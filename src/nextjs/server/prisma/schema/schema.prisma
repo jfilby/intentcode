@@ -1,0 +1,53 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["public", "core"]
+}
+
+// Project specific
+
+// Batch
+
+model BatchJob {
+  id                         String           @id @default(cuid())
+  instanceId                 String?          @map("instance_id")
+  instance                   Instance?        @relation(fields: [instanceId], references: [id])
+  userProfileId              String?          @map("user_profile_id")
+  userProfile                UserProfile?     @relation(fields: [userProfileId], references: [id])
+  runInATransaction          Boolean          @map("run_in_a_transaction")
+  status                     String           @db.Char(1)
+  progressPct                Int?             @map("progress_pct")
+  message                    String?
+  jobType                    String           @map("job_type")
+  refModel                   String?          @map("ref_model")
+  refId                      String?          @map("ref_id")
+  parameters                 String?          // Stringified JSON
+  created                    DateTime         @default(now())
+  updated                    DateTime         @updatedAt
+
+  @@index([refId])
+  @@map("batch_job")
+  @@schema("public")
+}
+
+// Wait-list
+
+model Waitlist {
+  email                        String               @id
+
+  @@map("waitlist")
+  @@schema("public")
+}
+
+// Coder
+

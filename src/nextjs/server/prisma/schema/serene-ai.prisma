@@ -1,0 +1,18 @@
+// Serene AI
+
+// Cache and rate-limiting
+
+model LlmCache {
+  id                           String               @id @default(cuid())
+  techId                       String               @map("tech_id")
+  tech                         Tech                 @relation(fields: [techId], references: [id])
+  key                          String
+  inputMessage                 String               @map("input_message")
+  outputMessage                String?              @map("output_message")
+  outputMessages               Json?                @map("output_messages")
+  created                      DateTime             @default(now())
+
+  @@unique([key, techId])
+  @@map("llm_cache")
+  @@schema("public")
+}
