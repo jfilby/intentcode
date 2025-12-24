@@ -4,7 +4,7 @@ import { LlmCacheService } from '@/serene-ai-server/services/cache/service'
 import { AgentLlmService } from '@/serene-ai-server/services/llm-apis/agent-llm-service'
 import { LlmUtilsService } from '@/serene-ai-server/services/llm-apis/utils-service'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
-import { ServerOnlyTypes } from '@/types/server-only-types'
+import { MessageTypes, ServerOnlyTypes } from '@/types/server-only-types'
 
 // Services
 const agentLlmService = new AgentLlmService()
@@ -21,7 +21,6 @@ export class CodeMutateLlmService {
           prisma: PrismaClient,
           userProfileId: string,
           llmTech: Tech,
-          pass: number,
           prompt: string) {
 
     // Debug
@@ -92,7 +91,6 @@ export class CodeMutateLlmService {
         validated = await
           this.validateQueryResults(
             prisma,
-            pass,
             queryResults)
       }
 
@@ -147,7 +145,6 @@ export class CodeMutateLlmService {
 
   async validateQueryResults(
           prisma: PrismaClient,
-          pass: number,
           queryResults: any) {
 
     // Debug
@@ -155,22 +152,33 @@ export class CodeMutateLlmService {
 
     // Test for concept graph results. This may not be a concept graph if the
     // text to analyze overrode the prompt.
-    if (Array.isArray(queryResults.json) === false) {
+    if (Array.isArray(queryResults.json) === true) {
 
-      console.log(`${fnName}: queryResults.json isn't an array: ` +
+      console.log(`${fnName}: queryResults.json should be a map: ` +
                   JSON.stringify(queryResults))
 
       return false
     }
 
     // Validate the JSON
-    for (const entry of queryResults.json) {
+    if (queryResults.json.warnings != null) {
 
-      const entryValidated = await
-              this.validateQueryResultsEntry(
-                prisma,
-                pass,
-                entry)
+      const entryValidated =
+              this.validateMessages(
+                MessageTypes.warnings,
+                queryResults.json.warnings)
+
+      if (entryValidated === false) {
+        return false
+      }
+    }
+
+    if (queryResults.json.errors != null) {
+
+      const entryValidated =
+              this.validateMessages(
+                MessageTypes.errors,
+                queryResults.json.errors)
 
       if (entryValidated === false) {
         return false
@@ -181,18 +189,30 @@ export class CodeMutateLlmService {
     return true
   }
 
-  async validateQueryResultsEntry(
-          prisma: PrismaClient,
-          pass: number,
-          entry: any) {
+  validateMessages(
+    name: string,
+    messages: any[]) {
 
     // Debug
-    const fnName = `${this.clName}.validateQueryResultsEntry()`
+    const fnName = `${this.clName}.validateMessages()`
 
-    // console.log(`${fnName}: entry: ` + JSON.stringify(entry))
+    // console.log(`${fnName}: messages: ` + JSON.stringify(messages))
 
-    // ..
-    ;
+    // Validate array structure
+    if (Array.isArray(messages) === false) {
+
+      console.log(`${fnName}: ${name} isn't an array`)
+      return false
+    }
+
+    for (const message of messages) {
+
+      if (message.text == null) {
+
+        console.log(`${fnName}: ${name} message is missing text`)
+        return false
+      }
+    }
 
     // Validated OK
     return true
