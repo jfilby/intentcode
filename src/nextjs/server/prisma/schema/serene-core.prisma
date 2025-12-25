@@ -273,6 +273,8 @@ model Instance {
 
   ofBatchJobs                  BatchJob[]
 
+  ofIntentCodeNodes            IntentCodeNode[]
+
   @@unique([userProfileId, parentId, name])
   @@map("instance")
   @@schema("public")

@@ -49,5 +49,45 @@ model Waitlist {
   @@schema("public")
 }
 
-// Coder
+// IntentCode
 
+model IntentCodeEdge {
+  id                         String            @id @default(cuid())
+  fromId                     String            @map("from_id")
+  from                       IntentCodeNode    @relation("from", fields: [fromId], references: [id])
+  toId                       String            @map("to_id")
+  to                         IntentCodeNode    @relation("to", fields: [toId], references: [id])
+  status                     String            @db.Char(1)
+  name                       String
+
+  @@unique([fromId, toId, name])
+  @@map("intentcode_edge")
+  @@schema("public")
+}
+
+model IntentCodeNode {
+  id                         String            @id @default(cuid())
+  parentId                   String?           @map("parent_id")
+  parent                     IntentCodeNode?   @relation("parent", fields: [parentId], references: [id])
+  instanceId                 String            @map("instance_id")
+  instance                   Instance          @relation(fields: [instanceId], references: [id])
+  type                       String
+  path                       String
+  name                       String
+  content                    String?
+  contentHash                String?           @map("content_hash")
+  metadata                   Json?             @db.JsonB
+  analysisStatus             String?           @map("analysis_status") @db.Char(1)
+  lastAnalyzed               DateTime?         @map("last_analyzed")
+  created                    DateTime          @default(now())
+  updated                    DateTime          @updatedAt
+
+  outgoingEdges              IntentCodeEdge[]  @relation("from")
+  incomingEdges              IntentCodeEdge[]  @relation("to")
+  children                   IntentCodeNode[]  @relation("parent")
+
+  @@unique([parentId, name])
+  @@index([contentHash])
+  @@map("intentcode_node")
+  @@schema("public")
+}
