@@ -77,12 +77,15 @@ export class CodeMutateService {
 
   async run(prisma: PrismaClient,
             targetLang: string,
-            intentcode: string) {
+            intentCode: string) {
 
     // Debug
     const fnName = `${this.clName}.run()`
 
     // console.log(`${fnName}: starting..`)
+
+    // Check that the intentcode is fully indexed
+    ;
 
     // Get the admin UserProfile
     const adminUserProfile = await
@@ -102,7 +105,7 @@ export class CodeMutateService {
     const prompt =
       this.getPrompt(
         targetLang,
-        intentcode)
+        intentCode)
 
     // Run
     const llmResults = await

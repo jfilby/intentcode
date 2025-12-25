@@ -2,8 +2,8 @@ const fs = require('fs')
 import { PrismaClient, UserProfile } from '@prisma/client'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir'
 import { fileExtToLanguageName } from '../../types/source-code-types'
-import { CodeMutateService } from '../transpiler/code/mutate-service'
-import { IntentCodeFilenameService } from '../transpiler/code/filename-service'
+import { CodeMutateService } from '../intentcode/transpiler/code/mutate-service'
+import { IntentCodeFilenameService } from '../intentcode/transpiler/code/filename-service'
 
 // Services
 const codeMutateService = new CodeMutateService()
@@ -39,31 +39,31 @@ export class TestsService {
     ;
 
     // Get intentcode to transpile
-    var intentcodeList: string[] = []
+    var intentCodeList: string[] = []
 
     await walkDirService.walkDir(
             `${relativePath}/intent`,
-            intentcodeList)
+            intentCodeList)
 
     // Transpile
-    for (const intentcodeFilename of intentcodeList) {
+    for (const intentCodeFilename of intentCodeList) {
 
       // Read file
       const intentcode = await
               fs.readFileSync(
-                intentcodeFilename,
+                intentCodeFilename,
                 { encoding: 'utf8', flag: 'r' })
 
       // Get the target file extension from the intentcode filename
       const targetLangFileExt =
-              intentCodeFilenameService.getTargetLang(intentcodeFilename)
+              intentCodeFilenameService.getTargetLang(intentCodeFilename)
 
       // Validate
       if (targetLangFileExt == null) {
 
         console.warn(
-          `${fnName}: can't get target file extension from intentcode ` +
-          `filename: ${intentcodeFilename}`)
+          `${fnName}: can't get target file extension from intentCode ` +
+          `filename: ${intentCodeFilename}`)
 
         continue
       }
