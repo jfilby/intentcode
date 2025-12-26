@@ -1,9 +1,7 @@
-import { PrismaClient, Tech } from '@prisma/client'
+import { PrismaClient } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { TechModel } from '@/serene-core-server/models/tech/tech-model'
 import { UsersService } from '@/serene-core-server/services/users/service'
-import { BaseDataTypes } from '@/shared/types/base-data-types'
-import { ServerOnlyTypes } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { CodeMutateLlmService } from './llm-service'
 import { GetTechService } from '@/services/tech/get-tech-service'
@@ -34,9 +32,17 @@ export class CodeMutateService {
     var prompt =
           `## Instructions\n` +
           `\n` +
-          `You need to convert intent code to ${targetLang} source code, ` +
+          `You need to:\n` +
+          `1. Determine the assumptions needed in the IntentCode to make it ` +
+          `   unambiguous.\n` +
+          `2. Convert IntentCode to ${targetLang} source code, ` +
           `but first scan for warnings and errors. If there are any errors ` +
           `then don't return any source.\n` +
+          `\n` +
+          `## Assumptions\n` +
+          `\n` +
+          `Assumptions have different levels: file or line. The line level ` +
+          `requires a line field.\n` +
           `\n` +
           `## Messages\n` +
           `\n` +
@@ -46,22 +52,29 @@ export class CodeMutateService {
           `## Example output\n` +
           `\n` +
           `{\n` +
+          `  "assumptions": [\n` +
+          `    {\n` +
+          `      "level": "file",\n` +
+          `      "type": "import",\n` +
+          `      "assumption": "import Calc from services/calc"\n` +
+          `    }\n` +
+          `  ],\n` +
           `  "warnings": [\n` +
           `    {\n` +
-          `      "line": 1\n` +
+          `      "line": 1,\n` +
           `      "text": "File name has invalid chars"\n` +
           `    }\n` +
           `  ],\n` +
           `  "errors": [\n` +
           `    {\n` +
-          `      "line": 5\n` +
+          `      "line": 5,\n` +
           `      "text": "Variable x in steps is undefined"\n` +
           `    }\n` +
           `  ],\n` +
-          `  "source": ".."\n` +
+          `  "targetSource": ".."\n` +
           `}\n` +
           `\n` +
-          `## Source code\n` +
+          `## IntentCode\n` +
           `\n` +
           intentcode
 
