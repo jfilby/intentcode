@@ -81,19 +81,12 @@ export class CodeMutateService {
           `      "assumption": ".."\n` +
           `    }\n` +
           `  ],\n` +
-          `  "warnings": [\n` +
-          `    {\n` +
-          `      "line": 1,\n` +
-          `      "from": 2,\n` +
-          `      "line": 7,\n` +
-          `      "text": "File name has invalid chars"\n` +
-          `    }\n` +
-          `  ],\n` +
+          `  "warnings": [],\n` +
           `  "errors": [\n` +
           `    {\n` +
           `      "line": 5,\n` +
           `      "from": 6,\n` +
-          `      "line": 7,\n` +
+          `      "to": 7,\n` +
           `      "text": "Variable x is undefined"\n` +
           `    }\n` +
           `  ],\n` +
