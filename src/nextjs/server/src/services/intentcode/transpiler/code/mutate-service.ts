@@ -35,9 +35,9 @@ export class CodeMutateService {
           `You need to:\n` +
           `1. Determine the assumptions needed in the IntentCode to make it ` +
           `   unambiguous.\n` +
-          `2. Convert IntentCode to ${targetLang} source code, ` +
-          `but first scan for warnings and errors. If there are any errors ` +
-          `then don't return any source.\n` +
+          `2. Scan for warnings and errors. If there are any errors then ` +
+          `   don't return any target source.\n` +
+          `3. Convert IntentCode to ${targetLang} source code.\n` +
           `\n` +
           `## Assumptions\n` +
           `\n` +
