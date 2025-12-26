@@ -41,15 +41,23 @@ export class CodeMutateService {
           `\n` +
           `## Assumptions\n` +
           `\n` +
-          `Assumptions have different levels: file or line. The line level ` +
-          `requires a line field.\n` +
+          `- Different levels: file or line. The line level requires line, ` +
+          `  from and to fields.\n` +
+          `- Don't guess, they need to be based on high probabilities at ` +
+          `  worst.\n` +
+          `- Assumed imports must be based on the index data.\n` +
+          `- Don't force assumptions, if you don't know something critical ` +
+          `  then list it as an error.\n` +
           `\n` +
           `## Messages\n` +
           `\n` +
-          `Warnings and errors might not have a line number, but they ` +
-          `always have a text field.\n` +
+          `Warnings and errors might not have a line, from and to numbers, ` +
+          `but they always have a text field.\n` +
           `\n` +
           `## Example output\n` +
+          `\n` +
+          `This is an example of the output structure only. Don't try to ` +
+          `use it as a source of any kind of data.\n` +
           `\n` +
           `{\n` +
           `  "assumptions": [\n` +
@@ -62,13 +70,17 @@ export class CodeMutateService {
           `  "warnings": [\n` +
           `    {\n` +
           `      "line": 1,\n` +
+          `      "from": 2,\n` +
+          `      "line": 7,\n` +
           `      "text": "File name has invalid chars"\n` +
           `    }\n` +
           `  ],\n` +
           `  "errors": [\n` +
           `    {\n` +
           `      "line": 5,\n` +
-          `      "text": "Variable x in steps is undefined"\n` +
+          `      "from": 6,\n` +
+          `      "line": 7,\n` +
+          `      "text": "Variable x is undefined"\n` +
           `    }\n` +
           `  ],\n` +
           `  "targetSource": ".."\n` +
@@ -76,7 +88,11 @@ export class CodeMutateService {
           `\n` +
           `## IntentCode\n` +
           `\n` +
-          intentcode
+          intentcode +
+          `\n` +
+          `## Index data\n` +
+          `\n` +
+          `None available.\n`
 
     // Return
     return prompt
