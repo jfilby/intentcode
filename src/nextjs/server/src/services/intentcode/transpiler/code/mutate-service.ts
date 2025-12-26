@@ -78,7 +78,7 @@ export class CodeMutateService {
           `      "probability": "0.95",\n` +
           `      "level": "file",\n` +
           `      "type": "import",\n` +
-          `      "assumption": "import Calc from services/calc"\n` +
+          `      "assumption": ".."\n` +
           `    }\n` +
           `  ],\n` +
           `  "warnings": [\n` +
