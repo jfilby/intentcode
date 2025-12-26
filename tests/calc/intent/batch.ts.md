@@ -2,7 +2,7 @@
 
 ## Steps
 
-- Prompt the user for a calculation string -> input
-- Calc.run(input) -> answer
+- input = Read input from the console
+- answer = Calc.run(input)
 - Print the answer
 

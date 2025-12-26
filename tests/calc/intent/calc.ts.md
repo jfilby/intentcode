@@ -9,8 +9,8 @@ InputType:
 
 ## Steps
 
-Convert input to an array of InputType -> steps[]
+steps[] = Convert input to an array of InputType
 Put brackets around steps using arithmetic precendence
-Solve the steps -> answer
+answer = Solve the steps
 Return answer
 
