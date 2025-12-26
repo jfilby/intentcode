@@ -37,16 +37,29 @@ export class CodeMutateService {
           `   unambiguous.\n` +
           `2. Scan for warnings and errors. If there are any errors then ` +
           `   don't return any target source.\n` +
-          `3. Convert IntentCode to ${targetLang} source code.\n` +
+          `3. Try to fix and errors and warnings in the fixedIntentCode ` +
+          `   field.\n` +
+          `4. Convert the input IntentCode (if no errors) to ${targetLang} ` +
+          `   source code.\n` +
           `\n` +
           `## Assumptions\n` +
           `\n` +
+          `Useful assumptions include:\n` +
+          `- Importing decisions based on more than one option.\n` +
+          `- Implementing functionality using known functions where ` +
+          `  possible, make use of functions available in index data or ` +
+          `  standard libraries.\n` +
+          `\n` +
+          `Do not make these assumptions:\n` +
+          `- Imports not based on index data or known standard libraries.\n` +
+          `\n` +
+          `General rules:\n` +
+          `- Include a probability from 0..1.\n ` +
           `- Different levels: file or line. The line level requires line, ` +
           `  from and to fields.\n` +
           `- Don't guess, they need to be based on high probabilities at ` +
           `  worst.\n` +
-          `- Assumed imports must be based on the index data.\n` +
-          `- Don't force assumptions, if you don't know something critical ` +
+          `- Don assume without data: if you don't know something critical ` +
           `  then list it as an error.\n` +
           `\n` +
           `## Messages\n` +
@@ -62,6 +75,7 @@ export class CodeMutateService {
           `{\n` +
           `  "assumptions": [\n` +
           `    {\n` +
+          `      "probability": "0.95",\n` +
           `      "level": "file",\n` +
           `      "type": "import",\n` +
           `      "assumption": "import Calc from services/calc"\n` +
@@ -83,6 +97,7 @@ export class CodeMutateService {
           `      "text": "Variable x is undefined"\n` +
           `    }\n` +
           `  ],\n` +
+          `  "fixedIntentCode": "..",\n` +
           `  "targetSource": ".."\n` +
           `}\n` +
           `\n` +
