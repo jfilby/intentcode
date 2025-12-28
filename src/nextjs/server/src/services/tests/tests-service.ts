@@ -2,11 +2,11 @@ const fs = require('fs')
 import { PrismaClient, UserProfile } from '@prisma/client'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir'
 import { fileExtToLanguageName } from '../../types/source-code-types'
-import { CodeMutateService } from '../intentcode/transpiler/code/mutate-service'
-import { IntentCodeFilenameService } from '../intentcode/transpiler/code/filename-service'
+import { CompilerMutateService } from '../intentcode/compiler/code/mutate-service'
+import { IntentCodeFilenameService } from '../intentcode/compiler/code/filename-service'
 
 // Services
-const codeMutateService = new CodeMutateService()
+const compilerMutateService = new CompilerMutateService()
 const intentCodeFilenameService = new IntentCodeFilenameService()
 const walkDirService = new WalkDirService()
 
@@ -22,30 +22,30 @@ export class TestsService {
               adminUserProfile: UserProfile) {
 
     // Run the calc test
-    await this.runRetranspileProject(
+    await this.runRecompileProject(
             prisma,
             `${process.env.LOCAL_TESTS_PATH}/calc`)
   }
 
-  async runRetranspileProject(
+  async runRecompileProject(
           prisma: PrismaClient,
           relativePath: string) {
 
     // Debug
-    const fnName = `${this.clName}.runRetranspileProject()`
+    const fnName = `${this.clName}.runRecompileProject()`
 
     // Purging old code and metadata to be done manually, but possibly detect
     // and warn if still present
     ;
 
-    // Get intentcode to transpile
+    // Get intentcode to compile
     var intentCodeList: string[] = []
 
     await walkDirService.walkDir(
             `${relativePath}/intent`,
             intentCodeList)
 
-    // Transpile
+    // Compile
     for (const intentCodeFilename of intentCodeList) {
 
       // Read file
@@ -80,9 +80,9 @@ export class TestsService {
       // Get the target lang
       const targetLang = fileExtToLanguageName[targetLangFileExt]
 
-      // Transpile intentcode -> source
+      // Compile intentcode -> source
       const results = await
-              codeMutateService.run(
+              compilerMutateService.run(
                 prisma,
                 targetLang,
                 intentcode)

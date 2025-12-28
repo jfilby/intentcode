@@ -3,22 +3,22 @@ import { CustomError } from '@/serene-core-server/types/errors'
 import { TechModel } from '@/serene-core-server/models/tech/tech-model'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { ServerTestTypes } from '@/types/server-test-types'
-import { CodeMutateLlmService } from './llm-service'
+import { CompilerMutateLlmService } from './llm-service'
 import { GetTechService } from '@/services/tech/get-tech-service'
 
 // Models
 const techModel = new TechModel()
 
 // Services
-const codeMutateLlmService = new CodeMutateLlmService()
+const compilerMutateLlmService = new CompilerMutateLlmService()
 const getTechService = new GetTechService()
 const usersService = new UsersService()
 
 // Class
-export class CodeMutateService {
+export class CompilerMutateService {
 
   // Consts
-  clName = 'CodeMutateService'
+  clName = 'CompilerMutateService'
 
   // Code
   getPrompt(
@@ -146,7 +146,7 @@ export class CodeMutateService {
 
     // Run
     const llmResults = await
-            codeMutateLlmService.llmRequest(
+            compilerMutateLlmService.llmRequest(
               prisma,
               adminUserProfile.id,
               tech,
