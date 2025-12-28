@@ -1,6 +1,7 @@
 import { PrismaClient, Tech } from '@prisma/client'
-import { TechModel } from '../../models/tech/tech-model'
+import { CustomError } from '../../types/errors'
 import { SereneCoreServerTypes } from '../../types/user-types'
+import { TechModel } from '../../models/tech/tech-model'
 
 // Models
 const techModel = new TechModel()
@@ -12,6 +13,46 @@ export class TechQueryService {
   clName = 'TechQueryService'
 
   // Code
+  async getTechByEnvKey(
+          prisma: PrismaClient,
+          envKey: string) {
+
+    // Debug
+    const fnName = `${this.clName}.getTechByEnvKey()`
+
+    // Validate
+    if (envKey == null ||
+        envKey.length === 0) {
+
+      throw new CustomError(`${fnName}: envKey not specified`)
+    }
+
+    // Get and validate env var
+    const variantName = process.env[envKey]
+
+    // Validate
+    if (variantName == null ||
+        variantName === '') {
+
+      throw new CustomError(`${fnName}: envKey: ${envKey} not found`)
+    }
+
+    // Get the standard LLM to use
+    const tech = await
+            techModel.getByVariantName(
+              prisma,
+              variantName)
+
+    // Validate
+    if (tech == null) {
+      throw new CustomError(`${fnName}: tech == null for variantName: ` +
+                            `${variantName}`)
+    }
+
+    // Return
+    return tech
+  }
+
   async getTechs(
           prisma: PrismaClient,
           userProfile: any,
