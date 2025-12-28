@@ -273,7 +273,7 @@ model Instance {
 
   ofBatchJobs                  BatchJob[]
 
-  ofIntentCodeNodes            IntentCodeNode[]
+  ofSourceNodes                SourceNode[]
 
   @@unique([userProfileId, parentId, name])
   @@map("instance")

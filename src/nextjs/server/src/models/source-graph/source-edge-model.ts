@@ -1,9 +1,9 @@
 import { PrismaClient } from '@prisma/client'
 
-export class IntentCodeEdgeModel {
+export class SourceEdgeModel {
 
   // Consts
-  clName = 'IntentCodeEdgeModel'
+  clName = 'SourceEdgeModel'
 
   // Code
   async create(
@@ -18,7 +18,7 @@ export class IntentCodeEdgeModel {
 
     // Create record
     try {
-      return await prisma.intentCodeEdge.create({
+      return await prisma.sourceEdge.create({
         data: {
           fromId: fromId,
           toId: toId,
@@ -41,7 +41,7 @@ export class IntentCodeEdgeModel {
 
     // Delete
     try {
-      return await prisma.intentCodeEdge.delete({
+      return await prisma.sourceEdge.delete({
         where: {
           id: id
         }
@@ -65,7 +65,7 @@ export class IntentCodeEdgeModel {
 
     // Query
     try {
-      return await prisma.intentCodeEdge.findMany({
+      return await prisma.sourceEdge.findMany({
         where: {
           fromId: fromId,
           toId: toId,
@@ -86,10 +86,10 @@ export class IntentCodeEdgeModel {
     const fnName = `${this.clName}.getById()`
 
     // Query
-    var intentCodeEdge: any = null
+    var sourceEdge: any = null
 
     try {
-      intentCodeEdge = await prisma.intentCodeEdge.findUnique({
+      sourceEdge = await prisma.sourceEdge.findUnique({
         where: {
           id: id
         }
@@ -102,7 +102,7 @@ export class IntentCodeEdgeModel {
     }
 
     // Return
-    return intentCodeEdge
+    return sourceEdge
   }
 
   async getByUniqueKey(
@@ -131,10 +131,10 @@ export class IntentCodeEdgeModel {
     }
 
     // Query
-    var intentCodeEdge: any = null
+    var sourceEdge: any = null
 
     try {
-      intentCodeEdge = await prisma.intentCodeEdge.findFirst({
+      sourceEdge = await prisma.sourceEdge.findFirst({
         where: {
           fromId: fromId,
           toId: toId,
@@ -149,7 +149,7 @@ export class IntentCodeEdgeModel {
     }
 
     // Return
-    return intentCodeEdge
+    return sourceEdge
   }
 
   async update(
@@ -165,7 +165,7 @@ export class IntentCodeEdgeModel {
 
     // Update record
     try {
-      return await prisma.intentCodeEdge.update({
+      return await prisma.sourceEdge.update({
         data: {
           fromId: fromId,
           toId: toId,
@@ -201,15 +201,15 @@ export class IntentCodeEdgeModel {
         toId != null &&
         name != null) {
 
-      const intentCodeEdge = await
+      const sourceEdge = await
               this.getByUniqueKey(
                 prisma,
                 fromId,
                 toId,
                 name)
 
-      if (intentCodeEdge != null) {
-        id = intentCodeEdge.id
+      if (sourceEdge != null) {
+        id = sourceEdge.id
       }
     }
 

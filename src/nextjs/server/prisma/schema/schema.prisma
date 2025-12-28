@@ -49,26 +49,26 @@ model Waitlist {
   @@schema("public")
 }
 
-// IntentCode
+// IntentCode: Source graph
 
-model IntentCodeEdge {
+model SourceEdge {
   id                         String            @id @default(cuid())
   fromId                     String            @map("from_id")
-  from                       IntentCodeNode    @relation("from", fields: [fromId], references: [id])
+  from                       SourceNode        @relation("from", fields: [fromId], references: [id])
   toId                       String            @map("to_id")
-  to                         IntentCodeNode    @relation("to", fields: [toId], references: [id])
+  to                         SourceNode        @relation("to", fields: [toId], references: [id])
   status                     String            @db.Char(1)
   name                       String
 
   @@unique([fromId, toId, name])
-  @@map("intentcode_edge")
+  @@map("source_edge")
   @@schema("public")
 }
 
-model IntentCodeNode {
+model SourceNode {
   id                         String            @id @default(cuid())
   parentId                   String?           @map("parent_id")
-  parent                     IntentCodeNode?   @relation("parent", fields: [parentId], references: [id])
+  parent                     SourceNode?       @relation("parent", fields: [parentId], references: [id])
   instanceId                 String            @map("instance_id")
   instance                   Instance          @relation(fields: [instanceId], references: [id])
   type                       String
@@ -82,12 +82,12 @@ model IntentCodeNode {
   created                    DateTime          @default(now())
   updated                    DateTime          @updatedAt
 
-  outgoingEdges              IntentCodeEdge[]  @relation("from")
-  incomingEdges              IntentCodeEdge[]  @relation("to")
-  children                   IntentCodeNode[]  @relation("parent")
+  outgoingEdges              SourceEdge[]      @relation("from")
+  incomingEdges              SourceEdge[]      @relation("to")
+  children                   SourceNode[]      @relation("parent")
 
   @@unique([parentId, name])
   @@index([contentHash])
-  @@map("intentcode_node")
+  @@map("source_node")
   @@schema("public")
 }

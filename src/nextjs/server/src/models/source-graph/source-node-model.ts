@@ -1,9 +1,9 @@
 import { PrismaClient } from '@prisma/client'
 
-export class IntentCodeNodeModel {
+export class SourceNodeModel {
 
   // Consts
-  clName = 'IntentCodeNodeModel'
+  clName = 'SourceNodeModel'
 
   // Code
   async create(
@@ -24,7 +24,7 @@ export class IntentCodeNodeModel {
 
     // Create record
     try {
-      return await prisma.intentCodeNode.create({
+      return await prisma.sourceNode.create({
         data: {
           parentId: parentId,
           instanceId: instanceId,
@@ -53,7 +53,7 @@ export class IntentCodeNodeModel {
 
     // Delete
     try {
-      return await prisma.intentCodeNode.delete({
+      return await prisma.sourceNode.delete({
         where: {
           id: id
         }
@@ -80,7 +80,7 @@ export class IntentCodeNodeModel {
 
     // Query
     try {
-      return await prisma.intentCodeNode.findMany({
+      return await prisma.sourceNode.findMany({
         where: {
           parentId: parentId,
           instanceId: instanceId,
@@ -104,10 +104,10 @@ export class IntentCodeNodeModel {
     const fnName = `${this.clName}.getById()`
 
     // Query
-    var intentCodeNode: any = null
+    var sourceNode: any = null
 
     try {
-      intentCodeNode = await prisma.intentCodeNode.findUnique({
+      sourceNode = await prisma.sourceNode.findUnique({
         where: {
           id: id
         }
@@ -120,7 +120,7 @@ export class IntentCodeNodeModel {
     }
 
     // Return
-    return intentCodeNode
+    return sourceNode
   }
 
   async getByUniqueKey(
@@ -143,10 +143,10 @@ export class IntentCodeNodeModel {
     }
 
     // Query
-    var intentCodeNode: any = null
+    var sourceNode: any = null
 
     try {
-      intentCodeNode = await prisma.intentCodeNode.findFirst({
+      sourceNode = await prisma.sourceNode.findFirst({
         where: {
           parentId: parentId,
           name: name
@@ -160,7 +160,7 @@ export class IntentCodeNodeModel {
     }
 
     // Return
-    return intentCodeNode
+    return sourceNode
   }
 
   async update(
@@ -182,7 +182,7 @@ export class IntentCodeNodeModel {
 
     // Update record
     try {
-      return await prisma.intentCodeNode.update({
+      return await prisma.sourceNode.update({
         data: {
           parentId: parentId,
           instanceId: instanceId,
@@ -229,14 +229,14 @@ export class IntentCodeNodeModel {
         parentId != null &&
         name != null) {
 
-      const intentCodeNode = await
+      const sourceNode = await
               this.getByUniqueKey(
                 prisma,
                 parentId,
                 name)
 
-      if (intentCodeNode != null) {
-        id = intentCodeNode.id
+      if (sourceNode != null) {
+        id = sourceNode.id
       }
     }
 
