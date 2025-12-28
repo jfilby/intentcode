@@ -7,7 +7,7 @@ InputType:
   value?: number
 
 
-## Steps
+## run()
 
 steps[] = Convert input to an array of InputType
 Put brackets around steps using arithmetic precendence

@@ -1,12 +1,15 @@
 const fs = require('fs')
 import { PrismaClient, UserProfile } from '@prisma/client'
+import { CustomError } from '@/serene-core-server/types/errors'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir'
 import { fileExtToLanguageName } from '../../types/source-code-types'
 import { CompilerMutateService } from '../intentcode/compiler/code/mutate-service'
-import { IntentCodeFilenameService } from '../intentcode/compiler/code/filename-service'
+import { IntentCodeFilenameService } from '../intentcode/utils/filename-service'
+import { IndexerMutateService } from '../intentcode/indexer/mutate-service'
 
 // Services
 const compilerMutateService = new CompilerMutateService()
+const indexerMutateService = new IndexerMutateService()
 const intentCodeFilenameService = new IntentCodeFilenameService()
 const walkDirService = new WalkDirService()
 
@@ -38,7 +41,7 @@ export class TestsService {
     // and warn if still present
     ;
 
-    // Get intentcode to compile
+    // Get IntentCode to compile
     var intentCodeList: string[] = []
 
     await walkDirService.walkDir(
@@ -48,13 +51,7 @@ export class TestsService {
     // Compile
     for (const intentCodeFilename of intentCodeList) {
 
-      // Read file
-      const intentcode = await
-              fs.readFileSync(
-                intentCodeFilename,
-                { encoding: 'utf8', flag: 'r' })
-
-      // Get the target file extension from the intentcode filename
+      // Get the target file extension from the IntentCode filename
       const targetLangFileExt =
               intentCodeFilenameService.getTargetLang(intentCodeFilename)
 
@@ -80,15 +77,35 @@ export class TestsService {
       // Get the target lang
       const targetLang = fileExtToLanguageName[targetLangFileExt]
 
+      // Read file
+      const intentCode = await
+              fs.readFileSync(
+                intentCodeFilename,
+                { encoding: 'utf8', flag: 'r' })
+
+      // Index the file
+      const indexResults = await
+              indexerMutateService.indexFileWithLlm(
+                prisma,
+                targetLang,
+                intentCode)
+
+      // Debug
+      console.log(`${fnName}: indexResults: ` + JSON.stringify(indexResults))
+
+      // TEST STOP
+      throw new CustomError(`${fnName}: TEST STOP`)
+
       // Compile intentcode -> source
-      const results = await
+      const compileResults = await
               compilerMutateService.run(
                 prisma,
                 targetLang,
-                intentcode)
+                intentCode)
 
       // Debug
-      console.log(`${fnName}: results: ` + JSON.stringify(results))
+      console.log(`${fnName}: compileResults: ` +
+                  JSON.stringify(compileResults))
     }
   }
 }

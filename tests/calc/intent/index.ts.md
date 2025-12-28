@@ -1,6 +1,6 @@
-# Batch
+# Index
 
-## Steps
+## main()
 
 - input = Read input from the console
 - answer = Calc.run(input)

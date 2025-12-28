@@ -1,17 +1,18 @@
 import { PrismaClient } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { TechModel } from '@/serene-core-server/models/tech/tech-model'
+import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-service'
 import { UsersService } from '@/serene-core-server/services/users/service'
+import { LlmEnvNames } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { CompilerMutateLlmService } from './llm-service'
-import { GetTechService } from '@/services/tech/get-tech-service'
 
 // Models
 const techModel = new TechModel()
 
 // Services
 const compilerMutateLlmService = new CompilerMutateLlmService()
-const getTechService = new GetTechService()
+const techQueryService = new TechQueryService()
 const usersService = new UsersService()
 
 // Class
@@ -23,7 +24,7 @@ export class CompilerMutateService {
   // Code
   getPrompt(
     targetLang: string,
-    intentcode: string) {
+    intentCode: string) {
 
     // Debug
     const fnName = `${this.clName}.getPrompt()`
@@ -96,7 +97,7 @@ export class CompilerMutateService {
           `\n` +
           `## IntentCode\n` +
           `\n` +
-          intentcode +
+          intentCode +
           `\n` +
           `## Index data\n` +
           `\n` +
@@ -136,7 +137,9 @@ export class CompilerMutateService {
 
     // Get tech
     const tech = await
-            getTechService.getStandardLlmTech(prisma)
+            techQueryService.getTechByEnvKey(
+              prisma,
+              LlmEnvNames.compilerEnvName)
 
     // Get prompt
     const prompt =
