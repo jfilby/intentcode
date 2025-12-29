@@ -1,16 +1,20 @@
 const fs = require('fs')
-import { PrismaClient, UserProfile } from '@prisma/client'
+import { PrismaClient, SourceNode, UserProfile } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir'
 import { fileExtToLanguageName } from '../../types/source-code-types'
 import { CompilerMutateService } from '../intentcode/compiler/code/mutate-service'
-import { IntentCodeFilenameService } from '../utils/filename-service'
 import { IndexerMutateService } from '../intentcode/indexer/mutate-service'
+import { IntentCodeFilenameService } from '../utils/filename-service'
+import { IntentCodeGraphMutateService } from '../graphs/intentcode/graph-mutate-service'
+import { SourceCodeGraphMutateService } from '../graphs/source-code/graph-mutate-service'
 
 // Services
 const compilerMutateService = new CompilerMutateService()
 const indexerMutateService = new IndexerMutateService()
 const intentCodeFilenameService = new IntentCodeFilenameService()
+const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
+const sourceCodeGraphMutateService = new SourceCodeGraphMutateService()
 const walkDirService = new WalkDirService()
 
 // Class
@@ -25,17 +29,18 @@ export class CalcTestsService {
               adminUserProfile: UserProfile) {
 
     // Setup the project
-    await this.setupProject(prisma)
+    const intentCodeProjectNode = await
+            this.setupProject(prisma)
 
     // Recompile the project
     await this.runRecompileProject(
             prisma,
-            `${process.env.LOCAL_TESTS_PATH}/calc`)
+            intentCodeProjectNode)
   }
 
   async runRecompileProject(
           prisma: PrismaClient,
-          relativePath: string) {
+          intentCodeProjectNode: SourceNode) {
 
     // Debug
     const fnName = `${this.clName}.runRecompileProject()`
@@ -48,7 +53,7 @@ export class CalcTestsService {
     var intentCodeList: string[] = []
 
     await walkDirService.walkDir(
-            `${relativePath}/intent`,
+            intentCodeProjectNode.path!,
             intentCodeList)
 
     // Compile
@@ -110,5 +115,33 @@ export class CalcTestsService {
       console.log(`${fnName}: compileResults: ` +
                   JSON.stringify(compileResults))
     }
+  }
+
+  async setupProject(prisma: PrismaClient) {
+
+    // Get/create IntentCode project
+    const intentCodeProjectNode = await
+            intentCodeGraphMutateService.getOrCreateIntentCodeProject(
+              prisma,
+              null,  // instanceId
+              `Calc`,
+              `${process.env.LOCAL_TESTS_PATH}/calc/intent`)
+
+    // Get/create source code project
+    const sourceCodeProjectNode = await
+            sourceCodeGraphMutateService.getOrCreateSourceCodeProject(
+              prisma,
+              null,  // instanceId
+              `Calc`,
+              `${process.env.LOCAL_TESTS_PATH}/calc/src`)
+
+    // Link the projets
+    await intentCodeGraphMutateService.linkIntentCodeProjectToSourceCodeProject(
+            prisma,
+            intentCodeProjectNode,
+            sourceCodeProjectNode)
+
+    // Return
+    return intentCodeProjectNode
   }
 }
