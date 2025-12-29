@@ -40,10 +40,19 @@ export class IntentCodePathGraphMutateService {
     const dirsPath = fsUtilsService.getDirectoriesPart(relativePath)
     const dirs = fsUtilsService.getDirectoriesArray(dirsPath)
 
+    // Debug
+    // console.log(`${fnName}: relativePath: ${relativePath}`)
+    // console.log(`${fnName}: dirsPath: ${dirsPath}`)
+    // console.log(`${fnName}: dirs: ${dirs}`)
+
     // Get/create nodes for dirs
     var dirSourceNode: SourceNode = projectSourceNode
 
     for (const dir of dirs) {
+
+      if (dir.length === 0) {
+        break
+      }
 
       dirSourceNode = await
         intentCodeGraphMutateService.getOrCreateIntentCodeDir(

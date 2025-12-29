@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import { CustomError } from '@/serene-core-server/types/errors'
 
 export class SourceNodeModel {
 
@@ -21,6 +22,15 @@ export class SourceNodeModel {
 
     // Debug
     const fnName = `${this.clName}.create()`
+
+    // Validate
+    if (name == null) {
+      throw new CustomError(`${fnName}: name == null`)
+    }
+
+    if (name.length == 0) {
+      throw new CustomError(`${fnName}: name.length == 0`)
+    }
 
     // Create record
     try {
@@ -193,6 +203,15 @@ export class SourceNodeModel {
 
     // Debug
     const fnName = `${this.clName}.update()`
+
+    // Validate
+    if (name == null) {
+      throw new CustomError(`${fnName}: name == null`)
+    }
+
+    if (name.length == 0) {
+      throw new CustomError(`${fnName}: name.length == 0`)
+    }
 
     // Update record
     try {
