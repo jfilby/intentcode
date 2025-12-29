@@ -69,8 +69,8 @@ model SourceNode {
   id                         String            @id @default(cuid())
   parentId                   String?           @map("parent_id")
   parent                     SourceNode?       @relation("parent", fields: [parentId], references: [id])
-  instanceId                 String            @map("instance_id")
-  instance                   Instance          @relation(fields: [instanceId], references: [id])
+  instanceId                 String?           @map("instance_id")
+  instance                   Instance?         @relation(fields: [instanceId], references: [id])
   type                       String
   path                       String?
   name                       String

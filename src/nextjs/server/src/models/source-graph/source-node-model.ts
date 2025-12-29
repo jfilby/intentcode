@@ -9,7 +9,7 @@ export class SourceNodeModel {
   async create(
           prisma: PrismaClient,
           parentId: string | null,
-          instanceId: string,
+          instanceId: string | null,
           type: string,
           path: string | null,
           name: string,
@@ -69,7 +69,7 @@ export class SourceNodeModel {
   async filter(
           prisma: PrismaClient,
           parentId: string | null | undefined = undefined,
-          instanceId: string | undefined = undefined,
+          instanceId: string | null | undefined = undefined,
           type: string | undefined = undefined,
           name: string | undefined = undefined,
           contentHash: string | null | undefined = undefined,
@@ -169,7 +169,7 @@ export class SourceNodeModel {
           prisma: PrismaClient,
           id: string,
           parentId: string | null | undefined,
-          instanceId: string | undefined,
+          instanceId: string | null | undefined,
           type: string | undefined,
           path: string | null | undefined,
           name: string | undefined,
@@ -211,7 +211,7 @@ export class SourceNodeModel {
           prisma: PrismaClient,
           id: string | undefined,
           parentId: string | null | undefined,
-          instanceId: string | undefined,
+          instanceId: string | null | undefined,
           type: string | undefined,
           path: string | null | undefined,
           name: string | undefined,
@@ -253,8 +253,8 @@ export class SourceNodeModel {
         throw 'Prisma error'
       }
 
-      if (instanceId == null) {
-        console.error(`${fnName}: id is null and instanceId is null`)
+      if (instanceId === undefined) {
+        console.error(`${fnName}: id is null and instanceId is undefined`)
         throw 'Prisma error'
       }
 
