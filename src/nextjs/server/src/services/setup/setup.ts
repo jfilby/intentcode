@@ -8,6 +8,7 @@ import { SereneAiSetup } from '@/serene-ai-server/services/setup/setup-service'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
 import { ServerOnlyTypes } from '@/types/server-only-types'
 import { AgentUserService } from '@/services/agents/agent-user-service'
+import { ProjectsMutateService } from '../projects/mutate-service'
 
 // Models
 const agentUserModel = new AgentUserModel()
@@ -15,6 +16,7 @@ const chatSettingsModel = new ChatSettingsModel()
 
 // Services
 const agentUserService = new AgentUserService()
+const projectsMutateService = new ProjectsMutateService()
 const sereneAiSetup = new SereneAiSetup()
 
 // Class
@@ -92,6 +94,10 @@ export class SetupService {
           prisma: PrismaClient,
           adminUserProfile: UserProfile) {
 
-    ;
+    // Setup a local project
+    await projectsMutateService.getOrCreate(
+            prisma,
+            adminUserProfile.id,
+            ServerOnlyTypes.localProjectName)
   }
 }

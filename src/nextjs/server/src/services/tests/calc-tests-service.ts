@@ -1,5 +1,5 @@
 const fs = require('fs')
-import { PrismaClient, SourceNode, UserProfile } from '@prisma/client'
+import { Instance, PrismaClient, SourceNode, UserProfile } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir'
 import { fileExtToLanguageName } from '../../types/source-code-types'
@@ -7,6 +7,7 @@ import { CompilerMutateService } from '../intentcode/compiler/code/mutate-servic
 import { IndexerMutateService } from '../intentcode/indexer/mutate-service'
 import { IntentCodeFilenameService } from '../utils/filename-service'
 import { IntentCodeGraphMutateService } from '../graphs/intentcode/graph-mutate-service'
+import { ProjectsQueryService } from '../projects/query-service'
 import { SourceCodeGraphMutateService } from '../graphs/source-code/graph-mutate-service'
 
 // Services
@@ -14,6 +15,7 @@ const compilerMutateService = new CompilerMutateService()
 const indexerMutateService = new IndexerMutateService()
 const intentCodeFilenameService = new IntentCodeFilenameService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
+const projectsQueryService = new ProjectsQueryService()
 const sourceCodeGraphMutateService = new SourceCodeGraphMutateService()
 const walkDirService = new WalkDirService()
 
@@ -28,9 +30,15 @@ export class CalcTestsService {
               regularTestUserProfile: UserProfile,
               adminUserProfile: UserProfile) {
 
+    // Get the project
+    const instance = await
+            projectsQueryService.getLocalProject(prisma)
+
     // Setup the project
     const intentCodeProjectNode = await
-            this.setupProject(prisma)
+            this.setupProject(
+              prisma,
+              instance)
 
     // Recompile the project
     await this.runRecompileProject(
@@ -119,13 +127,15 @@ export class CalcTestsService {
     }
   }
 
-  async setupProject(prisma: PrismaClient) {
+  async setupProject(
+          prisma: PrismaClient,
+          instance: Instance) {
 
     // Get/create IntentCode project
     const intentCodeProjectNode = await
             intentCodeGraphMutateService.getOrCreateIntentCodeProject(
               prisma,
-              null,  // instanceId
+              instance.id,
               `Calc`,
               `${process.env.LOCAL_TESTS_PATH}/calc/intent`)
 
@@ -133,7 +143,7 @@ export class CalcTestsService {
     const sourceCodeProjectNode = await
             sourceCodeGraphMutateService.getOrCreateSourceCodeProject(
               prisma,
-              null,  // instanceId
+              instance.id,
               `Calc`,
               `${process.env.LOCAL_TESTS_PATH}/calc/src`)
 

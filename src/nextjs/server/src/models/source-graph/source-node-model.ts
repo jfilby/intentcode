@@ -10,7 +10,7 @@ export class SourceNodeModel {
   async create(
           prisma: PrismaClient,
           parentId: string | null,
-          instanceId: string | null,
+          instanceId: string,
           status: string,
           type: string,
           path: string | null,
@@ -79,7 +79,7 @@ export class SourceNodeModel {
   async filter(
           prisma: PrismaClient,
           parentId: string | null | undefined = undefined,
-          instanceId: string | null | undefined = undefined,
+          instanceId: string | undefined = undefined,
           type: string | undefined = undefined,
           name: string | undefined = undefined,
           contentHash: string | null | undefined = undefined,
@@ -136,7 +136,7 @@ export class SourceNodeModel {
   async getByUniqueKey(
           prisma: PrismaClient,
           parentId: string | null,
-          instanceId: string | null,
+          instanceId: string,
           type: string,
           name: string) {
 
@@ -149,8 +149,8 @@ export class SourceNodeModel {
       throw 'Validation error'
     }
 
-    if (instanceId === undefined) {
-      console.error(`${fnName}: instanceId === undefined`)
+    if (instanceId == null) {
+      console.error(`${fnName}: instanceId == null`)
       throw 'Validation error'
     }
 
@@ -191,7 +191,7 @@ export class SourceNodeModel {
           prisma: PrismaClient,
           id: string,
           parentId: string | null | undefined,
-          instanceId: string | null | undefined,
+          instanceId: string | undefined,
           status: string | undefined,
           type: string | undefined,
           path: string | null | undefined,
@@ -242,7 +242,7 @@ export class SourceNodeModel {
           prisma: PrismaClient,
           id: string | undefined,
           parentId: string | null | undefined,
-          instanceId: string | null | undefined,
+          instanceId: string | undefined,
           status: string | undefined,
           type: string | undefined,
           path: string | null | undefined,
