@@ -48,9 +48,10 @@ export class IndexerMutateService {
               fullPath)
 
     // Check if the file has been updated since last indexed
-    if (intentFileSourceNode != null &&
+    if (intentFileSourceNode?.contentUpdated != null &&
         intentFileSourceNode.contentUpdated <= fileModifiedTime) {
 
+      // console.log(`${fnName}: file: ${fullPath} already indexed`)
       return
     }
 
