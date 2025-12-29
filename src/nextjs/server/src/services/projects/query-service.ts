@@ -25,7 +25,9 @@ export class ProjectsQueryService {
   clName = 'ProjectsQueryService'
 
   // Code
-  async getLocalProject(prisma: PrismaClient) {
+  async getProject(
+          prisma: PrismaClient,
+          projectName: string) {
 
     // Debug
     const fnName = `${this.clName}.getSystemProject()`
@@ -46,7 +48,7 @@ export class ProjectsQueryService {
             instanceModel.getByParentIdAndNameAndUserProfileId(
               prisma,
               null,  // parentId
-              ServerOnlyTypes.localProjectName,
+              projectName,
               adminUserProfile.id)
 
     // Return

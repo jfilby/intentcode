@@ -8,7 +8,7 @@ import { FsUtilsService } from '../utils/fs-utils-service'
 import { IndexerMutateService } from '../intentcode/indexer/mutate-service'
 import { IntentCodeFilenameService } from '../utils/filename-service'
 import { IntentCodeGraphMutateService } from '../graphs/intentcode/graph-mutate-service'
-import { ProjectsQueryService } from '../projects/query-service'
+import { ProjectsMutateService } from '../projects/mutate-service'
 import { SourceCodeGraphMutateService } from '../graphs/source-code/graph-mutate-service'
 
 // Services
@@ -17,7 +17,7 @@ const fsUtilsService = new FsUtilsService()
 const indexerMutateService = new IndexerMutateService()
 const intentCodeFilenameService = new IntentCodeFilenameService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
-const projectsQueryService = new ProjectsQueryService()
+const projectsMutateService = new ProjectsMutateService()
 const sourceCodeGraphMutateService = new SourceCodeGraphMutateService()
 const walkDirService = new WalkDirService()
 
@@ -27,14 +27,19 @@ export class CalcTestsService {
   // Consts
   clName = 'CalcTestsService'
 
+  projectName = `Calc`
+
   // Code
   async tests(prisma: PrismaClient,
               regularTestUserProfile: UserProfile,
               adminUserProfile: UserProfile) {
 
-    // Get the project
+    // Get/create the project
     const instance = await
-            projectsQueryService.getLocalProject(prisma)
+            projectsMutateService.getOrCreate(
+              prisma,
+              adminUserProfile.id,
+              this.projectName)
 
     // Setup the project
     const intentCodeProjectNode = await
@@ -106,22 +111,15 @@ export class CalcTestsService {
                 { encoding: 'utf8', flag: 'r' })
 
       // Index the file
-      const indexResults = await
-              indexerMutateService.indexFileWithLlm(
-                prisma,
-                intentCodeProjectNode,
-                intentCodeFilename,
-                targetLang,
-                intentCode,
-                fileModifiedTime)
+      await indexerMutateService.indexFileWithLlm(
+              prisma,
+              intentCodeProjectNode,
+              intentCodeFilename,
+              targetLang,
+              intentCode,
+              fileModifiedTime)
 
-      // Debug
-      console.log(`${fnName}: indexResults: ` + JSON.stringify(indexResults))
-
-      // TEST STOP
-      throw new CustomError(`${fnName}: TEST STOP`)
-
-      // Compile intentcode -> source
+      // Compile IntentCode to source
       const compileResults = await
               compilerMutateService.run(
                 prisma,

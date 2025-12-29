@@ -2,9 +2,6 @@ export class ServerOnlyTypes {
 
   // Instance types
   static projectInstanceType = 'P'
-
-  // Instance names
-  static localProjectName = 'Local'
 }
 
 export enum MessageTypes {

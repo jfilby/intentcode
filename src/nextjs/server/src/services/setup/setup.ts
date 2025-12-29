@@ -94,10 +94,6 @@ export class SetupService {
           prisma: PrismaClient,
           adminUserProfile: UserProfile) {
 
-    // Setup a local project
-    await projectsMutateService.getOrCreate(
-            prisma,
-            adminUserProfile.id,
-            ServerOnlyTypes.localProjectName)
+    ;
   }
 }

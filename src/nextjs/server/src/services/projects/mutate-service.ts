@@ -24,7 +24,7 @@ export class ProjectsMutateService {
           userProfileId: string,
           projectName: string) {
 
-    // Try to get the System project
+    // Try to get project
     var project = await
           instanceModel.getByParentIdAndNameAndUserProfileId(
             prisma,
@@ -36,7 +36,7 @@ export class ProjectsMutateService {
       return project
     }
 
-    // Create the System project
+    // Create the project
     project = await
       instanceModel.create(
         prisma,
