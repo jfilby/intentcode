@@ -86,7 +86,7 @@ model SourceNode {
   incomingEdges              SourceEdge[]      @relation("to")
   children                   SourceNode[]      @relation("parent")
 
-  @@unique([parentId, type, name])
+  @@unique([parentId, instanceId, type, name])
   @@index([contentHash])
   @@map("source_node")
   @@schema("public")
