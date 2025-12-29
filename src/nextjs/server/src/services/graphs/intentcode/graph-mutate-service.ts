@@ -1,3 +1,4 @@
+import { blake3 } from '@noble/hashes/blake3'
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
@@ -20,7 +21,8 @@ export class IntentCodeGraphMutateService {
           prisma: PrismaClient,
           instanceId: string | null,
           parentNode: SourceNode,
-          name: string) {
+          name: string,
+          jsonContent: any) {
 
     // Debug
     const fnName = `${this.clName}.getOrCreateIntentCodeCompilerData()`
@@ -41,11 +43,21 @@ export class IntentCodeGraphMutateService {
           sourceNodeModel.getByUniqueKey(
             prisma,
             null,  // parentId
+            instanceId,
             SourceNodeTypes.intentCodeFile,
             name)
 
     if (intentCodeCompilerData != null) {
       return intentCodeCompilerData
+    }
+
+    // Get jsonContentHash
+    var jsonContentHash: string | null = null
+
+    if (jsonContent != null) {
+
+      // Blake3 hash
+      jsonContentHash = blake3(JSON.stringify(jsonContent)).toString()
     }
 
     // Create the node
@@ -54,14 +66,14 @@ export class IntentCodeGraphMutateService {
         prisma,
         parentNode.id,  // parentId
         instanceId,
+        BaseDataTypes.activeStatus,
         SourceNodeTypes.intentCodeCompilerData,
         null,           // path
         name,
         null,           // content
         null,           // contentHash
-        null,           // metadata
-        null,           // analysisStatus
-        null)           // lastAnalyzed
+        jsonContent,
+        jsonContentHash)
 
     // Return
     return intentCodeCompilerData
@@ -94,6 +106,7 @@ export class IntentCodeGraphMutateService {
           sourceNodeModel.getByUniqueKey(
             prisma,
             null,  // parentId
+            instanceId,
             SourceNodeTypes.intentCodeDir,
             name)
 
@@ -107,14 +120,14 @@ export class IntentCodeGraphMutateService {
         prisma,
         parentNode.id,  // parentId
         instanceId,
+        BaseDataTypes.activeStatus,
         SourceNodeTypes.intentCodeDir,
         null,           // path
         name,
         null,           // content
         null,           // contentHash
-        null,           // metadata
-        null,           // analysisStatus
-        null)           // lastAnalyzed
+        null,           // jsonContent
+        null)           // jsonContentHash
 
     // Return
     return intentCodeDir
@@ -147,6 +160,7 @@ export class IntentCodeGraphMutateService {
           sourceNodeModel.getByUniqueKey(
             prisma,
             null,  // parentId
+            instanceId,
             SourceNodeTypes.intentCodeFile,
             name)
 
@@ -160,14 +174,14 @@ export class IntentCodeGraphMutateService {
         prisma,
         parentNode.id,  // parentId
         instanceId,
+        BaseDataTypes.activeStatus,
         SourceNodeTypes.intentCodeFile,
         null,           // path
         name,
         null,           // content
         null,           // contentHash
-        null,           // metadata
-        null,           // analysisStatus
-        null)           // lastAnalyzed
+        null,           // jsonContent
+        null)           // jsonContentHash
 
     // Return
     return intentCodeFile
@@ -177,7 +191,8 @@ export class IntentCodeGraphMutateService {
           prisma: PrismaClient,
           instanceId: string | null,
           parentNode: SourceNode,
-          name: string) {
+          name: string,
+          jsonContent: any) {
 
     // Debug
     const fnName = `${this.clName}.getOrCreateIntentCodeIndexedData()`
@@ -198,11 +213,21 @@ export class IntentCodeGraphMutateService {
           sourceNodeModel.getByUniqueKey(
             prisma,
             null,  // parentId
+            instanceId,
             SourceNodeTypes.intentCodeFile,
             name)
 
     if (intentCodeIndexedData != null) {
       return intentCodeIndexedData
+    }
+
+    // Get jsonContentHash
+    var jsonContentHash: string | null = null
+
+    if (jsonContent != null) {
+
+      // Blake3 hash
+      jsonContentHash = blake3(JSON.stringify(jsonContent)).toString()
     }
 
     // Create the node
@@ -211,14 +236,14 @@ export class IntentCodeGraphMutateService {
         prisma,
         parentNode.id,  // parentId
         instanceId,
+        BaseDataTypes.activeStatus,
         SourceNodeTypes.intentCodeIndexedData,
         null,           // path
         name,
         null,           // content
         null,           // contentHash
-        null,           // metadata
-        null,           // analysisStatus
-        null)           // lastAnalyzed
+        jsonContent,
+        jsonContentHash)
 
     // Return
     return intentCodeIndexedData
@@ -238,6 +263,7 @@ export class IntentCodeGraphMutateService {
           sourceNodeModel.getByUniqueKey(
             prisma,
             null,  // parentId
+            instanceId,
             SourceNodeTypes.intentCodeProject,
             name)
 
@@ -251,14 +277,14 @@ export class IntentCodeGraphMutateService {
         prisma,
         null,  // parentId
         instanceId,
+        BaseDataTypes.activeStatus,
         SourceNodeTypes.intentCodeProject,
         localPath,
         name,
         null,  // content
         null,  // contentHash
-        null,  // metadata
-        null,  // analysisStatus
-        null)  // lastAnalyzed
+        null,           // jsonContent
+        null)           // jsonContentHash
 
     // Return
     return intentCodeProject

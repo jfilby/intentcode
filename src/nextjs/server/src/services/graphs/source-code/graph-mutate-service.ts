@@ -1,5 +1,6 @@
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
+import { BaseDataTypes } from '@/shared/types/base-data-types'
 import { SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 
@@ -27,6 +28,7 @@ export class SourceCodeGraphMutateService {
           sourceNodeModel.getByUniqueKey(
             prisma,
             null,  // parentId
+            instanceId,
             SourceNodeTypes.sourceCodeProject,
             name)
 
@@ -40,14 +42,14 @@ export class SourceCodeGraphMutateService {
         prisma,
         null,  // parentId
         instanceId,
+        BaseDataTypes.activeStatus,
         SourceNodeTypes.sourceCodeProject,
         localPath,
         name,
         null,  // content
         null,  // contentHash
-        null,  // metadata
-        null,  // analysisStatus
-        null)  // lastAnalyzed
+        null,           // jsonContent
+        null)           // jsonContentHash
 
     // Return
     return sourceCodeProject
@@ -80,6 +82,7 @@ export class SourceCodeGraphMutateService {
           sourceNodeModel.getByUniqueKey(
             prisma,
             null,  // parentId
+            instanceId,
             SourceNodeTypes.sourceCodeDir,
             name)
 
@@ -93,14 +96,14 @@ export class SourceCodeGraphMutateService {
         prisma,
         parentNode.id,  // parentId
         instanceId,
+        BaseDataTypes.activeStatus,
         SourceNodeTypes.sourceCodeDir,
         null,           // path
         name,
         null,           // content
         null,           // contentHash
-        null,           // metadata
-        null,           // analysisStatus
-        null)           // lastAnalyzed
+        null,           // jsonContent
+        null)           // jsonContentHash
 
     // Return
     return sourceCodeDir
@@ -133,6 +136,7 @@ export class SourceCodeGraphMutateService {
           sourceNodeModel.getByUniqueKey(
             prisma,
             null,  // parentId
+            instanceId,
             SourceNodeTypes.sourceCodeFile,
             name)
 
@@ -146,14 +150,14 @@ export class SourceCodeGraphMutateService {
         prisma,
         parentNode.id,  // parentId
         instanceId,
+        BaseDataTypes.activeStatus,
         SourceNodeTypes.sourceCodeFile,
         null,           // path
         name,
         null,           // content
         null,           // contentHash
-        null,           // metadata
-        null,           // analysisStatus
-        null)           // lastAnalyzed
+        null,           // jsonContent
+        null)           // jsonContentHash
 
     // Return
     return sourceCodeFile

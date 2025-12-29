@@ -71,14 +71,14 @@ model SourceNode {
   parent                     SourceNode?       @relation("parent", fields: [parentId], references: [id])
   instanceId                 String?           @map("instance_id")
   instance                   Instance?         @relation(fields: [instanceId], references: [id])
+  status                     String            @db.Char(1)
   type                       String
   path                       String?
   name                       String
   content                    String?
   contentHash                String?           @map("content_hash")
-  metadata                   Json?             @db.JsonB
-  analysisStatus             String?           @map("analysis_status") @db.Char(1)
-  lastAnalyzed               DateTime?         @map("last_analyzed")
+  jsonContent                Json?             @map("json_content") @db.JsonB
+  jsonContentHash            String?           @map("json_content_hash")
   created                    DateTime          @default(now())
   updated                    DateTime          @updatedAt
 

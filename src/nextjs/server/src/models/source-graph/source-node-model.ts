@@ -10,14 +10,14 @@ export class SourceNodeModel {
           prisma: PrismaClient,
           parentId: string | null,
           instanceId: string | null,
+          status: string,
           type: string,
           path: string | null,
           name: string,
           content: string | null,
           contentHash: string | null,
-          metadata: any,
-          analysisStatus: string | null,
-          lastAnalyzed: Date | null) {
+          jsonContent: any,
+          jsonContentHash: string | null) {
 
     // Debug
     const fnName = `${this.clName}.create()`
@@ -28,14 +28,14 @@ export class SourceNodeModel {
         data: {
           parentId: parentId,
           instanceId: instanceId,
+          status: status,
           type: type,
           path: path,
           name: name,
           content: content,
           contentHash: contentHash,
-          metadata: metadata,
-          analysisStatus: analysisStatus,
-          lastAnalyzed: lastAnalyzed
+          jsonContent: jsonContent,
+          jsonContentHash: jsonContentHash
         }
       })
     } catch(error) {
@@ -73,7 +73,7 @@ export class SourceNodeModel {
           type: string | undefined = undefined,
           name: string | undefined = undefined,
           contentHash: string | null | undefined = undefined,
-          analysisStatus: string | null | undefined = undefined) {
+          jsonContentHash: string | null | undefined = undefined) {
 
     // Debug
     const fnName = `${this.clName}.filter()`
@@ -87,7 +87,7 @@ export class SourceNodeModel {
           type: type,
           name: name,
           contentHash: contentHash,
-          analysisStatus: analysisStatus
+          jsonContentHash: jsonContentHash
         }
       })
     } catch(error: any) {
@@ -126,6 +126,7 @@ export class SourceNodeModel {
   async getByUniqueKey(
           prisma: PrismaClient,
           parentId: string | null,
+          instanceId: string | null,
           type: string,
           name: string) {
 
@@ -135,6 +136,16 @@ export class SourceNodeModel {
     // Validate
     if (parentId === undefined) {
       console.error(`${fnName}: parentId === undefined`)
+      throw 'Validation error'
+    }
+
+    if (instanceId === undefined) {
+      console.error(`${fnName}: instanceId === undefined`)
+      throw 'Validation error'
+    }
+
+    if (type == null) {
+      console.error(`${fnName}: type == null`)
       throw 'Validation error'
     }
 
@@ -150,6 +161,7 @@ export class SourceNodeModel {
       sourceNode = await prisma.sourceNode.findFirst({
         where: {
           parentId: parentId,
+          instanceId: instanceId,
           type: type,
           name: name
         }
@@ -170,14 +182,14 @@ export class SourceNodeModel {
           id: string,
           parentId: string | null | undefined,
           instanceId: string | null | undefined,
+          status: string | undefined,
           type: string | undefined,
           path: string | null | undefined,
           name: string | undefined,
           content: string | null | undefined,
           contentHash: string | null | undefined,
-          metadata: any,
-          analysisStatus: string | null | undefined,
-          lastAnalyzed: Date | null | undefined) {
+          jsonContent: any | undefined,
+          jsonContentHash: string | null | undefined) {
 
     // Debug
     const fnName = `${this.clName}.update()`
@@ -188,14 +200,14 @@ export class SourceNodeModel {
         data: {
           parentId: parentId,
           instanceId: instanceId,
+          status: status,
           type: type,
           path: path,
           name: name,
           content: content,
           contentHash: contentHash,
-          metadata: metadata,
-          analysisStatus: analysisStatus,
-          lastAnalyzed: lastAnalyzed
+          jsonContent: jsonContent,
+          jsonContentHash: jsonContentHash
         },
         where: {
           id: id
@@ -212,14 +224,14 @@ export class SourceNodeModel {
           id: string | undefined,
           parentId: string | null | undefined,
           instanceId: string | null | undefined,
+          status: string | undefined,
           type: string | undefined,
           path: string | null | undefined,
           name: string | undefined,
           content: string | null | undefined,
           contentHash: string | null | undefined,
-          metadata: any,
-          analysisStatus: string | null | undefined,
-          lastAnalyzed: Date | null | undefined) {
+          jsonContent: any | undefined,
+          jsonContentHash: string | null | undefined) {
 
     // Debug
     const fnName = `${this.clName}.upsert()`
@@ -228,7 +240,8 @@ export class SourceNodeModel {
 
     // If id isn't specified, but the unique keys are, try to get the record
     if (id == null &&
-        parentId != null &&
+        parentId !== undefined &&
+        instanceId !== undefined &&
         type != null &&
         name != null) {
 
@@ -236,6 +249,7 @@ export class SourceNodeModel {
               this.getByUniqueKey(
                 prisma,
                 parentId,
+                instanceId,
                 type,
                 name)
 
@@ -255,6 +269,11 @@ export class SourceNodeModel {
 
       if (instanceId === undefined) {
         console.error(`${fnName}: id is null and instanceId is undefined`)
+        throw 'Prisma error'
+      }
+
+      if (status == null) {
+        console.error(`${fnName}: id is null and status is null`)
         throw 'Prisma error'
       }
 
@@ -283,18 +302,13 @@ export class SourceNodeModel {
         throw 'Prisma error'
       }
 
-      if (metadata == undefined) {
-        console.error(`${fnName}: id is null and metadata is undefined`)
+      if (jsonContent === undefined) {
+        console.error(`${fnName}: id is null and jsonContent is undefined`)
         throw 'Prisma error'
       }
 
-      if (analysisStatus == undefined) {
-        console.error(`${fnName}: id is null and analysisStatus is undefined`)
-        throw 'Prisma error'
-      }
-
-      if (lastAnalyzed == undefined) {
-        console.error(`${fnName}: id is null and lastAnalyzed is undefined`)
+      if (jsonContentHash === undefined) {
+        console.error(`${fnName}: id is null and jsonContentHash is undefined`)
         throw 'Prisma error'
       }
 
@@ -304,14 +318,14 @@ export class SourceNodeModel {
                  prisma,
                  parentId,
                  instanceId,
+                 status,
                  type,
                  path,
                  name,
                  content,
                  contentHash,
-                 metadata,
-                 analysisStatus,
-                 lastAnalyzed)
+                 jsonContent,
+                 jsonContentHash)
     } else {
 
       // Update
@@ -321,14 +335,14 @@ export class SourceNodeModel {
                  id,
                  parentId,
                  instanceId,
+                 status,
                  type,
                  path,
                  name,
                  content,
                  contentHash,
-                 metadata,
-                 analysisStatus,
-                 lastAnalyzed)
+                 jsonContent,
+                 jsonContentHash)
     }
   }
 }

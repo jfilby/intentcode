@@ -1,5 +1,5 @@
 const fs = require('fs')
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, SourceNode } from '@prisma/client'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { IndexerMutateLlmService } from './llm-service'
 import { CustomError } from '@/serene-core-server/types/errors'
@@ -8,10 +8,15 @@ import { UsersService } from '@/serene-core-server/services/users/service'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir'
 import { LlmEnvNames } from '@/types/server-only-types'
 import { IntentCodeFilenameService } from '../../utils/filename-service'
+import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service'
+import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
+import { SourceNodeNames } from '@/types/source-graph-types'
 
 // Services
 const indexerMutateLlmService = new IndexerMutateLlmService()
 const intentCodeFilenameService = new IntentCodeFilenameService()
+const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
+const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
 const techQueryService = new TechQueryService()
 const walkDirService = new WalkDirService()
 const usersService = new UsersService()
@@ -25,6 +30,8 @@ export class IndexerMutateService {
   // Code
   async indexFileWithLlm(
           prisma: PrismaClient,
+          intentCodeProjectNode: SourceNode,
+          fullPath: string,
           targetLang: string,
           intentCode: string) {
 
@@ -64,6 +71,8 @@ export class IndexerMutateService {
     // Save the index data
     await this.processQueryResults(
             prisma,
+            intentCodeProjectNode,
+            fullPath,
             llmResults.queryResults.json)
 
     // Return
@@ -72,7 +81,7 @@ export class IndexerMutateService {
 
   async indexProject(
           prisma: PrismaClient,
-          path: string) {
+          intentCodeProjectNode: SourceNode) {
 
     // Debug
     const fnName = `${this.clName}.indexProject()`
@@ -81,7 +90,7 @@ export class IndexerMutateService {
     var intentCodeList: string[] = []
 
     await walkDirService.walkDir(
-            `${path}/intent`,
+            intentCodeProjectNode.path!,
             intentCodeList)
 
     // Analyze each file
@@ -105,6 +114,8 @@ export class IndexerMutateService {
       // Index file
       await this.indexFileWithLlm(
               prisma,
+              intentCodeProjectNode,
+              intentCodeFilename,
               intentCode,
               targetLang)
     }
@@ -174,17 +185,29 @@ export class IndexerMutateService {
 
   async processQueryResults(
           prisma: PrismaClient,
+          intentCodeProjectNode: SourceNode,
+          fullPath: string,
           json: any) {
 
-    // Save a graph for the file with dirs
-    ;
+    // Get/create the file's SourceNode
+    const intentFileSourceNode = await
+            intentCodePathGraphMutateService.getOrCreateIntentCodePathAsGraph(
+              prisma,
+              intentCodeProjectNode,
+              fullPath)
 
     // AST tree present?
     if (json.astTree == null) {
       return
     }
 
-    // Parse and save the AST tree
-    ;
+    // Upsert the indexer node
+    const indexerDataSourceNode = await
+            intentCodeGraphMutateService.getOrCreateIntentCodeIndexedData(
+              prisma,
+              intentCodeProjectNode.instanceId,
+              intentFileSourceNode,
+              SourceNodeNames.indexedData,
+              json.astTree)
   }
 }

@@ -95,6 +95,8 @@ export class CalcTestsService {
       const indexResults = await
               indexerMutateService.indexFileWithLlm(
                 prisma,
+                intentCodeProjectNode,
+                intentCodeFilename,
                 targetLang,
                 intentCode)
 

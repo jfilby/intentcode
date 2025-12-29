@@ -27,3 +27,8 @@ export enum SourceNodeTypes {
   // has parents: sourceCodeProject/sourceCodeDir
   sourceCodeFile = 'Source code file'
 }
+
+export enum SourceNodeNames {
+
+  indexedData = 'Indexed data'
+}
