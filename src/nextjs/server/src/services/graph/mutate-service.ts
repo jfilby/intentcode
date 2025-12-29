@@ -13,6 +13,57 @@ export class GraphMutateService {
   clName = 'GraphMutateService'
 
   // Code
+  async getOrCreateIntentCodeCompilerData(
+          prisma: PrismaClient,
+          instanceId: string,
+          parentNode: SourceNode,
+          name: string) {
+
+    // Debug
+    const fnName = `${this.clName}.getOrCreateIntentCodeCompilerData()`
+
+    // Validate
+    if (parentNode == null) {
+      throw new CustomError(`${fnName}: projectSourceNode == null`)
+    }
+
+    if (parentNode.type !== SourceNodeTypes.intentCodeFile) {
+
+      throw new CustomError(`${fnName}: parentNode.type !== ` +
+                            `SourceNodeTypes.intentCodeFile`)
+    }
+
+    // Try to get the node
+    var intentCodeCompilerData = await
+          sourceNodeModel.getByUniqueKey(
+            prisma,
+            null,  // parentId
+            SourceNodeTypes.intentCodeFile,
+            name)
+
+    if (intentCodeCompilerData != null) {
+      return intentCodeCompilerData
+    }
+
+    // Create the node
+    intentCodeCompilerData = await
+      sourceNodeModel.create(
+        prisma,
+        parentNode.id,  // parentId
+        instanceId,
+        SourceNodeTypes.intentCodeCompilerData,
+        null,           // path
+        name,
+        null,           // content
+        null,           // contentHash
+        null,           // metadata
+        null,           // analysisStatus
+        null)           // lastAnalyzed
+
+    // Return
+    return intentCodeCompilerData
+  }
+
   async getOrCreateIntentCodeDir(
           prisma: PrismaClient,
           instanceId: string,
@@ -117,6 +168,57 @@ export class GraphMutateService {
 
     // Return
     return intentCodeFile
+  }
+
+  async getOrCreateIntentCodeIndexedData(
+          prisma: PrismaClient,
+          instanceId: string,
+          parentNode: SourceNode,
+          name: string) {
+
+    // Debug
+    const fnName = `${this.clName}.getOrCreateIntentCodeIndexedData()`
+
+    // Validate
+    if (parentNode == null) {
+      throw new CustomError(`${fnName}: projectSourceNode == null`)
+    }
+
+    if (parentNode.type !== SourceNodeTypes.intentCodeFile) {
+
+      throw new CustomError(`${fnName}: parentNode.type !== ` +
+                            `SourceNodeTypes.intentCodeFile`)
+    }
+
+    // Try to get the node
+    var intentCodeIndexedData = await
+          sourceNodeModel.getByUniqueKey(
+            prisma,
+            null,  // parentId
+            SourceNodeTypes.intentCodeFile,
+            name)
+
+    if (intentCodeIndexedData != null) {
+      return intentCodeIndexedData
+    }
+
+    // Create the node
+    intentCodeIndexedData = await
+      sourceNodeModel.create(
+        prisma,
+        parentNode.id,  // parentId
+        instanceId,
+        SourceNodeTypes.intentCodeIndexedData,
+        null,           // path
+        name,
+        null,           // content
+        null,           // contentHash
+        null,           // metadata
+        null,           // analysisStatus
+        null)           // lastAnalyzed
+
+    // Return
+    return intentCodeIndexedData
   }
 
   async getOrCreateIntentCodeProject(
