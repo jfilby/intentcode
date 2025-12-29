@@ -16,6 +16,10 @@ export class GraphQueryService {
           prisma: PrismaClient,
           instanceId: string) {
 
+    // Debug
+    const fnName = `${this.clName}.getAllIndexedData()`
+
+    // Get SourceNodes
     const sourceNodes = await
             sourceNodeModel.getJsonContentByInstanceIdAndType(
               prisma,
@@ -23,6 +27,10 @@ export class GraphQueryService {
               SourceNodeTypes.intentCodeIndexedData,
               true)  // includeParent
 
+    // Debug
+    // console.log(`${fnName}: sourceNodes: ` + JSON.stringify(sourceNodes))
+
+    // Return
     return sourceNodes
   }
 }

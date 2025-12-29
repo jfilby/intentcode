@@ -25,12 +25,10 @@ export class SourceNodeModel {
     const fnName = `${this.clName}.create()`
 
     // Validate
-    if (name == null) {
-      throw new CustomError(`${fnName}: name == null`)
-    }
+    if (name != null &&
+        name.length === 0) {
 
-    if (name.length == 0) {
-      throw new CustomError(`${fnName}: name.length == 0`)
+      throw new CustomError(`${fnName}: name.length === 0`)
     }
 
     // Create record
@@ -237,12 +235,10 @@ export class SourceNodeModel {
     const fnName = `${this.clName}.update()`
 
     // Validate
-    if (name == null) {
-      throw new CustomError(`${fnName}: name == null`)
-    }
+    if (name != null &&
+        name.length === 0) {
 
-    if (name.length == 0) {
-      throw new CustomError(`${fnName}: name.length == 0`)
+      throw new CustomError(`${fnName}: name.length === 0`)
     }
 
     // Update record
@@ -315,7 +311,7 @@ export class SourceNodeModel {
     if (id == null) {
 
       // Validate for create (mainly for type validation of the create call)
-      if (parentId == undefined) {
+      if (parentId === undefined) {
         console.error(`${fnName}: id is null and parentId is undefined`)
         throw 'Prisma error'
       }
@@ -345,12 +341,12 @@ export class SourceNodeModel {
         throw 'Prisma error'
       }
 
-      if (content == undefined) {
+      if (content === undefined) {
         console.error(`${fnName}: id is null and content is undefined`)
         throw 'Prisma error'
       }
 
-      if (contentHash == undefined) {
+      if (contentHash === undefined) {
         console.error(`${fnName}: id is null and contentHash is undefined`)
         throw 'Prisma error'
       }

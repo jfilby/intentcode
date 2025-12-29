@@ -7,6 +7,7 @@ import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir'
 import { LlmEnvNames } from '@/types/server-only-types'
+import { SourceNodeNames } from '@/types/source-graph-types'
 import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { IntentCodeFilenameService } from '../../utils/filename-service'
 import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service'
@@ -236,9 +237,11 @@ export class IndexerMutateService {
 
     // Upsert the indexed data node
     const indexerDataSourceNode = await
-            intentCodeGraphMutateService.updateIntentCodeIndexedData(
+            intentCodeGraphMutateService.upsertIntentCodeIndexedData(
               prisma,
-              intentFileSourceNode.id,
+              intentFileSourceNode.instanceId,
+              intentFileSourceNode,  // parentNode
+              SourceNodeNames.indexedData,
               jsonContent,
               fileModifiedTime)
   }
