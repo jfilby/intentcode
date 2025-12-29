@@ -123,6 +123,7 @@ export class CalcTestsService {
       const compileResults = await
               compilerMutateService.run(
                 prisma,
+                intentCodeProjectNode,
                 targetLang,
                 intentCode)
 
@@ -141,7 +142,7 @@ export class CalcTestsService {
             intentCodeGraphMutateService.getOrCreateIntentCodeProject(
               prisma,
               instance.id,
-              `Calc`,
+              this.projectName,
               `${process.env.LOCAL_TESTS_PATH}/calc/intent`)
 
     // Get/create source code project
@@ -149,7 +150,7 @@ export class CalcTestsService {
             sourceCodeGraphMutateService.getOrCreateSourceCodeProject(
               prisma,
               instance.id,
-              `Calc`,
+              this.projectName,
               `${process.env.LOCAL_TESTS_PATH}/calc/src`)
 
     // Link the projets

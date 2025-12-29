@@ -210,9 +210,27 @@ export class IndexerMutateService {
           fileModifiedTime: Date,
           json: any) {
 
-    // AST tree present?
+    // Debug
+    const fnName = `${this.clName}.processQueryResults()`
+
+    // Validate
     if (json.astTree == null) {
       return
+    }
+
+    if (intentFileSourceNode.jsonContent == null) {
+      throw new CustomError(
+        `${fnName}: intentFileSourceNode.jsonContent == null`)
+    }
+
+    if ((intentFileSourceNode.jsonContent as any).relativePath == null) {
+      throw new CustomError(
+        `${fnName}: intentFileSourceNode.jsonContent.relativePath == null`)
+    }
+
+    // Define jsonContent with relative path of the file
+    const jsonContent = {
+      astTree: json.astTree
     }
 
     // Upsert the indexed data node
@@ -220,7 +238,7 @@ export class IndexerMutateService {
             intentCodeGraphMutateService.updateIntentCodeIndexedData(
               prisma,
               intentFileSourceNode.id,
-              json.astTree,
+              jsonContent,
               fileModifiedTime)
   }
 }

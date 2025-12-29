@@ -4,7 +4,7 @@ import { LlmCacheService } from '@/serene-ai-server/services/cache/service'
 import { AgentLlmService } from '@/serene-ai-server/services/llm-apis/agent-llm-service'
 import { LlmUtilsService } from '@/serene-ai-server/services/llm-apis/utils-service'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
-import { MessageTypes, ServerOnlyTypes } from '@/types/server-only-types'
+import { MessageTypes } from '@/types/server-only-types'
 
 // Services
 const agentLlmService = new AgentLlmService()

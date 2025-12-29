@@ -68,7 +68,8 @@ export class IntentCodePathGraphMutateService {
               prisma,
               projectSourceNode.instanceId,
               dirSourceNode,
-              filename)
+              filename,
+              relativePath)
 
     // Return filename's node
     return filenameSourceNode

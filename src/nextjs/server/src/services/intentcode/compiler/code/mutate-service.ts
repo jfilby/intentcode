@@ -1,17 +1,15 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
-import { TechModel } from '@/serene-core-server/models/tech/tech-model'
 import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-service'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { LlmEnvNames } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { CompilerMutateLlmService } from './llm-service'
-
-// Models
-const techModel = new TechModel()
+import { GraphQueryService } from '@/services/graphs/intentcode/graph-query-service'
 
 // Services
 const compilerMutateLlmService = new CompilerMutateLlmService()
+const graphQueryService = new GraphQueryService()
 const techQueryService = new TechQueryService()
 const usersService = new UsersService()
 
@@ -24,7 +22,8 @@ export class CompilerMutateService {
   // Code
   getPrompt(
     targetLang: string,
-    intentCode: string) {
+    intentCode: string,
+    indexedDataSourceNodes: SourceNode[]) {
 
     // Debug
     const fnName = `${this.clName}.getPrompt()`
@@ -100,8 +99,29 @@ export class CompilerMutateService {
           intentCode +
           `\n` +
           `## Index data\n` +
-          `\n` +
-          `None available.\n`
+          `\n`
+
+    // List all indexed data
+    if (indexedDataSourceNodes.length > 0) {
+
+      for (const indexedDataSourceNode of indexedDataSourceNodes) {
+
+        // Validate
+        if ((indexedDataSourceNode as any).parent == null) {
+          throw new CustomError(`${fnName}: indexedDataSourceNode.parent`)
+        }
+
+        // Get intentCodeFileSourceNode
+        const intentCodeFileSourceNode = (indexedDataSourceNode as any).parent
+
+        prompt +=
+          `- file: ${intentCodeFileSourceNode.jsonContent.relativePath}\n` +
+          `  astTree: ${intentCodeFileSourceNode.jsonContent.astTree}\n\n`
+      }
+    } else {
+
+      prompt += `None available.`
+    }
 
     // Return
     return prompt
@@ -114,6 +134,7 @@ export class CompilerMutateService {
   }
 
   async run(prisma: PrismaClient,
+            intentCodeProjectNode: SourceNode,
             targetLang: string,
             intentCode: string) {
 
@@ -122,8 +143,15 @@ export class CompilerMutateService {
 
     // console.log(`${fnName}: starting..`)
 
-    // Check that the intentcode is fully indexed
-    ;
+    // Get all related indexed data, including for this file
+    const indexedDataSourceNodes = await
+            graphQueryService.getAllIndexedData(
+              prisma,
+              intentCodeProjectNode.instanceId)
+
+    if (indexedDataSourceNodes.length === 0) {
+      throw new CustomError(`${fnName}: indexedDataSourceNodes.length === 0`)
+    }
 
     // Get the admin UserProfile
     const adminUserProfile = await
@@ -145,7 +173,8 @@ export class CompilerMutateService {
     const prompt =
       this.getPrompt(
         targetLang,
-        intentCode)
+        intentCode,
+        indexedDataSourceNodes)
 
     // Run
     const llmResults = await
@@ -154,6 +183,9 @@ export class CompilerMutateService {
               adminUserProfile.id,
               tech,
               prompt)
+
+    // Process results
+    await this.processResults(llmResults.queryResults)
 
     // Return
     return llmResults

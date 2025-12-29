@@ -167,7 +167,8 @@ export class IntentCodeGraphMutateService {
           prisma: PrismaClient,
           instanceId: string,
           parentNode: SourceNode,
-          name: string) {
+          name: string,
+          relativePath: string) {
 
     // Debug
     const fnName = `${this.clName}.getOrCreateIntentCodeFile()`
@@ -212,7 +213,9 @@ export class IntentCodeGraphMutateService {
         name,
         null,           // content
         null,           // contentHash
-        null,           // jsonContent
+        {
+          relativePath: relativePath
+        },              // jsonContent
         null,           // jsonContentHash
         null)           // contentUpdated
 

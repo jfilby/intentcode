@@ -192,6 +192,32 @@ export class SourceNodeModel {
     return sourceNode
   }
 
+  async getJsonContentByInstanceIdAndType(
+          prisma: PrismaClient,
+          instanceId: string,
+          type: string,
+          includeParent: boolean = false) {
+
+    // Debug
+    const fnName = `${this.clName}.getJsonContentByInstanceIdAndType()`
+
+    // Query
+    try {
+      return await prisma.sourceNode.findMany({
+        include: {
+          parent: includeParent
+        },
+        where: {
+          instanceId: instanceId,
+          type: type
+        }
+      })
+    } catch(error: any) {
+      console.error(`${fnName}: error: ${error}`)
+      throw 'Prisma error'
+    }
+  }
+
   async update(
           prisma: PrismaClient,
           id: string,
