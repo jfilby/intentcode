@@ -79,6 +79,7 @@ model SourceNode {
   contentHash                String?           @map("content_hash")
   jsonContent                Json?             @map("json_content") @db.JsonB
   jsonContentHash            String?           @map("json_content_hash")
+  contentUpdated             DateTime?         @map("content_updated")  // content or jsonContent
   created                    DateTime          @default(now())
   updated                    DateTime          @updatedAt
 

@@ -18,7 +18,8 @@ export class SourceNodeModel {
           content: string | null,
           contentHash: string | null,
           jsonContent: any,
-          jsonContentHash: string | null) {
+          jsonContentHash: string | null,
+          contentUpdated: Date | null) {
 
     // Debug
     const fnName = `${this.clName}.create()`
@@ -45,7 +46,8 @@ export class SourceNodeModel {
           content: content,
           contentHash: contentHash,
           jsonContent: jsonContent,
-          jsonContentHash: jsonContentHash
+          jsonContentHash: jsonContentHash,
+          contentUpdated: contentUpdated
         }
       })
     } catch(error) {
@@ -202,7 +204,8 @@ export class SourceNodeModel {
           content: string | null | undefined,
           contentHash: string | null | undefined,
           jsonContent: any | undefined,
-          jsonContentHash: string | null | undefined) {
+          jsonContentHash: string | null | undefined,
+          contentUpdated: Date | null | undefined) {
 
     // Debug
     const fnName = `${this.clName}.update()`
@@ -229,7 +232,8 @@ export class SourceNodeModel {
           content: content,
           contentHash: contentHash,
           jsonContent: jsonContent,
-          jsonContentHash: jsonContentHash
+          jsonContentHash: jsonContentHash,
+          contentUpdated: contentUpdated
         },
         where: {
           id: id
@@ -253,7 +257,8 @@ export class SourceNodeModel {
           content: string | null | undefined,
           contentHash: string | null | undefined,
           jsonContent: any | undefined,
-          jsonContentHash: string | null | undefined) {
+          jsonContentHash: string | null | undefined,
+          contentUpdated: Date | null | undefined) {
 
     // Debug
     const fnName = `${this.clName}.upsert()`
@@ -334,6 +339,11 @@ export class SourceNodeModel {
         throw 'Prisma error'
       }
 
+      if (contentUpdated === undefined) {
+        console.error(`${fnName}: id is null and contentUpdated is undefined`)
+        throw 'Prisma error'
+      }
+
       // Create
       return await
                this.create(
@@ -347,7 +357,8 @@ export class SourceNodeModel {
                  content,
                  contentHash,
                  jsonContent,
-                 jsonContentHash)
+                 jsonContentHash,
+                 contentUpdated)
     } else {
 
       // Update
@@ -364,7 +375,8 @@ export class SourceNodeModel {
                  content,
                  contentHash,
                  jsonContent,
-                 jsonContentHash)
+                 jsonContentHash,
+                 contentUpdated)
     }
   }
 }

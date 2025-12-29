@@ -17,7 +17,7 @@ export class IntentCodeGraphMutateService {
   clName = 'IntentCodeGraphMutateService'
 
   // Code
-  async getOrCreateIntentCodeCompilerData(
+  async upsertIntentCodeCompilerData(
           prisma: PrismaClient,
           instanceId: string,
           parentNode: SourceNode,
@@ -25,7 +25,7 @@ export class IntentCodeGraphMutateService {
           jsonContent: any) {
 
     // Debug
-    const fnName = `${this.clName}.getOrCreateIntentCodeCompilerData()`
+    const fnName = `${this.clName}.upsertIntentCodeCompilerData()`
 
     // Validate
     if (parentNode == null) {
@@ -38,19 +38,6 @@ export class IntentCodeGraphMutateService {
                             `SourceNodeTypes.intentCodeFile`)
     }
 
-    // Try to get the node
-    var intentCodeCompilerData = await
-          sourceNodeModel.getByUniqueKey(
-            prisma,
-            parentNode.id,
-            instanceId,
-            SourceNodeTypes.intentCodeCompilerData,
-            name)
-
-    if (intentCodeCompilerData != null) {
-      return intentCodeCompilerData
-    }
-
     // Get jsonContentHash
     var jsonContentHash: string | null = null
 
@@ -61,19 +48,21 @@ export class IntentCodeGraphMutateService {
     }
 
     // Create the node
-    intentCodeCompilerData = await
-      sourceNodeModel.create(
-        prisma,
-        parentNode.id,  // parentId
-        instanceId,
-        BaseDataTypes.activeStatus,
-        SourceNodeTypes.intentCodeCompilerData,
-        null,           // path
-        name,
-        null,           // content
-        null,           // contentHash
-        jsonContent,
-        jsonContentHash)
+    const intentCodeCompilerData = await
+            sourceNodeModel.upsert(
+              prisma,
+              undefined,      // id
+              parentNode.id,  // parentId
+              instanceId,
+              BaseDataTypes.activeStatus,
+              SourceNodeTypes.intentCodeCompilerData,
+              null,           // path
+              name,
+              null,           // content
+              null,           // contentHash
+              jsonContent,
+              jsonContentHash,
+              new Date())     // contentUpdated
 
     // Return
     return intentCodeCompilerData
@@ -127,7 +116,8 @@ export class IntentCodeGraphMutateService {
         null,           // content
         null,           // contentHash
         null,           // jsonContent
-        null)           // jsonContentHash
+        null,           // jsonContentHash
+        null)           // contentUpdated
 
     // Return
     return intentCodeDir
@@ -183,13 +173,14 @@ export class IntentCodeGraphMutateService {
         null,           // content
         null,           // contentHash
         null,           // jsonContent
-        null)           // jsonContentHash
+        null,           // jsonContentHash
+        null)           // contentUpdated
 
     // Return
     return intentCodeFile
   }
 
-  async getOrCreateIntentCodeIndexedData(
+  async upsertIntentCodeIndexedData(
           prisma: PrismaClient,
           instanceId: string,
           parentNode: SourceNode,
@@ -197,7 +188,7 @@ export class IntentCodeGraphMutateService {
           jsonContent: any) {
 
     // Debug
-    const fnName = `${this.clName}.getOrCreateIntentCodeIndexedData()`
+    const fnName = `${this.clName}.upsertIntentCodeIndexedData()`
 
     // Validate
     if (parentNode == null) {
@@ -210,19 +201,6 @@ export class IntentCodeGraphMutateService {
                             `SourceNodeTypes.intentCodeFile`)
     }
 
-    // Try to get the node
-    var intentCodeIndexedData = await
-          sourceNodeModel.getByUniqueKey(
-            prisma,
-            parentNode.id,
-            instanceId,
-            SourceNodeTypes.intentCodeIndexedData,
-            name)
-
-    if (intentCodeIndexedData != null) {
-      return intentCodeIndexedData
-    }
-
     // Get jsonContentHash
     var jsonContentHash: string | null = null
 
@@ -233,19 +211,21 @@ export class IntentCodeGraphMutateService {
     }
 
     // Create the node
-    intentCodeIndexedData = await
-      sourceNodeModel.create(
-        prisma,
-        parentNode.id,  // parentId
-        instanceId,
-        BaseDataTypes.activeStatus,
-        SourceNodeTypes.intentCodeIndexedData,
-        null,           // path
-        name,
-        null,           // content
-        null,           // contentHash
-        jsonContent,
-        jsonContentHash)
+    const intentCodeIndexedData = await
+            sourceNodeModel.upsert(
+              prisma,
+              undefined,      // id
+              parentNode.id,  // parentId
+              instanceId,
+              BaseDataTypes.activeStatus,
+              SourceNodeTypes.intentCodeIndexedData,
+              null,           // path
+              name,
+              null,           // content
+              null,           // contentHash
+              jsonContent,
+              jsonContentHash,
+              new Date())     // contentUpdated
 
     // Return
     return intentCodeIndexedData
@@ -285,8 +265,9 @@ export class IntentCodeGraphMutateService {
         name,
         null,  // content
         null,  // contentHash
-        null,           // jsonContent
-        null)           // jsonContentHash
+        null,  // jsonContent
+        null,  // jsonContentHash
+        null)  // contentUpdated
 
     // Return
     return intentCodeProject

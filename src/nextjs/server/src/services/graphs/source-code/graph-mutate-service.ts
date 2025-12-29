@@ -49,7 +49,8 @@ export class SourceCodeGraphMutateService {
         null,  // content
         null,  // contentHash
         null,  // jsonContent
-        null)  // jsonContentHash
+        null,  // jsonContentHash
+        null)  // contentUpdated
 
     // Return
     return sourceCodeProject
@@ -103,7 +104,8 @@ export class SourceCodeGraphMutateService {
         null,           // content
         null,           // contentHash
         null,           // jsonContent
-        null)           // jsonContentHash
+        null,           // jsonContentHash
+        null)           // contentUpdated
 
     // Return
     return sourceCodeDir
@@ -157,7 +159,8 @@ export class SourceCodeGraphMutateService {
         null,           // content
         null,           // contentHash
         null,           // jsonContent
-        null)           // jsonContentHash
+        null,           // jsonContentHash
+        null)           // contentUpdated
 
     // Return
     return sourceCodeFile

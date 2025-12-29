@@ -203,7 +203,7 @@ export class IndexerMutateService {
 
     // Upsert the indexer node
     const indexerDataSourceNode = await
-            intentCodeGraphMutateService.getOrCreateIntentCodeIndexedData(
+            intentCodeGraphMutateService.upsertIntentCodeIndexedData(
               prisma,
               intentCodeProjectNode.instanceId,
               intentFileSourceNode,
