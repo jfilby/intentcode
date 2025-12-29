@@ -1,9 +1,12 @@
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
-import { SourceNodeTypes } from '@/types/source-graph-types'
+import { BaseDataTypes } from '@/shared/types/base-data-types'
+import { SourceEdgeTypes, SourceNodeTypes } from '@/types/source-graph-types'
+import { SourceEdgeModel } from '@/models/source-graph/source-edge-model'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 
 // Models
+const sourceEdgeModel = new SourceEdgeModel()
 const sourceNodeModel = new SourceNodeModel()
 
 // Code
@@ -259,5 +262,46 @@ export class IntentCodeGraphMutateService {
 
     // Return
     return intentCodeProject
+  }
+
+  async linkIntentCodeProjectToSourceCodeProject(
+          prisma: PrismaClient,
+          intentCodeProject: SourceNode,
+          sourceCodeProject: SourceNode) {
+
+    // Debug
+    const fnName = `${this.clName}.linkIntentCodeProjectToSourceCodeProject()`
+
+    // Validate
+    if (intentCodeProject == null) {
+      throw new CustomError(`${fnName}: intentCodeProject == null`)
+    }
+
+    if (sourceCodeProject == null) {
+      throw new CustomError(`${fnName}: sourceCodeProject == null`)
+    }
+
+    if (intentCodeProject.type !== SourceNodeTypes.intentCodeProject) {
+      throw new CustomError(`${fnName}: intentCodeProject.type !== ` +
+                            `SourceNodeTypes.intentCodeProject`)
+    }
+
+    if (sourceCodeProject.type !== SourceNodeTypes.sourceCodeProject) {
+      throw new CustomError(`${fnName}: sourceCodeProject.type !== ` +
+                            `SourceNodeTypes.sourceCodeProject`)
+    }
+
+    // Upsert the Source Edge
+    const sourceEdge = await
+            sourceEdgeModel.upsert(
+              prisma,
+              undefined,  // id
+              intentCodeProject.id,
+              sourceCodeProject.id,
+              BaseDataTypes.activeStatus,
+              SourceEdgeTypes.implements)
+
+    // Return
+    return sourceEdge
   }
 }

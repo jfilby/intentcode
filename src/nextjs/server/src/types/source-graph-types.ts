@@ -1,3 +1,8 @@
+export enum SourceEdgeTypes {
+
+  implements = 'implements'
+}
+
 export enum SourceNodeTypes {
 
   intentCodeProject = 'IntentCode project',
