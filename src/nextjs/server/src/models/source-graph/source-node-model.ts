@@ -143,6 +143,9 @@ export class SourceNodeModel {
     // Debug
     const fnName = `${this.clName}.getByUniqueKey()`
 
+    // console.log(`${fnName}: parentId: ${parentId} instanceId: ${instanceId} ` +
+    //             `type: ${type} name: ${name}`)
+
     // Validate
     if (parentId === undefined) {
       console.error(`${fnName}: parentId === undefined`)

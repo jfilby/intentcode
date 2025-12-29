@@ -48,8 +48,8 @@ export class SourceCodeGraphMutateService {
         name,
         null,  // content
         null,  // contentHash
-        null,           // jsonContent
-        null)           // jsonContentHash
+        null,  // jsonContent
+        null)  // jsonContentHash
 
     // Return
     return sourceCodeProject
@@ -81,7 +81,7 @@ export class SourceCodeGraphMutateService {
     var sourceCodeDir = await
           sourceNodeModel.getByUniqueKey(
             prisma,
-            null,  // parentId
+            parentNode.id,
             instanceId,
             SourceNodeTypes.sourceCodeDir,
             name)
@@ -135,7 +135,7 @@ export class SourceCodeGraphMutateService {
     var sourceCodeFile = await
           sourceNodeModel.getByUniqueKey(
             prisma,
-            null,  // parentId
+            parentNode.id,
             instanceId,
             SourceNodeTypes.sourceCodeFile,
             name)

@@ -42,9 +42,9 @@ export class IntentCodeGraphMutateService {
     var intentCodeCompilerData = await
           sourceNodeModel.getByUniqueKey(
             prisma,
-            null,  // parentId
+            parentNode.id,
             instanceId,
-            SourceNodeTypes.intentCodeFile,
+            SourceNodeTypes.intentCodeCompilerData,
             name)
 
     if (intentCodeCompilerData != null) {
@@ -105,7 +105,7 @@ export class IntentCodeGraphMutateService {
     var intentCodeDir = await
           sourceNodeModel.getByUniqueKey(
             prisma,
-            null,  // parentId
+            parentNode.id,
             instanceId,
             SourceNodeTypes.intentCodeDir,
             name)
@@ -144,7 +144,7 @@ export class IntentCodeGraphMutateService {
 
     // Validate
     if (parentNode == null) {
-      throw new CustomError(`${fnName}: projectSourceNode == null`)
+      throw new CustomError(`${fnName}: parentNode == null`)
     }
 
     if (![SourceNodeTypes.intentCodeProject,
@@ -159,10 +159,12 @@ export class IntentCodeGraphMutateService {
     var intentCodeFile = await
           sourceNodeModel.getByUniqueKey(
             prisma,
-            null,  // parentId
+            parentNode.id,
             instanceId,
             SourceNodeTypes.intentCodeFile,
             name)
+
+    console.log(`${fnName}: intentCodeFile: ` + JSON.stringify(intentCodeFile))
 
     if (intentCodeFile != null) {
       return intentCodeFile
@@ -212,9 +214,9 @@ export class IntentCodeGraphMutateService {
     var intentCodeIndexedData = await
           sourceNodeModel.getByUniqueKey(
             prisma,
-            null,  // parentId
+            parentNode.id,
             instanceId,
-            SourceNodeTypes.intentCodeFile,
+            SourceNodeTypes.intentCodeIndexedData,
             name)
 
     if (intentCodeIndexedData != null) {
