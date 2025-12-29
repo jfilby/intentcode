@@ -15,7 +15,7 @@ export class SourceCodeGraphMutateService {
   // Code
   async getOrCreateSourceCodeProject(
           prisma: PrismaClient,
-          instanceId: string,
+          instanceId: string | null,
           name: string,
           localPath: string) {
 
@@ -55,7 +55,7 @@ export class SourceCodeGraphMutateService {
 
   async getOrCreateSourceCodeDir(
           prisma: PrismaClient,
-          instanceId: string,
+          instanceId: string | null,
           parentNode: SourceNode,
           name: string) {
 
@@ -108,7 +108,7 @@ export class SourceCodeGraphMutateService {
 
   async getOrCreateSourceCodeFile(
           prisma: PrismaClient,
-          instanceId: string,
+          instanceId: string | null,
           parentNode: SourceNode,
           name: string) {
 

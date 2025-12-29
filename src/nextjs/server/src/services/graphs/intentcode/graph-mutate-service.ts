@@ -18,7 +18,7 @@ export class IntentCodeGraphMutateService {
   // Code
   async getOrCreateIntentCodeCompilerData(
           prisma: PrismaClient,
-          instanceId: string,
+          instanceId: string | null,
           parentNode: SourceNode,
           name: string) {
 
@@ -69,7 +69,7 @@ export class IntentCodeGraphMutateService {
 
   async getOrCreateIntentCodeDir(
           prisma: PrismaClient,
-          instanceId: string,
+          instanceId: string | null,
           parentNode: SourceNode,
           name: string) {
 
@@ -122,7 +122,7 @@ export class IntentCodeGraphMutateService {
 
   async getOrCreateIntentCodeFile(
           prisma: PrismaClient,
-          instanceId: string,
+          instanceId: string | null,
           parentNode: SourceNode,
           name: string) {
 
@@ -175,7 +175,7 @@ export class IntentCodeGraphMutateService {
 
   async getOrCreateIntentCodeIndexedData(
           prisma: PrismaClient,
-          instanceId: string,
+          instanceId: string | null,
           parentNode: SourceNode,
           name: string) {
 
@@ -226,7 +226,7 @@ export class IntentCodeGraphMutateService {
 
   async getOrCreateIntentCodeProject(
           prisma: PrismaClient,
-          instanceId: string,
+          instanceId: string | null,
           name: string,
           localPath: string) {
 
