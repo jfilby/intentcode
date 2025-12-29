@@ -7,7 +7,7 @@ import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir'
 import { LlmEnvNames } from '@/types/server-only-types'
-import { IntentCodeFilenameService } from '../utils/filename-service'
+import { IntentCodeFilenameService } from '../../utils/filename-service'
 
 // Services
 const indexerMutateLlmService = new IndexerMutateLlmService()

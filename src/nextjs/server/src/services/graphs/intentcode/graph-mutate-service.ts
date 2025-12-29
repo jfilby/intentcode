@@ -7,10 +7,10 @@ import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 const sourceNodeModel = new SourceNodeModel()
 
 // Code
-export class GraphMutateService {
+export class IntentCodeGraphMutateService {
 
   // Consts
-  clName = 'GraphMutateService'
+  clName = 'IntentCodeGraphMutateService'
 
   // Code
   async getOrCreateIntentCodeCompilerData(

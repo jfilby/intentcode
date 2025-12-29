@@ -4,7 +4,7 @@ import { CustomError } from '@/serene-core-server/types/errors'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir'
 import { fileExtToLanguageName } from '../../types/source-code-types'
 import { CompilerMutateService } from '../intentcode/compiler/code/mutate-service'
-import { IntentCodeFilenameService } from '../intentcode/utils/filename-service'
+import { IntentCodeFilenameService } from '../utils/filename-service'
 import { IndexerMutateService } from '../intentcode/indexer/mutate-service'
 
 // Services

@@ -1,26 +1,26 @@
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
-import { FsUtilsService } from '../intentcode/utils/fs-utils-service'
-import { GraphMutateService } from './graph-mutate-service'
+import { FsUtilsService } from '../../utils/fs-utils-service'
+import { SourceCodeGraphMutateService } from './graph-mutate-service'
 
 // Services
 const fsUtilsService = new FsUtilsService()
-const graphMutateService = new GraphMutateService()
+const sourceCodeGraphMutateService = new SourceCodeGraphMutateService()
 
 // Class
-export class PathGraphMutateService {
+export class SourceCodePathGraphMutateService {
 
   // Consts
-  clName = 'PathGraphMutateService'
+  clName = 'SourceCodePathGraphMutateService'
 
   // Code
-  async getOrCreatePathAsGraph(
+  async getOrCreateSourceCodePathAsGraph(
           prisma: PrismaClient,
           projectSourceNode: SourceNode,
           fullPath: string) {
 
     // Debug
-    const fnName = `${this.clName}.getOrCreatePathAsGraph()`
+    const fnName = `${this.clName}.getOrCreateSourceCodePathAsGraph()`
 
     // Validate project path
     if (projectSourceNode.path == null ||
@@ -46,7 +46,7 @@ export class PathGraphMutateService {
     for (const dir of dirs) {
 
       dirSourceNode = await
-        graphMutateService.getOrCreateIntentCodeDir(
+        sourceCodeGraphMutateService.getOrCreateSourceCodeDir(
           prisma,
           projectSourceNode.instanceId,
           dirSourceNode,
@@ -55,7 +55,7 @@ export class PathGraphMutateService {
 
     // Get/create nodes for the filename
     const filenameSourceNode = await
-            graphMutateService.getOrCreateIntentCodeFile(
+            sourceCodeGraphMutateService.getOrCreateSourceCodeFile(
               prisma,
               projectSourceNode.instanceId,
               dirSourceNode,
