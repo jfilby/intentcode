@@ -117,12 +117,13 @@ export class CalcTestsService {
               prisma,
               intentCodeProjectNode,
               intentCodeFilename,
+              fileModifiedTime,
               targetLang,
-              intentCode,
-              fileModifiedTime)
+              intentCode)
 
       // Add to compileList
       compileList.push({
+        intentCodeFilename: intentCodeFilename,
         targetLang: targetLang,
         intentCode: intentCode
       })
@@ -131,10 +132,17 @@ export class CalcTestsService {
     // Compile IntentCode to source
     for (const compileEntry of compileList) {
 
+      // Get last save time of the file
+      const fileModifiedTime = await
+              fsUtilsService.getLastUpdateTime(compileEntry.intentCodeFilename)
+
+      // Compile
       const compileResults = await
               compilerMutateService.run(
                 prisma,
                 intentCodeProjectNode,
+                compileEntry.intentCodeFilename,
+                fileModifiedTime,
                 compileEntry.targetLang,
                 compileEntry.intentCode)
 

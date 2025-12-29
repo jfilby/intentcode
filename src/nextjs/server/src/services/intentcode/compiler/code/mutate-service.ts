@@ -4,12 +4,17 @@ import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { LlmEnvNames } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
+import { SourceNodeNames } from '@/types/source-graph-types'
 import { CompilerMutateLlmService } from './llm-service'
 import { GraphQueryService } from '@/services/graphs/intentcode/graph-query-service'
+import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service'
+import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
 
 // Services
 const compilerMutateLlmService = new CompilerMutateLlmService()
 const graphQueryService = new GraphQueryService()
+const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
+const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
 const techQueryService = new TechQueryService()
 const usersService = new UsersService()
 
@@ -127,14 +132,27 @@ export class CompilerMutateService {
     return prompt
   }
 
-  processResults(queryResults: any) {
+  async processResults(
+          prisma: PrismaClient,
+          intentFileSourceNode: SourceNode,
+          fileModifiedTime: Date,
+          queryResults: any) {
 
-    // Get results
-    return queryResults.json
+    // Upsert the indexed data node
+    const indexerDataSourceNode = await
+            intentCodeGraphMutateService.upsertIntentCodeCompilerData(
+              prisma,
+              intentFileSourceNode.instanceId,
+              intentFileSourceNode,  // parentNode
+              SourceNodeNames.compilerData,
+              queryResults.json,     // jsonContent
+              fileModifiedTime)
   }
 
   async run(prisma: PrismaClient,
             intentCodeProjectNode: SourceNode,
+            fullPath: string,
+            fileModifiedTime: Date,
             targetLang: string,
             intentCode: string) {
 
@@ -152,6 +170,21 @@ export class CompilerMutateService {
     if (indexedDataSourceNodes.length === 0) {
       throw new CustomError(`${fnName}: indexedDataSourceNodes.length === 0`)
     }
+
+    // Get/create the file's SourceNode
+    const intentFileSourceNode = await
+            intentCodePathGraphMutateService.getOrCreateIntentCodePathAsGraph(
+              prisma,
+              intentCodeProjectNode,
+              fullPath)
+
+    /* Check if the file has been updated since last indexed
+    if (intentFileSourceNode?.contentUpdated != null &&
+        intentFileSourceNode.contentUpdated <= fileModifiedTime) {
+
+      // console.log(`${fnName}: file: ${fullPath} already indexed`)
+      return
+    } */
 
     // Get the admin UserProfile
     const adminUserProfile = await
@@ -185,7 +218,11 @@ export class CompilerMutateService {
               prompt)
 
     // Process results
-    await this.processResults(llmResults.queryResults)
+    await this.processResults(
+            prisma,
+            intentFileSourceNode,
+            fileModifiedTime,
+            llmResults.queryResults)
 
     // Return
     return llmResults

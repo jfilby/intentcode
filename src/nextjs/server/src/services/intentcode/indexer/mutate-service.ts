@@ -34,9 +34,9 @@ export class IndexerMutateService {
           prisma: PrismaClient,
           intentCodeProjectNode: SourceNode,
           fullPath: string,
+          fileModifiedTime: Date,
           targetLang: string,
-          intentCode: string,
-          fileModifiedTime: Date) {
+          intentCode: string) {
 
     // Debug
     const fnName = `${this.clName}.indexFileWithLlm()`
@@ -138,9 +138,9 @@ export class IndexerMutateService {
               prisma,
               intentCodeProjectNode,
               intentCodeFilename,
+              fileModifiedTime,
               intentCode,
-              targetLang,
-              fileModifiedTime)
+              targetLang)
     }
   }
 

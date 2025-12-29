@@ -30,5 +30,6 @@ export enum SourceNodeTypes {
 
 export enum SourceNodeNames {
 
+  compilerData = 'Compiler data',
   indexedData = 'Indexed data'
 }
