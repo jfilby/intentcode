@@ -11,7 +11,7 @@ export class SourceNodeModel {
           parentId: string | null,
           instanceId: string,
           type: string,
-          path: string,
+          path: string | null,
           name: string,
           content: string | null,
           contentHash: string | null,
@@ -126,6 +126,7 @@ export class SourceNodeModel {
   async getByUniqueKey(
           prisma: PrismaClient,
           parentId: string | null,
+          type: string,
           name: string) {
 
     // Debug
@@ -149,6 +150,7 @@ export class SourceNodeModel {
       sourceNode = await prisma.sourceNode.findFirst({
         where: {
           parentId: parentId,
+          type: type,
           name: name
         }
       })
@@ -169,7 +171,7 @@ export class SourceNodeModel {
           parentId: string | null | undefined,
           instanceId: string | undefined,
           type: string | undefined,
-          path: string | undefined,
+          path: string | null | undefined,
           name: string | undefined,
           content: string | null | undefined,
           contentHash: string | null | undefined,
@@ -211,7 +213,7 @@ export class SourceNodeModel {
           parentId: string | null | undefined,
           instanceId: string | undefined,
           type: string | undefined,
-          path: string | undefined,
+          path: string | null | undefined,
           name: string | undefined,
           content: string | null | undefined,
           contentHash: string | null | undefined,
@@ -227,12 +229,14 @@ export class SourceNodeModel {
     // If id isn't specified, but the unique keys are, try to get the record
     if (id == null &&
         parentId != null &&
+        type != null &&
         name != null) {
 
       const sourceNode = await
               this.getByUniqueKey(
                 prisma,
                 parentId,
+                type,
                 name)
 
       if (sourceNode != null) {
@@ -259,8 +263,8 @@ export class SourceNodeModel {
         throw 'Prisma error'
       }
 
-      if (path == null) {
-        console.error(`${fnName}: id is null and path is null`)
+      if (path === undefined) {
+        console.error(`${fnName}: id is null and path is undefined`)
         throw 'Prisma error'
       }
 

@@ -61,6 +61,11 @@ export class IndexerMutateService {
               tech,
               prompt)
 
+    // Save the index data
+    await this.processQueryResults(
+            prisma,
+            llmResults.queryResults.json)
+
     // Return
     return llmResults
   }
@@ -165,5 +170,21 @@ export class IndexerMutateService {
           intentCode
 
     return prompt
+  }
+
+  async processQueryResults(
+          prisma: PrismaClient,
+          json: any) {
+
+    // Save a graph for the file with dirs
+    ;
+
+    // AST tree present?
+    if (json.astTree == null) {
+      return
+    }
+
+    // Parse and save the AST tree
+    ;
   }
 }

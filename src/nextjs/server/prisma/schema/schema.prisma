@@ -72,7 +72,7 @@ model SourceNode {
   instanceId                 String            @map("instance_id")
   instance                   Instance          @relation(fields: [instanceId], references: [id])
   type                       String
-  path                       String
+  path                       String?
   name                       String
   content                    String?
   contentHash                String?           @map("content_hash")
@@ -86,7 +86,7 @@ model SourceNode {
   incomingEdges              SourceEdge[]      @relation("to")
   children                   SourceNode[]      @relation("parent")
 
-  @@unique([parentId, name])
+  @@unique([parentId, type, name])
   @@index([contentHash])
   @@map("source_node")
   @@schema("public")
