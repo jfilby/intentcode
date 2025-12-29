@@ -3,16 +3,22 @@ import { PrismaClient, SourceNode } from '@prisma/client'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { IndexerMutateLlmService } from './llm-service'
 import { CustomError } from '@/serene-core-server/types/errors'
+import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-service'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir'
 import { LlmEnvNames } from '@/types/server-only-types'
+import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { IntentCodeFilenameService } from '../../utils/filename-service'
 import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service'
 import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
 import { SourceNodeNames } from '@/types/source-graph-types'
 
+// Models
+const sourceNodeModel = new SourceNodeModel()
+
 // Services
+const fsUtilsService = new FsUtilsService()
 const indexerMutateLlmService = new IndexerMutateLlmService()
 const intentCodeFilenameService = new IntentCodeFilenameService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
@@ -33,10 +39,25 @@ export class IndexerMutateService {
           intentCodeProjectNode: SourceNode,
           fullPath: string,
           targetLang: string,
-          intentCode: string) {
+          intentCode: string,
+          fileModifiedTime: Date) {
 
     // Debug
     const fnName = `${this.clName}.indexFileWithLlm()`
+
+    // Get/create the file's SourceNode
+    const intentFileSourceNode = await
+            intentCodePathGraphMutateService.getOrCreateIntentCodePathAsGraph(
+              prisma,
+              intentCodeProjectNode,
+              fullPath)
+
+    // Check if the file has been updated since last indexed
+    if (intentFileSourceNode != null &&
+        intentFileSourceNode.contentUpdated <= fileModifiedTime) {
+
+      return
+    }
 
     // Get the admin UserProfile
     const adminUserProfile = await
@@ -71,8 +92,8 @@ export class IndexerMutateService {
     // Save the index data
     await this.processQueryResults(
             prisma,
-            intentCodeProjectNode,
-            fullPath,
+            intentFileSourceNode,
+            fileModifiedTime,
             llmResults.queryResults.json)
 
     // Return
@@ -96,6 +117,10 @@ export class IndexerMutateService {
     // Analyze each file
     for (const intentCodeFilename of intentCodeList) {
 
+      // Get last save time of the file
+      const fileModifiedTime = await
+              fsUtilsService.getLastUpdateTime(intentCodeFilename)
+
       // Get targetLang
       const targetLang =
               intentCodeFilenameService.getTargetLang(intentCodeFilename)
@@ -117,7 +142,8 @@ export class IndexerMutateService {
               intentCodeProjectNode,
               intentCodeFilename,
               intentCode,
-              targetLang)
+              targetLang,
+              fileModifiedTime)
     }
   }
 
@@ -185,29 +211,21 @@ export class IndexerMutateService {
 
   async processQueryResults(
           prisma: PrismaClient,
-          intentCodeProjectNode: SourceNode,
-          fullPath: string,
+          intentFileSourceNode: SourceNode,
+          fileModifiedTime: Date,
           json: any) {
-
-    // Get/create the file's SourceNode
-    const intentFileSourceNode = await
-            intentCodePathGraphMutateService.getOrCreateIntentCodePathAsGraph(
-              prisma,
-              intentCodeProjectNode,
-              fullPath)
 
     // AST tree present?
     if (json.astTree == null) {
       return
     }
 
-    // Upsert the indexer node
+    // Upsert the indexed data node
     const indexerDataSourceNode = await
-            intentCodeGraphMutateService.upsertIntentCodeIndexedData(
+            intentCodeGraphMutateService.updateIntentCodeIndexedData(
               prisma,
-              intentCodeProjectNode.instanceId,
-              intentFileSourceNode,
-              SourceNodeNames.indexedData,
-              json.astTree)
+              intentFileSourceNode.id,
+              json.astTree,
+              fileModifiedTime)
   }
 }

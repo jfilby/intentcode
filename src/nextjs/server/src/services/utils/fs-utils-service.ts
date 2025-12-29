@@ -1,3 +1,4 @@
+import fs from 'fs/promises'
 import path from 'path'
 import { CustomError } from '@/serene-core-server/types/errors'
 
@@ -63,6 +64,12 @@ export class FsUtilsService {
     const lastPathPart = fullPath.split(path.sep).pop()
 
     return lastPathPart
+  }
+
+  async getLastUpdateTime(path: string) {
+
+    const stats = await fs.stat(path)
+    return stats.mtime
   }
 
   getNameAndFileExtensionParts(filenamePath: string) {

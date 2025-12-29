@@ -17,12 +17,52 @@ export class IntentCodeGraphMutateService {
   clName = 'IntentCodeGraphMutateService'
 
   // Code
+  async updateIntentCodeCompilerData(
+          prisma: PrismaClient,
+          id: string,
+          jsonContent: any,
+          fileModifiedTime: Date) {
+
+    // Debug
+    const fnName = `${this.clName}.updateIntentCodeCompilerData()`
+
+    // Get jsonContentHash
+    var jsonContentHash: string | null = null
+
+    if (jsonContent != null) {
+
+      // Blake3 hash
+      jsonContentHash = blake3(JSON.stringify(jsonContent)).toString()
+    }
+
+    // Create the node
+    const intentCodeCompilerData = await
+            sourceNodeModel.update(
+              prisma,
+              id,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              jsonContent,
+              jsonContentHash,
+              fileModifiedTime)  // contentUpdated
+
+    // Return
+    return intentCodeCompilerData
+  }
+
   async upsertIntentCodeCompilerData(
           prisma: PrismaClient,
-          instanceId: string,
-          parentNode: SourceNode,
+          instanceId: string | undefined,
+          parentNode: SourceNode | undefined,
           name: string,
-          jsonContent: any) {
+          jsonContent: any,
+          fileModifiedTime: Date) {
 
     // Debug
     const fnName = `${this.clName}.upsertIntentCodeCompilerData()`
@@ -51,18 +91,18 @@ export class IntentCodeGraphMutateService {
     const intentCodeCompilerData = await
             sourceNodeModel.upsert(
               prisma,
-              undefined,      // id
-              parentNode.id,  // parentId
+              undefined,         // id
+              parentNode.id,     // parentId
               instanceId,
               BaseDataTypes.activeStatus,
               SourceNodeTypes.intentCodeCompilerData,
-              null,           // path
+              null,              // path
               name,
-              null,           // content
-              null,           // contentHash
+              null,              // content
+              null,              // contentHash
               jsonContent,
               jsonContentHash,
-              new Date())     // contentUpdated
+              fileModifiedTime)  // contentUpdated
 
     // Return
     return intentCodeCompilerData
@@ -180,12 +220,52 @@ export class IntentCodeGraphMutateService {
     return intentCodeFile
   }
 
+  async updateIntentCodeIndexedData(
+          prisma: PrismaClient,
+          id: string,
+          jsonContent: any,
+          fileModifiedTime: Date) {
+
+    // Debug
+    const fnName = `${this.clName}.updateIntentCodeIndexedData()`
+
+    // Get jsonContentHash
+    var jsonContentHash: string | null = null
+
+    if (jsonContent != null) {
+
+      // Blake3 hash
+      jsonContentHash = blake3(JSON.stringify(jsonContent)).toString()
+    }
+
+    // Create the node
+    const intentCodeIndexedData = await
+            sourceNodeModel.update(
+              prisma,
+              id,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              jsonContent,
+              jsonContentHash,
+              fileModifiedTime)  // contentUpdated
+
+    // Return
+    return intentCodeIndexedData
+  }
+
   async upsertIntentCodeIndexedData(
           prisma: PrismaClient,
-          instanceId: string,
-          parentNode: SourceNode,
+          instanceId: string | undefined,
+          parentNode: SourceNode | undefined,
           name: string,
-          jsonContent: any) {
+          jsonContent: any,
+          fileModifiedTime: Date) {
 
     // Debug
     const fnName = `${this.clName}.upsertIntentCodeIndexedData()`
@@ -214,18 +294,18 @@ export class IntentCodeGraphMutateService {
     const intentCodeIndexedData = await
             sourceNodeModel.upsert(
               prisma,
-              undefined,      // id
-              parentNode.id,  // parentId
+              undefined,         // id
+              parentNode.id,     // parentId
               instanceId,
               BaseDataTypes.activeStatus,
               SourceNodeTypes.intentCodeIndexedData,
-              null,           // path
+              null,              // path
               name,
-              null,           // content
-              null,           // contentHash
+              null,              // content
+              null,              // contentHash
               jsonContent,
               jsonContentHash,
-              new Date())     // contentUpdated
+              fileModifiedTime)  // contentUpdated
 
     // Return
     return intentCodeIndexedData

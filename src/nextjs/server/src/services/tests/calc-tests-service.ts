@@ -4,6 +4,7 @@ import { CustomError } from '@/serene-core-server/types/errors'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir'
 import { fileExtToLanguageName } from '../../types/source-code-types'
 import { CompilerMutateService } from '../intentcode/compiler/code/mutate-service'
+import { FsUtilsService } from '../utils/fs-utils-service'
 import { IndexerMutateService } from '../intentcode/indexer/mutate-service'
 import { IntentCodeFilenameService } from '../utils/filename-service'
 import { IntentCodeGraphMutateService } from '../graphs/intentcode/graph-mutate-service'
@@ -12,6 +13,7 @@ import { SourceCodeGraphMutateService } from '../graphs/source-code/graph-mutate
 
 // Services
 const compilerMutateService = new CompilerMutateService()
+const fsUtilsService = new FsUtilsService()
 const indexerMutateService = new IndexerMutateService()
 const intentCodeFilenameService = new IntentCodeFilenameService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
@@ -93,6 +95,10 @@ export class CalcTestsService {
       // Get the target lang
       const targetLang = fileExtToLanguageName[targetLangFileExt]
 
+      // Get last save time of the file
+      const fileModifiedTime = await
+              fsUtilsService.getLastUpdateTime(intentCodeFilename)
+
       // Read file
       const intentCode = await
               fs.readFileSync(
@@ -106,7 +112,8 @@ export class CalcTestsService {
                 intentCodeProjectNode,
                 intentCodeFilename,
                 targetLang,
-                intentCode)
+                intentCode,
+                fileModifiedTime)
 
       // Debug
       console.log(`${fnName}: indexResults: ` + JSON.stringify(indexResults))
