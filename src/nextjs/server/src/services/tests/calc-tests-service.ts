@@ -72,6 +72,8 @@ export class CalcTestsService {
             intentCodeList)
 
     // Compile
+    var compileList: any[] = []
+
     for (const intentCodeFilename of intentCodeList) {
 
       // Get the target file extension from the IntentCode filename
@@ -119,17 +121,26 @@ export class CalcTestsService {
               intentCode,
               fileModifiedTime)
 
-      // Compile IntentCode to source
+      // Add to compileList
+      compileList.push({
+        targetLang: targetLang,
+        intentCode: intentCode
+      })
+    }
+
+    // Compile IntentCode to source
+    for (const compileEntry of compileList) {
+
       const compileResults = await
               compilerMutateService.run(
                 prisma,
                 intentCodeProjectNode,
-                targetLang,
-                intentCode)
+                compileEntry.targetLang,
+                compileEntry.intentCode)
 
-      // Debug
-      console.log(`${fnName}: compileResults: ` +
-                  JSON.stringify(compileResults))
+        // Debug
+        console.log(`${fnName}: compileResults: ` +
+                    JSON.stringify(compileResults))
     }
   }
 
