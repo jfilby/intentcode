@@ -3,7 +3,6 @@ import { PrismaClient, SourceNode } from '@prisma/client'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { IndexerMutateLlmService } from './llm-service'
 import { CustomError } from '@/serene-core-server/types/errors'
-import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-service'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir'
@@ -12,10 +11,6 @@ import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { IntentCodeFilenameService } from '../../utils/filename-service'
 import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service'
 import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
-import { SourceNodeNames } from '@/types/source-graph-types'
-
-// Models
-const sourceNodeModel = new SourceNodeModel()
 
 // Services
 const fsUtilsService = new FsUtilsService()
@@ -97,7 +92,7 @@ export class IndexerMutateService {
             llmResults.queryResults.json)
 
     // Return
-    return llmResults
+    return
   }
 
   async indexProject(
