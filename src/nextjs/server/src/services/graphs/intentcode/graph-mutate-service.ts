@@ -17,95 +17,6 @@ export class IntentCodeGraphMutateService {
   clName = 'IntentCodeGraphMutateService'
 
   // Code
-  async updateIntentCodeCompilerData(
-          prisma: PrismaClient,
-          id: string,
-          jsonContent: any,
-          fileModifiedTime: Date) {
-
-    // Debug
-    const fnName = `${this.clName}.updateIntentCodeCompilerData()`
-
-    // Get jsonContentHash
-    var jsonContentHash: string | null = null
-
-    if (jsonContent != null) {
-
-      // Blake3 hash
-      jsonContentHash = blake3(JSON.stringify(jsonContent)).toString()
-    }
-
-    // Create the node
-    const intentCodeCompilerData = await
-            sourceNodeModel.update(
-              prisma,
-              id,
-              undefined,
-              undefined,
-              undefined,
-              undefined,
-              undefined,
-              undefined,
-              undefined,
-              jsonContent,
-              jsonContentHash,
-              fileModifiedTime)  // contentUpdated
-
-    // Return
-    return intentCodeCompilerData
-  }
-
-  async upsertIntentCodeCompilerData(
-          prisma: PrismaClient,
-          instanceId: string | undefined,
-          parentNode: SourceNode | undefined,
-          name: string,
-          jsonContent: any,
-          fileModifiedTime: Date) {
-
-    // Debug
-    const fnName = `${this.clName}.upsertIntentCodeCompilerData()`
-
-    // Validate
-    if (parentNode == null) {
-      throw new CustomError(`${fnName}: projectSourceNode == null`)
-    }
-
-    if (parentNode.type !== SourceNodeTypes.intentCodeFile) {
-
-      throw new CustomError(`${fnName}: parentNode.type !== ` +
-                            `SourceNodeTypes.intentCodeFile`)
-    }
-
-    // Get jsonContentHash
-    var jsonContentHash: string | null = null
-
-    if (jsonContent != null) {
-
-      // Blake3 hash
-      jsonContentHash = blake3(JSON.stringify(jsonContent)).toString()
-    }
-
-    // Create the node
-    const intentCodeCompilerData = await
-            sourceNodeModel.upsert(
-              prisma,
-              undefined,         // id
-              parentNode.id,     // parentId
-              instanceId,
-              BaseDataTypes.activeStatus,
-              SourceNodeTypes.intentCodeCompilerData,
-              name,
-              null,              // content
-              null,              // contentHash
-              jsonContent,
-              jsonContentHash,
-              fileModifiedTime)  // contentUpdated
-
-    // Return
-    return intentCodeCompilerData
-  }
-
   async getOrCreateIntentCodeDir(
           prisma: PrismaClient,
           instanceId: string,
@@ -219,95 +130,6 @@ export class IntentCodeGraphMutateService {
     return intentCodeFile
   }
 
-  async updateIntentCodeIndexedData(
-          prisma: PrismaClient,
-          id: string,
-          jsonContent: any,
-          fileModifiedTime: Date) {
-
-    // Debug
-    const fnName = `${this.clName}.updateIntentCodeIndexedData()`
-
-    // Get jsonContentHash
-    var jsonContentHash: string | null = null
-
-    if (jsonContent != null) {
-
-      // Blake3 hash
-      jsonContentHash = blake3(JSON.stringify(jsonContent)).toString()
-    }
-
-    // Create the node
-    const intentCodeIndexedData = await
-            sourceNodeModel.update(
-              prisma,
-              id,
-              undefined,
-              undefined,
-              undefined,
-              undefined,
-              undefined,
-              undefined,
-              undefined,
-              jsonContent,
-              jsonContentHash,
-              fileModifiedTime)  // contentUpdated
-
-    // Return
-    return intentCodeIndexedData
-  }
-
-  async upsertIntentCodeIndexedData(
-          prisma: PrismaClient,
-          instanceId: string | undefined,
-          parentNode: SourceNode | undefined,
-          name: string,
-          jsonContent: any,
-          fileModifiedTime: Date) {
-
-    // Debug
-    const fnName = `${this.clName}.upsertIntentCodeIndexedData()`
-
-    // Validate
-    if (parentNode == null) {
-      throw new CustomError(`${fnName}: projectSourceNode == null`)
-    }
-
-    if (parentNode.type !== SourceNodeTypes.intentCodeFile) {
-
-      throw new CustomError(`${fnName}: parentNode.type !== ` +
-                            `SourceNodeTypes.intentCodeFile`)
-    }
-
-    // Get jsonContentHash
-    var jsonContentHash: string | null = null
-
-    if (jsonContent != null) {
-
-      // Blake3 hash
-      jsonContentHash = blake3(JSON.stringify(jsonContent)).toString()
-    }
-
-    // Create the node
-    const intentCodeIndexedData = await
-            sourceNodeModel.upsert(
-              prisma,
-              undefined,         // id
-              parentNode.id,     // parentId
-              instanceId,
-              BaseDataTypes.activeStatus,
-              SourceNodeTypes.intentCodeIndexedData,
-              name,
-              null,              // content
-              null,              // contentHash
-              jsonContent,
-              jsonContentHash,
-              fileModifiedTime)  // contentUpdated
-
-    // Return
-    return intentCodeIndexedData
-  }
-
   async getOrCreateIntentCodeProject(
           prisma: PrismaClient,
           instanceId: string,
@@ -402,5 +224,107 @@ export class IntentCodeGraphMutateService {
 
     // Return
     return sourceEdge
+  }
+
+  async upsertIntentCodeCompilerData(
+          prisma: PrismaClient,
+          instanceId: string | undefined,
+          parentNode: SourceNode | undefined,
+          name: string,
+          jsonContent: any,
+          fileModifiedTime: Date) {
+
+    // Debug
+    const fnName = `${this.clName}.upsertIntentCodeCompilerData()`
+
+    // Validate
+    if (parentNode == null) {
+      throw new CustomError(`${fnName}: projectSourceNode == null`)
+    }
+
+    if (parentNode.type !== SourceNodeTypes.intentCodeFile) {
+
+      throw new CustomError(`${fnName}: parentNode.type !== ` +
+                            `SourceNodeTypes.intentCodeFile`)
+    }
+
+    // Get jsonContentHash
+    var jsonContentHash: string | null = null
+
+    if (jsonContent != null) {
+
+      // Blake3 hash
+      jsonContentHash = blake3(JSON.stringify(jsonContent)).toString()
+    }
+
+    // Create the node
+    const intentCodeCompilerData = await
+            sourceNodeModel.upsert(
+              prisma,
+              undefined,         // id
+              parentNode.id,     // parentId
+              instanceId,
+              BaseDataTypes.activeStatus,
+              SourceNodeTypes.intentCodeCompilerData,
+              name,
+              null,              // content
+              null,              // contentHash
+              jsonContent,
+              jsonContentHash,
+              fileModifiedTime)  // contentUpdated
+
+    // Return
+    return intentCodeCompilerData
+  }
+
+  async upsertIntentCodeIndexedData(
+          prisma: PrismaClient,
+          instanceId: string | undefined,
+          parentNode: SourceNode | undefined,
+          name: string,
+          jsonContent: any,
+          fileModifiedTime: Date) {
+
+    // Debug
+    const fnName = `${this.clName}.upsertIntentCodeIndexedData()`
+
+    // Validate
+    if (parentNode == null) {
+      throw new CustomError(`${fnName}: projectSourceNode == null`)
+    }
+
+    if (parentNode.type !== SourceNodeTypes.intentCodeFile) {
+
+      throw new CustomError(`${fnName}: parentNode.type !== ` +
+                            `SourceNodeTypes.intentCodeFile`)
+    }
+
+    // Get jsonContentHash
+    var jsonContentHash: string | null = null
+
+    if (jsonContent != null) {
+
+      // Blake3 hash
+      jsonContentHash = blake3(JSON.stringify(jsonContent)).toString()
+    }
+
+    // Create the node
+    const intentCodeIndexedData = await
+            sourceNodeModel.upsert(
+              prisma,
+              undefined,         // id
+              parentNode.id,     // parentId
+              instanceId,
+              BaseDataTypes.activeStatus,
+              SourceNodeTypes.intentCodeIndexedData,
+              name,
+              null,              // content
+              null,              // contentHash
+              jsonContent,
+              jsonContentHash,
+              fileModifiedTime)  // contentUpdated
+
+    // Return
+    return intentCodeIndexedData
   }
 }
