@@ -47,7 +47,6 @@ export class IntentCodeGraphMutateService {
               undefined,
               undefined,
               undefined,
-              undefined,
               jsonContent,
               jsonContentHash,
               fileModifiedTime)  // contentUpdated
@@ -96,7 +95,6 @@ export class IntentCodeGraphMutateService {
               instanceId,
               BaseDataTypes.activeStatus,
               SourceNodeTypes.intentCodeCompilerData,
-              null,              // path
               name,
               null,              // content
               null,              // contentHash
@@ -151,7 +149,6 @@ export class IntentCodeGraphMutateService {
         instanceId,
         BaseDataTypes.activeStatus,
         SourceNodeTypes.intentCodeDir,
-        null,           // path
         name,
         null,           // content
         null,           // contentHash
@@ -209,7 +206,6 @@ export class IntentCodeGraphMutateService {
         instanceId,
         BaseDataTypes.activeStatus,
         SourceNodeTypes.intentCodeFile,
-        null,           // path
         name,
         null,           // content
         null,           // contentHash
@@ -246,7 +242,6 @@ export class IntentCodeGraphMutateService {
             sourceNodeModel.update(
               prisma,
               id,
-              undefined,
               undefined,
               undefined,
               undefined,
@@ -302,7 +297,6 @@ export class IntentCodeGraphMutateService {
               instanceId,
               BaseDataTypes.activeStatus,
               SourceNodeTypes.intentCodeIndexedData,
-              null,              // path
               name,
               null,              // content
               null,              // contentHash
@@ -336,6 +330,20 @@ export class IntentCodeGraphMutateService {
       return intentCodeProject
     }
 
+    // Define jsonContent
+    const jsonContent = {
+      path: localPath
+    }
+
+    // Get jsonContentHash
+    var jsonContentHash: string | null = null
+
+    if (jsonContent != null) {
+
+      // Blake3 hash
+      jsonContentHash = blake3(JSON.stringify(jsonContent)).toString()
+    }
+
     // Create the node
     intentCodeProject = await
       sourceNodeModel.create(
@@ -344,12 +352,11 @@ export class IntentCodeGraphMutateService {
         instanceId,
         BaseDataTypes.activeStatus,
         SourceNodeTypes.intentCodeProject,
-        localPath,
         name,
         null,  // content
         null,  // contentHash
-        null,  // jsonContent
-        null,  // jsonContentHash
+        jsonContent,
+        jsonContentHash,
         null)  // contentUpdated
 
     // Return

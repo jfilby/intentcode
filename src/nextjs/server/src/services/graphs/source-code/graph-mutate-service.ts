@@ -37,6 +37,20 @@ export class SourceCodeGraphMutateService {
       return sourceCodeProject
     }
 
+    // Define jsonContent
+    const jsonContent = {
+      path: localPath
+    }
+
+    // Get jsonContentHash
+    var jsonContentHash: string | null = null
+
+    if (jsonContent != null) {
+
+      // Blake3 hash
+      jsonContentHash = blake3(JSON.stringify(jsonContent)).toString()
+    }
+
     // Create the node
     sourceCodeProject = await
       sourceNodeModel.create(
@@ -45,12 +59,11 @@ export class SourceCodeGraphMutateService {
         instanceId,
         BaseDataTypes.activeStatus,
         SourceNodeTypes.sourceCodeProject,
-        localPath,
         name,
         null,  // content
         null,  // contentHash
-        null,  // jsonContent
-        null,  // jsonContentHash
+        jsonContent,
+        jsonContentHash,
         null)  // contentUpdated
 
     // Return
@@ -100,7 +113,6 @@ export class SourceCodeGraphMutateService {
         instanceId,
         BaseDataTypes.activeStatus,
         SourceNodeTypes.sourceCodeDir,
-        null,           // path
         name,
         null,           // content
         null,           // contentHash
@@ -165,7 +177,6 @@ export class SourceCodeGraphMutateService {
         instanceId,
         BaseDataTypes.activeStatus,
         SourceNodeTypes.sourceCodeFile,
-        null,           // path
         name,
         content,
         contentHash,

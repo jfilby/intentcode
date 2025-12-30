@@ -22,18 +22,21 @@ export class IntentCodePathGraphMutateService {
     // Debug
     const fnName = `${this.clName}.getOrCreateIntentCodePathAsGraph()`
 
+    // Get project source path
+    const projectSourcePath = (projectSourceNode.jsonContent as any)?.path
+
     // Validate project path
-    if (projectSourceNode.path == null ||
-        !fullPath.startsWith(projectSourceNode.path)) {
+    if (projectSourcePath == null ||
+        !fullPath.startsWith(projectSourcePath)) {
 
       throw new CustomError(
         `${fnName}: Invalid path: ${fullPath} for project source node: ` +
-        `${projectSourceNode.path}`)
+        `${projectSourcePath}`)
     }
 
     // Strip project path from fullPath prefix
     // The fullPath must have been verified as starting with the project path
-    const relativePath = fullPath.slice(projectSourceNode.path.length)
+    const relativePath = fullPath.slice(projectSourcePath.length)
 
     // Split up dirs and filename
     const filename = fsUtilsService.getFilenamePart(relativePath)

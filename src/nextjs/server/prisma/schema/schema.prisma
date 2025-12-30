@@ -73,7 +73,6 @@ model SourceNode {
   instance                   Instance          @relation(fields: [instanceId], references: [id])
   status                     String            @db.Char(1)
   type                       String
-  path                       String?
   name                       String
   content                    String?
   contentHash                String?           @map("content_hash")

@@ -13,7 +13,6 @@ export class SourceNodeModel {
           instanceId: string,
           status: string,
           type: string,
-          path: string | null,
           name: string,
           content: string | null,
           contentHash: string | null,
@@ -39,7 +38,6 @@ export class SourceNodeModel {
           instanceId: instanceId,
           status: status,
           type: type,
-          path: path,
           name: name,
           content: content,
           contentHash: contentHash,
@@ -223,7 +221,6 @@ export class SourceNodeModel {
           instanceId: string | undefined,
           status: string | undefined,
           type: string | undefined,
-          path: string | null | undefined,
           name: string | undefined,
           content: string | null | undefined,
           contentHash: string | null | undefined,
@@ -249,7 +246,6 @@ export class SourceNodeModel {
           instanceId: instanceId,
           status: status,
           type: type,
-          path: path,
           name: name,
           content: content,
           contentHash: contentHash,
@@ -274,7 +270,6 @@ export class SourceNodeModel {
           instanceId: string | undefined,
           status: string | undefined,
           type: string | undefined,
-          path: string | null | undefined,
           name: string | undefined,
           content: string | null | undefined,
           contentHash: string | null | undefined,
@@ -331,11 +326,6 @@ export class SourceNodeModel {
         throw 'Prisma error'
       }
 
-      if (path === undefined) {
-        console.error(`${fnName}: id is null and path is undefined`)
-        throw 'Prisma error'
-      }
-
       if (name == null) {
         console.error(`${fnName}: id is null and name is null`)
         throw 'Prisma error'
@@ -374,7 +364,6 @@ export class SourceNodeModel {
                  instanceId,
                  status,
                  type,
-                 path,
                  name,
                  content,
                  contentHash,
@@ -392,7 +381,6 @@ export class SourceNodeModel {
                  instanceId,
                  status,
                  type,
-                 path,
                  name,
                  content,
                  contentHash,
