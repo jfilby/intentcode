@@ -63,12 +63,15 @@ export class GraphQueryService {
               false,  // includeFromNodes
               true)   // includeToNodes
 
+    // Debug
+    // console.log(`${fnName}: sourceEdges: ` + JSON.stringify(sourceEdges))
+
     // Validate
     if (sourceEdges.length === 0) {
       throw new CustomError(`${fnName}: no project source link`)
     }
 
-    if (sourceEdges.length > 0) {
+    if (sourceEdges.length > 1) {
       throw new CustomError(`${fnName}: more than one project source link`)
     }
 
