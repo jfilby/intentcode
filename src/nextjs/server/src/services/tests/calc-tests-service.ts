@@ -76,7 +76,7 @@ export class CalcTestsService {
     var intentCodeList: string[] = []
 
     await walkDirService.walkDir(
-            intentCodeProjectNode.path!,
+            (intentCodeProjectNode.jsonContent as any).path,
             intentCodeList)
 
     // Compile

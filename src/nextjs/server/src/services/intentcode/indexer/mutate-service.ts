@@ -108,7 +108,7 @@ export class IndexerMutateService {
     var intentCodeList: string[] = []
 
     await walkDirService.walkDir(
-            intentCodeProjectNode.path!,
+            (intentCodeProjectNode.jsonContent as any).path,
             intentCodeList)
 
     // Analyze each file
