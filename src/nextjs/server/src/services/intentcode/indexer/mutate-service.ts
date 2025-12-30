@@ -12,6 +12,7 @@ import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { IntentCodeFilenameService } from '../../utils/filename-service'
 import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service'
 import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
+import { TargetLangService } from '../compiler/code/target-lang-service'
 
 // Services
 const fsUtilsService = new FsUtilsService()
@@ -19,6 +20,7 @@ const indexerMutateLlmService = new IndexerMutateLlmService()
 const intentCodeFilenameService = new IntentCodeFilenameService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
 const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
+const targetLangService = new TargetLangService()
 const techQueryService = new TechQueryService()
 const walkDirService = new WalkDirService()
 const usersService = new UsersService()
@@ -155,6 +157,11 @@ export class IndexerMutateService {
     targetLang: string,
     intentCode: string) {
 
+    // Get rules by targetLang
+    const targetLangPrompting =
+            targetLangService.getPrompting(targetLang)
+
+    // Start the prompt
     var prompt = 
           `## Instructions\n` +  // TypeScript dialect
           `\n` +
@@ -205,11 +212,23 @@ export class IndexerMutateService {
           `    }\n` +
           `  ]\n` +
           `}\n` +
-          `\n` +
-          `## IntentCode\n` +
-          `\n` +
-          intentCode
+          `\n`
 
+    // Target lang prompting
+    if (targetLangPrompting != null) {
+      prompt +=
+        `## ${targetLang} specific\n` +
+        targetLangPrompting +
+        `\n`
+    }
+
+    // Continue prompt
+    prompt +=
+      `## IntentCode\n` +
+      `\n` +
+      intentCode
+
+    // Return
     return prompt
   }
 
