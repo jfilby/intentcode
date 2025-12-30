@@ -58,7 +58,10 @@ export class SourceEdgeModel {
           prisma: PrismaClient,
           fromId: string | undefined = undefined,
           toId: string | undefined = undefined,
-          status: string | undefined = undefined) {
+          status: string | undefined = undefined,
+          name: string | undefined = undefined,
+          includeFromNodes: boolean = false,
+          includeToNodes: boolean = false) {
 
     // Debug
     const fnName = `${this.clName}.filter()`
@@ -66,10 +69,15 @@ export class SourceEdgeModel {
     // Query
     try {
       return await prisma.sourceEdge.findMany({
+        include: {
+          from: includeFromNodes,
+          to: includeToNodes
+        },
         where: {
           fromId: fromId,
           toId: toId,
-          status: status
+          status: status,
+          name: name
         }
       })
     } catch(error: any) {

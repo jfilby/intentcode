@@ -1,3 +1,4 @@
+import { blake3 } from '@noble/hashes/blake3'
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
@@ -115,7 +116,8 @@ export class SourceCodeGraphMutateService {
           prisma: PrismaClient,
           instanceId: string,
           parentNode: SourceNode,
-          name: string) {
+          name: string,
+          content: string | null) {
 
     // Debug
     const fnName = `${this.clName}.getOrCreateSourceCodeFile()`
@@ -146,6 +148,15 @@ export class SourceCodeGraphMutateService {
       return sourceCodeFile
     }
 
+    // Get jsonContentHash
+    var contentHash: string | null = null
+
+    if (content != null) {
+
+      // Blake3 hash
+      contentHash = blake3(JSON.stringify(content)).toString()
+    }
+
     // Create the node
     sourceCodeFile = await
       sourceNodeModel.create(
@@ -156,11 +167,11 @@ export class SourceCodeGraphMutateService {
         SourceNodeTypes.sourceCodeFile,
         null,           // path
         name,
-        null,           // content
-        null,           // contentHash
+        content,
+        contentHash,
         null,           // jsonContent
         null,           // jsonContentHash
-        null)           // contentUpdated
+        new Date())
 
     // Return
     return sourceCodeFile

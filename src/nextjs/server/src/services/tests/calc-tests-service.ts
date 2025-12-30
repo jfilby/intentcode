@@ -5,6 +5,7 @@ import { WalkDirService } from '@/serene-core-server/services/files/walk-dir'
 import { fileExtToLanguageName } from '../../types/source-code-types'
 import { CompilerMutateService } from '../intentcode/compiler/code/mutate-service'
 import { FsUtilsService } from '../utils/fs-utils-service'
+import { GraphQueryService } from '../graphs/intentcode/graph-query-service'
 import { IndexerMutateService } from '../intentcode/indexer/mutate-service'
 import { IntentCodeFilenameService } from '../utils/filename-service'
 import { IntentCodeGraphMutateService } from '../graphs/intentcode/graph-mutate-service'
@@ -14,6 +15,7 @@ import { SourceCodeGraphMutateService } from '../graphs/source-code/graph-mutate
 // Services
 const compilerMutateService = new CompilerMutateService()
 const fsUtilsService = new FsUtilsService()
+const graphQueryService = new GraphQueryService()
 const indexerMutateService = new IndexerMutateService()
 const intentCodeFilenameService = new IntentCodeFilenameService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
@@ -63,6 +65,12 @@ export class CalcTestsService {
     // Purging old code and metadata to be done manually, but possibly detect
     // and warn if still present
     ;
+
+    // Get projectSourceNode
+    const projectSourceNode = await
+            graphQueryService.getProjectSourceNode(
+              prisma,
+              intentCodeProjectNode)
 
     // Get IntentCode to compile
     var intentCodeList: string[] = []
@@ -141,6 +149,7 @@ export class CalcTestsService {
               compilerMutateService.run(
                 prisma,
                 intentCodeProjectNode,
+                projectSourceNode,
                 compileEntry.intentCodeFilename,
                 fileModifiedTime,
                 compileEntry.targetLang,

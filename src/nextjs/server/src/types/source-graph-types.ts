@@ -1,4 +1,4 @@
-export enum SourceEdgeTypes {
+export enum SourceEdgeNames {
 
   implements = 'implements'
 }

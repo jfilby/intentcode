@@ -9,12 +9,14 @@ import { CompilerMutateLlmService } from './llm-service'
 import { GraphQueryService } from '@/services/graphs/intentcode/graph-query-service'
 import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service'
 import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
+import { SourceCodePathGraphMutateService } from '@/services/graphs/source-code/path-graph-mutate-service'
 
 // Services
 const compilerMutateLlmService = new CompilerMutateLlmService()
 const graphQueryService = new GraphQueryService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
 const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
+const sourceCodePathGraphMutateService = new SourceCodePathGraphMutateService()
 const techQueryService = new TechQueryService()
 const usersService = new UsersService()
 
@@ -135,8 +137,25 @@ export class CompilerMutateService {
   async processResults(
           prisma: PrismaClient,
           intentFileSourceNode: SourceNode,
+          projectSourceNode: SourceNode,
           fileModifiedTime: Date,
           queryResults: any) {
+
+    // Write source file (if any)
+    if (queryResults.json.targetSource != null) {
+
+      // Get SourceCode relative path
+      const fullPath =
+              (intentFileSourceNode.jsonContent as any).path +
+              (intentFileSourceNode.jsonContent as any).relativePath
+
+      // Get/create SourceCode node path
+      await sourceCodePathGraphMutateService.getOrCreateSourceCodePathAsGraph(
+              prisma,
+              projectSourceNode,
+              fullPath,
+              queryResults.json.targetSource)
+    }
 
     // Upsert the indexed data node
     const indexerDataSourceNode = await
@@ -151,6 +170,7 @@ export class CompilerMutateService {
 
   async run(prisma: PrismaClient,
             intentCodeProjectNode: SourceNode,
+            projectSourceNode: SourceNode,
             fullPath: string,
             fileModifiedTime: Date,
             targetLang: string,
@@ -221,6 +241,7 @@ export class CompilerMutateService {
     await this.processResults(
             prisma,
             intentFileSourceNode,
+            projectSourceNode,
             fileModifiedTime,
             llmResults.queryResults)
 

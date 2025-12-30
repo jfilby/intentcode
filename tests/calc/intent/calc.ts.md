@@ -1,10 +1,24 @@
 # Calc
 
+## Enums
+
+Operation:
+  plus = '+'
+  minus = '-'
+  multiple = '*'
+  divide = '/'
+
+
 ## Types
 
 InputType:
   op?: Operation
   value?: number
+
+
+## Inputs
+
+input: string
 
 
 ## run()

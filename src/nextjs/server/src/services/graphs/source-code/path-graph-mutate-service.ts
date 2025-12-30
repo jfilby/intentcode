@@ -17,7 +17,8 @@ export class SourceCodePathGraphMutateService {
   async getOrCreateSourceCodePathAsGraph(
           prisma: PrismaClient,
           projectSourceNode: SourceNode,
-          fullPath: string) {
+          fullPath: string,
+          content: string) {
 
     // Debug
     const fnName = `${this.clName}.getOrCreateSourceCodePathAsGraph()`
@@ -68,7 +69,8 @@ export class SourceCodePathGraphMutateService {
               prisma,
               projectSourceNode.instanceId,
               dirSourceNode,
-              filename)
+              filename,
+              content)
 
     // Return filename's node
     return filenameSourceNode
