@@ -11,6 +11,7 @@ import { GraphQueryService } from '@/services/graphs/intentcode/graph-query-serv
 import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service'
 import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
 import { SourceCodePathGraphMutateService } from '@/services/graphs/source-code/path-graph-mutate-service'
+import { TargetLangService } from './target-lang-service'
 
 // Services
 const compilerMutateLlmService = new CompilerMutateLlmService()
@@ -19,6 +20,7 @@ const graphQueryService = new GraphQueryService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
 const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
 const sourceCodePathGraphMutateService = new SourceCodePathGraphMutateService()
+const targetLangService = new TargetLangService()
 const techQueryService = new TechQueryService()
 const usersService = new UsersService()
 
@@ -36,6 +38,10 @@ export class CompilerMutateService {
 
     // Debug
     const fnName = `${this.clName}.getPrompt()`
+
+    // Get rules by targetLang
+    const targetLangPrompting =
+            targetLangService.getPrompting(targetLang)
 
     // Start the prompt
     var prompt =
@@ -102,13 +108,24 @@ export class CompilerMutateService {
           `  "fixedIntentCode": "..",\n` +
           `  "targetSource": ".."\n` +
           `}\n` +
-          `\n` +
-          `## IntentCode\n` +
-          `\n` +
-          intentCode +
-          `\n` +
-          `## Index data\n` +
           `\n`
+
+    // Target lang prompting
+    if (targetLangPrompting != null) {
+      prompt +=
+        `## ${targetLang} specific\n` +
+        targetLangPrompting +
+        `\n`
+    }
+
+    // Continue prompt
+    prompt +=
+      `## IntentCode\n` +
+      `\n` +
+      intentCode +
+      `\n` +
+      `## Index data\n` +
+      `\n`
 
     // List all indexed data
     if (indexedDataSourceNodes.length > 0) {
