@@ -198,7 +198,7 @@ export class SourceCodeGraphMutateService {
               undefined,                  // id
               sourceCodeFile.id,          // sourceNodeId
               sourceNodeGenerationData.techId,
-              sourceNodeGenerationData.temperature,
+              sourceNodeGenerationData.temperature ?? null,
               sourceNodeGenerationData.prompt,
               promptHash)
 

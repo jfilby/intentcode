@@ -289,7 +289,7 @@ export class IntentCodeGraphMutateService {
               undefined,                  // id
               intentCodeCompilerData.id,  // sourceNodeId
               sourceNodeGenerationData.techId,
-              sourceNodeGenerationData.temperature,
+              sourceNodeGenerationData.temperature ?? null,
               sourceNodeGenerationData.prompt,
               promptHash)
 
@@ -356,7 +356,7 @@ export class IntentCodeGraphMutateService {
               undefined,                  // id
               intentCodeIndexedData.id,  // sourceNodeId
               sourceNodeGenerationData.techId,
-              sourceNodeGenerationData.temperature,
+              sourceNodeGenerationData.temperature ?? null,
               sourceNodeGenerationData.prompt,
               promptHash)
 
