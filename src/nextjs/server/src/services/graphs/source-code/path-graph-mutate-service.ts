@@ -2,6 +2,7 @@ import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { FsUtilsService } from '../../utils/fs-utils-service'
 import { SourceCodeGraphMutateService } from './graph-mutate-service'
+import { SourceNodeGenerationData } from '@/types/source-graph-types'
 
 // Services
 const fsUtilsService = new FsUtilsService()
@@ -18,7 +19,8 @@ export class SourceCodePathGraphMutateService {
           prisma: PrismaClient,
           projectSourceNode: SourceNode,
           fullPath: string,
-          content: string) {
+          content: string,
+          sourceNodeGenerationData: SourceNodeGenerationData) {
 
     // Debug
     const fnName = `${this.clName}.getOrCreateSourceCodePathAsGraph()`
@@ -68,12 +70,13 @@ export class SourceCodePathGraphMutateService {
 
     // Get/create nodes for the filename
     const filenameSourceNode = await
-            sourceCodeGraphMutateService.getOrCreateSourceCodeFile(
+            sourceCodeGraphMutateService.upsertSourceCodeFile(
               prisma,
               projectSourceNode.instanceId,
               dirSourceNode,
               filename,
-              content)
+              content,
+              sourceNodeGenerationData)
 
     // Return filename's node
     return filenameSourceNode

@@ -2,13 +2,17 @@ import { blake3 } from '@noble/hashes/blake3'
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
-import { SourceEdgeNames, SourceNodeTypes } from '@/types/source-graph-types'
+import { SourceEdgeNames, SourceNodeGenerationData, SourceNodeTypes } from '@/types/source-graph-types'
+import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
 import { SourceEdgeModel } from '@/models/source-graph/source-edge-model'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 
 // Models
 const sourceEdgeModel = new SourceEdgeModel()
 const sourceNodeModel = new SourceNodeModel()
+
+// Services
+const sourceNodeGenerationModel = new SourceNodeGenerationModel()
 
 // Code
 export class IntentCodeGraphMutateService {
@@ -232,6 +236,7 @@ export class IntentCodeGraphMutateService {
           parentNode: SourceNode | undefined,
           name: string,
           jsonContent: any,
+          sourceNodeGenerationData: SourceNodeGenerationData,
           fileModifiedTime: Date) {
 
     // Debug
@@ -273,6 +278,21 @@ export class IntentCodeGraphMutateService {
               jsonContentHash,
               fileModifiedTime)  // contentUpdated
 
+    // Get promptHash
+    const promptHash =
+            blake3(JSON.stringify(sourceNodeGenerationData.prompt)).toString()
+
+    // Upsert SourceNodeGeneration
+    const sourceNodeGeneration = await
+            sourceNodeGenerationModel.upsert(
+              prisma,
+              undefined,                  // id
+              intentCodeCompilerData.id,  // sourceNodeId
+              sourceNodeGenerationData.techId,
+              sourceNodeGenerationData.temperature,
+              sourceNodeGenerationData.prompt,
+              promptHash)
+
     // Return
     return intentCodeCompilerData
   }
@@ -283,6 +303,7 @@ export class IntentCodeGraphMutateService {
           parentNode: SourceNode | undefined,
           name: string,
           jsonContent: any,
+          sourceNodeGenerationData: SourceNodeGenerationData,
           fileModifiedTime: Date) {
 
     // Debug
@@ -323,6 +344,21 @@ export class IntentCodeGraphMutateService {
               jsonContent,
               jsonContentHash,
               fileModifiedTime)  // contentUpdated
+
+    // Get promptHash
+    const promptHash =
+            blake3(JSON.stringify(sourceNodeGenerationData.prompt)).toString()
+
+    // Upsert SourceNodeGeneration
+    const sourceNodeGeneration = await
+            sourceNodeGenerationModel.upsert(
+              prisma,
+              undefined,                  // id
+              intentCodeIndexedData.id,  // sourceNodeId
+              sourceNodeGenerationData.techId,
+              sourceNodeGenerationData.temperature,
+              sourceNodeGenerationData.prompt,
+              promptHash)
 
     // Return
     return intentCodeIndexedData

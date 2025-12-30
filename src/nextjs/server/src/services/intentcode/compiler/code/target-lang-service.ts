@@ -23,8 +23,12 @@ export class TargetLangService {
   getTypeScriptPrompting() {
 
     const prompt =
-      `- Wrap functions in a class where possible. Use the H1 name as the ` +
-      `  class name.\n`
+      `- Wrap functions and basic static types in a class where possible. ` +
+      `  Use the H1 name as the class name.\n` +
+
+      // removed, now test without: `in the AST tree`
+      `- Track these attributes where relevant:\n `+
+      `  async, export, generator.\n`
 
     return prompt
   }

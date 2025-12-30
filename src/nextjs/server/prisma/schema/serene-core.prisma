@@ -372,6 +372,8 @@ model Tech {
 
   ofLlmCaches                  LlmCache[]
 
+  ofSourceNodeTechs            SourceNodeGeneration[]
+
   @@map("tech")
   @@schema("public")
 }

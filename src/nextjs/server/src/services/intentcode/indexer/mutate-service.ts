@@ -7,7 +7,7 @@ import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir'
 import { LlmEnvNames } from '@/types/server-only-types'
-import { SourceNodeNames } from '@/types/source-graph-types'
+import { SourceNodeGenerationData, SourceNodeNames } from '@/types/source-graph-types'
 import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { IntentCodeFilenameService } from '../../utils/filename-service'
 import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service'
@@ -86,10 +86,17 @@ export class IndexerMutateService {
               tech,
               prompt)
 
+    // Define SourceNodeGeneration
+    const sourceNodeGenerationData: SourceNodeGenerationData = {
+      techId: tech.id,
+      prompt: prompt
+    }
+
     // Save the index data
     await this.processQueryResults(
             prisma,
             intentFileSourceNode,
+            sourceNodeGenerationData,
             fileModifiedTime,
             llmResults.queryResults.json)
 
@@ -209,6 +216,7 @@ export class IndexerMutateService {
   async processQueryResults(
           prisma: PrismaClient,
           intentFileSourceNode: SourceNode,
+          sourceNodeGenerationData: SourceNodeGenerationData,
           fileModifiedTime: Date,
           json: any) {
 
@@ -243,6 +251,7 @@ export class IndexerMutateService {
               intentFileSourceNode,  // parentNode
               SourceNodeNames.indexedData,
               jsonContent,
+              sourceNodeGenerationData,
               fileModifiedTime)
   }
 }

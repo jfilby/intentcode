@@ -33,3 +33,10 @@ export enum SourceNodeNames {
   compilerData = 'Compiler data',
   indexedData = 'Indexed data'
 }
+
+export interface SourceNodeGenerationData {
+
+  techId: string
+  temperature?: number
+  prompt: string
+}

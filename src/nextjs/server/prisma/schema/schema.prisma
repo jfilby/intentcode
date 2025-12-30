@@ -85,9 +85,27 @@ model SourceNode {
   outgoingEdges              SourceEdge[]      @relation("from")
   incomingEdges              SourceEdge[]      @relation("to")
   children                   SourceNode[]      @relation("parent")
+  ofSourceNodeTechs          SourceNodeGeneration[]
 
   @@unique([parentId, instanceId, type, name])
   @@index([contentHash])
   @@map("source_node")
+  @@schema("public")
+}
+
+model SourceNodeGeneration {
+  // Note: it could be useful to track prompts (with a hash/version no?) here
+  id                         String            @id @default(cuid())
+  sourceNodeId               String            @map("source_node_id") @unique
+  sourceNode                 SourceNode        @relation(fields: [sourceNodeId], references: [id])
+  techId                     String            @map("tech_id")
+  tech                       Tech              @relation(fields: [techId], references: [id])
+  temperature                Float?
+  prompt                     String
+  promptHash                 String            @map("prompt_hash")
+  created                    DateTime          @default(now())
+  updated                    DateTime          @updatedAt
+
+  @@map("source_node_generation")
   @@schema("public")
 }

@@ -1,10 +1,10 @@
-import { PrismaClient, SourceNode } from '@prisma/client'
+import { PrismaClient, SourceNode, SourceNodeGeneration } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-service'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
-import { SourceNodeNames } from '@/types/source-graph-types'
+import { SourceNodeNames, SourceNodeGenerationData } from '@/types/source-graph-types'
 import { CompilerMutateLlmService } from './llm-service'
 import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { GraphQueryService } from '@/services/graphs/intentcode/graph-query-service'
@@ -157,6 +157,7 @@ export class CompilerMutateService {
           prisma: PrismaClient,
           intentFileSourceNode: SourceNode,
           projectSourceNode: SourceNode,
+          sourceNodeGenerationData: SourceNodeGenerationData,
           fileModifiedTime: Date,
           queryResults: any) {
 
@@ -201,7 +202,8 @@ export class CompilerMutateService {
               prisma,
               projectSourceNode,
               fullPath,
-              queryResults.json.targetSource)
+              queryResults.json.targetSource,
+              sourceNodeGenerationData)
 
       // Write source file
       await fsUtilsService.writeTextFile(
@@ -210,6 +212,10 @@ export class CompilerMutateService {
               true)  // createMissingDirs
     }
 
+    // Get compiler metadata only (without the targetSource)
+    const compilerData = structuredClone(queryResults.json)
+    compilerData.targetSource = undefined
+
     // Upsert the compiler data node
     const compilerDataSourceNode = await
             intentCodeGraphMutateService.upsertIntentCodeCompilerData(
@@ -217,7 +223,8 @@ export class CompilerMutateService {
               intentFileSourceNode.instanceId,
               intentFileSourceNode,  // parentNode
               SourceNodeNames.compilerData,
-              queryResults.json,     // jsonContent
+              compilerData,          // jsonContent
+              sourceNodeGenerationData,
               fileModifiedTime)
   }
 
@@ -290,11 +297,18 @@ export class CompilerMutateService {
               tech,
               prompt)
 
+    // Define SourceNodeGeneration
+    const sourceNodeGenerationData: SourceNodeGenerationData = {
+      techId: tech.id,
+      prompt: prompt
+    }
+
     // Process results
     await this.processResults(
             prisma,
             intentFileSourceNode,
             projectSourceNode,
+            sourceNodeGenerationData,
             fileModifiedTime,
             llmResults.queryResults)
 

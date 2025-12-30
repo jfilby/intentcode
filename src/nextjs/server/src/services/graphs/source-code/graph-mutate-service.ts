@@ -2,10 +2,12 @@ import { blake3 } from '@noble/hashes/blake3'
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
-import { SourceNodeTypes } from '@/types/source-graph-types'
+import { SourceNodeGenerationData, SourceNodeTypes } from '@/types/source-graph-types'
+import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 
 // Models
+const sourceNodeGenerationModel = new SourceNodeGenerationModel()
 const sourceNodeModel = new SourceNodeModel()
 
 // Code
@@ -124,15 +126,16 @@ export class SourceCodeGraphMutateService {
     return sourceCodeDir
   }
 
-  async getOrCreateSourceCodeFile(
+  async upsertSourceCodeFile(
           prisma: PrismaClient,
           instanceId: string,
           parentNode: SourceNode,
           name: string,
-          content: string | null) {
+          content: string | null,
+          sourceNodeGenerationData: SourceNodeGenerationData) {
 
     // Debug
-    const fnName = `${this.clName}.getOrCreateSourceCodeFile()`
+    const fnName = `${this.clName}.upsertSourceCodeFile()`
 
     // Validate
     if (parentNode == null) {
@@ -183,6 +186,21 @@ export class SourceCodeGraphMutateService {
         null,           // jsonContent
         null,           // jsonContentHash
         new Date())
+
+    // Get promptHash
+    const promptHash =
+            blake3(JSON.stringify(sourceNodeGenerationData.prompt)).toString()
+
+    // Upsert SourceNodeGeneration
+    const sourceNodeGeneration = await
+            sourceNodeGenerationModel.upsert(
+              prisma,
+              undefined,                  // id
+              sourceCodeFile.id,          // sourceNodeId
+              sourceNodeGenerationData.techId,
+              sourceNodeGenerationData.temperature,
+              sourceNodeGenerationData.prompt,
+              promptHash)
 
     // Return
     return sourceCodeFile
