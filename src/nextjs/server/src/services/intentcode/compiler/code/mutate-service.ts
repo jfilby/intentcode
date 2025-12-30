@@ -56,6 +56,8 @@ export class CompilerMutateService {
           `   field.\n` +
           `4. Convert the input IntentCode (if no errors) to ${targetLang} ` +
           `   source code.\n` +
+          `5. Use the indexed data for this file as a structural starting ` +
+          `   point. Imports depend on this to be accurate.\n` +
           `\n` +
           `## Assumptions\n` +
           `\n` +
@@ -137,15 +139,19 @@ export class CompilerMutateService {
           throw new CustomError(`${fnName}: indexedDataSourceNode.parent`)
         }
 
-        // Get intentCodeFileSourceNode
+        // Get fields
         const intentCodeFileSourceNode = (indexedDataSourceNode as any).parent
+        const relativePath = intentCodeFileSourceNode.jsonContent.relativePath
+
+        const astTree =
+          JSON.stringify((indexedDataSourceNode.jsonContent as any).astTree)
 
         prompt +=
-          `- file: ${intentCodeFileSourceNode.jsonContent.relativePath}\n` +
-          `  astTree: ${intentCodeFileSourceNode.jsonContent.astTree}\n\n`
+          `### File: ${relativePath}\n` +
+          `\n` +
+          `${astTree}\n\n`
       }
     } else {
-
       prompt += `None available.`
     }
 

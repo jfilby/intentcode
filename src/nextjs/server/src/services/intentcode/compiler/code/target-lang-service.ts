@@ -25,10 +25,11 @@ export class TargetLangService {
     const prompt =
       `- Wrap functions and basic static types in a class where possible. ` +
       `  Use the H1 name as the class name.\n` +
+      `- Instantiate classes that aren't static before using them.\n` +
 
       // removed, now test without: `in the AST tree`
       `- Track these attributes where relevant:\n `+
-      `  async, export, generator.\n`
+      `  async, export, generator, static.\n`
 
     return prompt
   }
