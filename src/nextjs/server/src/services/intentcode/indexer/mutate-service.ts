@@ -6,21 +6,21 @@ import { CustomError } from '@/serene-core-server/types/errors'
 import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-service'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir'
-import { LlmEnvNames } from '@/types/server-only-types'
+import { LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
 import { SourceNodeGenerationData, SourceNodeNames } from '@/types/source-graph-types'
 import { FsUtilsService } from '@/services/utils/fs-utils-service'
+import { IndexerTargetLangService } from './target-lang-service'
 import { IntentCodeFilenameService } from '../../utils/filename-service'
 import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service'
 import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
-import { TargetLangService } from '../compiler/code/target-lang-service'
 
 // Services
 const fsUtilsService = new FsUtilsService()
 const indexerMutateLlmService = new IndexerMutateLlmService()
+const indexerTargetLangService = new IndexerTargetLangService()
 const intentCodeFilenameService = new IntentCodeFilenameService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
 const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
-const targetLangService = new TargetLangService()
 const techQueryService = new TechQueryService()
 const walkDirService = new WalkDirService()
 const usersService = new UsersService()
@@ -42,6 +42,11 @@ export class IndexerMutateService {
 
     // Debug
     const fnName = `${this.clName}.indexFileWithLlm()`
+
+    // Verbose output
+    if (ServerOnlyTypes.verbosity === true) {
+      console.log(`indexing: ${fullPath}..`)
+    }
 
     // Get/create the file's SourceNode
     const intentFileSourceNode = await
@@ -159,7 +164,7 @@ export class IndexerMutateService {
 
     // Get rules by targetLang
     const targetLangPrompting =
-            targetLangService.getPrompting(targetLang)
+            indexerTargetLangService.getPrompting(targetLang)
 
     // Start the prompt
     var prompt = 

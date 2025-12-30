@@ -1,9 +1,9 @@
 import { fileExtToLanguageName } from '@/types/source-code-types'
 
-export class CompilerTargetLangService {
+export class IndexerTargetLangService {
 
   // Consts
-  clName = 'CompilerTargetLangService'
+  clName = 'IndexerTargetLangService'
 
   // Code
   getPrompting(targetLang: string) {
@@ -26,13 +26,8 @@ export class CompilerTargetLangService {
     var prompt =
       `- Wrap functions and basic static types in a class where possible. ` +
       `  Use the H1 name as the class name.\n` +
-      `- Adhere to these attributes where relevant:\n `+
+      `- Track these attributes where relevant:\n `+
       `  async, export, generator, static.\n`
-
-    // Prompting to coerce the compiler LLM to produce correct code
-    prompt +=
-      `- Instantiate classes before using them to call non-static ` +
-      `  functions.\n`
 
     // Return
     return prompt

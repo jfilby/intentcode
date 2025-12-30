@@ -5,6 +5,9 @@ export class ServerOnlyTypes {
 
   // Important file extensions (with .)
   static dotMdFileExt = '.md'
+
+  // Verbosity
+  static verbosity = true
 }
 
 export enum MessageTypes {

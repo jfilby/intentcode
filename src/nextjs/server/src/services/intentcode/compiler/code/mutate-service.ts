@@ -1,4 +1,4 @@
-import { PrismaClient, SourceNode, SourceNodeGeneration } from '@prisma/client'
+import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-service'
 import { UsersService } from '@/serene-core-server/services/users/service'
@@ -6,21 +6,21 @@ import { LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { SourceNodeNames, SourceNodeGenerationData } from '@/types/source-graph-types'
 import { CompilerMutateLlmService } from './llm-service'
+import { CompilerTargetLangService } from './target-lang-service'
 import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { GraphQueryService } from '@/services/graphs/intentcode/graph-query-service'
 import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service'
 import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
 import { SourceCodePathGraphMutateService } from '@/services/graphs/source-code/path-graph-mutate-service'
-import { TargetLangService } from './target-lang-service'
 
 // Services
 const compilerMutateLlmService = new CompilerMutateLlmService()
+const compilerTargetLangService = new CompilerTargetLangService()
 const fsUtilsService = new FsUtilsService()
 const graphQueryService = new GraphQueryService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
 const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
 const sourceCodePathGraphMutateService = new SourceCodePathGraphMutateService()
-const targetLangService = new TargetLangService()
 const techQueryService = new TechQueryService()
 const usersService = new UsersService()
 
@@ -41,7 +41,7 @@ export class CompilerMutateService {
 
     // Get rules by targetLang
     const targetLangPrompting =
-            targetLangService.getPrompting(targetLang)
+            compilerTargetLangService.getPrompting(targetLang)
 
     // Start the prompt
     var prompt =
@@ -246,6 +246,11 @@ export class CompilerMutateService {
     const fnName = `${this.clName}.run()`
 
     // console.log(`${fnName}: starting..`)
+
+    // Verbose output
+    if (ServerOnlyTypes.verbosity === true) {
+      console.log(`compiling: ${fullPath}..`)
+    }
 
     // Get all related indexed data, including for this file
     const indexedDataSourceNodes = await
