@@ -2,6 +2,9 @@ export class ServerOnlyTypes {
 
   // Instance types
   static projectInstanceType = 'P'
+
+  // Important file extensions (with .)
+  static dotMdFileExt = '.md'
 }
 
 export enum MessageTypes {

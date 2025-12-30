@@ -105,4 +105,22 @@ export class FsUtilsService {
     // Return
     return relativePath
   }
+
+  async writeTextFile(
+          fullPath: string,
+          content: string,
+          createMissingDirs: boolean = false) {
+
+    if (createMissingDirs === true) {
+
+      // Get dirs path
+      const dirsPath = this.getDirectoriesPart(fullPath)
+
+      // Create dirs path
+      await fs.mkdir(dirsPath, { recursive: true })
+    }
+
+    // Write file
+    await fs.writeFile(fullPath, content, 'utf-8')
+  }
 }

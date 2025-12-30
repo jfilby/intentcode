@@ -2,10 +2,11 @@ import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-service'
 import { UsersService } from '@/serene-core-server/services/users/service'
-import { LlmEnvNames } from '@/types/server-only-types'
+import { LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { SourceNodeNames } from '@/types/source-graph-types'
 import { CompilerMutateLlmService } from './llm-service'
+import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { GraphQueryService } from '@/services/graphs/intentcode/graph-query-service'
 import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service'
 import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
@@ -13,6 +14,7 @@ import { SourceCodePathGraphMutateService } from '@/services/graphs/source-code/
 
 // Services
 const compilerMutateLlmService = new CompilerMutateLlmService()
+const fsUtilsService = new FsUtilsService()
 const graphQueryService = new GraphQueryService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
 const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
@@ -141,13 +143,41 @@ export class CompilerMutateService {
           fileModifiedTime: Date,
           queryResults: any) {
 
+    // Debug
+    const fnName = `${this.clName}.run()`
+
     // Write source file (if any)
     if (queryResults.json.targetSource != null) {
 
-      // Get SourceCode relative path
-      const fullPath =
-              (intentFileSourceNode.jsonContent as any).path +
+      // Get paths
+      const projectSourcePath = (projectSourceNode.jsonContent as any).path
+
+      const intentFileRelativePath =
               (intentFileSourceNode.jsonContent as any).relativePath
+
+      // Validate
+      if (projectSourcePath == null) {
+        throw new CustomError(`${fnName}: projectSourcePath == null`)
+      }
+
+      if (intentFileRelativePath == null) {
+        throw new CustomError(`${fnName}: intentFileRelativePath == null`)
+      }
+
+      if (!intentFileRelativePath.endsWith(ServerOnlyTypes.dotMdFileExt)) {
+
+        throw new CustomError(
+          `${fnName}: intentFileRelativePath doesn't end with ` +
+          `${ServerOnlyTypes.dotMdFileExt}`)
+      }
+
+      // Get SourceCode relative path
+      const sourceFileRelativePath =
+              intentFileRelativePath.slice(
+                0,
+                intentFileRelativePath.length - ServerOnlyTypes.dotMdFileExt.length)
+
+      const fullPath = projectSourcePath + sourceFileRelativePath
 
       // Get/create SourceCode node path
       await sourceCodePathGraphMutateService.getOrCreateSourceCodePathAsGraph(
@@ -155,10 +185,16 @@ export class CompilerMutateService {
               projectSourceNode,
               fullPath,
               queryResults.json.targetSource)
+
+      // Write source file
+      await fsUtilsService.writeTextFile(
+              fullPath,
+              queryResults.json.targetSource,
+              true)  // createMissingDirs
     }
 
-    // Upsert the indexed data node
-    const indexerDataSourceNode = await
+    // Upsert the compiler data node
+    const compilerDataSourceNode = await
             intentCodeGraphMutateService.upsertIntentCodeCompilerData(
               prisma,
               intentFileSourceNode.instanceId,
