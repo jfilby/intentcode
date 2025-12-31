@@ -12,7 +12,11 @@ export class SourceNodeGenerationModel {
           techId: string,
           temperature: number | null,
           prompt: string,
-          promptHash: string) {
+          promptHash: string,
+          content: string | null,
+          contentHash: string | null,
+          jsonContent: any | null,
+          jsonContentHash: string | null) {
 
     // Debug
     const fnName = `${this.clName}.create()`
@@ -25,7 +29,11 @@ export class SourceNodeGenerationModel {
           techId: techId,
           temperature: temperature,
           prompt: prompt,
-          promptHash: promptHash
+          promptHash: promptHash,
+          content: content,
+          contentHash: contentHash,
+          jsonContent: jsonContent,
+          jsonContentHash: jsonContentHash
         }
       })
     } catch(error) {
@@ -214,7 +222,11 @@ export class SourceNodeGenerationModel {
           techId: string | undefined,
           temperature: number | null | undefined,
           prompt: string | undefined,
-          promptHash: string | undefined) {
+          promptHash: string | undefined,
+          content: string | null | undefined,
+          contentHash: string | null | undefined,
+          jsonContent: any | null | undefined,
+          jsonContentHash: string | null | undefined) {
 
     // Debug
     const fnName = `${this.clName}.update()`
@@ -227,7 +239,11 @@ export class SourceNodeGenerationModel {
           techId: techId,
           temperature: temperature,
           prompt: prompt,
-          promptHash: promptHash
+          promptHash: promptHash,
+          content: content,
+          contentHash: contentHash,
+          jsonContent: jsonContent,
+          jsonContentHash: jsonContentHash
         },
         where: {
           id: id
@@ -246,7 +262,11 @@ export class SourceNodeGenerationModel {
           techId: string | undefined,
           temperature: number | null | undefined,
           prompt: string | undefined,
-          promptHash: string | undefined) {
+          promptHash: string | undefined,
+          content: string | null | undefined,
+          contentHash: string | null | undefined,
+          jsonContent: any | null | undefined,
+          jsonContentHash: string | null | undefined) {
 
     // Debug
     const fnName = `${this.clName}.upsert()`
@@ -298,6 +318,26 @@ export class SourceNodeGenerationModel {
         throw 'Prisma error'
       }
 
+      if (content === undefined) {
+        console.error(`${fnName}: id is null and content is undefined`)
+        throw 'Prisma error'
+      }
+
+      if (contentHash === undefined) {
+        console.error(`${fnName}: id is null and contentHash is undefined`)
+        throw 'Prisma error'
+      }
+
+      if (jsonContent === undefined) {
+        console.error(`${fnName}: id is null and jsonContent is undefined`)
+        throw 'Prisma error'
+      }
+
+      if (jsonContentHash === undefined) {
+        console.error(`${fnName}: id is null and jsonContentHash is undefined`)
+        throw 'Prisma error'
+      }
+
       // Create
       return await
                this.create(
@@ -306,7 +346,11 @@ export class SourceNodeGenerationModel {
                  techId,
                  temperature,
                  prompt,
-                 promptHash)
+                 promptHash,
+                 content,
+                 contentHash,
+                 jsonContent,
+                 jsonContentHash)
     } else {
 
       // Update
@@ -318,7 +362,11 @@ export class SourceNodeGenerationModel {
                  techId,
                  temperature,
                  prompt,
-                 promptHash)
+                 promptHash,
+                 content,
+                 contentHash,
+                 jsonContent,
+                 jsonContentHash)
     }
   }
 }

@@ -199,12 +199,16 @@ export class SourceCodeGraphMutateService {
     const sourceNodeGeneration = await
             sourceNodeGenerationModel.upsert(
               prisma,
-              undefined,                  // id
-              sourceCodeFile.id,          // sourceNodeId
+              undefined,          // id
+              sourceCodeFile.id,  // sourceNodeId
               sourceNodeGenerationData.techId,
               sourceNodeGenerationData.temperature ?? null,
               sourceNodeGenerationData.prompt,
-              promptHash)
+              promptHash,
+              content,
+              contentHash,
+              null,               // jsonContent,
+              null)               // jsonContentHash
 
     // Delete old SourceNodeGenerations
     await sourceNodeGenerationService.deleteOld(

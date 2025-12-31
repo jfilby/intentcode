@@ -114,6 +114,10 @@ model SourceNodeGeneration {
   temperature                Float?
   prompt                     String
   promptHash                 String            @map("prompt_hash")
+  content                    String?
+  contentHash                String?           @map("content_hash")
+  jsonContent                Json?             @map("json_content") @db.JsonB
+  jsonContentHash            String?           @map("json_content_hash")
   created                    DateTime          @default(now())
   updated                    DateTime          @updatedAt
 

@@ -293,7 +293,11 @@ export class IntentCodeGraphMutateService {
               sourceNodeGenerationData.techId,
               sourceNodeGenerationData.temperature ?? null,
               sourceNodeGenerationData.prompt,
-              promptHash)
+              promptHash,
+              null,  // content
+              null,  // contentHash
+              jsonContent,
+              jsonContentHash)
 
     // Delete old SourceNodeGenerations
     await sourceNodeGenerationService.deleteOld(
@@ -365,7 +369,11 @@ export class IntentCodeGraphMutateService {
               sourceNodeGenerationData.techId,
               sourceNodeGenerationData.temperature ?? null,
               sourceNodeGenerationData.prompt,
-              promptHash)
+              promptHash,
+              null,  // content
+              null,  // contentHash
+              jsonContent,
+              jsonContentHash)
 
     // Delete old SourceNodeGenerations
     await sourceNodeGenerationService.deleteOld(
