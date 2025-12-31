@@ -6,13 +6,15 @@ import { SourceEdgeNames, SourceNodeGenerationData, SourceNodeTypes } from '@/ty
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
 import { SourceEdgeModel } from '@/models/source-graph/source-edge-model'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
+import { SourceNodeGenerationService } from './source-node-generation-service'
 
 // Models
 const sourceEdgeModel = new SourceEdgeModel()
+const sourceNodeGenerationModel = new SourceNodeGenerationModel()
 const sourceNodeModel = new SourceNodeModel()
 
 // Services
-const sourceNodeGenerationModel = new SourceNodeGenerationModel()
+const sourceNodeGenerationService = new SourceNodeGenerationService()
 
 // Code
 export class IntentCodeGraphMutateService {
@@ -293,6 +295,11 @@ export class IntentCodeGraphMutateService {
               sourceNodeGenerationData.prompt,
               promptHash)
 
+    // Delete old SourceNodeGenerations
+    await sourceNodeGenerationService.deleteOld(
+            prisma,
+            intentCodeCompilerData.id)  // sourceNodeId
+
     // Return
     return intentCodeCompilerData
   }
@@ -359,6 +366,11 @@ export class IntentCodeGraphMutateService {
               sourceNodeGenerationData.temperature ?? null,
               sourceNodeGenerationData.prompt,
               promptHash)
+
+    // Delete old SourceNodeGenerations
+    await sourceNodeGenerationService.deleteOld(
+            prisma,
+            intentCodeIndexedData.id)  // sourceNodeId
 
     // Return
     return intentCodeIndexedData

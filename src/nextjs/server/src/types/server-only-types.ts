@@ -8,6 +8,9 @@ export class ServerOnlyTypes {
 
   // Verbosity
   static verbosity = true
+
+  // Source node generation
+  static keepOldSourceNodeGenerations = 3
 }
 
 export enum MessageTypes {

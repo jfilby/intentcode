@@ -96,7 +96,7 @@ model SourceNode {
 model SourceNodeGeneration {
   // Note: it could be useful to track prompts (with a hash/version no?) here
   id                         String            @id @default(cuid())
-  sourceNodeId               String            @map("source_node_id") @unique
+  sourceNodeId               String            @map("source_node_id")
   sourceNode                 SourceNode        @relation(fields: [sourceNodeId], references: [id])
   techId                     String            @map("tech_id")
   tech                       Tech              @relation(fields: [techId], references: [id])
@@ -106,6 +106,7 @@ model SourceNodeGeneration {
   created                    DateTime          @default(now())
   updated                    DateTime          @updatedAt
 
+  @@unique([sourceNodeId, promptHash])
   @@map("source_node_generation")
   @@schema("public")
 }

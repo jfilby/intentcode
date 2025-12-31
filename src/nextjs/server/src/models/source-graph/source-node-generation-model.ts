@@ -56,6 +56,32 @@ export class SourceNodeGenerationModel {
     }
   }
 
+  async deleteNotInAndSourceNodeId(
+          prisma: PrismaClient,
+          keepIds: string[],
+          sourceNodeId: string) {
+
+    // Debug
+    const fnName = `${this.clName}.deleteNotInAndSourceNodeId()`
+
+    // Delete
+    try {
+      return await prisma.sourceNodeGeneration.deleteMany({
+        where: {
+          id: {
+            notIn: keepIds
+          },
+          sourceNodeId: sourceNodeId
+        }
+      })
+    } catch(error: any) {
+      if (!(error instanceof error.NotFound)) {
+        console.error(`${fnName}: error: ${error}`)
+        throw 'Prisma error'
+      }
+    }
+  }
+
   async filter(
           prisma: PrismaClient,
           techId: string | undefined = undefined) {
@@ -105,7 +131,8 @@ export class SourceNodeGenerationModel {
 
   async getByUniqueKey(
           prisma: PrismaClient,
-          sourceNodeId: string) {
+          sourceNodeId: string,
+          promptHash: string) {
 
     // Debug
     const fnName = `${this.clName}.getByUniqueKey()`
@@ -122,8 +149,52 @@ export class SourceNodeGenerationModel {
     try {
       sourceNodeGeneration = await prisma.sourceNodeGeneration.findFirst({
         where: {
-          sourceNodeId: sourceNodeId
+          sourceNodeId: sourceNodeId,
+          promptHash: promptHash
         }
+      })
+    } catch(error: any) {
+      if (!(error instanceof error.NotFound)) {
+        console.error(`${fnName}: error: ${error}`)
+        throw 'Prisma error'
+      }
+    }
+
+    // Return
+    return sourceNodeGeneration
+  }
+
+  async getLatestForSourceNodeId(
+          prisma: PrismaClient,
+          keepLatest: number,
+          sourceNodeId: string) {
+
+    // Debug
+    const fnName = `${this.clName}.getLatestForSourceNodeId()`
+
+    // Validate
+    if (sourceNodeId == null) {
+      console.error(`${fnName}: sourceNodeId == null`)
+      throw 'Validation error'
+    }
+
+    // Query
+    var sourceNodeGeneration: any = null
+
+    try {
+      sourceNodeGeneration = await prisma.sourceNodeGeneration.findFirst({
+        select: {
+          id: true
+        },
+        take: keepLatest,
+        where: {
+          sourceNodeId: sourceNodeId
+        },
+        orderBy: [
+          {
+            created: 'desc'
+          }
+        ]
       })
     } catch(error: any) {
       if (!(error instanceof error.NotFound)) {
@@ -184,12 +255,14 @@ export class SourceNodeGenerationModel {
 
     // If id isn't specified, but the unique keys are, try to get the record
     if (id == null &&
-        sourceNodeId != null) {
+        sourceNodeId != null &&
+        promptHash != null) {
 
       const sourceNodeGeneration = await
               this.getByUniqueKey(
                 prisma,
-                sourceNodeId)
+                sourceNodeId,
+                promptHash)
 
       if (sourceNodeGeneration != null) {
         id = sourceNodeGeneration.id

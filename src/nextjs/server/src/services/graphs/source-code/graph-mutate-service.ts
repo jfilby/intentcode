@@ -5,10 +5,14 @@ import { BaseDataTypes } from '@/shared/types/base-data-types'
 import { SourceNodeGenerationData, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
+import { SourceNodeGenerationService } from '../intentcode/source-node-generation-service'
 
 // Models
 const sourceNodeGenerationModel = new SourceNodeGenerationModel()
 const sourceNodeModel = new SourceNodeModel()
+
+// Services
+const sourceNodeGenerationService = new SourceNodeGenerationService()
 
 // Code
 export class SourceCodeGraphMutateService {
@@ -201,6 +205,11 @@ export class SourceCodeGraphMutateService {
               sourceNodeGenerationData.temperature ?? null,
               sourceNodeGenerationData.prompt,
               promptHash)
+
+    // Delete old SourceNodeGenerations
+    await sourceNodeGenerationService.deleteOld(
+            prisma,
+            sourceCodeFile.id)  // sourceNodeId
 
     // Return
     return sourceCodeFile
