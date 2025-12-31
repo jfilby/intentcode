@@ -49,6 +49,17 @@ model Waitlist {
   @@schema("public")
 }
 
+// IntentCode: Engine
+
+model Version {
+  id                         String            @id @default(cuid())
+  name                       String            @unique
+  version                    String
+
+  @@map("version")
+  @@schema("public")
+}
+
 // IntentCode: Source graph
 
 model SourceEdge {

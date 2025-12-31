@@ -6,13 +6,15 @@ import { ChatSettingsModel } from '@/serene-core-server/models/chat/chat-setting
 import { AgentUserModel } from '@/serene-ai-server/models/agents/agent-user-model'
 import { SereneAiSetup } from '@/serene-ai-server/services/setup/setup-service'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
-import { ServerOnlyTypes } from '@/types/server-only-types'
+import { ServerOnlyTypes, VersionNames } from '@/types/server-only-types'
+import { VersionModel } from '@/models/engine/version-model'
 import { AgentUserService } from '@/services/agents/agent-user-service'
 import { ProjectsMutateService } from '../projects/mutate-service'
 
 // Models
 const agentUserModel = new AgentUserModel()
 const chatSettingsModel = new ChatSettingsModel()
+const versionModel = new VersionModel()
 
 // Services
 const agentUserService = new AgentUserService()
@@ -94,6 +96,12 @@ export class SetupService {
           prisma: PrismaClient,
           adminUserProfile: UserProfile) {
 
-    ;
+    // Setup engine version
+    const engineVersion = await
+            versionModel.upsert(
+              prisma,
+              undefined,  // id
+              VersionNames.engine,
+              ServerOnlyTypes.engineVersion)
   }
 }

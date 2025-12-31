@@ -1,5 +1,8 @@
 export class ServerOnlyTypes {
 
+  // Versions
+  static engineVersion = '0.0.1'
+
   // Instance types
   static projectInstanceType = 'P'
 
@@ -21,4 +24,8 @@ export enum MessageTypes {
 export enum LlmEnvNames {
   compilerEnvName = 'COMPILER_LLM_VARIANT_NAME',
   indexerEnvName = 'INDEXER_LLM_VARIANT_NAME'
+}
+
+export enum VersionNames {
+  engine = 'Engine'
 }
