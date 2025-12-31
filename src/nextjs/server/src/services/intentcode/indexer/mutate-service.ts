@@ -1,5 +1,6 @@
 const fs = require('fs')
-import { PrismaClient, SourceNode } from '@prisma/client'
+import { blake3 } from '@noble/hashes/blake3'
+import { PrismaClient, SourceNode, Tech } from '@prisma/client'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { IndexerMutateLlmService } from './llm-service'
 import { CustomError } from '@/serene-core-server/types/errors'
@@ -7,12 +8,18 @@ import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir'
 import { LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
-import { SourceNodeGenerationData, SourceNodeNames } from '@/types/source-graph-types'
+import { SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
+import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
+import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { IndexerTargetLangService } from './target-lang-service'
 import { IntentCodeFilenameService } from '../../utils/filename-service'
 import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service'
 import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
+
+// Models
+const sourceNodeGenerationModel = new SourceNodeGenerationModel()
+const sourceNodeModel = new SourceNodeModel()
 
 // Services
 const fsUtilsService = new FsUtilsService()
@@ -32,6 +39,49 @@ export class IndexerMutateService {
   clName = 'IndexerMutateService'
 
   // Code
+  async getExistingJsonContent(
+          prisma: PrismaClient,
+          intentFileSourceNode: SourceNode,
+          tech: Tech,
+          prompt: string) {
+
+    // Debug
+    const fnName = `${this.clName}.getExistingJsonContent()`
+
+    // Try to get existing indexer data SourceNode
+    const indexerDataSourceNode = await
+            sourceNodeModel.getByUniqueKey(
+              prisma,
+              intentFileSourceNode.id,  // parentId
+              intentFileSourceNode.instanceId,
+              SourceNodeTypes.intentCodeIndexedData,
+              SourceNodeNames.indexedData)
+
+    if (indexerDataSourceNode == null) {
+      return null
+    }
+
+    // Get promptHash
+    const promptHash = blake3(JSON.stringify(prompt)).toString()
+
+    // Try to get existing SourceNodeGeneration
+    const sourceNodeGeneration = await
+            sourceNodeGenerationModel.getByUniqueKey(
+              prisma,
+              indexerDataSourceNode.id,
+              tech.id,
+              promptHash)
+
+    if (sourceNodeGeneration == null ||
+        sourceNodeGeneration.prompt !== prompt) {
+
+      return
+    }
+
+    // Return jsonContent
+    return sourceNodeGeneration.jsonContent
+  }
+
   async indexFileWithLlm(
           prisma: PrismaClient,
           intentCodeProjectNode: SourceNode,
@@ -85,13 +135,28 @@ export class IndexerMutateService {
         targetLang,
         intentCode)
 
+    // Already generated?
+    var jsonContent = await
+          this.getExistingJsonContent(
+            prisma,
+            intentFileSourceNode,
+            tech,
+            prompt)
+
     // Run
-    const llmResults = await
-            indexerMutateLlmService.llmRequest(
-              prisma,
-              adminUserProfile.id,
-              tech,
-              prompt)
+    if (jsonContent == null) {
+
+      const llmResults = await
+              indexerMutateLlmService.llmRequest(
+                prisma,
+                adminUserProfile.id,
+                tech,
+                prompt)
+
+      jsonContent = {
+        astTree: llmResults.queryResults.json.astTree
+      }
+    }
 
     // Define SourceNodeGeneration
     const sourceNodeGenerationData: SourceNodeGenerationData = {
@@ -105,7 +170,7 @@ export class IndexerMutateService {
             intentFileSourceNode,
             sourceNodeGenerationData,
             fileModifiedTime,
-            llmResults.queryResults.json)
+            jsonContent)
 
     // Return
     return
@@ -242,16 +307,12 @@ export class IndexerMutateService {
           intentFileSourceNode: SourceNode,
           sourceNodeGenerationData: SourceNodeGenerationData,
           fileModifiedTime: Date,
-          json: any) {
+          jsonContent: any) {
 
     // Debug
     const fnName = `${this.clName}.processQueryResults()`
 
     // Validate
-    if (json.astTree == null) {
-      return
-    }
-
     if (intentFileSourceNode.jsonContent == null) {
       throw new CustomError(
         `${fnName}: intentFileSourceNode.jsonContent == null`)
@@ -260,11 +321,6 @@ export class IndexerMutateService {
     if ((intentFileSourceNode.jsonContent as any).relativePath == null) {
       throw new CustomError(
         `${fnName}: intentFileSourceNode.jsonContent.relativePath == null`)
-    }
-
-    // Define jsonContent with relative path of the file
-    const jsonContent = {
-      astTree: json.astTree
     }
 
     // Upsert the indexed data node

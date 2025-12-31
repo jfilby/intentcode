@@ -113,19 +113,14 @@ export class ProjectCompileService {
               fsUtilsService.getLastUpdateTime(compileEntry.intentCodeFilename)
 
       // Compile
-      const compileResults = await
-              compilerMutateService.run(
-                prisma,
-                intentCodeProjectNode,
-                projectSourceNode,
-                compileEntry.intentCodeFilename,
-                fileModifiedTime,
-                compileEntry.targetLang,
-                compileEntry.intentCode)
-
-        // Debug
-        console.log(`${fnName}: compileResults: ` +
-                    JSON.stringify(compileResults))
+      await compilerMutateService.run(
+              prisma,
+              intentCodeProjectNode,
+              projectSourceNode,
+              compileEntry.intentCodeFilename,
+              fileModifiedTime,
+              compileEntry.targetLang,
+              compileEntry.intentCode)
     }
   }
 }

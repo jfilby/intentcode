@@ -135,11 +135,16 @@ export class CompilerMutateLlmService {
       }
     }
 
+    // Get compiler metadata only (without the targetSource)
+    const compilerData = structuredClone(queryResults.json)
+    compilerData.targetSource = undefined
+
     // OK
     return {
       status: true,
       message: undefined,
-      queryResults: queryResults
+      content: queryResults.json.targetSource,
+      jsonContent: compilerData
     }
   }
 

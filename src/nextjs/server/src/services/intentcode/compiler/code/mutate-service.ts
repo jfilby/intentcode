@@ -1,10 +1,13 @@
-import { PrismaClient, SourceNode } from '@prisma/client'
+import { blake3 } from '@noble/hashes/blake3'
+import { PrismaClient, SourceNode, Tech } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-service'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
-import { SourceNodeNames, SourceNodeGenerationData } from '@/types/source-graph-types'
+import { SourceNodeNames, SourceNodeGenerationData, SourceNodeTypes } from '@/types/source-graph-types'
+import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
+import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { CompilerMutateLlmService } from './llm-service'
 import { CompilerTargetLangService } from './target-lang-service'
 import { FsUtilsService } from '@/services/utils/fs-utils-service'
@@ -12,6 +15,10 @@ import { GraphQueryService } from '@/services/graphs/intentcode/graph-query-serv
 import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service'
 import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
 import { SourceCodePathGraphMutateService } from '@/services/graphs/source-code/path-graph-mutate-service'
+
+// Models
+const sourceNodeGenerationModel = new SourceNodeGenerationModel()
+const sourceNodeModel = new SourceNodeModel()
 
 // Services
 const compilerMutateLlmService = new CompilerMutateLlmService()
@@ -31,6 +38,58 @@ export class CompilerMutateService {
   clName = 'CompilerMutateService'
 
   // Code
+  async getExistingJsonContent(
+          prisma: PrismaClient,
+          intentFileSourceNode: SourceNode,
+          tech: Tech,
+          prompt: string) {
+
+    // Debug
+    const fnName = `${this.clName}.getExistingJsonContent()`
+
+    // Try to get existing compiler data SourceNode
+    const compilerDataSourceNode = await
+            sourceNodeModel.getByUniqueKey(
+              prisma,
+              intentFileSourceNode.id,  // parentId
+              intentFileSourceNode.instanceId,
+              SourceNodeTypes.intentCodeCompilerData,
+              SourceNodeNames.compilerData)
+
+    if (compilerDataSourceNode == null) {
+      return {
+        content: undefined,
+        jsonContent: undefined
+      }
+    }
+
+    // Get promptHash
+    const promptHash = blake3(JSON.stringify(prompt)).toString()
+
+    // Try to get existing SourceNodeGeneration
+    const sourceNodeGeneration = await
+            sourceNodeGenerationModel.getByUniqueKey(
+              prisma,
+              compilerDataSourceNode.id,
+              tech.id,
+              promptHash)
+
+    if (sourceNodeGeneration == null ||
+        sourceNodeGeneration.prompt !== prompt) {
+
+      return {
+        content: undefined,
+        jsonContent: undefined
+      }
+    }
+
+    // Return jsonContent
+    return {
+      content: sourceNodeGeneration.content,
+      jsonContent: sourceNodeGeneration.jsonContent
+    }
+  }
+
   getPrompt(
     targetLang: string,
     intentCode: string,
@@ -165,13 +224,14 @@ export class CompilerMutateService {
           projectSourceNode: SourceNode,
           sourceNodeGenerationData: SourceNodeGenerationData,
           fileModifiedTime: Date,
-          queryResults: any) {
+          content: string,
+          jsonContent: any) {
 
     // Debug
     const fnName = `${this.clName}.run()`
 
     // Write source file (if any)
-    if (queryResults.json.targetSource != null) {
+    if (content != null) {
 
       // Get paths
       const projectSourcePath = (projectSourceNode.jsonContent as any).path
@@ -208,19 +268,15 @@ export class CompilerMutateService {
               prisma,
               projectSourceNode,
               fullPath,
-              queryResults.json.targetSource,
+              content,
               sourceNodeGenerationData)
 
       // Write source file
       await fsUtilsService.writeTextFile(
               fullPath,
-              queryResults.json.targetSource,
+              content,
               true)  // createMissingDirs
     }
-
-    // Get compiler metadata only (without the targetSource)
-    const compilerData = structuredClone(queryResults.json)
-    compilerData.targetSource = undefined
 
     // Upsert the compiler data node
     const compilerDataSourceNode = await
@@ -229,7 +285,7 @@ export class CompilerMutateService {
               intentFileSourceNode.instanceId,
               intentFileSourceNode,  // parentNode
               SourceNodeNames.compilerData,
-              compilerData,          // jsonContent
+              jsonContent,
               sourceNodeGenerationData,
               fileModifiedTime)
   }
@@ -300,13 +356,27 @@ export class CompilerMutateService {
         intentCode,
         indexedDataSourceNodes)
 
+    // Already generated?
+    var { content, jsonContent } = await
+          this.getExistingJsonContent(
+            prisma,
+            intentFileSourceNode,
+            tech,
+            prompt)
+
     // Run
-    const llmResults = await
-            compilerMutateLlmService.llmRequest(
-              prisma,
-              adminUserProfile.id,
-              tech,
-              prompt)
+    if (jsonContent == null) {
+
+      var status = false
+      var message: string | undefined = undefined;
+
+      ({ status, message, content, jsonContent } = await
+              compilerMutateLlmService.llmRequest(
+                prisma,
+                adminUserProfile.id,
+                tech,
+                prompt))
+    }
 
     // Define SourceNodeGeneration
     const sourceNodeGenerationData: SourceNodeGenerationData = {
@@ -321,9 +391,7 @@ export class CompilerMutateService {
             projectSourceNode,
             sourceNodeGenerationData,
             fileModifiedTime,
-            llmResults.queryResults)
-
-    // Return
-    return llmResults
+            content,
+            jsonContent)
   }
 }

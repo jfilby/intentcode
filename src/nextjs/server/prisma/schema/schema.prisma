@@ -121,7 +121,7 @@ model SourceNodeGeneration {
   created                    DateTime          @default(now())
   updated                    DateTime          @updatedAt
 
-  @@unique([sourceNodeId, promptHash])
+  @@unique([sourceNodeId, techId, promptHash])
   @@map("source_node_generation")
   @@schema("public")
 }

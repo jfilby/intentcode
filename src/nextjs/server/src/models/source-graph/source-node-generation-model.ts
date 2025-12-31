@@ -140,6 +140,7 @@ export class SourceNodeGenerationModel {
   async getByUniqueKey(
           prisma: PrismaClient,
           sourceNodeId: string,
+          techId: string,
           promptHash: string) {
 
     // Debug
@@ -158,6 +159,7 @@ export class SourceNodeGenerationModel {
       sourceNodeGeneration = await prisma.sourceNodeGeneration.findFirst({
         where: {
           sourceNodeId: sourceNodeId,
+          techId: techId,
           promptHash: promptHash
         }
       })
@@ -174,7 +176,7 @@ export class SourceNodeGenerationModel {
 
   async getLatestForSourceNodeId(
           prisma: PrismaClient,
-          keepLatest: number,
+          count: number,
           sourceNodeId: string) {
 
     // Debug
@@ -190,11 +192,11 @@ export class SourceNodeGenerationModel {
     var sourceNodeGeneration: any = null
 
     try {
-      sourceNodeGeneration = await prisma.sourceNodeGeneration.findFirst({
+      sourceNodeGeneration = await prisma.sourceNodeGeneration.findMany({
         select: {
           id: true
         },
-        take: keepLatest,
+        take: count,
         where: {
           sourceNodeId: sourceNodeId
         },
@@ -276,12 +278,14 @@ export class SourceNodeGenerationModel {
     // If id isn't specified, but the unique keys are, try to get the record
     if (id == null &&
         sourceNodeId != null &&
+        techId != null &&
         promptHash != null) {
 
       const sourceNodeGeneration = await
               this.getByUniqueKey(
                 prisma,
                 sourceNodeId,
+                techId,
                 promptHash)
 
       if (sourceNodeGeneration != null) {
