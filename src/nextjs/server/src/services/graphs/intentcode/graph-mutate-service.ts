@@ -109,7 +109,7 @@ export class IntentCodeGraphMutateService {
             SourceNodeTypes.intentCodeFile,
             name)
 
-    console.log(`${fnName}: intentCodeFile: ` + JSON.stringify(intentCodeFile))
+    // console.log(`${fnName}: intentCodeFile: ` + JSON.stringify(intentCodeFile))
 
     if (intentCodeFile != null) {
       return intentCodeFile
