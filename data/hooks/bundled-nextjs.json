@@ -11,7 +11,7 @@
     }
   ],
   "hooks": {
-    "new-project": {
+    "intentcode/new-project": {
       "commands": [
         "npx create-next-app@latest ${project-name} --ts --eslint --app --src-dir --use-npm"
       ],
@@ -24,7 +24,7 @@
         }
       }
     },
-    "install-dependencies": {
+    "intentcode/install-dependencies": {
       "commands": [
         "cd ${project-dir}",
         "npm install"
@@ -37,7 +37,7 @@
         }
       }
     },
-    "update-dependencies": {
+    "intentcode/update-dependencies": {
       "commands": [
         "cd ${project-dir}",
         "npm update"
