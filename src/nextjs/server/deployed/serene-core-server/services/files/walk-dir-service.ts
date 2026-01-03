@@ -9,7 +9,9 @@ export class WalkDirService {
   // Code
   async walkDir(
           dir: string,
-          fileList: string[] = []): Promise<any> {
+          fileList: string[] = [],
+          recursive: boolean = true,
+          fileExts: string[] | undefined = undefined): Promise<any> {
 
     // Debug
     const fnName = `${this.clName}.walkDir()`
@@ -24,10 +26,25 @@ export class WalkDirService {
       const filePath = path.join(dir, file)
       const stat = await fs.promises.stat(filePath)
 
-      // If a directory, call this function
+      // If a directory, call this function (if recursive)
       if (stat.isDirectory()) {
-        await this.walkDir(filePath, fileList)
+
+        // Directories
+        if (recursive === true) {
+          await this.walkDir(filePath, fileList)
+        }
+
       } else {
+
+        // Files
+        // In fileExts list?
+        if (fileExts != null &&
+            !fileExts.includes(path.extname())) {
+
+          continue
+        }
+
+        // Add file to list
         fileList.push(filePath)
       }
     }

@@ -147,7 +147,7 @@ export class UserModel {
         throw 'Prisma error'
       }
 
-      if (name == undefined) {
+      if (name === undefined) {
         console.error(`${fnName}: id is null and name is undefined`)
         throw 'Prisma error'
       }
