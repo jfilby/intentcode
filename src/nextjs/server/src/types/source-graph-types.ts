@@ -1,3 +1,5 @@
+import { SourceNode } from '@prisma/client'
+
 export enum SourceEdgeNames {
 
   implements = 'implements'
@@ -43,8 +45,13 @@ export enum SourceNodeNames {
 }
 
 export interface SourceNodeGenerationData {
-
   techId: string
   temperature?: number
   prompt: string
+}
+
+export interface ExtensionsData {
+  extensionNodes: SourceNode[]
+  skillNodes: SourceNode[]
+  hooksNodes: SourceNode[]
 }
