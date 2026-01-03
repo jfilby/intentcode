@@ -25,13 +25,21 @@ export enum SourceNodeTypes {
   sourceCodeDir = 'Source code dir',
 
   // has parents: sourceCodeProject/sourceCodeDir
-  sourceCodeFile = 'Source code file'
+  sourceCodeFile = 'Source code file',
+
+  // Extensions
+  extensionsType = 'Extensions',
+  extensionType = 'Extension',
+  hooksType = 'Hooks',
+  skillType = 'Skill',
 }
 
 export enum SourceNodeNames {
 
   compilerData = 'Compiler data',
-  indexedData = 'Indexed data'
+  indexedData = 'Indexed data',
+
+  extensionsName = 'Extensions'
 }
 
 export interface SourceNodeGenerationData {

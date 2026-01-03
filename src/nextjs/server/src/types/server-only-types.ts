@@ -14,6 +14,14 @@ export class ServerOnlyTypes {
 
   // Source node generation
   static keepOldSourceNodeGenerations = 3
+
+  // Libraries related
+  static indexerAutoAddLibraries = true
+  static compilerAutoAddLibraries = true
+}
+
+export enum InstanceSettingNames {
+  projectPath = 'project path'
 }
 
 export enum MessageTypes {

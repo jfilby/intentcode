@@ -1,10 +1,12 @@
 import { PrismaClient, UserProfile } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
+import { LoadExternalExtensionsService } from '../extensions/extension/load-external-service'
 import { ProjectsMutateService } from '../projects/mutate-service'
 import { ProjectCompileService } from '../projects/compile-service'
 import { ProjectSetupService } from '../projects/setup-project'
 
 // Services
+const loadExternalExtensionsService = new LoadExternalExtensionsService()
 const projectsMutateService = new ProjectsMutateService()
 const projectCompileService = new ProjectCompileService()
 const projectSetupService = new ProjectSetupService()
@@ -28,6 +30,12 @@ export class CalcTestsService {
               prisma,
               adminUserProfile.id,
               this.projectName)
+
+    // Load bundled extension
+    await loadExternalExtensionsService.loadPath(
+            prisma,
+            instance.id,
+            `${process.env.BASE_DATA_PATH}/bundled-extensions`)
 
     // Setup the project
     const projectPath = `${process.env.LOCAL_TESTS_PATH}/calc`

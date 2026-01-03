@@ -1,5 +1,5 @@
 ---
-name: bundled-next.js
+name: Bundled Next.js v15+
 description: Next.js skill
 
 context:

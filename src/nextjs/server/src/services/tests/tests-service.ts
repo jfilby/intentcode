@@ -1,8 +1,9 @@
 import { PrismaClient, UserProfile } from '@prisma/client'
-import { CustomError } from '@/serene-core-server/types/errors'
+import { ConsoleService } from '@/serene-core-server/services/console/service'
 import { CalcTestsService } from './calc-tests-service'
 
 // Services
+const consoleService = new ConsoleService()
 const calcTestsService = new CalcTestsService()
 
 // Class
@@ -16,10 +17,29 @@ export class TestsService {
               regularTestUserProfile: UserProfile,
               adminUserProfile: UserProfile) {
 
-    // Run the calc test
-    await calcTestsService.tests(
-            prisma,
-            regularTestUserProfile,
-            adminUserProfile)
+    // Tests menu
+    console.log(`Tests`)
+    console.log(`-----`)
+    console.log(`1. Calc project`)
+
+    // Get test to run
+    const testNo = await
+            consoleService.askQuestion('> ')
+
+    // Run the selected test
+    switch (testNo) {
+
+      case '1': {
+        await calcTestsService.tests(
+                prisma,
+                regularTestUserProfile,
+                adminUserProfile)
+        return
+      }
+
+      default: {
+        console.log(`Test not found`)
+      }
+    }
   }
 }

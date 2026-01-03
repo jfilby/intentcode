@@ -4,7 +4,7 @@ const path = require('path')
 export class WalkDirService {
 
   // Consts
-  clName = ''
+  clName = 'WalkDirService'
 
   // Code
   async walkDir(
@@ -39,7 +39,7 @@ export class WalkDirService {
         // Files
         // In fileExts list?
         if (fileExts != null &&
-            !fileExts.includes(path.extname())) {
+            !fileExts.includes(path.extname(filePath))) {
 
           continue
         }

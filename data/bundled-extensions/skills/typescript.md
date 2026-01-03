@@ -1,5 +1,5 @@
 ---
-name: bundled-typescript
+name: Bundled TypeScript
 description: TypeScript skill
 
 context:

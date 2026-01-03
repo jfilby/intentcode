@@ -6,6 +6,7 @@ import { prisma } from './db'
 import { TechProviderMutateService } from '@/serene-core-server/services/tech/tech-provider-mutate-service'
 import { UsersService } from '../deployed/serene-core-server/services/users/service'
 import { ServerTestTypes } from './types/server-test-types'
+import { LoadExternalExtensionsService } from './services/extensions/extension/load-external-service'
 import { SetupService } from './services/setup/setup'
 import { TestsService } from './services/tests/tests-service'
 
@@ -16,6 +17,7 @@ import { TestsService } from './services/tests/tests-service'
   const fnName = 'cli.ts'
 
   // Consts
+  const loadExtensionsCommand = 'load-extensions'
   const loadTechProviderApiKeysCommand = 'load-tech-provider-api-keys'
   const setupCommand = 'setup'
   const testsCommand = 'tests'
@@ -32,6 +34,7 @@ import { TestsService } from './services/tests/tests-service'
   console.log(`${fnName}: comand to run: ${command}`)
 
   // Services
+  const loadExternalExtensionsService = new LoadExternalExtensionsService()
   const usersService = new UsersService()
   const setupService = new SetupService()
   const techProviderMutateService = new TechProviderMutateService()
@@ -53,6 +56,13 @@ import { TestsService } from './services/tests/tests-service'
 
   // Run the chosen command
   switch (command) {
+
+    case loadExtensionsCommand: {
+
+      await loadExternalExtensionsService.promptForAndLoadPath(prisma)
+
+      break
+    }
 
     case loadTechProviderApiKeysCommand: {
 

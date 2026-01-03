@@ -1,7 +1,7 @@
 const fs = require('fs')
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
-import { WalkDirService } from '@/serene-core-server/services/files/walk-dir'
+import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
 import { fileExtToLanguageName } from '../../types/source-code-types'
 import { CompilerMutateService } from '../intentcode/compiler/code/mutate-service'
 import { FsUtilsService } from '../utils/fs-utils-service'
