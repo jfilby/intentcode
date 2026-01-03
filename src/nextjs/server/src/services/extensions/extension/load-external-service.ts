@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { ConsoleService } from '@/serene-core-server/services/console/service'
 import { ExtensionMutateService } from './mutate-service'
+import { GraphsDeleteService } from '@/services/graphs/general/delete-service'
 import { LoadExternalHooksService } from '../hooks/load-external-service'
 import { LoadExternalSkillsService } from '../skills/load-external-service'
 import { ProjectsQueryService } from '../../projects/query-service'
@@ -11,6 +12,7 @@ import { ProjectsQueryService } from '../../projects/query-service'
 // Services
 const consoleService = new ConsoleService()
 const extensionMutateService = new ExtensionMutateService()
+const graphsDeleteService = new GraphsDeleteService()
 const loadExternalHooksService = new LoadExternalHooksService()
 const loadExternalSkillsService = new LoadExternalSkillsService()
 const projectsQueryService = new ProjectsQueryService()
@@ -83,8 +85,16 @@ export class LoadExternalExtensionsService {
               instanceId,
               loadPath)
 
+    // Validate
+    if (extensionNode == null) {
+      throw new CustomError(`${fnName}: extensionNode == null`)
+    }
+
     // Delete any nodes under the extension
-    ;
+    await graphsDeleteService.deleteSourceNodeCascade(
+            prisma,
+            extensionNode.id,
+            false)  // deleteThisNode
 
     // Load skills
     await loadExternalSkillsService.loadFromPath(
