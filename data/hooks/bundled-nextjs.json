@@ -1,0 +1,54 @@
+{
+  "name": "Bundled Next.js v15+ hooks",
+  "context": [
+    {
+      "any-dependency": [
+        {
+          "name": "nextjs",
+          "min-version": "15"
+        }
+      ]
+    }
+  ],
+  "hooks": {
+    "new-project": {
+      "commands": [
+        "npx create-next-app@latest ${project-name} --ts --eslint --app --src-dir --use-npm"
+      ],
+      "variables": {
+        "project-name": {
+          "required": true,
+          "type": "string",
+          "description":
+            "Name of the project, creates a directory with this name"
+        }
+      }
+    },
+    "install-dependencies": {
+      "commands": [
+        "cd ${project-dir}",
+        "npm install"
+      ],
+      "variables": {
+        "project-dir": {
+          "required": true,
+          "type": "path",
+          "description": "Project directory"
+        }
+      }
+    },
+    "update-dependencies": {
+      "commands": [
+        "cd ${project-dir}",
+        "npm update"
+      ],
+      "variables": {
+        "project-dir": {
+          "required": true,
+          "type": "path",
+          "description": "Project directory"
+        }
+      }
+    }
+  }
+}
