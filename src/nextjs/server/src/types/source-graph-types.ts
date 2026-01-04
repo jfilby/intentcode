@@ -50,6 +50,8 @@ export interface SourceNodeGenerationData {
   prompt: string
 }
 
+// Extensions
+
 export interface ExtensionsData {
   extensionNodes: SourceNode[]
   skillNodes: SourceNode[]
