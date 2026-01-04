@@ -2,21 +2,21 @@
   "name": "Bundled Next.js v15+ hooks",
   "context": [
     {
-      "any-dependency": [
+      "anyDependency": [
         {
           "name": "nextjs",
-          "min-version": "15"
+          "minVersion": "15"
         }
       ]
     }
   ],
   "hooks": {
-    "intentcode/new-project": {
+    "intentcode/newProject": {
       "commands": [
-        "npx create-next-app@latest ${project-name} --ts --eslint --app --src-dir --use-npm"
+        "npx create-next-app@latest ${projectName} --ts --eslint --app --src-dir --use-npm"
       ],
       "variables": {
-        "project-name": {
+        "projectName": {
           "required": true,
           "type": "string",
           "description":
@@ -24,26 +24,26 @@
         }
       }
     },
-    "intentcode/install-dependencies": {
+    "intentcode/installDependencies": {
       "commands": [
-        "cd ${project-dir}",
+        "cd ${projectDir}",
         "npm install"
       ],
       "variables": {
-        "project-dir": {
+        "projectDir": {
           "required": true,
           "type": "path",
           "description": "Project directory"
         }
       }
     },
-    "intentcode/update-dependencies": {
+    "intentcode/updateDependencies": {
       "commands": [
-        "cd ${project-dir}",
+        "cd ${projectDir}",
         "npm update"
       ],
       "variables": {
-        "project-dir": {
+        "projectDir": {
           "required": true,
           "type": "path",
           "description": "Project directory"

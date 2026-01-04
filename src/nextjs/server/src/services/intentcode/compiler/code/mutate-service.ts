@@ -94,23 +94,21 @@ export class CompilerMutateService {
 
   getPrompt(
     extensionsData: ExtensionsData,
-    fullPath: string,
-    targetLang: string,
+    targetFileExt: string,
     intentCode: string,
     indexedDataSourceNodes: SourceNode[]) {
 
     // Debug
     const fnName = `${this.clName}.getPrompt()`
 
-    // Get file ext
-    const fileExt = path.extname(fullPath)
-
     // Get rules by targetLang
     const targetLangPrompting =
             compilerQueryService.getSkillPrompting(
               extensionsData,
-              fileExt,
-              targetLang)
+              targetFileExt)
+
+    // Debug
+    console.log(`${fnName}: targetLangPrompting: ${targetLangPrompting}`)
 
     // Start the prompt
     var prompt =
@@ -123,8 +121,8 @@ export class CompilerMutateService {
           `   don't return any target source.\n` +
           `3. Try to fix and errors and warnings in the fixedIntentCode ` +
           `   field.\n` +
-          `4. Convert the input IntentCode (if no errors) to ${targetLang} ` +
-          `   source code.\n` +
+          `4. Convert the input IntentCode (if no errors) to ` +
+          `   ${targetFileExt} source code.\n` +
           `5. Use the indexed data for this file as a structural starting ` +
           `   point. Imports depend on this to be accurate.\n` +
           `\n` +
@@ -182,9 +180,10 @@ export class CompilerMutateService {
           `\n`
 
     // Target lang prompting
-    if (targetLangPrompting != null) {
+    if (targetLangPrompting.length > 0) {
+
       prompt +=
-        `## ${targetLang} specific\n` +
+        `## ${targetFileExt} specific\n` +
         targetLangPrompting +
         `\n`
     }
@@ -306,7 +305,7 @@ export class CompilerMutateService {
             projectSourceNode: SourceNode,
             fullPath: string,
             fileModifiedTime: Date,
-            targetLang: string,
+            targetFileExt: string,
             intentCode: string) {
 
     // Debug
@@ -364,8 +363,7 @@ export class CompilerMutateService {
     const prompt =
       this.getPrompt(
         buildData.extensionsData,
-        fullPath,
-        targetLang,
+        targetFileExt,
         intentCode,
         indexedDataSourceNodes)
 

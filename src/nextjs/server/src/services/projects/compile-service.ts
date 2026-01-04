@@ -2,7 +2,6 @@ const fs = require('fs')
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
-import { fileExtToLanguageName } from '../../types/source-code-types'
 import { CompilerMutateService } from '../intentcode/compiler/code/mutate-service'
 import { FsUtilsService } from '../utils/fs-utils-service'
 import { GraphQueryService } from '../graphs/intentcode/graph-query-service'
@@ -50,11 +49,11 @@ export class ProjectCompileService {
     for (const intentCodeFilename of intentCodeList) {
 
       // Get the target file extension from the IntentCode filename
-      const targetLangFileExt =
-              intentCodeFilenameService.getTargetLang(intentCodeFilename)
+      const targetFileExt =
+              intentCodeFilenameService.getTargetFileExt(intentCodeFilename)
 
       // Validate
-      if (targetLangFileExt == null) {
+      if (targetFileExt == null) {
 
         console.warn(
           `${fnName}: can't get target file extension from intentCode ` +
@@ -63,21 +62,9 @@ export class ProjectCompileService {
         continue
       }
 
-      if (!Object.hasOwn(fileExtToLanguageName, targetLangFileExt)) {
-
-        console.warn(
-         `${fnName}: can't get language name from target file extension: ` +
-          `${targetLangFileExt}`)
-
-        continue
-      }
-
-      // Get the target lang
-      const targetLang = fileExtToLanguageName[targetLangFileExt]
-
       // Add to buildFileList
       buildFileList.push({
-        targetLang: targetLang,
+        targetFileExt: targetFileExt,
         intentCodeFilename: intentCodeFilename
       })
     }
@@ -126,7 +113,7 @@ export class ProjectCompileService {
               projectSourceNode,
               buildFile.intentCodeFilename,
               fileModifiedTime,
-              buildFile.targetLang,
+              buildFile.targetFileExt,
               intentCode)
     }
   }
@@ -167,7 +154,7 @@ export class ProjectCompileService {
               intentCodeProjectNode,
               buildFile.intentCodeFilename,
               fileModifiedTime,
-              buildFile.targetLang,
+              buildFile.targetFileExt,
               intentCode)
     }
   }

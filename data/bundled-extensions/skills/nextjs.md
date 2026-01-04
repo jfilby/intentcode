@@ -3,9 +3,9 @@ name: Bundled Next.js v15+
 description: Next.js skill
 
 context:
-  any-dependency:
+  anyDependency:
     - name: nextjs
-      min-version: 15
+      minVersion: 15
 ---
 
 # Bundled Next.js

@@ -90,7 +90,7 @@ export class IndexerMutateService {
           intentCodeProjectNode: SourceNode,
           fullPath: string,
           fileModifiedTime: Date,
-          targetLang: string,
+          targetFileExt: string,
           intentCode: string) {
 
     // Debug
@@ -136,8 +136,7 @@ export class IndexerMutateService {
     const prompt =
       this.getPrompt(
         buildData.extensionsData,
-        fullPath,
-        targetLang,
+        targetFileExt,
         intentCode)
 
     // Already generated?
@@ -203,11 +202,11 @@ export class IndexerMutateService {
       const fileModifiedTime = await
               fsUtilsService.getLastUpdateTime(intentCodeFilename)
 
-      // Get targetLang
-      const targetLang =
-              intentCodeFilenameService.getTargetLang(intentCodeFilename)
+      // Get targetFileExt
+      const targetFileExt =
+              intentCodeFilenameService.getTargetFileExt(intentCodeFilename)
 
-      if (targetLang == null) {
+      if (targetFileExt == null) {
         console.warn(`${fnName}: skipping file: ${intentCodeFilename}`)
         continue
       }
@@ -226,25 +225,20 @@ export class IndexerMutateService {
               intentCodeFilename,
               fileModifiedTime,
               intentCode,
-              targetLang)
+              targetFileExt)
     }
   }
 
   getPrompt(
     extensionsData: ExtensionsData,
-    fullPath: string,
-    targetLang: string,
+    targetFileExt: string,
     intentCode: string) {
-
-    // Get file ext
-    const fileExt = path.extname(fullPath)
 
     // Get rules by targetLang
     const targetLangPrompting =
             compilerQueryService.getSkillPrompting(
               extensionsData,
-              fileExt,
-              targetLang)
+              targetFileExt)
 
     // Start the prompt
     var prompt = 
@@ -300,9 +294,10 @@ export class IndexerMutateService {
           `\n`
 
     // Target lang prompting
-    if (targetLangPrompting != null) {
+    if (targetLangPrompting.length > 0) {
+
       prompt +=
-        `## ${targetLang} specific\n` +
+        `## ${targetFileExt} specific\n` +
         targetLangPrompting +
         `\n`
     }
