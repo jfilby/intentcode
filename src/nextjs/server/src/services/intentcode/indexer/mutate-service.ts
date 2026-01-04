@@ -281,6 +281,7 @@ export class IndexerMutateService {
           `    {\n` +
           `      "astNode": "class",\n` +
           `      "name": "..",\n` +
+          `      "attributes": [".."],\n` +
           `      "children": [\n` +
           `        {\n` +
           `          "astNode": "function",\n` +
