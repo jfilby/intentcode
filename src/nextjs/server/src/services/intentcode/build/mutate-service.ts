@@ -18,22 +18,22 @@ export class BuildMutateService {
   clName = 'BuildMutateService'
 
   // Code
-  addBuildStageTypes(buildStages: BuildStageType[]) {
-
-    buildStages.push(BuildStageType.updateDeps)
-    buildStages.push(BuildStageType.index)
-    buildStages.push(BuildStageType.compile)
-  }
-
   createNextBuildStage(buildData: BuildData) {
+
+    // Debug
+    const fnName = `${this.clName}.createNextBuildStage()`
 
     // Get buildNo
     const buildNo = buildData.curBuildNo + 1
 
     // Validate
-    if (buildNo > buildData.buildStages.length) {
+    if (buildNo > buildData.buildStageTypes.length) {
 
       console.log(`No more build stages`)
+
+      // console.log(`${fnName}: ${buildNo} > ` +
+      //             `${buildData.buildStageTypes.length}`)
+
       return null
     }
 
@@ -58,12 +58,20 @@ export class BuildMutateService {
     return buildStage
   }
 
+  getBuildStageTypes() {
+
+    return [
+      BuildStageType.updateDeps,
+      BuildStageType.index,
+      BuildStageType.compile
+    ]
+  }
+
   initBuildData(): BuildData {
 
     // Create initial build stages
-    var buildStageTypes: BuildStageType[] = []
-
-    this.addBuildStageTypes(buildStageTypes)
+    var buildStageTypes: BuildStageType[] =
+          this.getBuildStageTypes()
 
     // Initial builds array
     const buildStages: BuildStage[] = []
@@ -103,6 +111,9 @@ export class BuildMutateService {
 
     // Init BuildData
     const buildData = this.initBuildData()
+
+    // Debug
+    console.log(`${fnName}: buildData: ` + JSON.stringify(buildData))
 
     // Iterate until completed
     var nextIter = true
@@ -187,7 +198,8 @@ export class BuildMutateService {
       }
 
       // Add a fresh set of build stage types, which start with updating deps
-      this.addBuildStageTypes(buildData.buildStageTypes)
+      buildData.buildStageTypes =
+        buildData.buildStageTypes.concat(this.getBuildStageTypes())
     }
 
     // Return

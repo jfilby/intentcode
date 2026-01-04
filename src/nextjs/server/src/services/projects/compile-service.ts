@@ -95,6 +95,8 @@ export class ProjectCompileService {
     // Debug
     const fnName = `${this.clName}.runCompileBuildStage()`
 
+    console.log(`Compiling IntentCode..`)
+
     // Prep for stage
     const { projectSourceNode, buildFileList } = await
             this.prepForIntentCodeStage(
@@ -132,6 +134,8 @@ export class ProjectCompileService {
 
     // Debug
     const fnName = `${this.clName}.runIndexBuildStage()`
+
+    console.log(`Indexing IntentCode..`)
 
     // Prep for stage
     const { projectSourceNode, buildFileList } = await
