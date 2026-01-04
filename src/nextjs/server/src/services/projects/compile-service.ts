@@ -23,16 +23,12 @@ export class ProjectCompileService {
   clName = 'ProjectCompileService'
 
   // Code
-  async runRecompileProject(
+  async prepForIntentCodeStage(
           prisma: PrismaClient,
           intentCodeProjectNode: SourceNode) {
 
     // Debug
-    const fnName = `${this.clName}.runRecompileProject()`
-
-    // Purging old code and metadata to be done manually, but possibly detect
-    // and warn if still present
-    ;
+    const fnName = `${this.clName}.prepForIntentCodeStage()`
 
     // Get projectSourceNode
     const projectSourceNode = await
@@ -48,7 +44,7 @@ export class ProjectCompileService {
             intentCodeList)
 
     // Compile
-    var compileList: any[] = []
+    var buildFileList: any[] = []
 
     for (const intentCodeFilename of intentCodeList) {
 
@@ -78,49 +74,92 @@ export class ProjectCompileService {
       // Get the target lang
       const targetLang = fileExtToLanguageName[targetLangFileExt]
 
+      // Add to buildFileList
+      buildFileList.push({
+        targetLang: targetLang,
+        intentCodeFilename: intentCodeFilename
+      })
+    }
+
+    // Return
+    return {
+      projectSourceNode,
+      buildFileList
+    }
+  }
+
+  async runCompileBuildStage(
+          prisma: PrismaClient,
+          intentCodeProjectNode: SourceNode) {
+
+    // Debug
+    const fnName = `${this.clName}.runCompileBuildStage()`
+
+    // Prep for stage
+    const { projectSourceNode, buildFileList } = await
+            this.prepForIntentCodeStage(
+              prisma,
+              intentCodeProjectNode)
+
+    // Compile IntentCode to source
+    for (const buildFile of buildFileList) {
+
       // Get last save time of the file
       const fileModifiedTime = await
-              fsUtilsService.getLastUpdateTime(intentCodeFilename)
+              fsUtilsService.getLastUpdateTime(buildFile.intentCodeFilename)
 
       // Read file
       const intentCode = await
               fs.readFileSync(
-                intentCodeFilename,
+                buildFile.intentCodeFilename,
                 { encoding: 'utf8', flag: 'r' })
-
-      // Index the file
-      await indexerMutateService.indexFileWithLlm(
-              prisma,
-              intentCodeProjectNode,
-              intentCodeFilename,
-              fileModifiedTime,
-              targetLang,
-              intentCode)
-
-      // Add to compileList
-      compileList.push({
-        intentCodeFilename: intentCodeFilename,
-        targetLang: targetLang,
-        intentCode: intentCode
-      })
-    }
-
-    // Compile IntentCode to source
-    for (const compileEntry of compileList) {
-
-      // Get last save time of the file
-      const fileModifiedTime = await
-              fsUtilsService.getLastUpdateTime(compileEntry.intentCodeFilename)
 
       // Compile
       await compilerMutateService.run(
               prisma,
               intentCodeProjectNode,
               projectSourceNode,
-              compileEntry.intentCodeFilename,
+              buildFile.intentCodeFilename,
               fileModifiedTime,
-              compileEntry.targetLang,
-              compileEntry.intentCode)
+              buildFile.targetLang,
+              intentCode)
+    }
+  }
+
+  async runIndexBuildStage(
+          prisma: PrismaClient,
+          intentCodeProjectNode: SourceNode) {
+
+    // Debug
+    const fnName = `${this.clName}.runIndexBuildStage()`
+
+    // Prep for stage
+    const { projectSourceNode, buildFileList } = await
+            this.prepForIntentCodeStage(
+              prisma,
+              intentCodeProjectNode)
+
+    // Index IntentCode
+    for (const buildFile of buildFileList) {
+
+      // Get last save time of the file
+      const fileModifiedTime = await
+              fsUtilsService.getLastUpdateTime(buildFile.intentCodeFilename)
+
+      // Read file
+      const intentCode = await
+              fs.readFileSync(
+                buildFile.intentCodeFilename,
+                { encoding: 'utf8', flag: 'r' })
+
+      // Index the file
+      await indexerMutateService.indexFileWithLlm(
+              prisma,
+              intentCodeProjectNode,
+              buildFile.intentCodeFilename,
+              fileModifiedTime,
+              buildFile.targetLang,
+              intentCode)
     }
   }
 }

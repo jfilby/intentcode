@@ -33,7 +33,6 @@ export interface BuildStage {
 
   // Dependency-related
   depsUpdated: boolean
-  depsError: boolean
 
   // IntentFile build by full-path filename
   intentFileBuilds: Record<string, IntentFileBuild>

@@ -1,14 +1,14 @@
 import { PrismaClient, UserProfile } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
+import { BuildMutateService } from '../intentcode/build/mutate-service'
 import { LoadExternalExtensionsService } from '../extensions/extension/load-external-service'
 import { ProjectsMutateService } from '../projects/mutate-service'
-import { ProjectCompileService } from '../projects/compile-service'
 import { ProjectSetupService } from '../projects/setup-project'
 
 // Services
+const buildMutateService = new BuildMutateService()
 const loadExternalExtensionsService = new LoadExternalExtensionsService()
 const projectsMutateService = new ProjectsMutateService()
-const projectCompileService = new ProjectCompileService()
 const projectSetupService = new ProjectSetupService()
 
 // Class
@@ -50,8 +50,9 @@ export class CalcTestsService {
               `${projectPath}/src`)
 
     // Recompile the project
-    await projectCompileService.runRecompileProject(
+    await buildMutateService.runBuild(
             prisma,
-            intentCodeProjectNode)
+            instance.id,
+            this.projectName)
   }
 }
