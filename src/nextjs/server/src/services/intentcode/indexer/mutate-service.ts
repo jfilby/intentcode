@@ -307,7 +307,10 @@ export class IndexerMutateService {
     prompt +=
       `## IntentCode\n` +
       `\n` +
-      intentCode
+      '```md\n' +
+      intentCode +
+      `\n` +
+      '```'
 
     // Return
     return prompt

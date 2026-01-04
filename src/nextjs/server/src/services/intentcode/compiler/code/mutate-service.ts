@@ -115,16 +115,17 @@ export class CompilerMutateService {
           `## Instructions\n` +
           `\n` +
           `You need to:\n` +
-          `1. Determine the assumptions needed in the IntentCode to make it ` +
-          `   unambiguous.\n` +
-          `2. Scan for warnings and errors. If there are any errors then ` +
-          `   don't return any target source.\n` +
-          `3. Try to fix and errors and warnings in the fixedIntentCode ` +
-          `   field.\n` +
-          `4. Convert the input IntentCode (if no errors) to ` +
-          `   ${targetFileExt} source code.\n` +
-          `5. Use the indexed data for this file as a structural starting ` +
-          `   point. Imports depend on this to be accurate.\n` +
+          `- Determine the assumptions needed in the IntentCode to make it ` +
+          `  unambiguous.\n` +
+          `- Scan for warnings and errors. If there are any errors then ` +
+          `  don't return any target source.\n` +
+          `- Try to fix and errors and warnings in the fixedIntentCode ` +
+          `  field.\n` +
+          `- Convert the input IntentCode (if no errors) to ` +
+          `  ${targetFileExt} source code.\n` +
+          `- Use the indexed data for this file as a structural starting ` +
+          `  point. Imports depend on this to be accurate.\n` +
+          `- Write idiomatic code, this is for actual use.\n` +
           `\n` +
           `## Assumptions\n` +
           `\n` +
@@ -192,7 +193,10 @@ export class CompilerMutateService {
     prompt +=
       `## IntentCode\n` +
       `\n` +
+      '```md\n' +
       intentCode +
+      `\n` +
+      '```\n' +
       `\n` +
       `## Index data\n` +
       `\n`
