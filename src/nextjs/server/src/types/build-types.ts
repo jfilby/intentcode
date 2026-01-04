@@ -1,3 +1,6 @@
+import { SourceNode } from "@prisma/client"
+import { ExtensionsData } from "./source-graph-types"
+
 export enum BuildStageType {
   compile = 'compile',
   index = 'index',
@@ -44,4 +47,7 @@ export interface BuildData {
   curBuildNo: number
   buildStages: BuildStage[]
   buildStageTypes: BuildStageType[]
+
+  // Extensions
+  extensionsData: ExtensionsData
 }

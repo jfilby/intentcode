@@ -1,15 +1,17 @@
+import path from 'path'
 import { blake3 } from '@noble/hashes/blake3'
 import { PrismaClient, SourceNode, Tech } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-service'
 import { UsersService } from '@/serene-core-server/services/users/service'
+import { BuildData } from '@/types/build-types'
 import { LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
-import { SourceNodeNames, SourceNodeGenerationData, SourceNodeTypes } from '@/types/source-graph-types'
+import { SourceNodeNames, SourceNodeGenerationData, SourceNodeTypes, ExtensionsData } from '@/types/source-graph-types'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { CompilerMutateLlmService } from './llm-service'
-import { CompilerTargetLangService } from './target-lang-service'
+import { CompilerQueryService } from './query-service'
 import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { GraphQueryService } from '@/services/graphs/intentcode/graph-query-service'
 import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service'
@@ -22,7 +24,7 @@ const sourceNodeModel = new SourceNodeModel()
 
 // Services
 const compilerMutateLlmService = new CompilerMutateLlmService()
-const compilerTargetLangService = new CompilerTargetLangService()
+const compilerQueryService = new CompilerQueryService()
 const fsUtilsService = new FsUtilsService()
 const graphQueryService = new GraphQueryService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
@@ -91,6 +93,8 @@ export class CompilerMutateService {
   }
 
   getPrompt(
+    extensionsData: ExtensionsData,
+    fullPath: string,
     targetLang: string,
     intentCode: string,
     indexedDataSourceNodes: SourceNode[]) {
@@ -98,9 +102,15 @@ export class CompilerMutateService {
     // Debug
     const fnName = `${this.clName}.getPrompt()`
 
+    // Get file ext
+    const fileExt = path.extname(fullPath)
+
     // Get rules by targetLang
     const targetLangPrompting =
-            compilerTargetLangService.getPrompting(targetLang)
+            compilerQueryService.getSkillPrompting(
+              extensionsData,
+              fileExt,
+              targetLang)
 
     // Start the prompt
     var prompt =
@@ -291,6 +301,7 @@ export class CompilerMutateService {
   }
 
   async run(prisma: PrismaClient,
+            buildData: BuildData,
             intentCodeProjectNode: SourceNode,
             projectSourceNode: SourceNode,
             fullPath: string,
@@ -352,6 +363,8 @@ export class CompilerMutateService {
     // Get prompt
     const prompt =
       this.getPrompt(
+        buildData.extensionsData,
+        fullPath,
         targetLang,
         intentCode,
         indexedDataSourceNodes)

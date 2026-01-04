@@ -8,6 +8,7 @@ import { FsUtilsService } from '../utils/fs-utils-service'
 import { GraphQueryService } from '../graphs/intentcode/graph-query-service'
 import { IndexerMutateService } from '../intentcode/indexer/mutate-service'
 import { IntentCodeFilenameService } from '../utils/filename-service'
+import { BuildData } from '@/types/build-types'
 
 // Services
 const compilerMutateService = new CompilerMutateService()
@@ -90,6 +91,7 @@ export class ProjectCompileService {
 
   async runCompileBuildStage(
           prisma: PrismaClient,
+          buildData: BuildData,
           intentCodeProjectNode: SourceNode) {
 
     // Debug
@@ -119,6 +121,7 @@ export class ProjectCompileService {
       // Compile
       await compilerMutateService.run(
               prisma,
+              buildData,
               intentCodeProjectNode,
               projectSourceNode,
               buildFile.intentCodeFilename,
@@ -130,6 +133,7 @@ export class ProjectCompileService {
 
   async runIndexBuildStage(
           prisma: PrismaClient,
+          buildData: BuildData,
           intentCodeProjectNode: SourceNode) {
 
     // Debug
@@ -159,6 +163,7 @@ export class ProjectCompileService {
       // Index the file
       await indexerMutateService.indexFileWithLlm(
               prisma,
+              buildData,
               intentCodeProjectNode,
               buildFile.intentCodeFilename,
               fileModifiedTime,

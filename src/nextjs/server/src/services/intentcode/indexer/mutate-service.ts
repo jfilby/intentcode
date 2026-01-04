@@ -1,4 +1,5 @@
 const fs = require('fs')
+import path from 'path'
 import { blake3 } from '@noble/hashes/blake3'
 import { PrismaClient, SourceNode, Tech } from '@prisma/client'
 import { ServerTestTypes } from '@/types/server-test-types'
@@ -7,12 +8,13 @@ import { CustomError } from '@/serene-core-server/types/errors'
 import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-service'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
+import { BuildData } from '@/types/build-types'
 import { LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
-import { SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
+import { ExtensionsData, SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
+import { CompilerQueryService } from '../compiler/code/query-service'
 import { FsUtilsService } from '@/services/utils/fs-utils-service'
-import { IndexerTargetLangService } from './target-lang-service'
 import { IntentCodeFilenameService } from '../../utils/filename-service'
 import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service'
 import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
@@ -22,9 +24,9 @@ const sourceNodeGenerationModel = new SourceNodeGenerationModel()
 const sourceNodeModel = new SourceNodeModel()
 
 // Services
+const compilerQueryService = new CompilerQueryService()
 const fsUtilsService = new FsUtilsService()
 const indexerMutateLlmService = new IndexerMutateLlmService()
-const indexerTargetLangService = new IndexerTargetLangService()
 const intentCodeFilenameService = new IntentCodeFilenameService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
 const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
@@ -84,6 +86,7 @@ export class IndexerMutateService {
 
   async indexFileWithLlm(
           prisma: PrismaClient,
+          buildData: BuildData,
           intentCodeProjectNode: SourceNode,
           fullPath: string,
           fileModifiedTime: Date,
@@ -132,6 +135,8 @@ export class IndexerMutateService {
     // Get prompt
     const prompt =
       this.getPrompt(
+        buildData.extensionsData,
+        fullPath,
         targetLang,
         intentCode)
 
@@ -178,6 +183,7 @@ export class IndexerMutateService {
 
   async indexProject(
           prisma: PrismaClient,
+          buildData: BuildData,
           intentCodeProjectNode: SourceNode) {
 
     // Debug
@@ -215,6 +221,7 @@ export class IndexerMutateService {
       // Index file
       await this.indexFileWithLlm(
               prisma,
+              buildData,
               intentCodeProjectNode,
               intentCodeFilename,
               fileModifiedTime,
@@ -224,12 +231,20 @@ export class IndexerMutateService {
   }
 
   getPrompt(
+    extensionsData: ExtensionsData,
+    fullPath: string,
     targetLang: string,
     intentCode: string) {
 
+    // Get file ext
+    const fileExt = path.extname(fullPath)
+
     // Get rules by targetLang
     const targetLangPrompting =
-            indexerTargetLangService.getPrompting(targetLang)
+            compilerQueryService.getSkillPrompting(
+              extensionsData,
+              fileExt,
+              targetLang)
 
     // Start the prompt
     var prompt = 

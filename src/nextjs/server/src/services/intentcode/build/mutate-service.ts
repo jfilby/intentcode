@@ -3,12 +3,14 @@ import { CustomError } from '@/serene-core-server/types/errors'
 import { BuildData, BuildStage, BuildStageType, IntentFileBuild } from '@/types/build-types'
 import { SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
+import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
 import { ProjectCompileService } from '@/services/projects/compile-service'
 
 // Models
 const sourceNodeModel = new SourceNodeModel()
 
 // Services
+const extensionQueryService = new ExtensionQueryService()
 const projectCompileService = new ProjectCompileService()
 
 // Class
@@ -67,7 +69,12 @@ export class BuildMutateService {
     ]
   }
 
-  initBuildData(): BuildData {
+  async initBuildData(
+          prisma: PrismaClient,
+          instanceId: string): Promise<BuildData> {
+
+    // Debug
+    const fnName = `${this.clName}.initBuildData()`
 
     // Create initial build stages
     var buildStageTypes: BuildStageType[] =
@@ -76,11 +83,23 @@ export class BuildMutateService {
     // Initial builds array
     const buildStages: BuildStage[] = []
 
+    // Load extensions
+    const extensionsData = await
+            extensionQueryService.loadExtensions(
+              prisma,
+              instanceId)
+
+    // Validate
+    if (extensionsData == null) {
+      throw new CustomError(`${fnName}: extensionsData == null`)
+    }
+
     // Create BuildData
     const buildData: BuildData = {
       curBuildNo: 0,  // Not yet started
       buildStages: buildStages,
-      buildStageTypes: buildStageTypes
+      buildStageTypes: buildStageTypes,
+      extensionsData: extensionsData
     }
 
     // Return
@@ -110,10 +129,13 @@ export class BuildMutateService {
     }
 
     // Init BuildData
-    const buildData = this.initBuildData()
+    const buildData = await
+            this.initBuildData(
+              prisma,
+              instanceId)
 
     // Debug
-    console.log(`${fnName}: buildData: ` + JSON.stringify(buildData))
+    // console.log(`${fnName}: buildData: ` + JSON.stringify(buildData))
 
     // Iterate until completed
     var nextIter = true
@@ -131,10 +153,13 @@ export class BuildMutateService {
   async runBuildStage(
           prisma: PrismaClient,
           intentCodeProjectNode: SourceNode,
-          buildStage: BuildStage) {
+          buildData: BuildData) {
 
     // Debug
     const fnName = `${this.clName}.runBuildStage()`
+
+    // Get buildStage
+    const buildStage = buildData.buildStages[buildData.curBuildNo - 1]
 
     // Route by build stage type
     switch (buildStage.buildStageType) {
@@ -148,6 +173,7 @@ export class BuildMutateService {
 
         await projectCompileService.runIndexBuildStage(
                 prisma,
+                buildData,
                 intentCodeProjectNode)
 
         break
@@ -157,6 +183,7 @@ export class BuildMutateService {
 
         await projectCompileService.runCompileBuildStage(
                 prisma,
+                buildData,
                 intentCodeProjectNode)
 
         break
@@ -186,7 +213,7 @@ export class BuildMutateService {
     await this.runBuildStage(
             prisma,
             intentCodeProjectNode,
-            buildStage)
+            buildData)
 
     // Have the dependencies been updated since the last build? Were there any
     // errors? If so then add another set of stages
