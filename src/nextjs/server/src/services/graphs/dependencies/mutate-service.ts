@@ -158,15 +158,15 @@ export class DependenciesMutateService {
           node: SourceNode,
           depDeltas: DepDelta[]) {
 
-    // Update jsonContent
-    var jsonContent: any = node.jsonContent
+    // Update jsonContent as depsJson
+    var depsJson: any = structuredClone(node.jsonContent)
 
-    if (jsonContent == null) {
-      jsonContent = {}
+    if (depsJson == null) {
+      depsJson = {}
     }
 
-    if (jsonContent.deps == null) {
-      jsonContent.deps = {}
+    if (depsJson.deps == null) {
+      depsJson.deps = {}
     }
 
     // Process each delta
@@ -176,29 +176,27 @@ export class DependenciesMutateService {
       if (node.type !== SourceNodeTypes.deps &&
           depDelta.delta === DepDeltaNames.del) {
 
-        jsonContent.deps[depDelta.name] = undefined
+        depsJson.deps[depDelta.name] = undefined
       }
 
       // Set deps
       if (depDelta.delta === DepDeltaNames.set) {
 
-        jsonContent.deps[depDelta.name] = {
+        depsJson.deps[depDelta.name] = {
           minVersion: depDelta.minVersion
         }
       }
     }
 
-    (node.jsonContent as any).deps = jsonContent
-
-    // Get jsonContentHash
-    node.jsonContentHash = blake3(JSON.stringify(prompt)).toString()
+    // Get depsJsonHash
+    const depsJsonHash = blake3(JSON.stringify(depsJson)).toString()
 
     // Upsert IntentFileNode
     node = await
       sourceNodeModel.setJsonContent(
         prisma,
         node.id,
-        node.jsonContent,
-        node.jsonContentHash)
+        depsJson,
+        depsJsonHash)
   }
 }

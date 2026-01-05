@@ -1,5 +1,6 @@
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { DependenciesQueryService } from './query-service'
+import { DepDeltaNames } from '@/types/server-only-types'
 
 // Services
 const dependenciesQueryService = new DependenciesQueryService()
@@ -20,8 +21,10 @@ export class DependenciesPromptService {
     var prompting =
       `## Dependencies\n` +
       `\n` +
-      `Add or remove any dependencies using the deps field, but only after ` +
-      `considering existing dependencies.\n` +
+      `- Add or remove any dependencies using the deps field, but only ` +
+      `  after considering existing dependencies.\n` +
+      `- Field delta can be either ${DepDeltaNames.set} or ` +
+      `  ${DepDeltaNames.del}.\n` +
       `\n`
 
     if ((intentFileNode.jsonContent as any).deps != null) {

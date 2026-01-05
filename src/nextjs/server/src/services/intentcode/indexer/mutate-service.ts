@@ -312,7 +312,7 @@ export class IndexerMutateService {
           `  ],\n` +
           `  "deps": [\n` +
           `    {\n` +
-          `      "delta": "add",\n` +
+          `      "delta": "set",\n` +
           `      "name": "..",\n` +
           `      "minVersion": ".."\n` +
           `    }\n` +
