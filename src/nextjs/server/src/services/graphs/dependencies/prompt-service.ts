@@ -23,6 +23,8 @@ export class DependenciesPromptService {
       `\n` +
       `- Add or remove any dependencies using the deps field, but only ` +
       `  after considering existing dependencies.\n` +
+      `- Any dependencies added in source output not in the existing list ` +
+      `  should be set in the delta list.\n` +
       `- Field delta can be either ${DepDeltaNames.set} or ` +
       `  ${DepDeltaNames.del}.\n` +
       `\n`
@@ -71,14 +73,15 @@ export class DependenciesPromptService {
               prisma,
               intentCodeProjectNode)
 
-    if (depsNode?.jsonContent == null) {
+    if (depsNode?.jsonContent?.deps == null) {
       return
     }
 
     // Process the consolidated list as prompting
     var prompting = `Full list of dependencies in this project:\n`
 
-    for (const [depName, depDetails] of Object.entries(depsNode.jsonContent)) {
+    for (const [depName, depDetails] of
+         Object.entries(depsNode.jsonContent.deps)) {
 
       prompting +=
         `- ${depName}: minVersion: ${(depDetails as any).minVersion}\n`
