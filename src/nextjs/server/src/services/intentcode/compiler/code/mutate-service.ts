@@ -4,6 +4,7 @@ import { CustomError } from '@/serene-core-server/types/errors'
 import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-service'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { BuildData } from '@/types/build-types'
+import { IntentCodeCommonTypes } from '../../common/types'
 import { LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { SourceNodeNames, SourceNodeGenerationData, SourceNodeTypes, ExtensionsData } from '@/types/source-graph-types'
@@ -139,6 +140,8 @@ export class CompilerMutateService {
           `- Use the indexed data for this file as a structural starting ` +
           `  point. Imports depend on this to be accurate.\n` +
           `- Write idiomatic code, this is for actual use.\n` +
+          `\n` +
+          IntentCodeCommonTypes.intentCodePrompting +
           `\n` +
           `## Assumptions\n` +
           `\n` +

@@ -8,6 +8,7 @@ import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
 import { BuildData } from '@/types/build-types'
+import { IntentCodeCommonTypes } from '../common/types'
 import { LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
 import { ExtensionsData, SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
@@ -261,7 +262,7 @@ export class IndexerMutateService {
     var prompt = 
           `## Instructions\n` +  // TypeScript dialect
           `\n` +
-          `Identify the structure of the IntentCode:\n` +
+          `Identify the structures in the IntentCode:\n` +
           `- H1 headings are classes, unless they are meant to be run from ` +
           `  the CLI.\n` +
           `- H2 headings are functions.\n` +
@@ -271,6 +272,11 @@ export class IndexerMutateService {
           `Notes:\n` +
           `- You can infer parameters and the return type used in the ` +
           `  steps.\n` +
+          // The `function call` attribute is needed to make the distinction
+          // between calls and definitions to produce correct code.
+          `- Function calls must include the "function call" attribute.\n` +
+          `\n` +
+          IntentCodeCommonTypes.intentCodePrompting +
           `\n` +
           depsPrompting +
           `\n` +
