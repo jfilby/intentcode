@@ -19,6 +19,7 @@ import { DependenciesPromptService } from '@/services/graphs/dependencies/prompt
 import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { IntentCodeFilenameService } from '../../utils/filename-service'
 import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service'
+import { IntentCodeMessagesService } from '../common/messages-service'
 import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
 
 // Models
@@ -33,6 +34,7 @@ const fsUtilsService = new FsUtilsService()
 const indexerMutateLlmService = new IndexerMutateLlmService()
 const intentCodeFilenameService = new IntentCodeFilenameService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
+const intentCodeMessagesService = new IntentCodeMessagesService()
 const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
 const techQueryService = new TechQueryService()
 const walkDirService = new WalkDirService()
@@ -390,5 +392,8 @@ export class IndexerMutateService {
               jsonContent,
               sourceNodeGenerationData,
               fileModifiedTime)
+
+    // Print warnings and errors (must be at the end of results processing)
+    intentCodeMessagesService.handleMessages(jsonContent)
   }
 }

@@ -17,6 +17,7 @@ import { DependenciesPromptService } from '@/services/graphs/dependencies/prompt
 import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { GraphQueryService } from '@/services/graphs/intentcode/graph-query-service'
 import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service'
+import { IntentCodeMessagesService } from '../../common/messages-service'
 import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
 import { SourceCodePathGraphMutateService } from '@/services/graphs/source-code/path-graph-mutate-service'
 
@@ -32,6 +33,7 @@ const dependenciesPromptService = new DependenciesPromptService()
 const fsUtilsService = new FsUtilsService()
 const graphQueryService = new GraphQueryService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
+const intentCodeMessagesService = new IntentCodeMessagesService()
 const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
 const sourceCodePathGraphMutateService = new SourceCodePathGraphMutateService()
 const techQueryService = new TechQueryService()
@@ -337,6 +339,9 @@ export class CompilerMutateService {
               jsonContent,
               sourceNodeGenerationData,
               fileModifiedTime)
+
+    // Print warnings and errors (must be at the end of results processing)
+    intentCodeMessagesService.handleMessages(jsonContent)
   }
 
   async run(prisma: PrismaClient,
