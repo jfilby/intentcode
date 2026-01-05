@@ -6,10 +6,14 @@ import { DepDelta, DepDeltaNames } from '@/types/server-only-types'
 import { SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceEdgeModel } from '@/models/source-graph/source-edge-model'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
+import { DependenciesQueryService } from './query-service'
 
 // Models
 const sourceEdgeModel = new SourceEdgeModel()
 const sourceNodeModel = new SourceNodeModel()
+
+// Services
+const dependenciesQueryService = new DependenciesQueryService()
 
 // Class
 export class DependenciesMutateService {
@@ -46,14 +50,11 @@ export class DependenciesMutateService {
           prisma: PrismaClient,
           intentCodeProjectNode: SourceNode) {
 
-    // Try to get an existing node
+    // Try to get the existing node
     var depsNode = await
-          sourceNodeModel.getByUniqueKey(
+          dependenciesQueryService.getDepsNode(
             prisma,
-            intentCodeProjectNode.id,
-            intentCodeProjectNode.instanceId,
-            SourceNodeTypes.deps,
-            SourceNodeNames.depsName)
+            intentCodeProjectNode)
 
     if (depsNode != null) {
       return depsNode
@@ -81,13 +82,13 @@ export class DependenciesMutateService {
           prisma: PrismaClient,
           intentCodeProjectNode: SourceNode,
           intentFileNode: SourceNode,
-          deps: DepDelta[]) {
+          depDeltas: DepDelta[]) {
 
     // Debug
     const fnName = `${this.clName}.processDeps()`
 
     // Validate
-    if (deps == null) {
+    if (depDeltas == null) {
       return
     }
 
@@ -95,49 +96,42 @@ export class DependenciesMutateService {
       throw new CustomError(`${fnName}: intentFileNode == null`)
     }
 
-    // Prepare intentFileNode
-    if (intentFileNode.jsonContent == null) {
-      intentFileNode.jsonContent = {}
-    }
-
-    // Update jsonContent
-    (intentFileNode.jsonContent as any).deps = deps
-
-    // Get jsonContentHash
-    intentFileNode.jsonContentHash = blake3(JSON.stringify(prompt)).toString()
-
-    // Upsert IntentFileNode
-    intentFileNode = await
-      sourceNodeModel.setJsonContent(
-        prisma,
-        intentFileNode.id,
-        intentFileNode.jsonContent,
-        intentFileNode.jsonContentHash)
-
     // Get/create deps node
     const depsNode = await
             this.getOrCreateDepsNode(
               prisma,
               intentCodeProjectNode)
 
-    // Create edges to dependencies file
-    for (const dep of deps) {
+    // Update jsonContent of intentFileNode
+    await this.updateNodeDeps(
+            prisma,
+            intentFileNode,
+            depDeltas)
 
-      if (dep.delta === DepDeltaNames.set) {
+    // Update jsonContent of depsNode
+    await this.updateNodeDeps(
+            prisma,
+            depsNode,
+            depDeltas)
+
+    // Update each dep
+    for (const depDelta of depDeltas) {
+
+      if (depDelta.delta === DepDeltaNames.set) {
 
         await this.setDep(
                 prisma,
                 depsNode,
                 intentFileNode,
-                dep.name)
+                depDelta.name)
 
-      } else if (dep.delta === DepDeltaNames.del) {
+      } else if (depDelta.delta === DepDeltaNames.del) {
 
         await this.delDep(
                 prisma,
                 depsNode,
                 intentFileNode,
-                dep.name)
+                depDelta.name)
       }
     }
   }
@@ -157,5 +151,54 @@ export class DependenciesMutateService {
               depsNode.id,
               BaseDataTypes.activeStatus,
               name)
+  }
+
+  async updateNodeDeps(
+          prisma: PrismaClient,
+          node: SourceNode,
+          depDeltas: DepDelta[]) {
+
+    // Update jsonContent
+    var jsonContent: any = node.jsonContent
+
+    if (jsonContent == null) {
+      jsonContent = {}
+    }
+
+    if (jsonContent.deps == null) {
+      jsonContent.deps = {}
+    }
+
+    // Process each delta
+    for (const depDelta of depDeltas) {
+
+      // Don't remove deps for the project's deps node
+      if (node.type !== SourceNodeTypes.deps &&
+          depDelta.delta === DepDeltaNames.del) {
+
+        jsonContent.deps[depDelta.name] = undefined
+      }
+
+      // Set deps
+      if (depDelta.delta === DepDeltaNames.set) {
+
+        jsonContent.deps[depDelta.name] = {
+          minVersion: depDelta.minVersion
+        }
+      }
+    }
+
+    (node.jsonContent as any).deps = jsonContent
+
+    // Get jsonContentHash
+    node.jsonContentHash = blake3(JSON.stringify(prompt)).toString()
+
+    // Upsert IntentFileNode
+    node = await
+      sourceNodeModel.setJsonContent(
+        prisma,
+        node.id,
+        node.jsonContent,
+        node.jsonContentHash)
   }
 }

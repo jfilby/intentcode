@@ -136,8 +136,11 @@ export class IndexerMutateService {
               LlmEnvNames.indexerEnvName)
 
     // Get prompt
-    const prompt =
+    const prompt = await
       this.getPrompt(
+        prisma,
+        intentCodeProjectNode,
+        intentFileNode,
         buildData.extensionsData,
         targetFileExt,
         intentCode)
@@ -233,16 +236,26 @@ export class IndexerMutateService {
     }
   }
 
-  getPrompt(
-    extensionsData: ExtensionsData,
-    targetFileExt: string,
-    intentCode: string) {
+  async getPrompt(
+          prisma: PrismaClient,
+          intentCodeProjectNode: SourceNode,
+          intentFileNode: SourceNode,
+          extensionsData: ExtensionsData,
+          targetFileExt: string,
+          intentCode: string) {
 
     // Get rules by targetLang
     const targetLangPrompting =
             compilerQueryService.getSkillPrompting(
               extensionsData,
               targetFileExt)
+
+    // Get deps prompting
+    const depsPrompting = await
+            dependenciesPromptService.getDepsPrompting(
+              prisma,
+              intentCodeProjectNode,
+              intentFileNode)
 
     // Start the prompt
     var prompt = 
@@ -259,7 +272,7 @@ export class IndexerMutateService {
           `- You can infer parameters and the return type used in the ` +
           `  steps.\n` +
           `\n` +
-          dependenciesPromptService.getAddDepsPrompting() +
+          depsPrompting +
           `\n` +
           `## Output field details\n` +  // TypeScript dialect
           `\n` +

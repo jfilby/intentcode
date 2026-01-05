@@ -95,11 +95,14 @@ export class CompilerMutateService {
     }
   }
 
-  getPrompt(
-    extensionsData: ExtensionsData,
-    targetFileExt: string,
-    intentCode: string,
-    indexedDataSourceNodes: SourceNode[]) {
+  async getPrompt(
+          prisma: PrismaClient,
+          intentCodeProjectNode: SourceNode,
+          intentFileNode: SourceNode,
+          extensionsData: ExtensionsData,
+          targetFileExt: string,
+          intentCode: string,
+          indexedDataSourceNodes: SourceNode[]) {
 
     // Debug
     const fnName = `${this.clName}.getPrompt()`
@@ -109,6 +112,13 @@ export class CompilerMutateService {
             compilerQueryService.getSkillPrompting(
               extensionsData,
               targetFileExt)
+
+    // Get deps prompting
+    const depsPrompting = await
+            dependenciesPromptService.getDepsPrompting(
+              prisma,
+              intentCodeProjectNode,
+              intentFileNode)
 
     // Debug
     console.log(`${fnName}: targetLangPrompting: ${targetLangPrompting}`)
@@ -155,7 +165,7 @@ export class CompilerMutateService {
           `Warnings and errors might not have a line, from and to numbers, ` +
           `but they always have a text field.\n` +
           `\n` +
-          dependenciesPromptService.getAddDepsPrompting() +
+          depsPrompting +
           `\n` +
           `## Example output\n` +
           `\n` +
@@ -387,8 +397,11 @@ export class CompilerMutateService {
               LlmEnvNames.compilerEnvName)
 
     // Get prompt
-    const prompt =
+    const prompt = await
       this.getPrompt(
+        prisma,
+        intentCodeProjectNode,
+        intentFileNode,
         buildData.extensionsData,
         targetFileExt,
         intentCode,

@@ -1,11 +1,35 @@
+import { PrismaClient, SourceNode } from "@prisma/client"
 import { DepDeltaNames } from "@/types/server-only-types"
+import { SourceNodeNames, SourceNodeTypes } from "@/types/source-graph-types"
+import { SourceNodeModel } from "@/models/source-graph/source-node-model"
 
+// Models
+const sourceNodeModel = new SourceNodeModel()
+
+// Class
 export class DependenciesQueryService {
 
   // Consts
   clName = 'DependenciesQueryService'
 
   // Code
+  async getDepsNode(
+          prisma: PrismaClient,
+          intentCodeProjectNode: SourceNode) {
+
+    // Try to get an existing node
+    var depsNode = await
+          sourceNodeModel.getByUniqueKey(
+            prisma,
+            intentCodeProjectNode.id,
+            intentCodeProjectNode.instanceId,
+            SourceNodeTypes.deps,
+            SourceNodeNames.depsName)
+
+    // Return depsNode
+    return depsNode
+  }
+
   verifyDeps(deps: any[]) {
 
     // Verify array
