@@ -214,6 +214,33 @@ export class SourceNodeModel {
     }
   }
 
+  async setJsonContent(
+          prisma: PrismaClient,
+          id: string,
+          jsonContent: any | undefined,
+          jsonContentHash: string | null | undefined) {
+
+    // Debug
+    const fnName = `${this.clName}.setJsonContent()`
+
+    // Update record
+    try {
+      return await prisma.sourceNode.update({
+        data: {
+          jsonContent: jsonContent,
+          jsonContentHash: jsonContentHash,
+          contentUpdated: new Date()
+        },
+        where: {
+          id: id
+        }
+      })
+    } catch(error) {
+      console.error(`${fnName}: error: ${error}`)
+      throw 'Prisma error'
+    }
+  }
+
   async update(
           prisma: PrismaClient,
           id: string,

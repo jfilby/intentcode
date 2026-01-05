@@ -1,4 +1,3 @@
-import path from 'path'
 import { blake3 } from '@noble/hashes/blake3'
 import { PrismaClient, SourceNode, Tech } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
@@ -12,6 +11,8 @@ import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-gen
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { CompilerMutateLlmService } from './llm-service'
 import { CompilerQueryService } from './query-service'
+import { DependenciesMutateService } from '@/services/graphs/dependencies/mutate-service'
+import { DependenciesPromptService } from '@/services/graphs/dependencies/prompt-service'
 import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { GraphQueryService } from '@/services/graphs/intentcode/graph-query-service'
 import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service'
@@ -25,6 +26,8 @@ const sourceNodeModel = new SourceNodeModel()
 // Services
 const compilerMutateLlmService = new CompilerMutateLlmService()
 const compilerQueryService = new CompilerQueryService()
+const dependenciesMutateService = new DependenciesMutateService()
+const dependenciesPromptService = new DependenciesPromptService()
 const fsUtilsService = new FsUtilsService()
 const graphQueryService = new GraphQueryService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
@@ -42,7 +45,7 @@ export class CompilerMutateService {
   // Code
   async getExistingJsonContent(
           prisma: PrismaClient,
-          intentFileSourceNode: SourceNode,
+          intentFileNode: SourceNode,
           tech: Tech,
           prompt: string) {
 
@@ -53,8 +56,8 @@ export class CompilerMutateService {
     const compilerDataSourceNode = await
             sourceNodeModel.getByUniqueKey(
               prisma,
-              intentFileSourceNode.id,  // parentId
-              intentFileSourceNode.instanceId,
+              intentFileNode.id,  // parentId
+              intentFileNode.instanceId,
               SourceNodeTypes.intentCodeCompilerData,
               SourceNodeNames.compilerData)
 
@@ -152,6 +155,8 @@ export class CompilerMutateService {
           `Warnings and errors might not have a line, from and to numbers, ` +
           `but they always have a text field.\n` +
           `\n` +
+          dependenciesPromptService.getAddDepsPrompting() +
+          `\n` +
           `## Example output\n` +
           `\n` +
           `This is an example of the output structure only. Don't try to ` +
@@ -177,6 +182,13 @@ export class CompilerMutateService {
           `  ],\n` +
           `  "fixedIntentCode": "..",\n` +
           `  "targetSource": ".."\n` +
+          `  "deps": [\n` +
+          `    {\n` +
+          `      "delta": "add",\n` +
+          `      "name": "..",\n` +
+          `      "minVersion": ".."\n` +
+          `    }\n` +
+          `  ]\n` +
           `}\n` +
           `\n`
 
@@ -233,7 +245,8 @@ export class CompilerMutateService {
 
   async processResults(
           prisma: PrismaClient,
-          intentFileSourceNode: SourceNode,
+          intentCodeProjectNode: SourceNode,
+          intentFileNode: SourceNode,
           projectSourceNode: SourceNode,
           sourceNodeGenerationData: SourceNodeGenerationData,
           fileModifiedTime: Date,
@@ -250,7 +263,7 @@ export class CompilerMutateService {
       const projectSourcePath = (projectSourceNode.jsonContent as any).path
 
       const intentFileRelativePath =
-              (intentFileSourceNode.jsonContent as any).relativePath
+              (intentFileNode.jsonContent as any).relativePath
 
       // Validate
       if (projectSourcePath == null) {
@@ -291,12 +304,22 @@ export class CompilerMutateService {
               true)  // createMissingDirs
     }
 
+    // Update the IntentCode node with deps
+    if (jsonContent.deps != null) {
+
+      await dependenciesMutateService.processDeps(
+              prisma,
+              intentCodeProjectNode,
+              intentFileNode,
+              jsonContent.deps)
+    }
+
     // Upsert the compiler data node
     const compilerDataSourceNode = await
             intentCodeGraphMutateService.upsertIntentCodeCompilerData(
               prisma,
-              intentFileSourceNode.instanceId,
-              intentFileSourceNode,  // parentNode
+              intentFileNode.instanceId,
+              intentFileNode,  // parentNode
               SourceNodeNames.compilerData,
               jsonContent,
               sourceNodeGenerationData,
@@ -333,15 +356,15 @@ export class CompilerMutateService {
     }
 
     // Get/create the file's SourceNode
-    const intentFileSourceNode = await
+    const intentFileNode = await
             intentCodePathGraphMutateService.getOrCreateIntentCodePathAsGraph(
               prisma,
               intentCodeProjectNode,
               fullPath)
 
     /* Check if the file has been updated since last indexed
-    if (intentFileSourceNode?.contentUpdated != null &&
-        intentFileSourceNode.contentUpdated <= fileModifiedTime) {
+    if (intentFileNode?.contentUpdated != null &&
+        intentFileNode.contentUpdated <= fileModifiedTime) {
 
       // console.log(`${fnName}: file: ${fullPath} already indexed`)
       return
@@ -375,7 +398,7 @@ export class CompilerMutateService {
     var { content, jsonContent } = await
           this.getExistingJsonContent(
             prisma,
-            intentFileSourceNode,
+            intentFileNode,
             tech,
             prompt)
 
@@ -402,7 +425,8 @@ export class CompilerMutateService {
     // Process results
     await this.processResults(
             prisma,
-            intentFileSourceNode,
+            intentCodeProjectNode,
+            intentFileNode,
             projectSourceNode,
             sourceNodeGenerationData,
             fileModifiedTime,

@@ -20,6 +20,11 @@ export class ServerOnlyTypes {
   static compilerAutoAddLibraries = true
 }
 
+export enum DepDeltaNames {
+  set = 'set',
+  del = 'del'
+}
+
 export enum InstanceSettingNames {
   projectPath = 'project path'
 }
@@ -36,4 +41,10 @@ export enum LlmEnvNames {
 
 export enum VersionNames {
   engine = 'Engine'
+}
+
+export interface DepDelta {
+  delta: string
+  name: string
+  minVersion: string
 }

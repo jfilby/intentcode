@@ -1,5 +1,4 @@
 const fs = require('fs')
-import path from 'path'
 import { blake3 } from '@noble/hashes/blake3'
 import { PrismaClient, SourceNode, Tech } from '@prisma/client'
 import { ServerTestTypes } from '@/types/server-test-types'
@@ -14,6 +13,8 @@ import { ExtensionsData, SourceNodeGenerationData, SourceNodeNames, SourceNodeTy
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { CompilerQueryService } from '../compiler/code/query-service'
+import { DependenciesMutateService } from '@/services/graphs/dependencies/mutate-service'
+import { DependenciesPromptService } from '@/services/graphs/dependencies/prompt-service'
 import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { IntentCodeFilenameService } from '../../utils/filename-service'
 import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service'
@@ -24,6 +25,8 @@ const sourceNodeGenerationModel = new SourceNodeGenerationModel()
 const sourceNodeModel = new SourceNodeModel()
 
 // Services
+const dependenciesMutateService = new DependenciesMutateService()
+const dependenciesPromptService = new DependenciesPromptService()
 const compilerQueryService = new CompilerQueryService()
 const fsUtilsService = new FsUtilsService()
 const indexerMutateLlmService = new IndexerMutateLlmService()
@@ -43,7 +46,7 @@ export class IndexerMutateService {
   // Code
   async getExistingJsonContent(
           prisma: PrismaClient,
-          intentFileSourceNode: SourceNode,
+          intentFileNode: SourceNode,
           tech: Tech,
           prompt: string) {
 
@@ -54,8 +57,8 @@ export class IndexerMutateService {
     const indexerDataSourceNode = await
             sourceNodeModel.getByUniqueKey(
               prisma,
-              intentFileSourceNode.id,  // parentId
-              intentFileSourceNode.instanceId,
+              intentFileNode.id,  // parentId
+              intentFileNode.instanceId,
               SourceNodeTypes.intentCodeIndexedData,
               SourceNodeNames.indexedData)
 
@@ -102,15 +105,15 @@ export class IndexerMutateService {
     }
 
     // Get/create the file's SourceNode
-    const intentFileSourceNode = await
+    const intentFileNode = await
             intentCodePathGraphMutateService.getOrCreateIntentCodePathAsGraph(
               prisma,
               intentCodeProjectNode,
               fullPath)
 
     // Check if the file has been updated since last indexed
-    if (intentFileSourceNode?.contentUpdated != null &&
-        intentFileSourceNode.contentUpdated <= fileModifiedTime) {
+    if (intentFileNode?.contentUpdated != null &&
+        intentFileNode.contentUpdated <= fileModifiedTime) {
 
       // console.log(`${fnName}: file: ${fullPath} already indexed`)
       return
@@ -143,7 +146,7 @@ export class IndexerMutateService {
     var jsonContent = await
           this.getExistingJsonContent(
             prisma,
-            intentFileSourceNode,
+            intentFileNode,
             tech,
             prompt)
 
@@ -171,7 +174,8 @@ export class IndexerMutateService {
     // Save the index data
     await this.processQueryResults(
             prisma,
-            intentFileSourceNode,
+            intentCodeProjectNode,
+            intentFileNode,
             sourceNodeGenerationData,
             fileModifiedTime,
             jsonContent)
@@ -255,6 +259,8 @@ export class IndexerMutateService {
           `- You can infer parameters and the return type used in the ` +
           `  steps.\n` +
           `\n` +
+          dependenciesPromptService.getAddDepsPrompting() +
+          `\n` +
           `## Output field details\n` +  // TypeScript dialect
           `\n` +
           `The astNode can be:\n` +
@@ -290,6 +296,13 @@ export class IndexerMutateService {
           `        }\n` +
           `      ]\n` +
           `    }\n` +
+          `  ],\n` +
+          `  "deps": [\n` +
+          `    {\n` +
+          `      "delta": "add",\n` +
+          `      "name": "..",\n` +
+          `      "minVersion": ".."\n` +
+          `    }\n` +
           `  ]\n` +
           `}\n` +
           `\n`
@@ -318,7 +331,8 @@ export class IndexerMutateService {
 
   async processQueryResults(
           prisma: PrismaClient,
-          intentFileSourceNode: SourceNode,
+          intentCodeProjectNode: SourceNode,
+          intentFileNode: SourceNode,
           sourceNodeGenerationData: SourceNodeGenerationData,
           fileModifiedTime: Date,
           jsonContent: any) {
@@ -327,22 +341,32 @@ export class IndexerMutateService {
     const fnName = `${this.clName}.processQueryResults()`
 
     // Validate
-    if (intentFileSourceNode.jsonContent == null) {
+    if (intentFileNode.jsonContent == null) {
       throw new CustomError(
-        `${fnName}: intentFileSourceNode.jsonContent == null`)
+        `${fnName}: intentFileNode.jsonContent == null`)
     }
 
-    if ((intentFileSourceNode.jsonContent as any).relativePath == null) {
+    if ((intentFileNode.jsonContent as any).relativePath == null) {
       throw new CustomError(
-        `${fnName}: intentFileSourceNode.jsonContent.relativePath == null`)
+        `${fnName}: intentFileNode.jsonContent.relativePath == null`)
+    }
+
+    // Update the IntentCode node with deps
+    if (jsonContent.deps != null) {
+
+      await dependenciesMutateService.processDeps(
+              prisma,
+              intentCodeProjectNode,
+              intentFileNode,
+              jsonContent.deps)
     }
 
     // Upsert the indexed data node
     const indexerDataSourceNode = await
             intentCodeGraphMutateService.upsertIntentCodeIndexedData(
               prisma,
-              intentFileSourceNode.instanceId,
-              intentFileSourceNode,  // parentNode
+              intentFileNode.instanceId,
+              intentFileNode,  // parentNode
               SourceNodeNames.indexedData,
               jsonContent,
               sourceNodeGenerationData,

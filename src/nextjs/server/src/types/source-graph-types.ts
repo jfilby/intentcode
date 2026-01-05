@@ -9,6 +9,8 @@ export enum SourceNodeTypes {
 
   intentCodeProject = 'IntentCode project',
 
+  deps = 'Deps',
+
   // has parents: intentCodeProject/intentCodeDir
   intentCodeDir = 'IntentCode dir',
 
@@ -41,6 +43,7 @@ export enum SourceNodeNames {
   compilerData = 'Compiler data',
   indexedData = 'Indexed data',
 
+  depsName = 'Dependencies',
   extensionsName = 'Extensions'
 }
 
