@@ -122,7 +122,7 @@ export class CompilerMutateService {
               intentFileNode)
 
     // Debug
-    console.log(`${fnName}: targetLangPrompting: ${targetLangPrompting}`)
+    // console.log(`${fnName}: targetLangPrompting: ${targetLangPrompting}`)
 
     // Start the prompt
     var prompt =
