@@ -1,9 +1,12 @@
 import { PrismaClient, SourceNode } from '@prisma/client'
+import { CustomError } from '@/serene-core-server/types/errors'
+import { ImportsData } from '@/services/source-code/imports/types'
+import { DependenciesQueryService } from '@/services/graphs/dependencies/query-service'
 import { GraphQueryService } from '@/services/graphs/intentcode/graph-query-service'
 import { ReadJsTsSourceImportsService } from '@/services/source-code/imports/read-js-ts-service'
-import { CustomError } from '@/serene-core-server/types/errors'
 
 // Services
+const dependenciesQueryService = new DependenciesQueryService()
 const graphQueryService = new GraphQueryService()
 const readJsTsSourceImportsService = new ReadJsTsSourceImportsService()
 
@@ -14,9 +17,39 @@ export class PackageJsonManagedFileService {
   clName = 'PackageJsonManagedFileService'
 
   // Code
-  async updateAndWriteFile(
+  async enrichFromDepsNode(
           prisma: PrismaClient,
-          intentCodeProjectNode: SourceNode) {
+          intentCodeProjectNode: SourceNode,
+          importsData: ImportsData) {
+
+    // Debug
+    const fnName = `${this.clName}.processSrcFile()`
+
+    // Get depsNode
+    const depsNode = await
+            dependenciesQueryService.getDepsNode(
+              prisma,
+              intentCodeProjectNode)
+
+    // Validate
+    if (depsNode?.jsonContent == null) {
+      throw new CustomError(`${fnName}: depsNode?.jsonContent == null`)
+    }
+
+    if (depsNode.jsonContent.deps == null) {
+      // console.log(`${fnName}: no deps in depsNode`)
+      return
+    }
+
+    // Add to importsData
+    for (const [name, minVersionNo] of depsNode.jsonContent.deps) {
+
+      importsData.dependencies[name] = minVersionNo
+    }
+  }
+
+  async run(prisma: PrismaClient,
+            intentCodeProjectNode: SourceNode) {
 
     // Debug
     const fnName = `${this.clName}.writeFile()`
@@ -39,18 +72,35 @@ export class PackageJsonManagedFileService {
     const importsData = await
             readJsTsSourceImportsService.run(
               prisma,
+              intentCodeProjectNode,
               projectSourcePath)
+
+    // Get min versions and any potentially missing imports from deps graph
+    await this.enrichFromDepsNode(
+            prisma,
+            intentCodeProjectNode,
+            importsData)
+
+    // Update and write the deps file
+    await this.updateAndWriteFile(
+            prisma,
+            importsData)
 
     // TEST STOP
     throw new CustomError(`${fnName}: TEST STOP`)
+  }
 
-    // Get all dependency nodes
+  async updateAndWriteFile(
+          prisma: PrismaClient,
+          importsData: ImportsData) {
+
+    // If the deps file doesn't exist yet, use a hook to create it
     ;
 
-    // Update the contents
+    // Update the deps file content
     ;
 
-    // Write the contents
+    // Write file
     ;
   }
 }

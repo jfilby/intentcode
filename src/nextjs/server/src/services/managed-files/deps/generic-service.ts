@@ -57,7 +57,7 @@ export class ManagedDepsFileService {
     switch (depsNode.jsonContent.tool) {
 
       case DepsTools.npm: {
-        await packageJsonManagedFileService.updateAndWriteFile(
+        await packageJsonManagedFileService.run(
                 prisma,
                 intentCodeProjectNode)
 

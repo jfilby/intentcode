@@ -1,5 +1,5 @@
-import fs from 'fs'
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, SourceNode } from '@prisma/client'
+import { CustomError } from '@/serene-core-server/types/errors'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
 import { ImportsData, JsTsSrcTypes } from './types'
 import { ParseJsTsImportsService } from './parse-js-ts-service'
@@ -15,13 +15,6 @@ export class ReadJsTsSourceImportsService {
   clName = 'ReadJsTsSourceImportsService'
 
   // Code
-  async enrichWithDepsGraph(
-          prisma: PrismaClient,
-          importsData: ImportsData) {
-
-    ;
-  }
-
   async processSrcFile(
           importsData: ImportsData,
           srcFilePath: string) {
@@ -32,18 +25,34 @@ export class ReadJsTsSourceImportsService {
     console.log(`${fnName}: starting with srcFilePath: ${srcFilePath}`)
 
     // Parse for imports
-    const results = await
+    const importsResults = await
             parseJsTsImportsService.parseImports(srcFilePath)
 
     // Debug
-    console.log(`${fnName}: results: ` + JSON.stringify(results))
+    console.log(`${fnName}: importsResults: ` + JSON.stringify(importsResults))
+
+    // Process imports
+    for (const importResult of importsResults) {
+
+      // Skip internal imports
+      if (importResult.specifier.startsWith('node:')) {
+
+        importsData.internalDependencies[importResult.specifier] = '?'
+        continue
+      }
+
+      // Add to imports (with minVersionNo unknown)
+      importsData.dependencies[importResult.specifier] = '?'
+    }
   }
 
   async run(prisma: PrismaClient,
+            intentCodeProjectNode: SourceNode,
             srcPath: string) {
 
     // ImportsData var
     const importsData: ImportsData = {
+      internalDependencies: {},
       dependencies: {}
     }
 
@@ -51,11 +60,6 @@ export class ReadJsTsSourceImportsService {
     await this.walkDir(
             importsData,
             srcPath)
-
-    // Get min versions and any potentially missing imports from deps graph
-    await this.enrichWithDepsGraph(
-            prisma,
-            importsData)
 
     // Return
     return importsData

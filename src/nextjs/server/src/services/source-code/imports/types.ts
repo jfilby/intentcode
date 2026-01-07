@@ -1,6 +1,7 @@
 export interface ImportsData {
 
   // Deps: name -> minVersionNo
+  internalDependencies: Record<string, string>
   dependencies: Record<string, string>
 }
 
