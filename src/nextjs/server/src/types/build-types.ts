@@ -1,10 +1,13 @@
-import { SourceNode } from "@prisma/client"
-import { ExtensionsData } from "./source-graph-types"
+import { ExtensionsData } from './source-graph-types'
 
 export enum BuildStageType {
   compile = 'compile',
   index = 'index',
   updateDeps = 'update-deps'
+}
+
+export enum DepsTools {
+  npm = 'npm'
 }
 
 export interface IntentFileBuild {

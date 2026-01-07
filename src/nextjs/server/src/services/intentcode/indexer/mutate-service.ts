@@ -203,7 +203,10 @@ export class IndexerMutateService {
 
     await walkDirService.walkDir(
             (intentCodeProjectNode.jsonContent as any).path,
-            intentCodeList)
+            intentCodeList,
+            {
+              recursive: true
+            })
 
     // Analyze each file
     for (const intentCodeFilename of intentCodeList) {

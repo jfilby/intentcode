@@ -4,6 +4,7 @@ import { BuildData, BuildStage, BuildStageType, IntentFileBuild } from '@/types/
 import { SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
+import { ManagedDepsFileService } from '@/services/managed-files/deps/generic-service'
 import { ProjectCompileService } from '@/services/projects/compile-service'
 
 // Models
@@ -11,6 +12,7 @@ const sourceNodeModel = new SourceNodeModel()
 
 // Services
 const extensionQueryService = new ExtensionQueryService()
+const managedDepsFileService = new ManagedDepsFileService()
 const projectCompileService = new ProjectCompileService()
 
 // Class
@@ -165,7 +167,11 @@ export class BuildMutateService {
     switch (buildStage.buildStageType) {
 
       case BuildStageType.updateDeps: {
-        console.error(`Update deps build stage type not yet implemented`)
+
+        await managedDepsFileService.updateAndWriteFile(
+                prisma,
+                intentCodeProjectNode)
+
         break
       }
 

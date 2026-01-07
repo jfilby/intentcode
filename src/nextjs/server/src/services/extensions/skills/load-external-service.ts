@@ -47,8 +47,10 @@ export class LoadExternalSkillsService {
     await walkDirService.walkDir(
             loadPath,
             mdFiles,
-            true,  // recursive
-            ['.md'])
+            {
+              recursive: true,
+              fileExts: ['.md']
+            })
 
     // Debug
     // console.log(`${fnName}: mdFiles: ` + JSON.stringify(mdFiles))

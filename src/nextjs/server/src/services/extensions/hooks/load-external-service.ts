@@ -46,8 +46,10 @@ export class LoadExternalHooksService {
     await walkDirService.walkDir(
             loadPath,
             jsonFiles,
-            true,  // recursive
-            ['.json'])
+            {
+              recursive: true,
+              fileExts: ['.json']
+            })
 
     // Load each file
     for (const jsonFile of jsonFiles) {

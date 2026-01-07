@@ -41,7 +41,10 @@ export class ProjectCompileService {
 
     await walkDirService.walkDir(
             (intentCodeProjectNode.jsonContent as any).path,
-            intentCodeList)
+            intentCodeList,
+            {
+              recursive: true
+            })
 
     // Compile
     var buildFileList: any[] = []
