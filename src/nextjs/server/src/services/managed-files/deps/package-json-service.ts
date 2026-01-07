@@ -1,3 +1,5 @@
+import fs from 'fs'
+import path from 'path'
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { ImportsData } from '@/services/source-code/imports/types'
@@ -68,6 +70,9 @@ export class PackageJsonManagedFileService {
     // Get projectSourcePath
     const projectSourcePath = (projectSourceNode.jsonContent as any).path
 
+    // Test for an existing package.json file
+    await this.verifyPackageJsonExists(projectSourcePath)
+
     // Read in the existing file (if available)
     const importsData = await
             readJsTsSourceImportsService.run(
@@ -102,5 +107,21 @@ export class PackageJsonManagedFileService {
 
     // Write file
     ;
+  }
+
+  async verifyPackageJsonExists(projectSourcePath: string) {
+
+    // Define filename
+    const filename = `${projectSourcePath}${path.sep}package.json`
+
+    // Check if the file exists
+    if (fs.existsSync(filename) === false) {
+
+      console.log(
+        `File not found: ${filename}\n` +
+        `Please create the initial project in the source directory first.`)
+
+      process.exit(1)
+    }
   }
 }
