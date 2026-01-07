@@ -1,16 +1,18 @@
 const fs = require('fs')
 import { blake3 } from '@noble/hashes/blake3'
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
 import { SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
+import { DependenciesMutateService } from '@/services/graphs/dependencies/mutate-service'
 
 // Models
 const sourceNodeModel = new SourceNodeModel()
 
 // Services
+const dependenciesMutateService = new DependenciesMutateService()
 const walkDirService = new WalkDirService()
 
 // Class
@@ -23,7 +25,7 @@ export class LoadExternalHooksService {
   async loadFromPath(
           prisma: PrismaClient,
           instanceId: string,
-          extensionNode: any,
+          extensionNode: SourceNode,
           loadPath: string) {
 
     // Debug
@@ -61,7 +63,7 @@ export class LoadExternalHooksService {
   async loadHooksJsonFile(
           prisma: PrismaClient,
           instanceId: string,
-          extensionNode: any,
+          extensionNode: SourceNode,
           fullPath: string) {
 
     // Output
@@ -83,12 +85,18 @@ export class LoadExternalHooksService {
             instanceId,
             extensionNode,
             hooksJson)
+
+    // Set the deps tool for all projects
+    await this.setDepsToolForProjects(
+            prisma,
+            instanceId,
+            hooksJson)
   }
 
   async saveHooks(
           prisma: PrismaClient,
           instanceId: string,
-          extensionNode: any,
+          extensionNode: SourceNode,
           hooksJson: any) {
 
     // Debug
@@ -127,5 +135,102 @@ export class LoadExternalHooksService {
               hooksJson,         // jsonContent
               hooksJsonHash,     // jsonContentHash
               new Date())        // contentUpdated
+  }
+
+  async setDepsToolForProjects(
+          prisma: PrismaClient,
+          instanceId: string,
+          hooksJson: any) {
+
+    // Debug
+    const fnName = `${this.clName}.setDepsToolForProjects()`
+
+    // Get IntentCode project node
+    const intentCodeProjectNodes = await
+            sourceNodeModel.filter(
+              prisma,
+              null,  // parentId
+              instanceId,
+              SourceNodeTypes.intentCodeProject)  // type
+
+    // Skip if no projects
+    if (intentCodeProjectNodes.length === 0) {
+      return
+    }
+
+    // Check for a specified deps tool
+    var depsTool = hooksJson.deps?.tool
+
+    if (depsTool == null) {
+
+      // Debug
+      // console.log(`${fnName}: hooksJson: ` + JSON.stringify(hooksJson))
+
+      // Use AI to infer a deps tool
+      throw new CustomError(
+        `${fnName}: using AI to infer deps tool is unimplemented`)
+    }
+
+    // Set deps tool for each project
+    for (const intentCodeProjectNode of intentCodeProjectNodes) {
+
+      await this.setDepsToolForProject(
+              prisma,
+              instanceId,
+              intentCodeProjectNode,
+              depsTool)
+    }
+  }
+
+  async setDepsToolForProject(
+          prisma: PrismaClient,
+          instanceId: string,
+          intentCodeProjectNode: SourceNode,
+          depsTool: string) {
+
+    // Debug
+    const fnName = `${this.clName}.setDepsToolForProject()`
+
+    console.log(`${fnName}: updating intentCodeProjectNode.id: ` +
+                `${intentCodeProjectNode.id}`)
+
+    // Get/create Deps node
+    var depsNode = await
+          dependenciesMutateService.getOrCreateDepsNode(
+            prisma,
+            intentCodeProjectNode)
+
+    // Already set?
+    if (depsNode.jsonContent?.tool === depsTool) {
+      console.log(`${fnName}: skipping, deps tool already set as expected`)
+      return
+    }
+
+    // Set jsonContent?
+    if (depsNode.jsonContent == null) {
+      depsNode.jsonContent = {}
+    }
+
+    // Set deps tool
+    depsNode.jsonContent.tool = depsTool
+
+    // Debug
+    console.log(`${fnName}: depsNode.jsonContent: ` +
+                JSON.stringify(depsNode.jsonContent))
+
+    // Get jsonContentHash
+    depsNode.jsonContentHash =
+      blake3(JSON.stringify(depsNode.jsonContent)).toString()
+
+    // Save node
+    depsNode = await
+      sourceNodeModel.setJsonContent(
+        prisma,
+        depsNode.id,
+        depsNode.jsonContent,
+        depsNode.jsonContentHash)
+
+    // Debug
+    console.log(`${fnName}: updated depsNode with id: ${depsNode.id}`)
   }
 }

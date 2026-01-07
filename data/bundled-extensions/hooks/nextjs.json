@@ -10,6 +10,9 @@
       ]
     }
   ],
+  "deps": {
+    "tool": "npm"
+  },
   "hooks": {
     "intentcode/newProject": {
       "commands": [
