@@ -191,8 +191,8 @@ export class LoadExternalHooksService {
     // Debug
     const fnName = `${this.clName}.setDepsToolForProject()`
 
-    console.log(`${fnName}: updating intentCodeProjectNode.id: ` +
-                `${intentCodeProjectNode.id}`)
+    // console.log(`${fnName}: updating intentCodeProjectNode.id: ` +
+    //             `${intentCodeProjectNode.id}`)
 
     // Get/create Deps node
     var depsNode = await
@@ -215,8 +215,8 @@ export class LoadExternalHooksService {
     depsNode.jsonContent.tool = depsTool
 
     // Debug
-    console.log(`${fnName}: depsNode.jsonContent: ` +
-                JSON.stringify(depsNode.jsonContent))
+    // console.log(`${fnName}: depsNode.jsonContent: ` +
+    //             JSON.stringify(depsNode.jsonContent))
 
     // Get jsonContentHash
     depsNode.jsonContentHash =
@@ -231,6 +231,6 @@ export class LoadExternalHooksService {
         depsNode.jsonContentHash)
 
     // Debug
-    console.log(`${fnName}: updated depsNode with id: ${depsNode.id}`)
+    // console.log(`${fnName}: updated depsNode with id: ${depsNode.id}`)
   }
 }
