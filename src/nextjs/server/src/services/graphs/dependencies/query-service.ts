@@ -1,4 +1,5 @@
 import { PrismaClient, SourceNode } from "@prisma/client"
+import { CustomError } from "@/serene-core-server/types/errors"
 import { DepDeltaNames } from "@/types/server-only-types"
 import { SourceNodeNames, SourceNodeTypes } from "@/types/source-graph-types"
 import { SourceNodeModel } from "@/models/source-graph/source-node-model"
@@ -15,14 +16,24 @@ export class DependenciesQueryService {
   // Code
   async getDepsNode(
           prisma: PrismaClient,
-          intentCodeProjectNode: SourceNode) {
+          projectNode: SourceNode) {
+
+    // Debug
+    const fnName = `${this.clName}.getDepsNode()`
+
+    // Validate
+    if (projectNode.type !== SourceNodeTypes.project) {
+
+      throw new CustomError(
+        `${fnName}: projectNode.type !== SourceNodeTypes.project`)
+    }
 
     // Try to get an existing node
     var depsNode = await
           sourceNodeModel.getByUniqueKey(
             prisma,
-            intentCodeProjectNode.id,
-            intentCodeProjectNode.instanceId,
+            projectNode.id,
+            projectNode.instanceId,
             SourceNodeTypes.deps,
             SourceNodeNames.depsName)
 

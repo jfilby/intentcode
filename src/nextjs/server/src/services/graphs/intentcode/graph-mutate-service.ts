@@ -2,7 +2,7 @@ import { blake3 } from '@noble/hashes/blake3'
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
-import { SourceEdgeNames, SourceNodeGenerationData, SourceNodeTypes } from '@/types/source-graph-types'
+import { SourceEdgeNames, SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
 import { SourceEdgeModel } from '@/models/source-graph/source-edge-model'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
@@ -34,7 +34,7 @@ export class IntentCodeGraphMutateService {
 
     // Validate
     if (parentNode == null) {
-      throw new CustomError(`${fnName}: projectSourceNode == null`)
+      throw new CustomError(`${fnName}: parentNode == null`)
     }
 
     if (![SourceNodeTypes.intentCodeProject,
@@ -138,8 +138,7 @@ export class IntentCodeGraphMutateService {
 
   async getOrCreateIntentCodeProject(
           prisma: PrismaClient,
-          instanceId: string,
-          name: string,
+          projectNode: SourceNode,
           localPath: string) {
 
     // Debug
@@ -149,10 +148,10 @@ export class IntentCodeGraphMutateService {
     var intentCodeProject = await
           sourceNodeModel.getByUniqueKey(
             prisma,
-            null,  // parentId
-            instanceId,
+            projectNode.id,  // parentId
+            projectNode.instanceId,
             SourceNodeTypes.intentCodeProject,
-            name)
+            SourceNodeNames.intentCodeProject)
 
     if (intentCodeProject != null) {
       return intentCodeProject
@@ -176,11 +175,11 @@ export class IntentCodeGraphMutateService {
     intentCodeProject = await
       sourceNodeModel.create(
         prisma,
-        null,  // parentId
-        instanceId,
+        projectNode.id,  // parentId
+        projectNode.instanceId,
         BaseDataTypes.activeStatus,
         SourceNodeTypes.intentCodeProject,
-        name,
+        SourceNodeNames.intentCodeProject,
         null,  // content
         null,  // contentHash
         jsonContent,
@@ -189,47 +188,6 @@ export class IntentCodeGraphMutateService {
 
     // Return
     return intentCodeProject
-  }
-
-  async linkIntentCodeProjectToSourceCodeProject(
-          prisma: PrismaClient,
-          intentCodeProject: SourceNode,
-          sourceCodeProject: SourceNode) {
-
-    // Debug
-    const fnName = `${this.clName}.linkIntentCodeProjectToSourceCodeProject()`
-
-    // Validate
-    if (intentCodeProject == null) {
-      throw new CustomError(`${fnName}: intentCodeProject == null`)
-    }
-
-    if (sourceCodeProject == null) {
-      throw new CustomError(`${fnName}: sourceCodeProject == null`)
-    }
-
-    if (intentCodeProject.type !== SourceNodeTypes.intentCodeProject) {
-      throw new CustomError(`${fnName}: intentCodeProject.type !== ` +
-                            `SourceNodeTypes.intentCodeProject`)
-    }
-
-    if (sourceCodeProject.type !== SourceNodeTypes.sourceCodeProject) {
-      throw new CustomError(`${fnName}: sourceCodeProject.type !== ` +
-                            `SourceNodeTypes.sourceCodeProject`)
-    }
-
-    // Upsert the Source Edge
-    const sourceEdge = await
-            sourceEdgeModel.upsert(
-              prisma,
-              undefined,  // id
-              intentCodeProject.id,
-              sourceCodeProject.id,
-              BaseDataTypes.activeStatus,
-              SourceEdgeNames.implements)
-
-    // Return
-    return sourceEdge
   }
 
   async upsertIntentCodeCompilerData(
@@ -246,7 +204,7 @@ export class IntentCodeGraphMutateService {
 
     // Validate
     if (parentNode == null) {
-      throw new CustomError(`${fnName}: projectSourceNode == null`)
+      throw new CustomError(`${fnName}: parentNode == null`)
     }
 
     if (parentNode.type !== SourceNodeTypes.intentCodeFile) {
@@ -322,7 +280,7 @@ export class IntentCodeGraphMutateService {
 
     // Validate
     if (parentNode == null) {
-      throw new CustomError(`${fnName}: projectSourceNode == null`)
+      throw new CustomError(`${fnName}: parentNode == null`)
     }
 
     if (parentNode.type !== SourceNodeTypes.intentCodeFile) {

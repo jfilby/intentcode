@@ -117,17 +117,17 @@ export class BuildMutateService {
     const fnName = `${this.clName}.runBuild()`
 
     // Get IntentCode project node
-    const intentCodeProjectNode = await
+    const projectNode = await
             sourceNodeModel.getByUniqueKey(
               prisma,
-              null,  // parentId
+              null,                     // parentId
               instanceId,
-              SourceNodeTypes.intentCodeProject,  // type
+              SourceNodeTypes.project,  // type
               projectName)
 
     // Validate
-    if (intentCodeProjectNode == null) {
-      throw new CustomError(`${fnName}: intentCodeProjectNode == null`)
+    if (projectNode == null) {
+      throw new CustomError(`${fnName}: projectNode == null`)
     }
 
     // Init BuildData
@@ -147,14 +147,14 @@ export class BuildMutateService {
       nextIter = await
         this.runNextBuildStage(
           prisma,
-          intentCodeProjectNode,
+          projectNode,
           buildData)
     }
   }
 
   async runBuildStage(
           prisma: PrismaClient,
-          intentCodeProjectNode: SourceNode,
+          projectNode: SourceNode,
           buildData: BuildData) {
 
     // Debug
@@ -170,7 +170,7 @@ export class BuildMutateService {
 
         await managedDepsFileService.updateAndWriteFile(
                 prisma,
-                intentCodeProjectNode)
+                projectNode)
 
         break
       }
@@ -180,7 +180,7 @@ export class BuildMutateService {
         await projectCompileService.runIndexBuildStage(
                 prisma,
                 buildData,
-                intentCodeProjectNode)
+                projectNode)
 
         break
       }
@@ -190,7 +190,7 @@ export class BuildMutateService {
         await projectCompileService.runCompileBuildStage(
                 prisma,
                 buildData,
-                intentCodeProjectNode)
+                projectNode)
 
         break
       }
@@ -203,7 +203,7 @@ export class BuildMutateService {
 
   async runNextBuildStage(
           prisma: PrismaClient,
-          intentCodeProjectNode: SourceNode,
+          projectNode: SourceNode,
           buildData: BuildData) {
 
     // Create the next build if one is required
@@ -218,7 +218,7 @@ export class BuildMutateService {
     // Run the build stage
     await this.runBuildStage(
             prisma,
-            intentCodeProjectNode,
+            projectNode,
             buildData)
 
     // Have the dependencies been updated since the last build? Were there any

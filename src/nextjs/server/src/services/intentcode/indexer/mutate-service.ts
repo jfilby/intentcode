@@ -93,6 +93,7 @@ export class IndexerMutateService {
   async indexFileWithLlm(
           prisma: PrismaClient,
           buildData: BuildData,
+          projectNode: SourceNode,
           intentCodeProjectNode: SourceNode,
           fullPath: string,
           fileModifiedTime: Date,
@@ -180,7 +181,7 @@ export class IndexerMutateService {
     // Save the index data
     await this.processQueryResults(
             prisma,
-            intentCodeProjectNode,
+            projectNode,
             intentFileNode,
             sourceNodeGenerationData,
             fileModifiedTime,
@@ -193,6 +194,7 @@ export class IndexerMutateService {
   async indexProject(
           prisma: PrismaClient,
           buildData: BuildData,
+          projectNode: SourceNode,
           intentCodeProjectNode: SourceNode) {
 
     // Debug
@@ -234,6 +236,7 @@ export class IndexerMutateService {
       await this.indexFileWithLlm(
               prisma,
               buildData,
+              projectNode,
               intentCodeProjectNode,
               intentCodeFilename,
               fileModifiedTime,
@@ -355,7 +358,7 @@ export class IndexerMutateService {
 
   async processQueryResults(
           prisma: PrismaClient,
-          intentCodeProjectNode: SourceNode,
+          projectNode: SourceNode,
           intentFileNode: SourceNode,
           sourceNodeGenerationData: SourceNodeGenerationData,
           fileModifiedTime: Date,
@@ -380,7 +383,7 @@ export class IndexerMutateService {
 
       await dependenciesMutateService.processDeps(
               prisma,
-              intentCodeProjectNode,
+              projectNode,
               intentFileNode,
               jsonContent.deps)
     }

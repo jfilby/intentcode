@@ -147,16 +147,21 @@ export class LoadExternalHooksService {
     // Debug
     const fnName = `${this.clName}.setDepsToolForProjects()`
 
-    // Get IntentCode project node
-    const intentCodeProjectNodes = await
+    // Get project nodes
+    const projectNodes = await
             sourceNodeModel.filter(
               prisma,
-              null,  // parentId
+              null,                     // parentId
               instanceId,
-              SourceNodeTypes.intentCodeProject)  // type
+              SourceNodeTypes.project)  // type
+
+    // Debug
+    console.log(
+      `${fnName}: setting up deps tool for ${projectNodes.length} projects ` +
+      `with instanceId: ${instanceId}..`)
 
     // Skip if no projects
-    if (intentCodeProjectNodes.length === 0) {
+    if (projectNodes.length === 0) {
       return
     }
 
@@ -174,12 +179,12 @@ export class LoadExternalHooksService {
     }
 
     // Set deps tool for each project
-    for (const intentCodeProjectNode of intentCodeProjectNodes) {
+    for (const projectNode of projectNodes) {
 
       await this.setDepsToolForProject(
               prisma,
               instanceId,
-              intentCodeProjectNode,
+              projectNode,
               depsTool)
     }
   }
@@ -187,11 +192,13 @@ export class LoadExternalHooksService {
   async setDepsToolForProject(
           prisma: PrismaClient,
           instanceId: string,
-          intentCodeProjectNode: SourceNode,
+          projectNode: SourceNode,
           depsTool: string) {
 
     // Debug
     const fnName = `${this.clName}.setDepsToolForProject()`
+
+    console.log(`${fnName}: setting up deps tool for project..`)
 
     // console.log(`${fnName}: updating intentCodeProjectNode.id: ` +
     //             `${intentCodeProjectNode.id}`)
@@ -200,7 +207,7 @@ export class LoadExternalHooksService {
     var depsNode = await
           dependenciesMutateService.getOrCreateDepsNode(
             prisma,
-            intentCodeProjectNode)
+            projectNode)
 
     // Already set?
     if (depsNode.jsonContent?.tool === depsTool) {

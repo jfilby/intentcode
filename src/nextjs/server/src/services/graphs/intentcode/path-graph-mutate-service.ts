@@ -16,14 +16,14 @@ export class IntentCodePathGraphMutateService {
   // Code
   async getOrCreateIntentCodePathAsGraph(
           prisma: PrismaClient,
-          projectSourceNode: SourceNode,
+          intentCodeProjectNode: SourceNode,
           fullPath: string) {
 
     // Debug
     const fnName = `${this.clName}.getOrCreateIntentCodePathAsGraph()`
 
     // Get project source path
-    const projectSourcePath = (projectSourceNode.jsonContent as any)?.path
+    const projectSourcePath = (intentCodeProjectNode.jsonContent as any)?.path
 
     // Validate project path
     if (projectSourcePath == null ||
@@ -49,7 +49,7 @@ export class IntentCodePathGraphMutateService {
     // console.log(`${fnName}: dirs: ${dirs}`)
 
     // Get/create nodes for dirs
-    var dirSourceNode: SourceNode = projectSourceNode
+    var dirSourceNode: SourceNode = intentCodeProjectNode
 
     for (const dir of dirs) {
 
@@ -60,7 +60,7 @@ export class IntentCodePathGraphMutateService {
       dirSourceNode = await
         intentCodeGraphMutateService.getOrCreateIntentCodeDir(
           prisma,
-          projectSourceNode.instanceId,
+          intentCodeProjectNode.instanceId,
           dirSourceNode,
           dir)
     }
@@ -69,7 +69,7 @@ export class IntentCodePathGraphMutateService {
     const filenameSourceNode = await
             intentCodeGraphMutateService.getOrCreateIntentCodeFile(
               prisma,
-              projectSourceNode.instanceId,
+              intentCodeProjectNode.instanceId,
               dirSourceNode,
               filename,
               relativePath)

@@ -2,7 +2,7 @@ import { blake3 } from '@noble/hashes/blake3'
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
-import { SourceNodeGenerationData, SourceNodeTypes } from '@/types/source-graph-types'
+import { SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { SourceNodeGenerationService } from '../intentcode/source-node-generation-service'
@@ -23,8 +23,7 @@ export class SourceCodeGraphMutateService {
   // Code
   async getOrCreateSourceCodeProject(
           prisma: PrismaClient,
-          instanceId: string,
-          name: string,
+          projectNode: SourceNode,
           localPath: string) {
 
     // Debug
@@ -34,10 +33,10 @@ export class SourceCodeGraphMutateService {
     var sourceCodeProject = await
           sourceNodeModel.getByUniqueKey(
             prisma,
-            null,  // parentId
-            instanceId,
+            projectNode.id,  // parentId
+            projectNode.instanceId,
             SourceNodeTypes.sourceCodeProject,
-            name)
+            SourceNodeNames.sourceCodeProject)
 
     if (sourceCodeProject != null) {
       return sourceCodeProject
@@ -61,11 +60,11 @@ export class SourceCodeGraphMutateService {
     sourceCodeProject = await
       sourceNodeModel.create(
         prisma,
-        null,  // parentId
-        instanceId,
+        projectNode.id,  // parentId
+        projectNode.instanceId,
         BaseDataTypes.activeStatus,
         SourceNodeTypes.sourceCodeProject,
-        name,
+        SourceNodeNames.sourceCodeProject,
         null,  // content
         null,  // contentHash
         jsonContent,
@@ -87,7 +86,7 @@ export class SourceCodeGraphMutateService {
 
     // Validate
     if (parentNode == null) {
-      throw new CustomError(`${fnName}: projectSourceNode == null`)
+      throw new CustomError(`${fnName}: parentNode == null`)
     }
 
     if (![SourceNodeTypes.sourceCodeProject,
@@ -143,7 +142,7 @@ export class SourceCodeGraphMutateService {
 
     // Validate
     if (parentNode == null) {
-      throw new CustomError(`${fnName}: projectSourceNode == null`)
+      throw new CustomError(`${fnName}: parentNode == null`)
     }
 
     if (![SourceNodeTypes.sourceCodeProject,

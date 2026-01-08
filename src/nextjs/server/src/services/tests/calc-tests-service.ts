@@ -1,5 +1,4 @@
 import { PrismaClient, UserProfile } from '@prisma/client'
-import { CustomError } from '@/serene-core-server/types/errors'
 import { BuildMutateService } from '../intentcode/build/mutate-service'
 import { LoadExternalExtensionsService } from '../extensions/extension/load-external-service'
 import { ProjectsMutateService } from '../projects/mutate-service'
@@ -24,6 +23,9 @@ export class CalcTestsService {
               regularTestUserProfile: UserProfile,
               adminUserProfile: UserProfile) {
 
+    // Debug
+    const fnName = `${this.clName}.tests()`
+
     // Get/create the project
     const instance = await
             projectsMutateService.getOrCreate(
@@ -31,23 +33,21 @@ export class CalcTestsService {
               adminUserProfile.id,
               this.projectName)
 
-    // Load bundled extension
-    await loadExternalExtensionsService.loadPath(
-            prisma,
-            instance.id,
-            `${process.env.BASE_DATA_PATH}/bundled-extensions`)
-
     // Setup the project
     const projectPath = `${process.env.LOCAL_TESTS_PATH}/calc`
 
-    const intentCodeProjectNode = await
+    const projectNode = await
             projectSetupService.setupProject(
               prisma,
               instance,
               this.projectName,
-              null,  // specsPath
-              `${projectPath}/intent`,
-              `${projectPath}/src`)
+              projectPath)
+
+    // Load bundled extension (must be done after the project is created)
+    await loadExternalExtensionsService.loadPath(
+            prisma,
+            instance.id,
+            `${process.env.BASE_DATA_PATH}/bundled-extensions`)
 
     // Recompile the project
     await buildMutateService.runBuild(

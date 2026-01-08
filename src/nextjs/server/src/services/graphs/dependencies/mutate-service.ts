@@ -48,13 +48,23 @@ export class DependenciesMutateService {
 
   async getOrCreateDepsNode(
           prisma: PrismaClient,
-          intentCodeProjectNode: SourceNode) {
+          projectNode: SourceNode) {
+
+    // Debug
+    const fnName = `${this.clName}.getOrCreateDepsNode()`
+
+    // Validate
+    if (projectNode.type !== SourceNodeTypes.project) {
+
+      throw new CustomError(
+        `${fnName}: projectNode.type !== SourceNodeTypes.project`)
+    }
 
     // Try to get the existing node
     var depsNode = await
           dependenciesQueryService.getDepsNode(
             prisma,
-            intentCodeProjectNode)
+            projectNode)
 
     if (depsNode != null) {
       return depsNode
@@ -63,8 +73,8 @@ export class DependenciesMutateService {
     depsNode = await
       sourceNodeModel.create(
         prisma,
-        intentCodeProjectNode.id,  // parentId
-        intentCodeProjectNode.instanceId,
+        projectNode.id,  // parentId
+        projectNode.instanceId,
         BaseDataTypes.activeStatus,
         SourceNodeTypes.deps,
         SourceNodeNames.depsName,
@@ -80,7 +90,7 @@ export class DependenciesMutateService {
 
   async processDeps(
           prisma: PrismaClient,
-          intentCodeProjectNode: SourceNode,
+          projectNode: SourceNode,
           intentFileNode: SourceNode,
           depDeltas: DepDelta[]) {
 
@@ -100,7 +110,7 @@ export class DependenciesMutateService {
     const depsNode = await
             this.getOrCreateDepsNode(
               prisma,
-              intentCodeProjectNode)
+              projectNode)
 
     // Update jsonContent of intentFileNode
     await this.updateNodeDeps(

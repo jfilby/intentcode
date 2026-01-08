@@ -7,7 +7,10 @@ export enum SourceEdgeNames {
 
 export enum SourceNodeTypes {
 
+  // Project level
+  project = 'Project',
   intentCodeProject = 'IntentCode project',
+  sourceCodeProject = 'Source code project',
 
   deps = 'Deps',
 
@@ -23,8 +26,6 @@ export enum SourceNodeTypes {
   // has parents: intentCodeFile
   intentCodeCompilerData = 'IntentCode compiler data',
 
-  sourceCodeProject = 'Source code project',
-
   // has parents: sourceCodeProject/sourceCodeDir
   sourceCodeDir = 'Source code dir',
 
@@ -39,6 +40,9 @@ export enum SourceNodeTypes {
 }
 
 export enum SourceNodeNames {
+
+  intentCodeProject = 'IntentCode project',
+  sourceCodeProject = 'Source code project',
 
   compilerData = 'Compiler data',
   indexedData = 'Indexed data',

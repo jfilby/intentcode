@@ -260,9 +260,9 @@ export class CompilerMutateService {
 
   async processResults(
           prisma: PrismaClient,
-          intentCodeProjectNode: SourceNode,
+          projectNode: SourceNode,
           intentFileNode: SourceNode,
-          projectSourceNode: SourceNode,
+          sourceCodeProjectNode: SourceNode,
           sourceNodeGenerationData: SourceNodeGenerationData,
           fileModifiedTime: Date,
           content: string,
@@ -275,7 +275,7 @@ export class CompilerMutateService {
     if (content != null) {
 
       // Get paths
-      const projectSourcePath = (projectSourceNode.jsonContent as any).path
+      const projectSourcePath = (sourceCodeProjectNode.jsonContent as any).path
 
       const intentFileRelativePath =
               (intentFileNode.jsonContent as any).relativePath
@@ -307,7 +307,7 @@ export class CompilerMutateService {
       // Get/create SourceCode node path
       await sourceCodePathGraphMutateService.getOrCreateSourceCodePathAsGraph(
               prisma,
-              projectSourceNode,
+              sourceCodeProjectNode,
               fullPath,
               content,
               sourceNodeGenerationData)
@@ -324,7 +324,7 @@ export class CompilerMutateService {
 
       await dependenciesMutateService.processDeps(
               prisma,
-              intentCodeProjectNode,
+              projectNode,
               intentFileNode,
               jsonContent.deps)
     }
@@ -346,8 +346,9 @@ export class CompilerMutateService {
 
   async run(prisma: PrismaClient,
             buildData: BuildData,
+            projectNode: SourceNode,
             intentCodeProjectNode: SourceNode,
-            projectSourceNode: SourceNode,
+            sourceCodeProjectNode: SourceNode,
             fullPath: string,
             fileModifiedTime: Date,
             targetFileExt: string,
@@ -446,9 +447,9 @@ export class CompilerMutateService {
     // Process results
     await this.processResults(
             prisma,
-            intentCodeProjectNode,
+            projectNode,
             intentFileNode,
-            projectSourceNode,
+            sourceCodeProjectNode,
             sourceNodeGenerationData,
             fileModifiedTime,
             content,

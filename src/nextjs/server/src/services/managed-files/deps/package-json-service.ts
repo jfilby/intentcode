@@ -2,14 +2,15 @@ import fs from 'fs'
 import path from 'path'
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
+import { SourceNodeTypes } from '@/types/source-graph-types'
 import { ImportsData } from '@/services/source-code/imports/types'
 import { DependenciesQueryService } from '@/services/graphs/dependencies/query-service'
-import { GraphQueryService } from '@/services/graphs/intentcode/graph-query-service'
+import { ProjectGraphQueryService } from '@/services/graphs/project/query-service'
 import { ReadJsTsSourceImportsService } from '@/services/source-code/imports/read-js-ts-service'
 
 // Services
 const dependenciesQueryService = new DependenciesQueryService()
-const graphQueryService = new GraphQueryService()
+const projectGraphQueryService = new ProjectGraphQueryService()
 const readJsTsSourceImportsService = new ReadJsTsSourceImportsService()
 
 // Class
@@ -21,7 +22,7 @@ export class PackageJsonManagedFileService {
   // Code
   async enrichFromDepsNode(
           prisma: PrismaClient,
-          intentCodeProjectNode: SourceNode,
+          projectNode: SourceNode,
           importsData: ImportsData) {
 
     // Debug
@@ -31,7 +32,7 @@ export class PackageJsonManagedFileService {
     const depsNode = await
             dependenciesQueryService.getDepsNode(
               prisma,
-              intentCodeProjectNode)
+              projectNode)
 
     // Validate
     if (depsNode?.jsonContent == null) {
@@ -51,39 +52,40 @@ export class PackageJsonManagedFileService {
   }
 
   async run(prisma: PrismaClient,
-            intentCodeProjectNode: SourceNode) {
+            projectNode: SourceNode) {
 
     // Debug
     const fnName = `${this.clName}.writeFile()`
 
-    // Get projectSourceNode
-    const projectSourceNode = await
-            graphQueryService.getProjectSourceNode(
+    // Get sourceCodeProjectNode
+    const sourceCodeProjectNode = await
+            projectGraphQueryService.getSourceProjectNode(
               prisma,
-              intentCodeProjectNode)
+              projectNode)
 
     // Validate
-    if (projectSourceNode == null) {
-      throw new CustomError(`${fnName}: projectSourceNode == null`)
+    if (sourceCodeProjectNode == null) {
+      throw new CustomError(`${fnName}: sourceCodeProjectNode == null`)
     }
 
-    // Get projectSourcePath
-    const projectSourcePath = (projectSourceNode.jsonContent as any).path
+    // Get paths
+    const projectPath = (projectNode.jsonContent as any).path
+    const projectSourcePath = (sourceCodeProjectNode.jsonContent as any).path
 
     // Test for an existing package.json file
-    await this.verifyPackageJsonExists(projectSourcePath)
+    await this.verifyPackageJsonExists(projectPath)
 
     // Read in the existing file (if available)
     const importsData = await
             readJsTsSourceImportsService.run(
               prisma,
-              intentCodeProjectNode,
+              projectNode,
               projectSourcePath)
 
     // Get min versions and any potentially missing imports from deps graph
     await this.enrichFromDepsNode(
             prisma,
-            intentCodeProjectNode,
+            projectNode,
             importsData)
 
     // Update and write the deps file
@@ -109,17 +111,17 @@ export class PackageJsonManagedFileService {
     ;
   }
 
-  async verifyPackageJsonExists(projectSourcePath: string) {
+  async verifyPackageJsonExists(projectPath: string) {
 
     // Define filename
-    const filename = `${projectSourcePath}${path.sep}package.json`
+    const filename = `${projectPath}${path.sep}package.json`
 
     // Check if the file exists
     if (fs.existsSync(filename) === false) {
 
       console.log(
         `File not found: ${filename}\n` +
-        `Please create the initial project in the source directory first.`)
+        `Please create the initial project directory first.`)
 
       process.exit(1)
     }

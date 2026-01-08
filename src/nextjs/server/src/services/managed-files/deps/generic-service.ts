@@ -16,7 +16,7 @@ export class ManagedDepsFileService {
   // Code
   async updateAndWriteFile(
           prisma: PrismaClient,
-          intentCodeProjectNode: SourceNode) {
+          projectNode: SourceNode) {
 
     // Debug
     const fnName = `${this.clName}.updateAndWriteFile()`
@@ -25,7 +25,7 @@ export class ManagedDepsFileService {
     const depsNode = await
             dependenciesQueryService.getDepsNode(
               prisma,
-              intentCodeProjectNode)
+              projectNode)
 
     // Validate
     if (depsNode == null) {
@@ -59,7 +59,7 @@ export class ManagedDepsFileService {
       case DepsTools.npm: {
         await packageJsonManagedFileService.run(
                 prisma,
-                intentCodeProjectNode)
+                projectNode)
 
         break
       }
