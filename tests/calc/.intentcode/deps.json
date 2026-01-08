@@ -1,0 +1,4 @@
+{
+  "tool": "npm",
+  "runtimes": ["ts-script"]
+}

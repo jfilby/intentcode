@@ -18,6 +18,9 @@ export class ServerOnlyTypes {
   // Libraries related
   static indexerAutoAddLibraries = true
   static compilerAutoAddLibraries = true
+
+  // Valid depsNode keys
+  static depsNodeKeys = ['runtimes', 'tool']
 }
 
 export enum DepDeltaNames {
