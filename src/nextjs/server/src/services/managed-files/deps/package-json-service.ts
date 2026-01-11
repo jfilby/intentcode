@@ -5,12 +5,10 @@ import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { SourceNodeTypes } from '@/types/source-graph-types'
 import { ImportsData } from '@/services/source-code/imports/types'
-import { DependenciesQueryService } from '@/services/graphs/dependencies/query-service'
 import { ProjectGraphQueryService } from '@/services/graphs/project/query-service'
 import { ReadJsTsSourceImportsService } from '@/services/source-code/imports/read-js-ts-service'
 
 // Services
-const dependenciesQueryService = new DependenciesQueryService()
 const projectGraphQueryService = new ProjectGraphQueryService()
 const readJsTsSourceImportsService = new ReadJsTsSourceImportsService()
 
