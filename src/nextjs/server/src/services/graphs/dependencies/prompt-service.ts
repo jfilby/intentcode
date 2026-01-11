@@ -27,6 +27,7 @@ export class DependenciesPromptService {
       `  should be set in the delta list.\n` +
       `- Field delta can be either ${DepDeltaNames.set} or ` +
       `  ${DepDeltaNames.del}.\n` +
+      `- Prefer a major version only, e.g. "^5" instead of "^5.1.4".\n` +
       `\n`
 
     if ((intentFileNode.jsonContent as any).deps != null) {
