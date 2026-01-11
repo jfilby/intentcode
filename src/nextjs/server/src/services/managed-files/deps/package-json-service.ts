@@ -18,6 +18,19 @@ export class PackageJsonManagedFileService {
   // Consts
   clName = 'PackageJsonManagedFileService'
 
+  tsConfigPaths = 'tsconfig-paths'
+  tsConfigPathsMinVersionNo = '^4'
+
+  tsNode = 'ts-node'
+  tsScript = 'ts-script'
+
+  tsConfigJsonTsNode = {
+    'require': ['tsconfig-paths/register'],
+      'compilerOptions': {
+        'module': 'CommonJS'
+      }
+    }
+
   // Code
   enrichFromDepsNode(
     depsNodeJson: any,
@@ -250,25 +263,21 @@ export class PackageJsonManagedFileService {
       const obj = value as any
 
       // ts-script
-      if (runtime === 'ts-script') {
+      if (runtime === this.tsScript) {
 
         // package.json modifications
-        packageJson.scripts['ts-script'] = `ts-node ${obj.run}`
-        packageJson.dependencies['ts-node'] = obj['ts-node']
+        packageJson.scripts[this.tsScript] = `ts-node ${obj.run}`
+        packageJson.dependencies[this.tsNode] = obj[this.tsNode]
 
-        if (packageJson.dependencies['tsconfig-paths'] == null &&
-            packageJson.devDependencies['tsconfig-paths'] == null) {
+        if (packageJson.dependencies[this.tsConfigPaths] == null &&
+            packageJson.devDependencies[this.tsConfigPaths] == null) {
 
-          packageJson.dependencies['tsconfig-paths'] = '^4'
+          packageJson.dependencies[this.tsConfigPaths] =
+            this.tsConfigPathsMinVersionNo
         }
 
         // tsconfig.json modifications
-        tsConfigJson['ts-node'] = {
-          'require': ['tsconfig-paths/register'],
-          'compilerOptions': {
-            'module': 'CommonJS'
-          }
-        }
+        tsConfigJson[this.tsNode] = this.tsConfigJsonTsNode
       }
     }
 
