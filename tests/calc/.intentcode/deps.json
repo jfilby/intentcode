@@ -2,7 +2,7 @@
   "tool": "npm",
   "runtimes": {
     "ts-script": {
-      "run": "./src/cli.ts",
+      "run": "./src/index.ts",
       "ts-node": "^10"
     }
   }

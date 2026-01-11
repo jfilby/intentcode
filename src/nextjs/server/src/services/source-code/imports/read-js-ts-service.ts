@@ -14,7 +14,11 @@ export class ReadJsTsSourceImportsService {
   // Consts
   clName = 'ReadJsTsSourceImportsService'
 
-  NODE_BUILTINS = new Set([
+  invalidBuiltIns = new Set([
+    'readline'
+  ])
+
+  nodeBuiltIns = new Set([
     'fs', 'path', 'crypto', 'stream', 'http', 'https', 'url',
     'util', 'events', 'os', 'child_process', 'buffer'
   ])
@@ -23,7 +27,8 @@ export class ReadJsTsSourceImportsService {
   isNodeBuiltin(specifier: string): boolean {
 
     return specifier.startsWith('node:') ||
-           this.NODE_BUILTINS.has(specifier.split('/')[0])
+           this.invalidBuiltIns.has(specifier.split('/')[0]) ||
+           this.nodeBuiltIns.has(specifier.split('/')[0])
   }
 
   isInternalImport(specifier: string): boolean {

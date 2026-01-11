@@ -59,7 +59,8 @@ export class ManagedDepsFileService {
       case DepsTools.npm: {
         await packageJsonManagedFileService.run(
                 prisma,
-                projectNode)
+                projectNode,
+                depsNode)
 
         break
       }

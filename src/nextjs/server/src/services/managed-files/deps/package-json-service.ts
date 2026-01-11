@@ -22,21 +22,22 @@ export class PackageJsonManagedFileService {
 
   // Code
   enrichFromDepsNode(
-    depsFromDepsNode: any,
+    depsNodeJson: any,
     importsData: ImportsData) {
 
     // Debug
     const fnName = `${this.clName}.enrichFromDepsNode()`
 
     // Add to importsData
-    for (const [name, minVersionNo] of Object.entries(depsFromDepsNode)) {
+    for (const [name, minVersionNo] of Object.entries(depsNodeJson.deps)) {
 
       importsData.dependencies[name] = minVersionNo as string
     }
   }
 
   async run(prisma: PrismaClient,
-            projectNode: SourceNode) {
+            projectNode: SourceNode,
+            depsNode: SourceNode) {
 
     // Debug
     const fnName = `${this.clName}.run()`
@@ -61,28 +62,21 @@ export class PackageJsonManagedFileService {
       throw new CustomError(`${fnName}: sourceCodeProjectNode == null`)
     }
 
-    // Get the Deps node
-    const depsNode = await
-            dependenciesQueryService.getDepsNode(
-              prisma,
-              projectNode)
-
     // Validate
     if (depsNode?.jsonContent == null) {
       throw new CustomError(`${fnName}: depsNode?.jsonContent == null`)
     }
 
     // Get deps
-    const depsFromDepsNode = (depsNode.jsonContent as any).deps
+    const depsNodeJson = (depsNode.jsonContent as any)
 
-    if (depsFromDepsNode == null) {
+    if (depsNodeJson == null) {
       // console.log(`${fnName}: no deps in depsNode`)
       return
     }
 
     // Debug
-    console.log(`${fnName}: depsFromDepsNode: ` +
-                JSON.stringify(depsFromDepsNode))
+    console.log(`${fnName}: depsNodeJson: ` + JSON.stringify(depsNodeJson))
 
     // Get paths
     const projectPath = (projectNode.jsonContent as any).path
@@ -100,12 +94,12 @@ export class PackageJsonManagedFileService {
 
     // Get min versions and any potentially missing imports from deps graph
     this.enrichFromDepsNode(
-      depsFromDepsNode,
+      depsNodeJson,
       importsData)
 
     // Update and write the deps file
     await this.updateAndWriteFile(
-            depsFromDepsNode,
+            depsNodeJson,
             projectPath,
             importsData)
   }
@@ -135,12 +129,15 @@ export class PackageJsonManagedFileService {
   }
 
   async updateAndWriteFile(
-          depsFromDepsNode: any,
+          depsNodeJson: any,
           projectPath: string,
           importsData: ImportsData) {
 
     // Debug
     const fnName = `${this.clName}.updateAndWriteFile()`
+
+    console.log(`${fnName}: depsNodeJson.runtimes: ` +
+                JSON.stringify(depsNodeJson.runtimes))
 
     // Define filename
     const filename = `${projectPath}${path.sep}package.json`
@@ -150,11 +147,11 @@ export class PackageJsonManagedFileService {
     const packageJson = JSON.parse(content)
 
     // Update for runtimes
-    if (depsFromDepsNode.runtimes != null) {
+    if (depsNodeJson.runtimes != null) {
 
       this.updateForRuntimes(
         packageJson,
-        depsFromDepsNode)
+        depsNodeJson)
     }
 
     // Update the dependencies
@@ -168,7 +165,7 @@ export class PackageJsonManagedFileService {
               packageJson,
               null,
               2) +
-          `\n`
+            `\n`
 
     // Write file
     await fs.writeFileSync(
@@ -206,7 +203,7 @@ export class PackageJsonManagedFileService {
           devDeps)
 
       } else {
-        // New dependency → default to dependencies
+        // New dependency: default to dependencies
         if (!packageJson.dependencies) {
           packageJson.dependencies = {}
         }
@@ -217,13 +214,13 @@ export class PackageJsonManagedFileService {
 
   updateForRuntimes(
     packageJson: any,
-    depsFromDepsNode: any) {
+    depsNodeJson: any) {
 
     // Debug
     const fnName = `${this.clName}.updateForRuntimes()`
 
     // Runtimes
-    for (const [runtime, value] of Object.entries(depsFromDepsNode.runtimes)) {
+    for (const [runtime, value] of Object.entries(depsNodeJson.runtimes)) {
 
       const obj = value as any
 
@@ -233,6 +230,9 @@ export class PackageJsonManagedFileService {
         packageJson.dependencies['ts-node'] = obj.tsNode
       }
     }
+
+    // Debug
+    console.log(`${fnName}: post processing: ` + JSON.stringify(packageJson))
   }
 
   async verifyPackageJsonExists(projectPath: string) {
