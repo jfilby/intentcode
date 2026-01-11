@@ -85,7 +85,7 @@ export class PackageJsonManagedFileService {
               projectSourcePath)
 
     // Get min versions and any potentially missing imports from deps graph
-    if (depsNodeJson != null) {
+    if (depsNodeJson?.deps != null) {
 
       this.enrichFromDepsNode(
         depsNodeJson,
