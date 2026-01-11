@@ -172,8 +172,8 @@ export class CompilerMutateService {
           `  from and to fields.\n` +
           `- Don't guess, they need to be based on high probabilities at ` +
           `  worst.\n` +
-          `- Don assume without data: if you don't know something critical ` +
-          `  then list it as an error.\n` +
+          `- Don't assume without data: if you don't know something ` +
+          `  critical then list it as an error.\n` +
           `\n` +
           `## Messages\n` +
           `\n` +
