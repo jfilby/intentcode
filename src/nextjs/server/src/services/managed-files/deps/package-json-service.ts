@@ -107,9 +107,6 @@ export class PackageJsonManagedFileService {
             depsFromDepsNode,
             projectPath,
             importsData)
-
-    // TEST STOP
-    throw new CustomError(`${fnName}: TEST STOP`)
   }
 
   async updateAndWriteFile(
@@ -140,10 +137,18 @@ export class PackageJsonManagedFileService {
       packageJson,
       importsData)
 
+    // Prettify JSON
+    const prettyPackageJson =
+            JSON.stringify(
+              packageJson,
+              null,
+              2) +
+          `\n`
+
     // Write file
     await fs.writeFileSync(
             filename,
-            JSON.stringify(packageJson))
+            prettyPackageJson)
   }
 
   updateDependencies(
