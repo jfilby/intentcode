@@ -1,4 +1,9 @@
 {
   "tool": "npm",
-  "runtimes": ["ts-script"]
+  "runtimes": {
+    "ts-script": {
+      "run": "./src/cli.ts",
+      "ts-node": "^10"
+    }
+  }
 }

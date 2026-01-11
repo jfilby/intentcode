@@ -67,7 +67,8 @@ export class BuildMutateService {
     return [
       BuildStageType.updateDeps,
       BuildStageType.index,
-      BuildStageType.compile
+      BuildStageType.compile,
+      BuildStageType.updateDeps
     ]
   }
 

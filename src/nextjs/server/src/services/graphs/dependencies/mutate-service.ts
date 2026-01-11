@@ -192,9 +192,7 @@ export class DependenciesMutateService {
       // Set deps
       if (depDelta.delta === DepDeltaNames.set) {
 
-        depsJson.deps[depDelta.name] = {
-          minVersion: depDelta.minVersion
-        }
+        depsJson.deps[depDelta.name] = depDelta.minVersion
       }
     }
 
