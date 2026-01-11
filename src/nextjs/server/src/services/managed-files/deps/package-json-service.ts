@@ -63,16 +63,10 @@ export class PackageJsonManagedFileService {
     }
 
     // Validate
-    if (depsNode?.jsonContent == null) {
-      throw new CustomError(`${fnName}: depsNode?.jsonContent == null`)
-    }
+    var depsNodeJson: any = null
 
-    // Get deps
-    const depsNodeJson = (depsNode.jsonContent as any)
-
-    if (depsNodeJson == null) {
-      // console.log(`${fnName}: no deps in depsNode`)
-      return
+    if (depsNode?.jsonContent != null) {
+      depsNodeJson = (depsNode.jsonContent as any)
     }
 
     // Debug
@@ -93,9 +87,12 @@ export class PackageJsonManagedFileService {
               projectSourcePath)
 
     // Get min versions and any potentially missing imports from deps graph
-    this.enrichFromDepsNode(
-      depsNodeJson,
-      importsData)
+    if (depsNodeJson != null) {
+
+      this.enrichFromDepsNode(
+        depsNodeJson,
+        importsData)
+    }
 
     // Update and write the deps file
     await this.updateAndWriteFile(
@@ -147,7 +144,7 @@ export class PackageJsonManagedFileService {
     const packageJson = JSON.parse(content)
 
     // Update for runtimes
-    if (depsNodeJson.runtimes != null) {
+    if (depsNodeJson?.runtimes != null) {
 
       this.updateForRuntimes(
         packageJson,
