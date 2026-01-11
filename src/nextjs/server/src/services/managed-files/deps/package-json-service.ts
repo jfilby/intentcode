@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+const semver = require('semver')
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { SourceNodeTypes } from '@/types/source-graph-types'
@@ -109,6 +110,30 @@ export class PackageJsonManagedFileService {
             importsData)
   }
 
+  setIfHigher(
+    dependency: string,
+    minVersionNo: string,
+    target: Record<string, string>) {
+
+    const existing = target[dependency]
+
+    if (!existing) {
+      target[dependency] = `^${minVersionNo}`
+      return
+    }
+
+    const existingMin = semver.minVersion(existing)
+    const incomingMin = semver.minVersion(minVersionNo)
+
+    if (
+      existingMin &&
+      incomingMin &&
+      semver.lt(existingMin, incomingMin)
+    ) {
+      target[dependency] = `^${minVersionNo}`
+    }
+  }
+
   async updateAndWriteFile(
           depsFromDepsNode: any,
           projectPath: string,
@@ -161,13 +186,32 @@ export class PackageJsonManagedFileService {
     // Add dependencies
     for (const [dependency, minVersionNo] of Object.entries(importsData.dependencies)) {
 
-      packageJson.dependencies[dependency] = minVersionNo
-    }
+      const deps = packageJson.dependencies ?? {}
+      const devDeps = packageJson.devDependencies ?? {}
 
-    // Add internal dependencies
-    for (const [dependency, minVersionNo] of Object.entries(importsData.internalDependencies)) {
+      const inDependencies = deps[dependency] != null
+      const inDevDependencies = devDeps[dependency] != null
 
-      packageJson.dependencies[dependency] = minVersionNo
+      // Helper to safely set or upgrade a version
+      if (inDependencies) {
+        this.setIfHigher(
+          dependency,
+          minVersionNo,
+          deps)
+
+      } else if (inDevDependencies) {
+        this.setIfHigher(
+          dependency,
+          minVersionNo,
+          devDeps)
+
+      } else {
+        // New dependency → default to dependencies
+        if (!packageJson.dependencies) {
+          packageJson.dependencies = {}
+        }
+        packageJson.dependencies[dependency] = `^${minVersionNo}`
+      }
     }
   }
 
