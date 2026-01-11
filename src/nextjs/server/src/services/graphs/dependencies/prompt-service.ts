@@ -63,11 +63,11 @@ export class DependenciesPromptService {
 
       prompting += `Existing deps for this file:\n`
 
-      for (const [depName, depDetails] of
+      for (const [dependency, minVersion] of
            Object.entries((intentFileNode.jsonContent as any).deps)) {
 
         prompting +=
-          `- ${depName}: minVersion: ${(depDetails as any).minVersion}\n`
+          `- ${dependency}: minVersion: ${minVersion}\n`
       }
 
       prompting += `\n`
@@ -121,6 +121,9 @@ export class DependenciesPromptService {
     // Debug
     const fnName = `${this.clName}.getRuntimePrompting()`
 
+    console.log(`${fnName}: depsJsonContent: ` +
+                JSON.stringify(depsJsonContent))
+
     // Validate
     if (depsJsonContent?.runtimes == null) {
       return null
@@ -131,9 +134,15 @@ export class DependenciesPromptService {
 
     for (const [runtime, obj] of Object.entries(depsJsonContent?.runtimes)) {
 
-      const run = (obj as any).run as string
+      // Strip any leading dot from the run filename
+      var runCheck = (obj as any).run as string
 
-      if (sourceFileRelativePath.endsWith(run)) {
+      if (runCheck.startsWith('.')) {
+        runCheck = runCheck.slice(1)
+      }
+
+      // Check
+      if (sourceFileRelativePath.endsWith(runCheck)) {
 
         prompting +=
           `- The target source file needs to be runnable by ${runtime}.\n`

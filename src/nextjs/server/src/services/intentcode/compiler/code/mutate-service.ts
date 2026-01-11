@@ -131,7 +131,8 @@ export class CompilerMutateService {
             dependenciesPromptService.getDepsPrompting(
               prisma,
               projectNode,
-              intentFileNode)
+              intentFileNode,
+              sourceFileRelativePath)
 
     // Debug
     // console.log(`${fnName}: targetLangPrompting: ${targetLangPrompting}`)
