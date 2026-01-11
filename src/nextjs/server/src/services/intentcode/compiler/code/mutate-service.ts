@@ -110,6 +110,16 @@ export class CompilerMutateService {
     // Debug
     const fnName = `${this.clName}.getPrompt()`
 
+    // Get intentFileRelativePath
+    const intentFileRelativePath =
+              (intentFileNode.jsonContent as any).relativePath
+
+    // Get SourceCode relative path
+    const sourceFileRelativePath =
+            intentFileRelativePath.slice(
+              0,
+              intentFileRelativePath.length - ServerOnlyTypes.dotMdFileExt.length)
+
     // Get rules by targetLang
     const targetLangPrompting =
             compilerQueryService.getSkillPrompting(

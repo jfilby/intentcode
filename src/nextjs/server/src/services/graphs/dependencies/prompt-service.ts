@@ -15,7 +15,20 @@ export class DependenciesPromptService {
   async getDepsPrompting(
           prisma: PrismaClient,
           intentCodeProjectNode: SourceNode,
-          intentFileNode: SourceNode) {
+          intentFileNode: SourceNode,
+          sourceFileRelativePath?: string) {
+
+    // Debug
+    const fnName = `${this.clName}.getDepsPrompting()`
+
+    // Try to get deps node
+    const depsNode = await
+            dependenciesQueryService.getDepsNode(
+              prisma,
+              intentCodeProjectNode)
+
+    // Get jsonContent
+    const depsJsonContent = (depsNode?.jsonContent)
 
     // Start prompting
     var prompting =
@@ -30,6 +43,20 @@ export class DependenciesPromptService {
       `- Prefer a major version only, e.g. "^5" instead of "^5.1.4".\n` +
       `\n`
 
+    // Get related runtime info (if any)
+    if (sourceFileRelativePath != null) {
+
+      const runtimePrompting =
+              this.getRuntimePrompting(
+                depsJsonContent,
+                sourceFileRelativePath)
+
+      if (runtimePrompting != null) {
+        prompting += runtimePrompting
+      }
+    }
+
+    // Existing deps
     if ((intentFileNode.jsonContent as any).deps != null) {
 
       const deps = (intentFileNode.jsonContent as any).deps
@@ -47,9 +74,9 @@ export class DependenciesPromptService {
     }
 
     // Full list of deps for this project
-    const projectDepsPrompting = await
+    const projectDepsPrompting =
             this.getProjectDepsPrompting(
-              prisma,
+              depsJsonContent,
               intentCodeProjectNode)
 
     if (projectDepsPrompting != null) {
@@ -61,20 +88,15 @@ export class DependenciesPromptService {
     return prompting
   }
 
-  async getProjectDepsPrompting(
-          prisma: PrismaClient,
-          intentCodeProjectNode: SourceNode) {
+  getProjectDepsPrompting(
+    depsJsonContent: any,
+    intentCodeProjectNode: SourceNode) {
 
     // Debug
     const fnName = `${this.clName}.getProjectDepsPrompting()`
 
-    // Try to get deps node
-    const depsNode = await
-            dependenciesQueryService.getDepsNode(
-              prisma,
-              intentCodeProjectNode)
-
-    if (depsNode?.jsonContent?.deps == null) {
+    // Validate
+    if (depsJsonContent?.deps == null) {
       return
     }
 
@@ -82,10 +104,40 @@ export class DependenciesPromptService {
     var prompting = `Full list of dependencies in this project:\n`
 
     for (const [depName, depDetails] of
-         Object.entries(depsNode.jsonContent.deps)) {
+         Object.entries(depsJsonContent.deps)) {
 
       prompting +=
         `- ${depName}: minVersion: ${(depDetails as any).minVersion}\n`
+    }
+
+    // Return
+    return prompting
+  }
+
+  getRuntimePrompting(
+    depsJsonContent: any,
+    sourceFileRelativePath: string) {
+
+    // Debug
+    const fnName = `${this.clName}.getRuntimePrompting()`
+
+    // Validate
+    if (depsJsonContent?.runtimes == null) {
+      return null
+    }
+
+    // Iterate runtimes
+    var prompting = ``
+
+    for (const [runtime, obj] of Object.entries(depsJsonContent?.runtimes)) {
+
+      const run = (obj as any).run as string
+
+      if (sourceFileRelativePath.endsWith(run)) {
+
+        prompting +=
+          `- The target source file needs to be runnable by ${runtime}.\n`
+      }
     }
 
     // Return

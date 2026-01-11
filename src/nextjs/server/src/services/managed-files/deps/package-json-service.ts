@@ -134,18 +134,33 @@ export class PackageJsonManagedFileService {
     console.log(`${fnName}: depsNodeJson.runtimes: ` +
                 JSON.stringify(depsNodeJson.runtimes))
 
-    // Define filename
-    const filename = `${projectPath}${path.sep}package.json`
+    // Define filenames
+    const packageJsonFilename = `${projectPath}${path.sep}package.json`
+    const tsConfigJsonFilename = `${projectPath}${path.sep}tsconfig.json`
 
     // Read the existing package.json
-    const content = await fs.readFileSync(filename, 'utf-8')
-    const packageJson = JSON.parse(content)
+    const packageJsonContent = await
+            fs.readFileSync(packageJsonFilename, 'utf-8')
+
+    const packageJson = JSON.parse(packageJsonContent)
+
+    // Read the existing tsconfig.json (if present)
+    var tsConfigJson: any = undefined
+
+    if (await fs.existsSync(tsConfigJsonFilename) === true) {
+
+      const tsConfigJsonContent = await
+              fs.readFileSync(tsConfigJsonFilename, 'utf-8')
+
+      tsConfigJson = JSON.parse(tsConfigJsonContent)
+    }
 
     // Update for runtimes
     if (depsNodeJson?.runtimes != null) {
 
       this.updateForRuntimes(
         packageJson,
+        tsConfigJson,
         depsNodeJson)
     }
 
@@ -154,7 +169,7 @@ export class PackageJsonManagedFileService {
       packageJson,
       importsData)
 
-    // Prettify JSON
+    // Prettify packageJson
     const prettyPackageJson =
             JSON.stringify(
               packageJson,
@@ -162,10 +177,24 @@ export class PackageJsonManagedFileService {
               2) +
             `\n`
 
-    // Write file
+    // Write files
     await fs.writeFileSync(
-            filename,
+            packageJsonFilename,
             prettyPackageJson)
+
+    if (tsConfigJson != null) {
+
+      const prettyTsConfigJson =
+              JSON.stringify(
+                tsConfigJson,
+                null,
+                2) +
+              `\n`
+
+      await fs.writeFileSync(
+              tsConfigJsonFilename,
+              prettyTsConfigJson)
+    }
   }
 
   updateDependencies(
@@ -209,6 +238,7 @@ export class PackageJsonManagedFileService {
 
   updateForRuntimes(
     packageJson: any,
+    tsConfigJson: any,
     depsNodeJson: any) {
 
     // Debug
@@ -219,10 +249,26 @@ export class PackageJsonManagedFileService {
 
       const obj = value as any
 
+      // ts-script
       if (runtime === 'ts-script') {
 
+        // package.json modifications
         packageJson.scripts['ts-script'] = obj.run
         packageJson.dependencies['ts-node'] = obj.tsNode
+
+        if (packageJson.dependencies['tsconfig-paths'] == null &&
+            packageJson.devDependencies['tsconfig-paths'] == null) {
+
+          packageJson.dependencies['tsconfig-paths'] = '^4'
+        }
+
+        // tsconfig.json modifications
+        tsConfigJson['ts-node'] = {
+          'require': ['tsconfig-paths/register'],
+          'compilerOptions': {
+            'module': 'CommonJS'
+          }
+        }
       }
     }
 
