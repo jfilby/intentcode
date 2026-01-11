@@ -253,8 +253,8 @@ export class PackageJsonManagedFileService {
       if (runtime === 'ts-script') {
 
         // package.json modifications
-        packageJson.scripts['ts-script'] = obj.run
-        packageJson.dependencies['ts-node'] = obj.tsNode
+        packageJson.scripts['ts-script'] = `ts-node ${obj.run}`
+        packageJson.dependencies['ts-node'] = obj['ts-node']
 
         if (packageJson.dependencies['tsconfig-paths'] == null &&
             packageJson.devDependencies['tsconfig-paths'] == null) {
