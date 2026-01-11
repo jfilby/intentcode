@@ -14,7 +14,35 @@ export class ReadJsTsSourceImportsService {
   // Consts
   clName = 'ReadJsTsSourceImportsService'
 
+  NODE_BUILTINS = new Set([
+    'fs', 'path', 'crypto', 'stream', 'http', 'https', 'url',
+    'util', 'events', 'os', 'child_process', 'buffer'
+  ])
+
   // Code
+  isNodeBuiltin(specifier: string): boolean {
+
+    return specifier.startsWith('node:') ||
+           this.NODE_BUILTINS.has(specifier.split('/')[0])
+  }
+
+  isInternalImport(specifier: string): boolean {
+
+    return (
+      specifier.startsWith('./') ||
+      specifier.startsWith('../') ||
+      specifier.startsWith('/') ||
+      specifier.startsWith('@/') ||   // tsconfig paths
+      specifier.startsWith('~') ||
+      specifier.startsWith('#'))
+  }
+
+  isPackageDependency(specifier: string): boolean {
+
+    return !this.isNodeBuiltin(specifier) &&
+           !this.isInternalImport(specifier)
+  }
+
   async processSrcFile(
           importsData: ImportsData,
           srcFilePath: string) {
@@ -34,10 +62,8 @@ export class ReadJsTsSourceImportsService {
     // Process imports
     for (const importResult of importsResults) {
 
-      // Skip internal imports
-      if (importResult.specifier.startsWith('node:')) {
-
-        importsData.internalDependencies[importResult.specifier] = '?'
+      // Skip non-package dependencies
+      if (!this.isPackageDependency(importResult.specifier)) {
         continue
       }
 
