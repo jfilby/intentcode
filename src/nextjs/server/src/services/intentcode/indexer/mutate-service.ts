@@ -143,7 +143,7 @@ export class IndexerMutateService {
     const prompt = await
       this.getPrompt(
         prisma,
-        intentCodeProjectNode,
+        projectNode,
         intentFileNode,
         buildData.extensionsData,
         targetFileExt,
@@ -247,7 +247,7 @@ export class IndexerMutateService {
 
   async getPrompt(
           prisma: PrismaClient,
-          intentCodeProjectNode: SourceNode,
+          projectNode: SourceNode,
           intentFileNode: SourceNode,
           extensionsData: ExtensionsData,
           targetFileExt: string,
@@ -263,7 +263,7 @@ export class IndexerMutateService {
     const depsPrompting = await
             dependenciesPromptService.getDepsPrompting(
               prisma,
-              intentCodeProjectNode,
+              projectNode,
               intentFileNode)
 
     // Start the prompt

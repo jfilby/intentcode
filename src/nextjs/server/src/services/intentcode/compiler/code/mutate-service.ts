@@ -100,7 +100,7 @@ export class CompilerMutateService {
 
   async getPrompt(
           prisma: PrismaClient,
-          intentCodeProjectNode: SourceNode,
+          projectNode: SourceNode,
           intentFileNode: SourceNode,
           extensionsData: ExtensionsData,
           targetFileExt: string,
@@ -120,7 +120,7 @@ export class CompilerMutateService {
     const depsPrompting = await
             dependenciesPromptService.getDepsPrompting(
               prisma,
-              intentCodeProjectNode,
+              projectNode,
               intentFileNode)
 
     // Debug
@@ -409,7 +409,7 @@ export class CompilerMutateService {
     const prompt = await
       this.getPrompt(
         prisma,
-        intentCodeProjectNode,
+        projectNode,
         intentFileNode,
         buildData.extensionsData,
         targetFileExt,
