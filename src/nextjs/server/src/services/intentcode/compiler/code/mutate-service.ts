@@ -113,12 +113,6 @@ export class CompilerMutateService {
     const intentFileRelativePath =
               (buildIntentFile.intentFileNode.jsonContent as any).relativePath
 
-    // Get SourceCode relative path
-    const sourceFileRelativePath =
-            intentFileRelativePath.slice(
-              0,
-              intentFileRelativePath.length - ServerOnlyTypes.dotMdFileExt.length)
-
     // Get rules by targetLang
     const targetLangPrompting =
             compilerQueryService.getSkillPrompting(
@@ -131,7 +125,7 @@ export class CompilerMutateService {
               prisma,
               projectNode,
               buildIntentFile.intentFileNode,
-              sourceFileRelativePath)
+              buildIntentFile.sourceFullPath)
 
     // Debug
     // console.log(`${fnName}: targetLangPrompting: ${targetLangPrompting}`)
@@ -293,26 +287,26 @@ export class CompilerMutateService {
     // Debug
     const fnName = `${this.clName}.processResults()`
 
+    // Validate
+    if (buildIntentFile.sourceFullPath == null) {
+      throw new CustomError(
+        `${fnName}: buildIntentFile.sourceFullPath == null`)
+    }
+
     // Write source file (if any)
     if (content != null) {
-
-      // Get source code's full path
-      const sourceFullPath =
-              sourceAssistIntentCodeService.getSourceCodeFullPath(
-                sourceCodeProjectNode,
-                buildIntentFile.intentFileNode)
 
       // Get/create SourceCode node path
       await sourceCodePathGraphMutateService.getOrCreateSourceCodePathAsGraph(
               prisma,
               sourceCodeProjectNode,
-              sourceFullPath,
+              buildIntentFile.sourceFullPath,
               content,
               sourceNodeGenerationData)
 
       // Write source file
       await fsUtilsService.writeTextFile(
-              sourceFullPath,
+              buildIntentFile.sourceFullPath,
               content,
               true)  // createMissingDirs
     }
@@ -384,6 +378,12 @@ export class CompilerMutateService {
             techQueryService.getTechByEnvKey(
               prisma,
               LlmEnvNames.compilerEnvName)
+
+    // Get source code's full path
+    buildIntentFile.sourceFullPath =
+      sourceAssistIntentCodeService.getSourceCodeFullPath(
+        sourceCodeProjectNode,
+        buildIntentFile.intentFileNode)
 
     // Get prompt
     const prompt = await

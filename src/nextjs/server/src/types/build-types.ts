@@ -13,6 +13,7 @@ export interface BuildIntentFile {
   intentCode: string
   targetFileExt: string
   intentFileNode: SourceNode
+  sourceFullPath?: string
 }
 
 export enum DepsTools {

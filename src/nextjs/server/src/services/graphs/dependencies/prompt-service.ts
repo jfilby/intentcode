@@ -59,8 +59,6 @@ export class DependenciesPromptService {
     // Existing deps
     if ((intentFileNode.jsonContent as any).deps != null) {
 
-      const deps = (intentFileNode.jsonContent as any).deps
-
       prompting += `Existing deps for this file:\n`
 
       for (const [dependency, minVersion] of
@@ -140,6 +138,10 @@ export class DependenciesPromptService {
       if (runCheck.startsWith('.')) {
         runCheck = runCheck.slice(1)
       }
+
+      // Debug
+      // console.log(`${fnName}: check if ${sourceFileRelativePath} ends ` +
+      //             `with ${runCheck}`)
 
       // Check
       if (sourceFileRelativePath.endsWith(runCheck)) {
