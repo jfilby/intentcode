@@ -134,7 +134,7 @@ export class IndexerMutateService {
     var jsonContent = await
           this.getExistingJsonContent(
             prisma,
-            buildIntentFile.intentFileNode!,
+            buildIntentFile.intentFileNode,
             tech,
             prompt)
 
@@ -387,7 +387,7 @@ export class IndexerMutateService {
       await dependenciesMutateService.processDeps(
               prisma,
               projectNode,
-              buildIntentFile.intentFileNode!,
+              buildIntentFile.intentFileNode,
               jsonContent.deps)
     }
 

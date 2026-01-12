@@ -127,7 +127,7 @@ export class CompilerMutateService {
             dependenciesPromptService.getDepsPrompting(
               prisma,
               projectNode,
-              buildIntentFile.intentFileNode!,
+              buildIntentFile.intentFileNode,
               sourceFileRelativePath)
 
     // Debug
@@ -331,7 +331,7 @@ export class CompilerMutateService {
       await dependenciesMutateService.processDeps(
               prisma,
               projectNode,
-              buildIntentFile.intentFileNode!,
+              buildIntentFile.intentFileNode,
               jsonContent.deps)
     }
 
@@ -406,7 +406,7 @@ export class CompilerMutateService {
     var { content, jsonContent } = await
           this.getExistingJsonContent(
             prisma,
-            buildIntentFile.intentFileNode!,
+            buildIntentFile.intentFileNode,
             tech,
             prompt)
 
