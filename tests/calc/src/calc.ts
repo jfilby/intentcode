@@ -42,12 +42,13 @@ export class Calc {
   }
 
   /**
-   * Processes the tokens while respecting arithmetic precedence (Multiplication/Division first).
+   * Processes the tokens while respecting arithmetic precedence.
+   * This implements 'putting brackets' by reducing high-precedence ops first.
    */
   private solveSteps(steps: InputType[]): number {
     if (steps.length === 0) return 0;
 
-    // Pass 1: Handle high-precedence operations (*, /) - Effectively 'putting brackets' around them
+    // Pass 1: Handle high-precedence operations (*, /)
     const pass1: InputType[] = [];
     for (let i = 0; i < steps.length; i++) {
       const current = steps[i];
