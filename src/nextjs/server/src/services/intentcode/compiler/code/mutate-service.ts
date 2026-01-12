@@ -3,7 +3,7 @@ import { PrismaClient, SourceNode, Tech } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-service'
 import { UsersService } from '@/serene-core-server/services/users/service'
-import { BuildData } from '@/types/build-types'
+import { BuildData, CompilerFile } from '@/types/build-types'
 import { IntentCodeCommonTypes } from '../../common/types'
 import { LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
@@ -18,7 +18,6 @@ import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { GraphQueryService } from '@/services/graphs/intentcode/graph-query-service'
 import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service'
 import { IntentCodeMessagesService } from '../../common/messages-service'
-import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
 import { SourceCodePathGraphMutateService } from '@/services/graphs/source-code/path-graph-mutate-service'
 
 // Models
@@ -34,7 +33,6 @@ const fsUtilsService = new FsUtilsService()
 const graphQueryService = new GraphQueryService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
 const intentCodeMessagesService = new IntentCodeMessagesService()
-const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
 const sourceCodePathGraphMutateService = new SourceCodePathGraphMutateService()
 const techQueryService = new TechQueryService()
 const usersService = new UsersService()
@@ -101,10 +99,8 @@ export class CompilerMutateService {
   async getPrompt(
           prisma: PrismaClient,
           projectNode: SourceNode,
-          intentFileNode: SourceNode,
+          compilerFile: CompilerFile,
           extensionsData: ExtensionsData,
-          targetFileExt: string,
-          intentCode: string,
           indexedDataSourceNodes: SourceNode[]) {
 
     // Debug
@@ -112,7 +108,7 @@ export class CompilerMutateService {
 
     // Get intentFileRelativePath
     const intentFileRelativePath =
-              (intentFileNode.jsonContent as any).relativePath
+              (compilerFile.intentFileNode.jsonContent as any).relativePath
 
     // Get SourceCode relative path
     const sourceFileRelativePath =
@@ -124,14 +120,14 @@ export class CompilerMutateService {
     const targetLangPrompting =
             compilerQueryService.getSkillPrompting(
               extensionsData,
-              targetFileExt)
+              compilerFile.targetFileExt)
 
     // Get deps prompting
     const depsPrompting = await
             dependenciesPromptService.getDepsPrompting(
               prisma,
               projectNode,
-              intentFileNode,
+              compilerFile.intentFileNode!,
               sourceFileRelativePath)
 
     // Debug
@@ -149,7 +145,7 @@ export class CompilerMutateService {
           `- Try to fix and errors and warnings in the fixedIntentCode ` +
           `  field.\n` +
           `- Convert the input IntentCode (if no errors) to ` +
-          `  ${targetFileExt} source code.\n` +
+          `  ${compilerFile.targetFileExt} source code.\n` +
           `- Use the indexed data for this file as a structural starting ` +
           `  point. Imports depend on this to be accurate.\n` +
           `- Write idiomatic code, this is for actual use.\n` +
@@ -222,7 +218,7 @@ export class CompilerMutateService {
     if (targetLangPrompting.length > 0) {
 
       prompt +=
-        `## ${targetFileExt} specific\n` +
+        `## ${compilerFile.targetFileExt} specific\n` +
         targetLangPrompting +
         `\n`
     }
@@ -232,7 +228,7 @@ export class CompilerMutateService {
       `## IntentCode\n` +
       `\n` +
       '```md\n' +
-      intentCode +
+      compilerFile.intentCode +
       `\n` +
       '```\n' +
       `\n` +
@@ -272,15 +268,14 @@ export class CompilerMutateService {
   async processResults(
           prisma: PrismaClient,
           projectNode: SourceNode,
-          intentFileNode: SourceNode,
+          compilerFile: CompilerFile,
           sourceCodeProjectNode: SourceNode,
           sourceNodeGenerationData: SourceNodeGenerationData,
-          fileModifiedTime: Date,
           content: string,
           jsonContent: any) {
 
     // Debug
-    const fnName = `${this.clName}.run()`
+    const fnName = `${this.clName}.processResults()`
 
     // Write source file (if any)
     if (content != null) {
@@ -289,7 +284,7 @@ export class CompilerMutateService {
       const projectSourcePath = (sourceCodeProjectNode.jsonContent as any).path
 
       const intentFileRelativePath =
-              (intentFileNode.jsonContent as any).relativePath
+              (compilerFile.intentFileNode.jsonContent as any).relativePath
 
       // Validate
       if (projectSourcePath == null) {
@@ -336,7 +331,7 @@ export class CompilerMutateService {
       await dependenciesMutateService.processDeps(
               prisma,
               projectNode,
-              intentFileNode,
+              compilerFile.intentFileNode!,
               jsonContent.deps)
     }
 
@@ -344,12 +339,12 @@ export class CompilerMutateService {
     const compilerDataSourceNode = await
             intentCodeGraphMutateService.upsertIntentCodeCompilerData(
               prisma,
-              intentFileNode.instanceId,
-              intentFileNode,  // parentNode
+              compilerFile.intentFileNode.instanceId,
+              compilerFile.intentFileNode,  // parentNode
               SourceNodeNames.compilerData,
               jsonContent,
               sourceNodeGenerationData,
-              fileModifiedTime)
+              compilerFile.fileModifiedTime)
 
     // Print warnings and errors (must be at the end of results processing)
     intentCodeMessagesService.handleMessages(jsonContent)
@@ -360,10 +355,7 @@ export class CompilerMutateService {
             projectNode: SourceNode,
             intentCodeProjectNode: SourceNode,
             sourceCodeProjectNode: SourceNode,
-            fullPath: string,
-            fileModifiedTime: Date,
-            targetFileExt: string,
-            intentCode: string) {
+            compilerFile: CompilerFile) {
 
     // Debug
     const fnName = `${this.clName}.run()`
@@ -372,7 +364,7 @@ export class CompilerMutateService {
 
     // Verbose output
     if (ServerOnlyTypes.verbosity === true) {
-      console.log(`compiling: ${fullPath}..`)
+      console.log(`compiling: ${compilerFile.intentCodeFilename}..`)
     }
 
     // Get all related indexed data, including for this file
@@ -384,21 +376,6 @@ export class CompilerMutateService {
     if (indexedDataSourceNodes.length === 0) {
       throw new CustomError(`${fnName}: indexedDataSourceNodes.length === 0`)
     }
-
-    // Get/create the file's SourceNode
-    const intentFileNode = await
-            intentCodePathGraphMutateService.getOrCreateIntentCodePathAsGraph(
-              prisma,
-              intentCodeProjectNode,
-              fullPath)
-
-    /* Check if the file has been updated since last indexed
-    if (intentFileNode?.contentUpdated != null &&
-        intentFileNode.contentUpdated <= fileModifiedTime) {
-
-      // console.log(`${fnName}: file: ${fullPath} already indexed`)
-      return
-    } */
 
     // Get the admin UserProfile
     const adminUserProfile = await
@@ -421,17 +398,15 @@ export class CompilerMutateService {
       this.getPrompt(
         prisma,
         projectNode,
-        intentFileNode,
+        compilerFile,
         buildData.extensionsData,
-        targetFileExt,
-        intentCode,
         indexedDataSourceNodes)
 
     // Already generated?
     var { content, jsonContent } = await
           this.getExistingJsonContent(
             prisma,
-            intentFileNode,
+            compilerFile.intentFileNode!,
             tech,
             prompt)
 
@@ -459,10 +434,9 @@ export class CompilerMutateService {
     await this.processResults(
             prisma,
             projectNode,
-            intentFileNode,
+            compilerFile,
             sourceCodeProjectNode,
             sourceNodeGenerationData,
-            fileModifiedTime,
             content,
             jsonContent)
   }

@@ -1,3 +1,4 @@
+import { SourceNode } from '@prisma/client'
 import { ExtensionsData } from './source-graph-types'
 
 export enum BuildStageType {
@@ -6,8 +7,24 @@ export enum BuildStageType {
   updateDeps = 'update-deps'
 }
 
+export interface CompilerFile {
+  intentCodeFilename: string
+  fileModifiedTime: Date
+  intentCode: string
+  targetFileExt: string
+  intentFileNode: SourceNode
+}
+
 export enum DepsTools {
   npm = 'npm'
+}
+
+export interface IndexerFile {
+  intentCodeFilename: string
+  fileModifiedTime: Date
+  intentCode: string
+  targetFileExt: string
+  intentFileNode: SourceNode
 }
 
 export interface IntentFileBuild {

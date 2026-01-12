@@ -1,12 +1,13 @@
 const fs = require('fs')
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
-import { BuildData } from '@/types/build-types'
+import { BuildData, CompilerFile, IndexerFile } from '@/types/build-types'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
 import { CompilerMutateService } from '../intentcode/compiler/code/mutate-service'
 import { FsUtilsService } from '../utils/fs-utils-service'
 import { IndexerMutateService } from '../intentcode/indexer/mutate-service'
 import { IntentCodeFilenameService } from '../utils/filename-service'
+import { IntentCodePathGraphMutateService } from '../graphs/intentcode/path-graph-mutate-service'
 import { ProjectGraphQueryService } from '../graphs/project/query-service'
 
 // Services
@@ -14,6 +15,7 @@ const compilerMutateService = new CompilerMutateService()
 const fsUtilsService = new FsUtilsService()
 const indexerMutateService = new IndexerMutateService()
 const intentCodeFilenameService = new IntentCodeFilenameService()
+const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
 const projectGraphQueryService = new ProjectGraphQueryService()
 const walkDirService = new WalkDirService()
 
@@ -115,6 +117,30 @@ export class ProjectCompileService {
                 buildFile.intentCodeFilename,
                 { encoding: 'utf8', flag: 'r' })
 
+      // Get/create the file's SourceNode
+      const intentFileNode = await
+        intentCodePathGraphMutateService.getOrCreateIntentCodePathAsGraph(
+          prisma,
+          intentCodeProjectNode,
+          buildFile.intentCodeFilename)
+
+      /* Check if the file has been updated since last indexed
+      if (intentFileNode?.contentUpdated != null &&
+          intentFileNode.contentUpdated <= fileModifiedTime) {
+
+        // console.log(`${fnName}: file: ${fullPath} already indexed`)
+        continue
+      } */
+
+      // Define CompilerFile
+      const compilerFile: CompilerFile = {
+        intentCodeFilename: buildFile.intentCodeFilename,
+        fileModifiedTime: fileModifiedTime,
+        intentCode: intentCode,
+        targetFileExt: buildFile.targetFileExt,
+        intentFileNode: intentFileNode
+      }
+
       // Compile
       await compilerMutateService.run(
               prisma,
@@ -122,10 +148,7 @@ export class ProjectCompileService {
               projectNode,
               intentCodeProjectNode,
               sourceCodeProjectNode,
-              buildFile.intentCodeFilename,
-              fileModifiedTime,
-              buildFile.targetFileExt,
-              intentCode)
+              compilerFile)
     }
   }
 
@@ -158,16 +181,37 @@ export class ProjectCompileService {
                 buildFile.intentCodeFilename,
                 { encoding: 'utf8', flag: 'r' })
 
+      // Get/create the file's SourceNode
+      const intentFileNode = await
+        intentCodePathGraphMutateService.getOrCreateIntentCodePathAsGraph(
+          prisma,
+          intentCodeProjectNode,
+          buildFile.intentCodeFilename)
+
+      // Check if the file has been updated since last indexed
+      if (intentFileNode?.contentUpdated != null &&
+          intentFileNode.contentUpdated <= fileModifiedTime) {
+
+        // console.log(`${fnName}: file: ${intentCodeFilename} already indexed`)
+        continue
+      }
+
+      // Define IndexerFile
+      const indexerFile: IndexerFile = {
+        intentCodeFilename: buildFile.intentCodeFilename,
+        fileModifiedTime: fileModifiedTime,
+        targetFileExt: buildFile.targetFileExt,
+        intentCode: intentCode,
+        intentFileNode: intentFileNode
+      }
+
       // Index the file
       await indexerMutateService.indexFileWithLlm(
               prisma,
               buildData,
               projectNode,
               intentCodeProjectNode,
-              buildFile.intentCodeFilename,
-              fileModifiedTime,
-              buildFile.targetFileExt,
-              intentCode)
+              indexerFile)
     }
   }
 }

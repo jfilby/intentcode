@@ -7,7 +7,7 @@ import { CustomError } from '@/serene-core-server/types/errors'
 import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-service'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
-import { BuildData } from '@/types/build-types'
+import { BuildData, IndexerFile } from '@/types/build-types'
 import { IntentCodeCommonTypes } from '../common/types'
 import { LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
 import { ExtensionsData, SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
@@ -95,32 +95,15 @@ export class IndexerMutateService {
           buildData: BuildData,
           projectNode: SourceNode,
           intentCodeProjectNode: SourceNode,
-          fullPath: string,
-          fileModifiedTime: Date,
-          targetFileExt: string,
-          intentCode: string) {
+          indexerFile: IndexerFile) {
 
     // Debug
     const fnName = `${this.clName}.indexFileWithLlm()`
 
     // Verbose output
     if (ServerOnlyTypes.verbosity === true) {
-      console.log(`indexing: ${fullPath}..`)
-    }
 
-    // Get/create the file's SourceNode
-    const intentFileNode = await
-            intentCodePathGraphMutateService.getOrCreateIntentCodePathAsGraph(
-              prisma,
-              intentCodeProjectNode,
-              fullPath)
-
-    // Check if the file has been updated since last indexed
-    if (intentFileNode?.contentUpdated != null &&
-        intentFileNode.contentUpdated <= fileModifiedTime) {
-
-      // console.log(`${fnName}: file: ${fullPath} already indexed`)
-      return
+      console.log(`indexing: ${indexerFile.intentCodeFilename}..`)
     }
 
     // Get the admin UserProfile
@@ -144,16 +127,14 @@ export class IndexerMutateService {
       this.getPrompt(
         prisma,
         projectNode,
-        intentFileNode,
         buildData.extensionsData,
-        targetFileExt,
-        intentCode)
+        indexerFile)
 
     // Already generated?
     var jsonContent = await
           this.getExistingJsonContent(
             prisma,
-            intentFileNode,
+            indexerFile.intentFileNode!,
             tech,
             prompt)
 
@@ -182,9 +163,8 @@ export class IndexerMutateService {
     await this.processQueryResults(
             prisma,
             projectNode,
-            intentFileNode,
+            indexerFile,
             sourceNodeGenerationData,
-            fileModifiedTime,
             jsonContent)
 
     // Return
@@ -211,6 +191,9 @@ export class IndexerMutateService {
             })
 
     // Analyze each file
+    // intentCodeFilename -> IndexerFile
+    var indexerFiles: IndexerFile[] = []
+
     for (const intentCodeFilename of intentCodeList) {
 
       // Get last save time of the file
@@ -232,39 +215,61 @@ export class IndexerMutateService {
                 intentCodeFilename,
                 { encoding: 'utf8', flag: 'r' })
 
-      // Index file
+      // Get/create the file's SourceNode
+      const intentFileNode = await
+        intentCodePathGraphMutateService.getOrCreateIntentCodePathAsGraph(
+          prisma,
+          intentCodeProjectNode,
+          intentCodeFilename)
+
+      // Check if the file has been updated since last indexed
+      if (intentFileNode?.contentUpdated != null &&
+          intentFileNode.contentUpdated <= fileModifiedTime) {
+
+        // console.log(`${fnName}: file: ${intentCodeFilename} already indexed`)
+        continue
+      }
+
+      // Add to indexerFiles
+      indexerFiles.push({
+        intentCodeFilename: intentCodeFilename,
+        fileModifiedTime: fileModifiedTime,
+        intentCode: intentCode,
+        targetFileExt: targetFileExt,
+        intentFileNode: intentFileNode
+      })
+    }
+
+    // Index files
+    for (const indexerFile of indexerFiles) {
+
       await this.indexFileWithLlm(
               prisma,
               buildData,
               projectNode,
               intentCodeProjectNode,
-              intentCodeFilename,
-              fileModifiedTime,
-              intentCode,
-              targetFileExt)
+              indexerFile)
     }
   }
 
   async getPrompt(
           prisma: PrismaClient,
           projectNode: SourceNode,
-          intentFileNode: SourceNode,
           extensionsData: ExtensionsData,
-          targetFileExt: string,
-          intentCode: string) {
+          indexerFile: IndexerFile) {
 
     // Get rules by targetLang
     const targetLangPrompting =
             compilerQueryService.getSkillPrompting(
               extensionsData,
-              targetFileExt)
+              indexerFile.targetFileExt)
 
     // Get deps prompting
     const depsPrompting = await
             dependenciesPromptService.getDepsPrompting(
               prisma,
               projectNode,
-              intentFileNode)
+              indexerFile.intentFileNode)
 
     // Start the prompt
     var prompt = 
@@ -338,7 +343,7 @@ export class IndexerMutateService {
     if (targetLangPrompting.length > 0) {
 
       prompt +=
-        `## ${targetFileExt} specific\n` +
+        `## ${indexerFile.targetFileExt} specific\n` +
         targetLangPrompting +
         `\n`
     }
@@ -348,7 +353,7 @@ export class IndexerMutateService {
       `## IntentCode\n` +
       `\n` +
       '```md\n' +
-      intentCode +
+      indexerFile.intentCode +
       `\n` +
       '```'
 
@@ -359,21 +364,20 @@ export class IndexerMutateService {
   async processQueryResults(
           prisma: PrismaClient,
           projectNode: SourceNode,
-          intentFileNode: SourceNode,
+          indexerFile: IndexerFile,
           sourceNodeGenerationData: SourceNodeGenerationData,
-          fileModifiedTime: Date,
           jsonContent: any) {
 
     // Debug
     const fnName = `${this.clName}.processQueryResults()`
 
     // Validate
-    if (intentFileNode.jsonContent == null) {
+    if (indexerFile.intentFileNode.jsonContent == null) {
       throw new CustomError(
         `${fnName}: intentFileNode.jsonContent == null`)
     }
 
-    if ((intentFileNode.jsonContent as any).relativePath == null) {
+    if ((indexerFile.intentFileNode.jsonContent as any).relativePath == null) {
       throw new CustomError(
         `${fnName}: intentFileNode.jsonContent.relativePath == null`)
     }
@@ -384,7 +388,7 @@ export class IndexerMutateService {
       await dependenciesMutateService.processDeps(
               prisma,
               projectNode,
-              intentFileNode,
+              indexerFile.intentFileNode!,
               jsonContent.deps)
     }
 
@@ -392,12 +396,12 @@ export class IndexerMutateService {
     const indexerDataSourceNode = await
             intentCodeGraphMutateService.upsertIntentCodeIndexedData(
               prisma,
-              intentFileNode.instanceId,
-              intentFileNode,  // parentNode
+              indexerFile.intentFileNode.instanceId,
+              indexerFile.intentFileNode,  // parentNode
               SourceNodeNames.indexedData,
               jsonContent,
               sourceNodeGenerationData,
-              fileModifiedTime)
+              indexerFile.fileModifiedTime)
 
     // Print warnings and errors (must be at the end of results processing)
     intentCodeMessagesService.handleMessages(jsonContent)
