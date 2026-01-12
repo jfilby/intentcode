@@ -1,4 +1,7 @@
 {
+  "extensions": {
+    "intentcode/bundled": "^0"
+  },
   "tool": "npm",
   "runtimes": {
     "ts-script": {

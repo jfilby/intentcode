@@ -6,12 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "ts-script": "ts-node ./src/index.ts"
   },
   "dependencies": {
     "next": "16.1.1",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "tsconfig-paths": "^4",
+    "ts-node": "^10"
   },
   "devDependencies": {
     "@types/node": "^20",

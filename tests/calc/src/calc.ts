@@ -10,98 +10,76 @@ export interface InputType {
   value?: number;
 }
 
+/**
+ * Calculator class to process arithmetic strings.
+ */
 export class Calc {
   /**
-   * Executes the calculation logic
+   * Main execution flow to calculate the result of an input string.
    */
   public run(input: string): number {
-    const steps = this.parseInput(input);
-    const precedenceSteps = this.applyPrecedence(steps);
-    return this.solve(precedenceSteps);
+    const steps: InputType[] = this.parseInput(input);
+    const answer: number = this.solveSteps(steps);
+    return answer;
   }
 
+  /**
+   * Tokenizes the input string into a list of operations and values.
+   */
   private parseInput(input: string): InputType[] {
     const tokens: InputType[] = [];
-    const regex = /(\d+(\.\d+)?)|([\+\-\*\/])/g;
-    let match;
+    const regex = /(\d+\.?\d*)|([\+\-\*\/])/g;
+    let match: RegExpExecArray | null;
 
     while ((match = regex.exec(input)) !== null) {
       if (match[1]) {
         tokens.push({ value: parseFloat(match[1]) });
-      } else if (match[3]) {
-        const opStr = match[3];
-        let op: Operation | undefined;
-        if (opStr === '+') op = Operation.plus;
-        else if (opStr === '-') op = Operation.minus;
-        else if (opStr === '*') op = Operation.multiple;
-        else if (opStr === '/') op = Operation.divide;
-
-        if (op) tokens.push({ op });
+      } else if (match[2]) {
+        tokens.push({ op: match[2] as Operation });
       }
     }
     return tokens;
   }
 
-  private applyPrecedence(steps: InputType[]): InputType[] {
-    const outputQueue: InputType[] = [];
-    const operatorStack: Operation[] = [];
-    const precedence: Record<string, number> = {
-      [Operation.multiple]: 2,
-      [Operation.divide]: 2,
-      [Operation.plus]: 1,
-      [Operation.minus]: 1
-    };
+  /**
+   * Processes the tokens while respecting arithmetic precedence (Multiplication/Division first).
+   */
+  private solveSteps(steps: InputType[]): number {
+    if (steps.length === 0) return 0;
 
-    for (const token of steps) {
-      if (token.value !== undefined) {
-        outputQueue.push(token);
-      } else if (token.op !== undefined) {
-        while (
-          operatorStack.length > 0 &&
-          precedence[operatorStack[operatorStack.length - 1]] >= precedence[token.op]
-        ) {
-          outputQueue.push({ op: operatorStack.pop() });
+    // Pass 1: Handle high-precedence operations (*, /) - Effectively 'putting brackets' around them
+    const pass1: InputType[] = [];
+    for (let i = 0; i < steps.length; i++) {
+      const current = steps[i];
+      if (current.op === Operation.multiple || current.op === Operation.divide) {
+        const left = pass1.pop();
+        const right = steps[++i];
+        if (left?.value !== undefined && right?.value !== undefined) {
+          const result = current.op === Operation.multiple 
+            ? left.value * right.value 
+            : left.value / right.value;
+          pass1.push({ value: result });
         }
-        operatorStack.push(token.op);
+      } else {
+        pass1.push(current);
       }
     }
 
-    while (operatorStack.length > 0) {
-      outputQueue.push({ op: operatorStack.pop() });
-    }
-
-    return outputQueue;
-  }
-
-  private solve(steps: InputType[]): number {
-    const stack: number[] = [];
-
-    for (const token of steps) {
-      if (token.value !== undefined) {
-        stack.push(token.value);
-      } else if (token.op !== undefined) {
-        const b = stack.pop();
-        const a = stack.pop();
-
-        if (a === undefined || b === undefined) continue;
-
-        switch (token.op) {
-          case Operation.plus:
-            stack.push(a + b);
-            break;
-          case Operation.minus:
-            stack.push(a - b);
-            break;
-          case Operation.multiple:
-            stack.push(a * b);
-            break;
-          case Operation.divide:
-            stack.push(a / b);
-            break;
+    // Pass 2: Handle low-precedence operations (+, -)
+    if (pass1.length === 0) return 0;
+    let total = pass1[0]?.value ?? 0;
+    for (let i = 1; i < pass1.length; i += 2) {
+      const op = pass1[i].op;
+      const nextVal = pass1[i + 1]?.value;
+      if (nextVal !== undefined) {
+        if (op === Operation.plus) {
+          total += nextVal;
+        } else if (op === Operation.minus) {
+          total -= nextVal;
         }
       }
     }
 
-    return stack[0] || 0;
+    return total;
   }
 }
