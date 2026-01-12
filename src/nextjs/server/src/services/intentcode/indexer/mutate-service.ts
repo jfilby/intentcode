@@ -7,7 +7,7 @@ import { CustomError } from '@/serene-core-server/types/errors'
 import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-service'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
-import { BuildData, IndexerFile } from '@/types/build-types'
+import { BuildData, BuildIntentFile } from '@/types/build-types'
 import { IntentCodeCommonTypes } from '../common/types'
 import { LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
 import { ExtensionsData, SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
@@ -95,7 +95,7 @@ export class IndexerMutateService {
           buildData: BuildData,
           projectNode: SourceNode,
           intentCodeProjectNode: SourceNode,
-          indexerFile: IndexerFile) {
+          buildIntentFile: BuildIntentFile) {
 
     // Debug
     const fnName = `${this.clName}.indexFileWithLlm()`
@@ -103,7 +103,7 @@ export class IndexerMutateService {
     // Verbose output
     if (ServerOnlyTypes.verbosity === true) {
 
-      console.log(`indexing: ${indexerFile.intentCodeFilename}..`)
+      console.log(`indexing: ${buildIntentFile.intentCodeFilename}..`)
     }
 
     // Get the admin UserProfile
@@ -128,13 +128,13 @@ export class IndexerMutateService {
         prisma,
         projectNode,
         buildData.extensionsData,
-        indexerFile)
+        buildIntentFile)
 
     // Already generated?
     var jsonContent = await
           this.getExistingJsonContent(
             prisma,
-            indexerFile.intentFileNode!,
+            buildIntentFile.intentFileNode!,
             tech,
             prompt)
 
@@ -163,7 +163,7 @@ export class IndexerMutateService {
     await this.processQueryResults(
             prisma,
             projectNode,
-            indexerFile,
+            buildIntentFile,
             sourceNodeGenerationData,
             jsonContent)
 
@@ -191,8 +191,7 @@ export class IndexerMutateService {
             })
 
     // Analyze each file
-    // intentCodeFilename -> IndexerFile
-    var indexerFiles: IndexerFile[] = []
+    var buildIntentFiles: BuildIntentFile[] = []
 
     for (const intentCodeFilename of intentCodeList) {
 
@@ -231,7 +230,7 @@ export class IndexerMutateService {
       }
 
       // Add to indexerFiles
-      indexerFiles.push({
+      buildIntentFiles.push({
         intentCodeFilename: intentCodeFilename,
         fileModifiedTime: fileModifiedTime,
         intentCode: intentCode,
@@ -241,14 +240,14 @@ export class IndexerMutateService {
     }
 
     // Index files
-    for (const indexerFile of indexerFiles) {
+    for (const buildIntentFile of buildIntentFiles) {
 
       await this.indexFileWithLlm(
               prisma,
               buildData,
               projectNode,
               intentCodeProjectNode,
-              indexerFile)
+              buildIntentFile)
     }
   }
 
@@ -256,20 +255,20 @@ export class IndexerMutateService {
           prisma: PrismaClient,
           projectNode: SourceNode,
           extensionsData: ExtensionsData,
-          indexerFile: IndexerFile) {
+          buildIntentFile: BuildIntentFile) {
 
     // Get rules by targetLang
     const targetLangPrompting =
             compilerQueryService.getSkillPrompting(
               extensionsData,
-              indexerFile.targetFileExt)
+              buildIntentFile.targetFileExt)
 
     // Get deps prompting
     const depsPrompting = await
             dependenciesPromptService.getDepsPrompting(
               prisma,
               projectNode,
-              indexerFile.intentFileNode)
+              buildIntentFile.intentFileNode)
 
     // Start the prompt
     var prompt = 
@@ -343,7 +342,7 @@ export class IndexerMutateService {
     if (targetLangPrompting.length > 0) {
 
       prompt +=
-        `## ${indexerFile.targetFileExt} specific\n` +
+        `## ${buildIntentFile.targetFileExt} specific\n` +
         targetLangPrompting +
         `\n`
     }
@@ -353,7 +352,7 @@ export class IndexerMutateService {
       `## IntentCode\n` +
       `\n` +
       '```md\n' +
-      indexerFile.intentCode +
+      buildIntentFile.intentCode +
       `\n` +
       '```'
 
@@ -364,7 +363,7 @@ export class IndexerMutateService {
   async processQueryResults(
           prisma: PrismaClient,
           projectNode: SourceNode,
-          indexerFile: IndexerFile,
+          buildIntentFile: BuildIntentFile,
           sourceNodeGenerationData: SourceNodeGenerationData,
           jsonContent: any) {
 
@@ -372,12 +371,12 @@ export class IndexerMutateService {
     const fnName = `${this.clName}.processQueryResults()`
 
     // Validate
-    if (indexerFile.intentFileNode.jsonContent == null) {
+    if (buildIntentFile.intentFileNode.jsonContent == null) {
       throw new CustomError(
         `${fnName}: intentFileNode.jsonContent == null`)
     }
 
-    if ((indexerFile.intentFileNode.jsonContent as any).relativePath == null) {
+    if ((buildIntentFile.intentFileNode.jsonContent as any).relativePath == null) {
       throw new CustomError(
         `${fnName}: intentFileNode.jsonContent.relativePath == null`)
     }
@@ -388,7 +387,7 @@ export class IndexerMutateService {
       await dependenciesMutateService.processDeps(
               prisma,
               projectNode,
-              indexerFile.intentFileNode!,
+              buildIntentFile.intentFileNode!,
               jsonContent.deps)
     }
 
@@ -396,12 +395,12 @@ export class IndexerMutateService {
     const indexerDataSourceNode = await
             intentCodeGraphMutateService.upsertIntentCodeIndexedData(
               prisma,
-              indexerFile.intentFileNode.instanceId,
-              indexerFile.intentFileNode,  // parentNode
+              buildIntentFile.intentFileNode.instanceId,
+              buildIntentFile.intentFileNode,  // parentNode
               SourceNodeNames.indexedData,
               jsonContent,
               sourceNodeGenerationData,
-              indexerFile.fileModifiedTime)
+              buildIntentFile.fileModifiedTime)
 
     // Print warnings and errors (must be at the end of results processing)
     intentCodeMessagesService.handleMessages(jsonContent)

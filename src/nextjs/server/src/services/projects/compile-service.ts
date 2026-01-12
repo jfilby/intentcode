@@ -1,7 +1,7 @@
 const fs = require('fs')
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
-import { BuildData, CompilerFile, IndexerFile } from '@/types/build-types'
+import { BuildData, BuildIntentFile } from '@/types/build-types'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
 import { CompilerMutateService } from '../intentcode/compiler/code/mutate-service'
 import { FsUtilsService } from '../utils/fs-utils-service'
@@ -132,8 +132,8 @@ export class ProjectCompileService {
         continue
       } */
 
-      // Define CompilerFile
-      const compilerFile: CompilerFile = {
+      // Define BuildIntentFile
+      const buildIntentFile: BuildIntentFile = {
         intentCodeFilename: buildFile.intentCodeFilename,
         fileModifiedTime: fileModifiedTime,
         intentCode: intentCode,
@@ -148,7 +148,7 @@ export class ProjectCompileService {
               projectNode,
               intentCodeProjectNode,
               sourceCodeProjectNode,
-              compilerFile)
+              buildIntentFile)
     }
   }
 
@@ -197,7 +197,7 @@ export class ProjectCompileService {
       }
 
       // Define IndexerFile
-      const indexerFile: IndexerFile = {
+      const buildIntentFile: BuildIntentFile = {
         intentCodeFilename: buildFile.intentCodeFilename,
         fileModifiedTime: fileModifiedTime,
         targetFileExt: buildFile.targetFileExt,
@@ -211,7 +211,7 @@ export class ProjectCompileService {
               buildData,
               projectNode,
               intentCodeProjectNode,
-              indexerFile)
+              buildIntentFile)
     }
   }
 }

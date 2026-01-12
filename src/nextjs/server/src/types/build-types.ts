@@ -7,7 +7,7 @@ export enum BuildStageType {
   updateDeps = 'update-deps'
 }
 
-export interface CompilerFile {
+export interface BuildIntentFile {
   intentCodeFilename: string
   fileModifiedTime: Date
   intentCode: string
@@ -17,14 +17,6 @@ export interface CompilerFile {
 
 export enum DepsTools {
   npm = 'npm'
-}
-
-export interface IndexerFile {
-  intentCodeFilename: string
-  fileModifiedTime: Date
-  intentCode: string
-  targetFileExt: string
-  intentFileNode: SourceNode
 }
 
 export interface IntentFileBuild {

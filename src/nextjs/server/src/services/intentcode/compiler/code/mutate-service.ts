@@ -3,7 +3,7 @@ import { PrismaClient, SourceNode, Tech } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-service'
 import { UsersService } from '@/serene-core-server/services/users/service'
-import { BuildData, CompilerFile } from '@/types/build-types'
+import { BuildData, BuildIntentFile } from '@/types/build-types'
 import { IntentCodeCommonTypes } from '../../common/types'
 import { LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
@@ -99,7 +99,7 @@ export class CompilerMutateService {
   async getPrompt(
           prisma: PrismaClient,
           projectNode: SourceNode,
-          compilerFile: CompilerFile,
+          buildIntentFile: BuildIntentFile,
           extensionsData: ExtensionsData,
           indexedDataSourceNodes: SourceNode[]) {
 
@@ -108,7 +108,7 @@ export class CompilerMutateService {
 
     // Get intentFileRelativePath
     const intentFileRelativePath =
-              (compilerFile.intentFileNode.jsonContent as any).relativePath
+              (buildIntentFile.intentFileNode.jsonContent as any).relativePath
 
     // Get SourceCode relative path
     const sourceFileRelativePath =
@@ -120,14 +120,14 @@ export class CompilerMutateService {
     const targetLangPrompting =
             compilerQueryService.getSkillPrompting(
               extensionsData,
-              compilerFile.targetFileExt)
+              buildIntentFile.targetFileExt)
 
     // Get deps prompting
     const depsPrompting = await
             dependenciesPromptService.getDepsPrompting(
               prisma,
               projectNode,
-              compilerFile.intentFileNode!,
+              buildIntentFile.intentFileNode!,
               sourceFileRelativePath)
 
     // Debug
@@ -145,7 +145,7 @@ export class CompilerMutateService {
           `- Try to fix and errors and warnings in the fixedIntentCode ` +
           `  field.\n` +
           `- Convert the input IntentCode (if no errors) to ` +
-          `  ${compilerFile.targetFileExt} source code.\n` +
+          `  ${buildIntentFile.targetFileExt} source code.\n` +
           `- Use the indexed data for this file as a structural starting ` +
           `  point. Imports depend on this to be accurate.\n` +
           `- Write idiomatic code, this is for actual use.\n` +
@@ -218,7 +218,7 @@ export class CompilerMutateService {
     if (targetLangPrompting.length > 0) {
 
       prompt +=
-        `## ${compilerFile.targetFileExt} specific\n` +
+        `## ${buildIntentFile.targetFileExt} specific\n` +
         targetLangPrompting +
         `\n`
     }
@@ -228,7 +228,7 @@ export class CompilerMutateService {
       `## IntentCode\n` +
       `\n` +
       '```md\n' +
-      compilerFile.intentCode +
+      buildIntentFile.intentCode +
       `\n` +
       '```\n' +
       `\n` +
@@ -268,7 +268,7 @@ export class CompilerMutateService {
   async processResults(
           prisma: PrismaClient,
           projectNode: SourceNode,
-          compilerFile: CompilerFile,
+          buildIntentFile: BuildIntentFile,
           sourceCodeProjectNode: SourceNode,
           sourceNodeGenerationData: SourceNodeGenerationData,
           content: string,
@@ -284,7 +284,7 @@ export class CompilerMutateService {
       const projectSourcePath = (sourceCodeProjectNode.jsonContent as any).path
 
       const intentFileRelativePath =
-              (compilerFile.intentFileNode.jsonContent as any).relativePath
+              (buildIntentFile.intentFileNode.jsonContent as any).relativePath
 
       // Validate
       if (projectSourcePath == null) {
@@ -331,7 +331,7 @@ export class CompilerMutateService {
       await dependenciesMutateService.processDeps(
               prisma,
               projectNode,
-              compilerFile.intentFileNode!,
+              buildIntentFile.intentFileNode!,
               jsonContent.deps)
     }
 
@@ -339,12 +339,12 @@ export class CompilerMutateService {
     const compilerDataSourceNode = await
             intentCodeGraphMutateService.upsertIntentCodeCompilerData(
               prisma,
-              compilerFile.intentFileNode.instanceId,
-              compilerFile.intentFileNode,  // parentNode
+              buildIntentFile.intentFileNode.instanceId,
+              buildIntentFile.intentFileNode,  // parentNode
               SourceNodeNames.compilerData,
               jsonContent,
               sourceNodeGenerationData,
-              compilerFile.fileModifiedTime)
+              buildIntentFile.fileModifiedTime)
 
     // Print warnings and errors (must be at the end of results processing)
     intentCodeMessagesService.handleMessages(jsonContent)
@@ -355,7 +355,7 @@ export class CompilerMutateService {
             projectNode: SourceNode,
             intentCodeProjectNode: SourceNode,
             sourceCodeProjectNode: SourceNode,
-            compilerFile: CompilerFile) {
+            buildIntentFile: BuildIntentFile) {
 
     // Debug
     const fnName = `${this.clName}.run()`
@@ -364,7 +364,7 @@ export class CompilerMutateService {
 
     // Verbose output
     if (ServerOnlyTypes.verbosity === true) {
-      console.log(`compiling: ${compilerFile.intentCodeFilename}..`)
+      console.log(`compiling: ${buildIntentFile.intentCodeFilename}..`)
     }
 
     // Get all related indexed data, including for this file
@@ -398,7 +398,7 @@ export class CompilerMutateService {
       this.getPrompt(
         prisma,
         projectNode,
-        compilerFile,
+        buildIntentFile,
         buildData.extensionsData,
         indexedDataSourceNodes)
 
@@ -406,7 +406,7 @@ export class CompilerMutateService {
     var { content, jsonContent } = await
           this.getExistingJsonContent(
             prisma,
-            compilerFile.intentFileNode!,
+            buildIntentFile.intentFileNode!,
             tech,
             prompt)
 
@@ -434,7 +434,7 @@ export class CompilerMutateService {
     await this.processResults(
             prisma,
             projectNode,
-            compilerFile,
+            buildIntentFile,
             sourceCodeProjectNode,
             sourceNodeGenerationData,
             content,
