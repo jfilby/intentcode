@@ -15,6 +15,9 @@ export class ServerOnlyTypes {
   // Source node generation
   static keepOldSourceNodeGenerations = 3
 
+  // Existing source mode
+  static includeExistingSourceMode = true
+
   // Libraries related
   static indexerAutoAddLibraries = true
   static compilerAutoAddLibraries = true

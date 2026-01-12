@@ -18,6 +18,7 @@ import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { GraphQueryService } from '@/services/graphs/intentcode/graph-query-service'
 import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service'
 import { IntentCodeMessagesService } from '../../common/messages-service'
+import { SourceAssistIntentCodeService } from '../../source/source-prompt'
 import { SourceCodePathGraphMutateService } from '@/services/graphs/source-code/path-graph-mutate-service'
 
 // Models
@@ -33,6 +34,7 @@ const fsUtilsService = new FsUtilsService()
 const graphQueryService = new GraphQueryService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
 const intentCodeMessagesService = new IntentCodeMessagesService()
+const sourceAssistIntentCodeService = new SourceAssistIntentCodeService()
 const sourceCodePathGraphMutateService = new SourceCodePathGraphMutateService()
 const techQueryService = new TechQueryService()
 const usersService = new UsersService()
@@ -99,6 +101,7 @@ export class CompilerMutateService {
   async getPrompt(
           prisma: PrismaClient,
           projectNode: SourceNode,
+          sourceCodeProjectNode: SourceNode,
           buildIntentFile: BuildIntentFile,
           extensionsData: ExtensionsData,
           indexedDataSourceNodes: SourceNode[]) {
@@ -261,6 +264,19 @@ export class CompilerMutateService {
       prompt += `None available.`
     }
 
+    // Existing source code
+    if (ServerOnlyTypes.includeExistingSourceMode === true) {
+
+      const existingSourcePrompting = await
+              sourceAssistIntentCodeService.getExistingSourcePrompting(
+                sourceCodeProjectNode,
+                buildIntentFile)
+
+      if (existingSourcePrompting != null) {
+        prompt += existingSourcePrompting
+      }
+    }
+
     // Return
     return prompt
   }
@@ -280,47 +296,23 @@ export class CompilerMutateService {
     // Write source file (if any)
     if (content != null) {
 
-      // Get paths
-      const projectSourcePath = (sourceCodeProjectNode.jsonContent as any).path
-
-      const intentFileRelativePath =
-              (buildIntentFile.intentFileNode.jsonContent as any).relativePath
-
-      // Validate
-      if (projectSourcePath == null) {
-        throw new CustomError(`${fnName}: projectSourcePath == null`)
-      }
-
-      if (intentFileRelativePath == null) {
-        throw new CustomError(`${fnName}: intentFileRelativePath == null`)
-      }
-
-      if (!intentFileRelativePath.endsWith(ServerOnlyTypes.dotMdFileExt)) {
-
-        throw new CustomError(
-          `${fnName}: intentFileRelativePath doesn't end with ` +
-          `${ServerOnlyTypes.dotMdFileExt}`)
-      }
-
-      // Get SourceCode relative path
-      const sourceFileRelativePath =
-              intentFileRelativePath.slice(
-                0,
-                intentFileRelativePath.length - ServerOnlyTypes.dotMdFileExt.length)
-
-      const fullPath = projectSourcePath + sourceFileRelativePath
+      // Get source code's full path
+      const sourceFullPath =
+              sourceAssistIntentCodeService.getSourceCodeFullPath(
+                sourceCodeProjectNode,
+                buildIntentFile.intentFileNode)
 
       // Get/create SourceCode node path
       await sourceCodePathGraphMutateService.getOrCreateSourceCodePathAsGraph(
               prisma,
               sourceCodeProjectNode,
-              fullPath,
+              sourceFullPath,
               content,
               sourceNodeGenerationData)
 
       // Write source file
       await fsUtilsService.writeTextFile(
-              fullPath,
+              sourceFullPath,
               content,
               true)  // createMissingDirs
     }
@@ -398,6 +390,7 @@ export class CompilerMutateService {
       this.getPrompt(
         prisma,
         projectNode,
+        sourceCodeProjectNode,
         buildIntentFile,
         buildData.extensionsData,
         indexedDataSourceNodes)
