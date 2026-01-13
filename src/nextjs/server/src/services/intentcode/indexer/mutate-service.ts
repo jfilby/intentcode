@@ -94,7 +94,7 @@ export class IndexerMutateService {
           prisma: PrismaClient,
           buildData: BuildData,
           projectNode: SourceNode,
-          intentCodeProjectNode: SourceNode,
+          projectIntentCodeNode: SourceNode,
           buildIntentFile: BuildIntentFile) {
 
     // Debug
@@ -175,7 +175,7 @@ export class IndexerMutateService {
           prisma: PrismaClient,
           buildData: BuildData,
           projectNode: SourceNode,
-          intentCodeProjectNode: SourceNode) {
+          projectIntentCodeNode: SourceNode) {
 
     // Debug
     const fnName = `${this.clName}.indexProject()`
@@ -184,7 +184,7 @@ export class IndexerMutateService {
     var intentCodeList: string[] = []
 
     await walkDirService.walkDir(
-            (intentCodeProjectNode.jsonContent as any).path,
+            (projectIntentCodeNode.jsonContent as any).path,
             intentCodeList,
             {
               recursive: true
@@ -218,7 +218,7 @@ export class IndexerMutateService {
       const intentFileNode = await
         intentCodePathGraphMutateService.getOrCreateIntentCodePathAsGraph(
           prisma,
-          intentCodeProjectNode,
+          projectIntentCodeNode,
           intentCodeFilename)
 
       // Check if the file has been updated since last indexed
@@ -246,7 +246,7 @@ export class IndexerMutateService {
               prisma,
               buildData,
               projectNode,
-              intentCodeProjectNode,
+              projectIntentCodeNode,
               buildIntentFile)
     }
   }

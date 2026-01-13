@@ -14,7 +14,7 @@ export class DependenciesPromptService {
   // Code
   async getDepsPrompting(
           prisma: PrismaClient,
-          intentCodeProjectNode: SourceNode,
+          projectIntentCodeNode: SourceNode,
           intentFileNode: SourceNode,
           sourceFileRelativePath?: string) {
 
@@ -25,7 +25,7 @@ export class DependenciesPromptService {
     const depsNode = await
             dependenciesQueryService.getDepsNode(
               prisma,
-              intentCodeProjectNode)
+              projectIntentCodeNode)
 
     // Get jsonContent
     const depsJsonContent = (depsNode?.jsonContent)
@@ -75,7 +75,7 @@ export class DependenciesPromptService {
     const projectDepsPrompting =
             this.getProjectDepsPrompting(
               depsJsonContent,
-              intentCodeProjectNode)
+              projectIntentCodeNode)
 
     if (projectDepsPrompting != null) {
 
@@ -88,7 +88,7 @@ export class DependenciesPromptService {
 
   getProjectDepsPrompting(
     depsJsonContent: any,
-    intentCodeProjectNode: SourceNode) {
+    projectIntentCodeNode: SourceNode) {
 
     // Debug
     const fnName = `${this.clName}.getProjectDepsPrompting()`

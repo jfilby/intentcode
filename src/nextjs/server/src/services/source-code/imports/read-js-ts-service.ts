@@ -78,7 +78,7 @@ export class ReadJsTsSourceImportsService {
   }
 
   async run(prisma: PrismaClient,
-            intentCodeProjectNode: SourceNode,
+            projectIntentCodeNode: SourceNode,
             srcPath: string) {
 
     // ImportsData var

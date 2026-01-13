@@ -11,14 +11,14 @@ export class SourceAssistIntentCodeService {
 
   // Code
   getSourceCodeFullPath(
-    sourceCodeProjectNode: SourceNode,
+    projectSourceCodeNode: SourceNode,
     intentFileNode: SourceNode) {
 
     // Debug
     const fnName = `${this.clName}.getSourceCodeFullPath()`
 
     // Get paths
-    const projectSourcePath = (sourceCodeProjectNode.jsonContent as any).path
+    const projectSourcePath = (projectSourceCodeNode.jsonContent as any).path
 
     const intentFileRelativePath =
             (intentFileNode.jsonContent as any).relativePath
@@ -52,13 +52,13 @@ export class SourceAssistIntentCodeService {
   }
 
   async getExistingSourcePrompting(
-          sourceCodeProjectNode: SourceNode,
+          projectSourceCodeNode: SourceNode,
           buildIntentFile: BuildIntentFile) {
 
     // Get source code's full path
     const sourceFullPath = await
             this.getSourceCodeFullPath(
-              sourceCodeProjectNode,
+              projectSourceCodeNode,
               buildIntentFile.intentFileNode)
 
     // Check if the file exists

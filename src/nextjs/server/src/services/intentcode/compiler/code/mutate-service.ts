@@ -101,7 +101,7 @@ export class CompilerMutateService {
   async getPrompt(
           prisma: PrismaClient,
           projectNode: SourceNode,
-          sourceCodeProjectNode: SourceNode,
+          projectSourceCodeNode: SourceNode,
           buildIntentFile: BuildIntentFile,
           extensionsData: ExtensionsData,
           indexedDataSourceNodes: SourceNode[]) {
@@ -263,7 +263,7 @@ export class CompilerMutateService {
 
       const existingSourcePrompting = await
               sourceAssistIntentCodeService.getExistingSourcePrompting(
-                sourceCodeProjectNode,
+                projectSourceCodeNode,
                 buildIntentFile)
 
       if (existingSourcePrompting != null) {
@@ -279,7 +279,7 @@ export class CompilerMutateService {
           prisma: PrismaClient,
           projectNode: SourceNode,
           buildIntentFile: BuildIntentFile,
-          sourceCodeProjectNode: SourceNode,
+          projectSourceCodeNode: SourceNode,
           sourceNodeGenerationData: SourceNodeGenerationData,
           content: string,
           jsonContent: any) {
@@ -299,7 +299,7 @@ export class CompilerMutateService {
       // Get/create SourceCode node path
       await sourceCodePathGraphMutateService.getOrCreateSourceCodePathAsGraph(
               prisma,
-              sourceCodeProjectNode,
+              projectSourceCodeNode,
               buildIntentFile.sourceFullPath,
               content,
               sourceNodeGenerationData)
@@ -339,8 +339,8 @@ export class CompilerMutateService {
   async run(prisma: PrismaClient,
             buildData: BuildData,
             projectNode: SourceNode,
-            intentCodeProjectNode: SourceNode,
-            sourceCodeProjectNode: SourceNode,
+            projectIntentCodeNode: SourceNode,
+            projectSourceCodeNode: SourceNode,
             buildIntentFile: BuildIntentFile) {
 
     // Debug
@@ -357,7 +357,7 @@ export class CompilerMutateService {
     const indexedDataSourceNodes = await
             graphQueryService.getAllIndexedData(
               prisma,
-              intentCodeProjectNode.instanceId)
+              projectIntentCodeNode.instanceId)
 
     if (indexedDataSourceNodes.length === 0) {
       throw new CustomError(`${fnName}: indexedDataSourceNodes.length === 0`)
@@ -382,7 +382,7 @@ export class CompilerMutateService {
     // Get source code's full path
     buildIntentFile.sourceFullPath =
       sourceAssistIntentCodeService.getSourceCodeFullPath(
-        sourceCodeProjectNode,
+        projectSourceCodeNode,
         buildIntentFile.intentFileNode)
 
     // Get prompt
@@ -390,7 +390,7 @@ export class CompilerMutateService {
       this.getPrompt(
         prisma,
         projectNode,
-        sourceCodeProjectNode,
+        projectSourceCodeNode,
         buildIntentFile,
         buildData.extensionsData,
         indexedDataSourceNodes)
@@ -428,7 +428,7 @@ export class CompilerMutateService {
             prisma,
             projectNode,
             buildIntentFile,
-            sourceCodeProjectNode,
+            projectSourceCodeNode,
             sourceNodeGenerationData,
             content,
             jsonContent)

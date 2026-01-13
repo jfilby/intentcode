@@ -62,15 +62,15 @@ export class PackageJsonManagedFileService {
         `${fnName}: projectNode.type !== SourceNodeTypes.project`)
     }
 
-    // Get sourceCodeProjectNode
-    const sourceCodeProjectNode = await
+    // Get projectSourceCodeNode
+    const projectSourceCodeNode = await
             projectGraphQueryService.getSourceProjectNode(
               prisma,
               projectNode)
 
     // Validate
-    if (sourceCodeProjectNode == null) {
-      throw new CustomError(`${fnName}: sourceCodeProjectNode == null`)
+    if (projectSourceCodeNode == null) {
+      throw new CustomError(`${fnName}: projectSourceCodeNode == null`)
     }
 
     // Validate
@@ -85,7 +85,7 @@ export class PackageJsonManagedFileService {
 
     // Get paths
     const projectPath = (projectNode.jsonContent as any).path
-    const projectSourcePath = (sourceCodeProjectNode.jsonContent as any).path
+    const projectSourcePath = (projectSourceCodeNode.jsonContent as any).path
 
     // Test for an existing package.json file
     await this.verifyPackageJsonExists(projectPath)

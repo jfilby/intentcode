@@ -9,7 +9,7 @@ export class BuildHooksService {
   // Code
   async updateDeps(
           prisma: PrismaClient,
-          intentCodeProjectNode: SourceNode,
+          projectIntentCodeNode: SourceNode,
           buildData: BuildData) {
 
     // Update deps file

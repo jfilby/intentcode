@@ -200,8 +200,8 @@ export class LoadExternalHooksService {
 
     console.log(`${fnName}: setting up deps tool for project..`)
 
-    // console.log(`${fnName}: updating intentCodeProjectNode.id: ` +
-    //             `${intentCodeProjectNode.id}`)
+    // console.log(`${fnName}: updating projectIntentCodeNode.id: ` +
+    //             `${projectIntentCodeNode.id}`)
 
     // Get/create Deps node
     var depsNode = await

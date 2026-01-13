@@ -126,15 +126,22 @@ export class ProjectSetupService {
     const intentPath = `${projectPath}${path.sep}intent`
     const srcPath = `${projectPath}${path.sep}src`
 
+    // Get/create specs project node
+    const specsProjectNode = await
+            specsGraphMutateService.getOrCreateSpecsProject(
+              prisma,
+              projectNode,
+              intentPath)
+
     // Get/create IntentCode project node
-    const intentCodeProjectNode = await
+    const projectIntentCodeNode = await
             intentCodeGraphMutateService.getOrCreateIntentCodeProject(
               prisma,
               projectNode,
               intentPath)
 
     // Get/create source code project node
-    const sourceCodeProjectNode = await
+    const projectSourceCodeNode = await
             sourceCodeGraphMutateService.getOrCreateSourceCodeProject(
               prisma,
               projectNode,
