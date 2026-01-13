@@ -1,7 +1,7 @@
 const fs = require('fs')
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
-import { BuildData, BuildIntentFile } from '@/types/build-types'
+import { BuildData, BuildFromFile } from '@/types/build-types'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
 import { CompilerMutateService } from '../intentcode/compiler/code/mutate-service'
 import { FsUtilsService } from '../utils/fs-utils-service'
@@ -132,13 +132,13 @@ export class ProjectCompileService {
         continue
       } */
 
-      // Define BuildIntentFile
-      const buildIntentFile: BuildIntentFile = {
-        intentCodeFilename: buildFile.intentCodeFilename,
+      // Define BuildFromFile
+      const buildFromFile: BuildFromFile = {
+        filename: buildFile.intentCodeFilename,
         fileModifiedTime: fileModifiedTime,
-        intentCode: intentCode,
-        targetFileExt: buildFile.targetFileExt,
-        intentFileNode: intentFileNode
+        content: intentCode,
+        fileNode: intentFileNode,
+        targetFileExt: buildFile.targetFileExt
       }
 
       // Compile
@@ -148,7 +148,7 @@ export class ProjectCompileService {
               projectNode,
               projectIntentCodeNode,
               projectSourceCodeNode,
-              buildIntentFile)
+              buildFromFile)
     }
   }
 
@@ -197,12 +197,12 @@ export class ProjectCompileService {
       }
 
       // Define IndexerFile
-      const buildIntentFile: BuildIntentFile = {
-        intentCodeFilename: buildFile.intentCodeFilename,
+      const buildFromFile: BuildFromFile = {
+        filename: buildFile.intentCodeFilename,
         fileModifiedTime: fileModifiedTime,
-        targetFileExt: buildFile.targetFileExt,
-        intentCode: intentCode,
-        intentFileNode: intentFileNode
+        content: intentCode,
+        fileNode: intentFileNode,
+        targetFileExt: buildFile.targetFileExt
       }
 
       // Index the file
@@ -211,7 +211,7 @@ export class ProjectCompileService {
               buildData,
               projectNode,
               projectIntentCodeNode,
-              buildIntentFile)
+              buildFromFile)
     }
   }
 }

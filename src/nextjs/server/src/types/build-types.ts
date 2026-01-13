@@ -7,13 +7,13 @@ export enum BuildStageType {
   updateDeps = 'update-deps'
 }
 
-export interface BuildIntentFile {
-  intentCodeFilename: string
+export interface BuildFromFile {
+  filename: string
   fileModifiedTime: Date
-  intentCode: string
+  content: string
+  fileNode: SourceNode
   targetFileExt: string
-  intentFileNode: SourceNode
-  sourceFullPath?: string
+  targetFullPath?: string
 }
 
 export enum DepsTools {

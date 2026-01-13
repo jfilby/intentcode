@@ -3,7 +3,7 @@ import { PrismaClient, SourceNode, Tech } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-service'
 import { UsersService } from '@/serene-core-server/services/users/service'
-import { BuildData, BuildIntentFile } from '@/types/build-types'
+import { BuildData, BuildFromFile } from '@/types/build-types'
 import { IntentCodeCommonTypes } from '../../common/types'
 import { LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
@@ -102,7 +102,7 @@ export class CompilerMutateService {
           prisma: PrismaClient,
           projectNode: SourceNode,
           projectSourceCodeNode: SourceNode,
-          buildIntentFile: BuildIntentFile,
+          buildFromFile: BuildFromFile,
           extensionsData: ExtensionsData,
           indexedDataSourceNodes: SourceNode[]) {
 
@@ -111,21 +111,21 @@ export class CompilerMutateService {
 
     // Get intentFileRelativePath
     const intentFileRelativePath =
-              (buildIntentFile.intentFileNode.jsonContent as any).relativePath
+              (buildFromFile.fileNode.jsonContent as any).relativePath
 
     // Get rules by targetLang
     const targetLangPrompting =
             compilerQueryService.getSkillPrompting(
               extensionsData,
-              buildIntentFile.targetFileExt)
+              buildFromFile.targetFileExt)
 
     // Get deps prompting
     const depsPrompting = await
             dependenciesPromptService.getDepsPrompting(
               prisma,
               projectNode,
-              buildIntentFile.intentFileNode,
-              buildIntentFile.sourceFullPath)
+              buildFromFile.fileNode,
+              buildFromFile.targetFullPath)
 
     // Debug
     // console.log(`${fnName}: targetLangPrompting: ${targetLangPrompting}`)
@@ -142,7 +142,7 @@ export class CompilerMutateService {
           `- Try to fix and errors and warnings in the fixedIntentCode ` +
           `  field.\n` +
           `- Convert the input IntentCode (if no errors) to ` +
-          `  ${buildIntentFile.targetFileExt} source code.\n` +
+          `  ${buildFromFile.targetFileExt} source code.\n` +
           `- Use the indexed data for this file as a structural starting ` +
           `  point. Imports depend on this to be accurate.\n` +
           `- Write idiomatic code, this is for actual use.\n` +
@@ -215,7 +215,7 @@ export class CompilerMutateService {
     if (targetLangPrompting.length > 0) {
 
       prompt +=
-        `## ${buildIntentFile.targetFileExt} specific\n` +
+        `## ${buildFromFile.targetFileExt} specific\n` +
         targetLangPrompting +
         `\n`
     }
@@ -225,7 +225,7 @@ export class CompilerMutateService {
       `## IntentCode\n` +
       `\n` +
       '```md\n' +
-      buildIntentFile.intentCode +
+      buildFromFile.content +
       `\n` +
       '```\n' +
       `\n` +
@@ -264,7 +264,7 @@ export class CompilerMutateService {
       const existingSourcePrompting = await
               sourceAssistIntentCodeService.getExistingSourcePrompting(
                 projectSourceCodeNode,
-                buildIntentFile)
+                buildFromFile)
 
       if (existingSourcePrompting != null) {
         prompt += existingSourcePrompting
@@ -278,7 +278,7 @@ export class CompilerMutateService {
   async processResults(
           prisma: PrismaClient,
           projectNode: SourceNode,
-          buildIntentFile: BuildIntentFile,
+          buildFromFile: BuildFromFile,
           projectSourceCodeNode: SourceNode,
           sourceNodeGenerationData: SourceNodeGenerationData,
           content: string,
@@ -288,9 +288,9 @@ export class CompilerMutateService {
     const fnName = `${this.clName}.processResults()`
 
     // Validate
-    if (buildIntentFile.sourceFullPath == null) {
+    if (buildFromFile.targetFullPath == null) {
       throw new CustomError(
-        `${fnName}: buildIntentFile.sourceFullPath == null`)
+        `${fnName}: buildFromFile.sourceFullPath == null`)
     }
 
     // Write source file (if any)
@@ -300,13 +300,13 @@ export class CompilerMutateService {
       await sourceCodePathGraphMutateService.getOrCreateSourceCodePathAsGraph(
               prisma,
               projectSourceCodeNode,
-              buildIntentFile.sourceFullPath,
+              buildFromFile.targetFullPath,
               content,
               sourceNodeGenerationData)
 
       // Write source file
       await fsUtilsService.writeTextFile(
-              buildIntentFile.sourceFullPath,
+              buildFromFile.targetFullPath,
               content,
               true)  // createMissingDirs
     }
@@ -317,7 +317,7 @@ export class CompilerMutateService {
       await dependenciesMutateService.processDeps(
               prisma,
               projectNode,
-              buildIntentFile.intentFileNode,
+              buildFromFile.fileNode,
               jsonContent.deps)
     }
 
@@ -325,12 +325,12 @@ export class CompilerMutateService {
     const compilerDataSourceNode = await
             intentCodeGraphMutateService.upsertIntentCodeCompilerData(
               prisma,
-              buildIntentFile.intentFileNode.instanceId,
-              buildIntentFile.intentFileNode,  // parentNode
+              buildFromFile.fileNode.instanceId,
+              buildFromFile.fileNode,  // parentNode
               SourceNodeNames.compilerData,
               jsonContent,
               sourceNodeGenerationData,
-              buildIntentFile.fileModifiedTime)
+              buildFromFile.fileModifiedTime)
 
     // Print warnings and errors (must be at the end of results processing)
     intentCodeMessagesService.handleMessages(jsonContent)
@@ -341,7 +341,7 @@ export class CompilerMutateService {
             projectNode: SourceNode,
             projectIntentCodeNode: SourceNode,
             projectSourceCodeNode: SourceNode,
-            buildIntentFile: BuildIntentFile) {
+            buildFromFile: BuildFromFile) {
 
     // Debug
     const fnName = `${this.clName}.run()`
@@ -350,7 +350,7 @@ export class CompilerMutateService {
 
     // Verbose output
     if (ServerOnlyTypes.verbosity === true) {
-      console.log(`compiling: ${buildIntentFile.intentCodeFilename}..`)
+      console.log(`compiling: ${buildFromFile.filename}..`)
     }
 
     // Get all related indexed data, including for this file
@@ -380,10 +380,10 @@ export class CompilerMutateService {
               LlmEnvNames.compilerEnvName)
 
     // Get source code's full path
-    buildIntentFile.sourceFullPath =
+    buildFromFile.targetFullPath =
       sourceAssistIntentCodeService.getSourceCodeFullPath(
         projectSourceCodeNode,
-        buildIntentFile.intentFileNode)
+        buildFromFile.fileNode)
 
     // Get prompt
     const prompt = await
@@ -391,7 +391,7 @@ export class CompilerMutateService {
         prisma,
         projectNode,
         projectSourceCodeNode,
-        buildIntentFile,
+        buildFromFile,
         buildData.extensionsData,
         indexedDataSourceNodes)
 
@@ -399,7 +399,7 @@ export class CompilerMutateService {
     var { content, jsonContent } = await
           this.getExistingJsonContent(
             prisma,
-            buildIntentFile.intentFileNode,
+            buildFromFile.fileNode,
             tech,
             prompt)
 
@@ -427,7 +427,7 @@ export class CompilerMutateService {
     await this.processResults(
             prisma,
             projectNode,
-            buildIntentFile,
+            buildFromFile,
             projectSourceCodeNode,
             sourceNodeGenerationData,
             content,

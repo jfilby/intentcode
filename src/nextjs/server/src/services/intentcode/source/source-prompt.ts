@@ -1,7 +1,7 @@
 const fs = require('fs')
 import { SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
-import { BuildIntentFile } from '@/types/build-types'
+import { BuildFromFile } from '@/types/build-types'
 import { ServerOnlyTypes } from '@/types/server-only-types'
 
 export class SourceAssistIntentCodeService {
@@ -53,13 +53,13 @@ export class SourceAssistIntentCodeService {
 
   async getExistingSourcePrompting(
           projectSourceCodeNode: SourceNode,
-          buildIntentFile: BuildIntentFile) {
+          buildFromFile: BuildFromFile) {
 
     // Get source code's full path
     const sourceFullPath = await
             this.getSourceCodeFullPath(
               projectSourceCodeNode,
-              buildIntentFile.intentFileNode)
+              buildFromFile.fileNode)
 
     // Check if the file exists
     if (await fs.existsSync(sourceFullPath) === false) {
