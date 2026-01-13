@@ -272,7 +272,7 @@ export class IndexerMutateService {
 
     // Start the prompt
     var prompt = 
-          `## Instructions\n` +  // TypeScript dialect
+          `## Instructions\n` +  // for TypeScript dialect
           `\n` +
           `Identify the structures in the IntentCode:\n` +
           `- H1 headings are classes, unless they are meant to be run from ` +
