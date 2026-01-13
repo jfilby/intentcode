@@ -35,8 +35,8 @@ export class SourceCodeGraphMutateService {
             prisma,
             projectNode.id,  // parentId
             projectNode.instanceId,
-            SourceNodeTypes.sourceCodeProject,
-            SourceNodeNames.sourceCodeProject)
+            SourceNodeTypes.projectSourceCode,
+            SourceNodeNames.projectSourceCode)
 
     if (sourceCodeProject != null) {
       return sourceCodeProject
@@ -63,8 +63,8 @@ export class SourceCodeGraphMutateService {
         projectNode.id,  // parentId
         projectNode.instanceId,
         BaseDataTypes.activeStatus,
-        SourceNodeTypes.sourceCodeProject,
-        SourceNodeNames.sourceCodeProject,
+        SourceNodeTypes.projectSourceCode,
+        SourceNodeNames.projectSourceCode,
         null,  // content
         null,  // contentHash
         jsonContent,
@@ -89,7 +89,7 @@ export class SourceCodeGraphMutateService {
       throw new CustomError(`${fnName}: parentNode == null`)
     }
 
-    if (![SourceNodeTypes.sourceCodeProject,
+    if (![SourceNodeTypes.projectSourceCode,
           SourceNodeTypes.sourceCodeDir].includes(
             parentNode.type as SourceNodeTypes)) {
 
@@ -145,7 +145,7 @@ export class SourceCodeGraphMutateService {
       throw new CustomError(`${fnName}: parentNode == null`)
     }
 
-    if (![SourceNodeTypes.sourceCodeProject,
+    if (![SourceNodeTypes.projectSourceCode,
           SourceNodeTypes.sourceCodeDir].includes(
             parentNode.type as SourceNodeTypes)) {
 

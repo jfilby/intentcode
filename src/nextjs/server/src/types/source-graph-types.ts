@@ -9,8 +9,8 @@ export enum SourceNodeTypes {
 
   // Project level
   project = 'Project',
-  intentCodeProject = 'IntentCode project',
-  sourceCodeProject = 'Source code project',
+  projectIntentCode = 'Project IntentCode',
+  projectSourceCode = 'Project source code',
 
   deps = 'Deps',
 
@@ -41,8 +41,8 @@ export enum SourceNodeTypes {
 
 export enum SourceNodeNames {
 
-  intentCodeProject = 'IntentCode project',
-  sourceCodeProject = 'Source code project',
+  projectIntentCode = 'Project IntentCode',
+  projectSourceCode = 'Project source code',
 
   compilerData = 'Compiler data',
   indexedData = 'Indexed data',

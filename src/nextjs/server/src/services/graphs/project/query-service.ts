@@ -33,8 +33,8 @@ export class ProjectGraphQueryService {
               prisma,
               projectNode.id,
               projectNode.instanceId,
-              SourceNodeTypes.intentCodeProject,
-              SourceNodeNames.intentCodeProject)
+              SourceNodeTypes.projectIntentCode,
+              SourceNodeNames.projectIntentCode)
 
     // Return
     return sourceCodeProject
@@ -60,8 +60,8 @@ export class ProjectGraphQueryService {
               prisma,
               projectNode.id,
               projectNode.instanceId,
-              SourceNodeTypes.sourceCodeProject,
-              SourceNodeNames.sourceCodeProject)
+              SourceNodeTypes.projectSourceCode,
+              SourceNodeNames.projectSourceCode)
 
     // Return
     return sourceCodeProject

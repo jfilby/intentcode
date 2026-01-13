@@ -37,7 +37,7 @@ export class IntentCodeGraphMutateService {
       throw new CustomError(`${fnName}: parentNode == null`)
     }
 
-    if (![SourceNodeTypes.intentCodeProject,
+    if (![SourceNodeTypes.projectIntentCode,
           SourceNodeTypes.intentCodeDir].includes(
             parentNode.type as SourceNodeTypes)) {
 
@@ -92,7 +92,7 @@ export class IntentCodeGraphMutateService {
       throw new CustomError(`${fnName}: parentNode == null`)
     }
 
-    if (![SourceNodeTypes.intentCodeProject,
+    if (![SourceNodeTypes.projectIntentCode,
           SourceNodeTypes.intentCodeDir].includes(
             parentNode.type as SourceNodeTypes)) {
 
@@ -150,8 +150,8 @@ export class IntentCodeGraphMutateService {
             prisma,
             projectNode.id,  // parentId
             projectNode.instanceId,
-            SourceNodeTypes.intentCodeProject,
-            SourceNodeNames.intentCodeProject)
+            SourceNodeTypes.projectIntentCode,
+            SourceNodeNames.projectIntentCode)
 
     if (intentCodeProject != null) {
       return intentCodeProject
@@ -178,8 +178,8 @@ export class IntentCodeGraphMutateService {
         projectNode.id,  // parentId
         projectNode.instanceId,
         BaseDataTypes.activeStatus,
-        SourceNodeTypes.intentCodeProject,
-        SourceNodeNames.intentCodeProject,
+        SourceNodeTypes.projectIntentCode,
+        SourceNodeNames.projectIntentCode,
         null,  // content
         null,  // contentHash
         jsonContent,
