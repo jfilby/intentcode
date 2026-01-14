@@ -104,6 +104,38 @@ export class SourceNodeModel {
     }
   }
 
+  async filterWithChildNodes(
+          prisma: PrismaClient,
+          instanceId: string | undefined = undefined,
+          type: string | undefined = undefined,
+          childTypes: string[] | undefined) {
+
+    // Debug
+    const fnName = `${this.clName}.filterWithChildNodes()`
+
+    // Query
+    try {
+      return await prisma.sourceNode.findMany({
+        include: {
+          children: {
+            where: {
+              type: {
+                in: childTypes
+              }
+            }
+          }
+        },
+        where: {
+          instanceId: instanceId,
+          type: type,
+        }
+      })
+    } catch(error: any) {
+      console.error(`${fnName}: error: ${error}`)
+      throw 'Prisma error'
+    }
+  }
+
   async getById(
           prisma: PrismaClient,
           id: string) {

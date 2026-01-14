@@ -13,10 +13,10 @@ const dependenciesQueryService = new DependenciesQueryService()
 const llmCacheService = new LlmCacheService()
 const llmUtilsService = new LlmUtilsService()
 
-export class IndexerMutateLlmService {
+export class SpecsTechStackMutateLlmService {
 
   // Consts
-  clName = 'IndexerMutateLlmService'
+  clName = 'SpecsTechStackMutateLlmService'
 
   // Code
   async llmRequest(
@@ -187,14 +187,20 @@ export class IndexerMutateLlmService {
       }
     }
 
-    if (queryResults.json.deps != null) {
+    // extensions is required and can't be an array
+    if (queryResults.json.extensions == null ||
+        Array.isArray(queryResults.json.deps)) {
 
-      const entryValidated =
-              dependenciesQueryService.verifyDepsDeltas(queryResults.json.deps)
+      console.log(`${fnName}: invalid extensions`)
+      return false
+    }
 
-      if (entryValidated === false) {
-        return false
-      }
+    // deps is optional, but can't be an array
+    if (queryResults.json.deps != null &&
+        Array.isArray(queryResults.json.deps)) {
+
+      console.log(`${fnName}: invalid deps`)
+      return false
     }
 
     // Validated OK

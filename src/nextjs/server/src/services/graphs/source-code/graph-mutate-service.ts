@@ -93,8 +93,7 @@ export class SourceCodeGraphMutateService {
           SourceNodeTypes.sourceCodeDir].includes(
             parentNode.type as SourceNodeTypes)) {
 
-      throw new CustomError(`${fnName}: parentNode.type !== ` +
-                            `SourceNodeTypes.sourceCodeProject`)
+      throw new CustomError(`${fnName}: invalid type: ${parentNode.type}`)
     }
 
     // Try to get the node
@@ -149,8 +148,7 @@ export class SourceCodeGraphMutateService {
           SourceNodeTypes.sourceCodeDir].includes(
             parentNode.type as SourceNodeTypes)) {
 
-      throw new CustomError(`${fnName}: parentNode.type !== ` +
-                            `SourceNodeTypes.sourceCodeProject`)
+      throw new CustomError(`${fnName}: invalid type: ${parentNode.type}`)
     }
 
     // Get contentHash

@@ -9,6 +9,7 @@ import { DependenciesMutateService } from '../graphs/dependencies/mutate-service
 import { IntentCodeGraphMutateService } from '../graphs/intentcode/graph-mutate-service'
 import { ProjectGraphMutateService } from '../graphs/project/mutate-service'
 import { SourceCodeGraphMutateService } from '../graphs/source-code/graph-mutate-service'
+import { SpecsGraphMutateService } from '../graphs/specs/graph-mutate-service'
 
 // Models
 const sourceNodeModel = new SourceNodeModel()
@@ -18,6 +19,7 @@ const dependenciesMutateService = new DependenciesMutateService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
 const projectGraphMutateService = new ProjectGraphMutateService()
 const sourceCodeGraphMutateService = new SourceCodeGraphMutateService()
+const specsGraphMutateService = new SpecsGraphMutateService()
 
 // Class
 export class ProjectSetupService {
@@ -55,8 +57,9 @@ export class ProjectSetupService {
     // Check if the file exists
     if (fs.existsSync(filename) === false) {
 
-      console.log(`Deps config file doesn't exist: ${filename}`)
-      process.exit(1)
+      // console.log(`Deps config file doesn't exist: ${filename}`)
+      // process.exit(1)
+      return
     }
 
     // Read the file
@@ -125,33 +128,47 @@ export class ProjectSetupService {
     const configPath = `${projectPath}${path.sep}.intentcode`
     const intentPath = `${projectPath}${path.sep}intent`
     const srcPath = `${projectPath}${path.sep}src`
+    const specsPath = `${projectPath}${path.sep}specs`
 
     // Get/create specs project node
-    const specsProjectNode = await
-            specsGraphMutateService.getOrCreateSpecsProject(
-              prisma,
-              projectNode,
-              intentPath)
+    if (await fs.existsSync(specsPath)) {
+
+      const specsProjectNode = await
+              specsGraphMutateService.getOrCreateSpecsProject(
+                prisma,
+                projectNode,
+                specsPath)
+    }
 
     // Get/create IntentCode project node
-    const projectIntentCodeNode = await
-            intentCodeGraphMutateService.getOrCreateIntentCodeProject(
-              prisma,
-              projectNode,
-              intentPath)
+    if (await fs.existsSync(intentPath)) {
+
+      const projectIntentCodeNode = await
+              intentCodeGraphMutateService.getOrCreateIntentCodeProject(
+                prisma,
+                projectNode,
+                intentPath)
+    }
 
     // Get/create source code project node
-    const projectSourceCodeNode = await
-            sourceCodeGraphMutateService.getOrCreateSourceCodeProject(
-              prisma,
-              projectNode,
-              srcPath)
+    if (await fs.existsSync(intentPath) ||
+        await fs.existsSync(srcPath)) {
+
+      const projectSourceCodeNode = await
+              sourceCodeGraphMutateService.getOrCreateSourceCodeProject(
+                prisma,
+                projectNode,
+                srcPath)
+    }
 
     // Load project-level config files
-    await this.loadConfigFiles(
-            prisma,
-            projectNode,
-            configPath)
+    if (await fs.existsSync(configPath)) {
+
+      await this.loadConfigFiles(
+              prisma,
+              projectNode,
+              configPath)
+    }
 
     // Return
     return projectNode

@@ -24,6 +24,9 @@ export class ServerOnlyTypes {
 
   // Valid depsNode keys
   static depsNodeKeys = ['runtimes', 'tool']
+
+  // Specs filenames
+  static techStackFilename = 'tech-stack.md'
 }
 
 export enum DepDeltaNames {

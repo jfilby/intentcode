@@ -41,7 +41,7 @@ export class DependenciesQueryService {
     return depsNode
   }
 
-  verifyDeps(deps: any[]) {
+  verifyDepsDeltas(deps: any[]) {
 
     // Verify array
     if (!Array.isArray(deps)) {

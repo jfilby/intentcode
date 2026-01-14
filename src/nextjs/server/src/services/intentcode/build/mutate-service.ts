@@ -6,6 +6,8 @@ import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
 import { ManagedDepsFileService } from '@/services/managed-files/deps/generic-service'
 import { ProjectCompileService } from '@/services/projects/compile-service'
+import { SpecsTechStackMutateService } from '@/services/specs/tech-stack/mutate-service'
+import { SpecsToIntentCodeMutateService } from '@/services/specs/to-intentcode/mutate-service'
 
 // Models
 const sourceNodeModel = new SourceNodeModel()
@@ -14,6 +16,8 @@ const sourceNodeModel = new SourceNodeModel()
 const extensionQueryService = new ExtensionQueryService()
 const managedDepsFileService = new ManagedDepsFileService()
 const projectCompileService = new ProjectCompileService()
+const specsTechStackMutateService = new SpecsTechStackMutateService()
+const specsToIntentCodeMutateService = new SpecsToIntentCodeMutateService()
 
 // Class
 export class BuildMutateService {
@@ -65,6 +69,10 @@ export class BuildMutateService {
   getBuildStageTypes() {
 
     return [
+      // Specs to IntentCode
+      BuildStageType.defineTechStack,
+      BuildStageType.specsToIntentCode,
+      // IntentCode to source
       BuildStageType.updateDeps,
       BuildStageType.index,
       BuildStageType.compile,
@@ -166,6 +174,25 @@ export class BuildMutateService {
 
     // Route by build stage type
     switch (buildStage.buildStageType) {
+
+      case BuildStageType.defineTechStack: {
+
+        await specsTechStackMutateService.processTechStack(
+                prisma,
+                buildData,
+                projectNode)
+
+        break
+      }
+
+      case BuildStageType.specsToIntentCode: {
+
+        await specsToIntentCodeMutateService.run(
+                prisma,
+                projectNode)
+
+        break
+      }
 
       case BuildStageType.updateDeps: {
 

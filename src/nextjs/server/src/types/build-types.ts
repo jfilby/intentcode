@@ -2,6 +2,10 @@ import { SourceNode } from '@prisma/client'
 import { ExtensionsData } from './source-graph-types'
 
 export enum BuildStageType {
+  // Specs to IntentCode
+  defineTechStack = 'define-tech-stack',
+  specsToIntentCode = 'specs-to-intentcode',
+  // IntentCode to Source
   compile = 'compile',
   index = 'index',
   updateDeps = 'update-deps'

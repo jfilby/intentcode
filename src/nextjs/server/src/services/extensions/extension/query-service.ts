@@ -12,26 +12,90 @@ export class ExtensionQueryService {
   clName = 'ExtensionQueryService'
 
   // Code
+  async getAsPrompting(
+          prisma: PrismaClient,
+          instanceId: string) {
+
+    // Get all extensions with their hooks for the instance
+    const extensionNodes = await
+            sourceNodeModel.filterWithChildNodes(
+              prisma,
+              instanceId,
+              SourceNodeTypes.extensionType,
+              [SourceNodeTypes.hooksType])
+
+    // Generate prompting
+    var prompting = ``
+
+    // Iterate extension nodes
+    for (const extensionNode of extensionNodes) {
+
+      if (extensionNode.jsonContent == null) {
+        continue
+      }
+
+      const extensionJsonContent = extensionNode.jsonContent as any
+
+      prompting +=
+        `### Extension id: ${extensionJsonContent.id}\n` +
+        `\n` +
+        `Name: ${extensionJsonContent.name}` +
+        `Version: ${extensionJsonContent.version}` +
+        `\n`
+
+      // Iterate hook nodes
+      for (const hookNode of extensionNode.children) {
+
+        if (hookNode.jsonContent == null) {
+          continue
+        }
+
+        const hookJsonContent = hookNode.jsonContent as any
+
+        prompting +=
+          `#### Hook: ${hookJsonContent.name}\n` +
+          `\n` +
+          JSON.stringify(hookJsonContent) +
+          `\n`
+      }
+    }
+
+    // Return
+    return prompting
+  }
+
   async loadExtension(
           prisma: PrismaClient,
           instanceId: string,
-          extensionNode: SourceNode) {
+          extensionNode: SourceNode,
+          withSkills: boolean = true,
+          withHooks: boolean = true) {
 
     // Get skills
-    const skillNodes = await
-            sourceNodeModel.filter(
-              prisma,
-              extensionNode.id,  // parentId
-              instanceId,
-              SourceNodeTypes.skillType)
+    var skillNodes: SourceNode[] = []
+
+    if (withSkills === true) {
+
+      skillNodes = await
+        sourceNodeModel.filter(
+          prisma,
+          extensionNode.id,  // parentId
+          instanceId,
+          SourceNodeTypes.skillType)
+    }
 
     // Get hooks
-    const hooksNodes = await
-            sourceNodeModel.filter(
-              prisma,
-              extensionNode.id,  // parentId
-              instanceId,
-              SourceNodeTypes.hooksType)
+    var hooksNodes: SourceNode[] = []
+
+    if (withHooks === true) {
+
+      hooksNodes = await
+        sourceNodeModel.filter(
+          prisma,
+          extensionNode.id,  // parentId
+          instanceId,
+          SourceNodeTypes.hooksType)
+    }
 
     // Return
     return {
@@ -42,7 +106,9 @@ export class ExtensionQueryService {
 
   async loadExtensions(
           prisma: PrismaClient,
-          instanceId: string) {
+          instanceId: string,
+          withSkills: boolean = true,
+          withHooks: boolean = true) {
 
     // Get the extensions node
     const extensionsNode = await
@@ -75,7 +141,9 @@ export class ExtensionQueryService {
         this.loadExtension(
           prisma,
           instanceId,
-          extensionNode)
+          extensionNode,
+          withSkills,
+          withHooks)
 
       skillNodes = skillNodes.concat(extensionSkillNodes)
       hooksNodes = hooksNodes.concat(extensionHooksNodes)

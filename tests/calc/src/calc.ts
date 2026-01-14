@@ -60,6 +60,8 @@ export class Calc {
             ? left.value * right.value 
             : left.value / right.value;
           pass1.push({ value: result });
+        } else if (left) {
+          pass1.push(left);
         }
       } else {
         pass1.push(current);

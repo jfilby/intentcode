@@ -41,8 +41,7 @@ export class IntentCodeGraphMutateService {
           SourceNodeTypes.intentCodeDir].includes(
             parentNode.type as SourceNodeTypes)) {
 
-      throw new CustomError(`${fnName}: parentNode.type !== ` +
-                            `SourceNodeTypes.intentCodeProject`)
+      throw new CustomError(`${fnName}: invalid type: ${parentNode.type}`)
     }
 
     // Try to get the node
@@ -96,8 +95,7 @@ export class IntentCodeGraphMutateService {
           SourceNodeTypes.intentCodeDir].includes(
             parentNode.type as SourceNodeTypes)) {
 
-      throw new CustomError(`${fnName}: parentNode.type !== ` +
-                            `SourceNodeTypes.intentCodeProject`)
+      throw new CustomError(`${fnName}: invalid type: ${parentNode.type}`)
     }
 
     // Try to get the node

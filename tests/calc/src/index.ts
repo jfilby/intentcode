@@ -2,20 +2,36 @@ import * as readline from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
 import { Calc } from './calc';
 
+/**
+ * Utility class for console interactions.
+ */
+export class ConsoleUtils {
+  /**
+   * Reads a line of input from the console.
+   */
+  public static async readLine(prompt: string): Promise<string> {
+    const rl = readline.createInterface({ input, output });
+    try {
+      return await rl.question(prompt);
+    } finally {
+      rl.close();
+    }
+  }
+}
+
 export class Index {
   /**
    * Main entry point for the Calculator demo.
    */
   public static async main(): Promise<void> {
-    const rl = readline.createInterface({ input, output });
     const calc = new Calc();
 
     console.log("Welcome to the Calculator demo!");
     console.log("Enter 'exit' to quit");
 
-    try {
-      while (true) {
-        const userInput = await rl.question('> ');
+    while (true) {
+      try {
+        const userInput = await ConsoleUtils.readLine('> ');
         const trimmedInput = userInput.trim();
 
         if (trimmedInput.toLowerCase() === 'exit') {
@@ -26,15 +42,11 @@ export class Index {
           continue;
         }
 
-        try {
-          const answer = calc.run(trimmedInput);
-          console.log(answer);
-        } catch (error) {
-          console.error('Error:', error instanceof Error ? error.message : String(error));
-        }
+        const answer = calc.run(trimmedInput);
+        console.log(answer);
+      } catch (error) {
+        console.error('Error:', error instanceof Error ? error.message : String(error));
       }
-    } finally {
-      rl.close();
     }
   }
 }

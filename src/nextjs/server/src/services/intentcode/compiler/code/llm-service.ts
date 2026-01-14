@@ -195,7 +195,7 @@ export class CompilerMutateLlmService {
     if (queryResults.json.deps != null) {
 
       const entryValidated =
-              dependenciesQueryService.verifyDeps(queryResults.json.deps)
+              dependenciesQueryService.verifyDepsDeltas(queryResults.json.deps)
 
       if (entryValidated === false) {
         return false
