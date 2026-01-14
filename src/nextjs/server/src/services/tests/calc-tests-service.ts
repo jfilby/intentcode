@@ -1,12 +1,12 @@
 import { PrismaClient, UserProfile } from '@prisma/client'
 import { BuildMutateService } from '../intentcode/build/mutate-service'
-import { LoadExternalExtensionsService } from '../extensions/extension/load-external-service'
+import { ExtensionQueryService } from '../extensions/extension/query-service'
 import { ProjectsMutateService } from '../projects/mutate-service'
 import { ProjectSetupService } from '../projects/setup-project'
 
 // Services
 const buildMutateService = new BuildMutateService()
-const loadExternalExtensionsService = new LoadExternalExtensionsService()
+const extensionQueryService = new ExtensionQueryService()
 const projectsMutateService = new ProjectsMutateService()
 const projectSetupService = new ProjectSetupService()
 
@@ -43,11 +43,11 @@ export class CalcTestsService {
               this.projectName,
               projectPath)
 
-    // Load bundled extension (must be done after the project is created)
-    await loadExternalExtensionsService.loadPath(
+    // Check expected extensions exist (loaded by the CLI)
+    await extensionQueryService.checkExtensionsExist(
             prisma,
             instance.id,
-            `${process.env.BASE_DATA_PATH}/bundled-extensions`)
+            [`intentcode/nodejs-typescript`])
 
     // Recompile the project
     await buildMutateService.runBuild(

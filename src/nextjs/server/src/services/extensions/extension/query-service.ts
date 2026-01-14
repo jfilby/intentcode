@@ -1,6 +1,7 @@
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { ExtensionsData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
+import { CustomError } from '@/serene-core-server/types/errors'
 
 // Models
 const sourceNodeModel = new SourceNodeModel()
@@ -12,6 +13,63 @@ export class ExtensionQueryService {
   clName = 'ExtensionQueryService'
 
   // Code
+  async checkExtensionsExist(
+          prisma: PrismaClient,
+          instanceId: string,
+          extensionIds: string[],
+          verbose: boolean = false) {
+
+    // Debug
+    const fnName = `${this.clName}.checkExtensionsExist()`
+
+    // Get extensions node
+    const extensionsNode = await
+            this.getExtensionsNode(
+              prisma,
+              instanceId)
+
+    // Validate
+    if (extensionsNode == null) {
+      throw new CustomError(`${fnName}: extensionsNode == null`)
+    }
+
+    // Get extension nodes
+    const extensionNodes = await
+            sourceNodeModel.filter(
+              prisma,
+              extensionsNode.id)
+
+    // List all loaded extensions if verbose
+    if (verbose === true) {
+
+      for (const extensionNode of extensionNodes) {
+
+        console.log(`..${extensionNode.name} loaded`)
+      }
+    }
+
+    // Ensure each extension id exists
+    for (const extensionId of extensionIds) {
+
+      var found = false
+
+      for (const extensionNode of extensionNodes) {
+
+        if (extensionNode.name === extensionId) {
+          found = true
+        }
+      }
+
+      if (found === false) {
+        console.log(`Expected extension not found: ${extensionId}`)
+        process.exit(1)
+      }
+    }
+
+    // All found
+    return true
+  }
+
   async getAsPrompting(
           prisma: PrismaClient,
           instanceId: string) {
@@ -64,6 +122,23 @@ export class ExtensionQueryService {
     return prompting
   }
 
+  async getExtensionsNode(
+          prisma: PrismaClient,
+          instanceId: string) {
+
+    // Get extensions node
+    const extensionsNode = await
+            sourceNodeModel.getByUniqueKey(
+              prisma,
+              null,  // parentId
+              instanceId,
+              SourceNodeTypes.extensionsType,
+              SourceNodeNames.extensionsName)
+
+    // Return
+    return extensionsNode
+  }
+
   async loadExtension(
           prisma: PrismaClient,
           instanceId: string,
@@ -112,12 +187,9 @@ export class ExtensionQueryService {
 
     // Get the extensions node
     const extensionsNode = await
-            sourceNodeModel.getByUniqueKey(
+            this.getExtensionsNode(
               prisma,
-              null,  // parentId
-              instanceId,
-              SourceNodeTypes.extensionsType,
-              SourceNodeNames.extensionsName)
+              instanceId)
 
     if (extensionsNode == null) {
       return

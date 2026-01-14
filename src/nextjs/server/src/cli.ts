@@ -7,6 +7,7 @@ import { TechProviderMutateService } from '@/serene-core-server/services/tech/te
 import { UsersService } from '../deployed/serene-core-server/services/users/service'
 import { ServerTestTypes } from './types/server-test-types'
 import { LoadExternalExtensionsService } from './services/extensions/extension/load-external-service'
+import { ManageExtensionsCliService } from './services/extensions/extension/cli-service'
 import { SetupService } from './services/setup/setup'
 import { TestsService } from './services/tests/tests-service'
 
@@ -18,11 +19,14 @@ import { TestsService } from './services/tests/tests-service'
 
   // Consts
   const loadExtensionsCommand = 'load-extensions'
+  const manageExtensionsCommand = 'manage-extensions'
   const loadTechProviderApiKeysCommand = 'load-tech-provider-api-keys'
   const setupCommand = 'setup'
   const testsCommand = 'tests'
 
   const commands = [
+          loadExtensionsCommand,
+          manageExtensionsCommand,
           loadTechProviderApiKeysCommand,
           setupCommand,
           testsCommand
@@ -35,6 +39,7 @@ import { TestsService } from './services/tests/tests-service'
 
   // Services
   const loadExternalExtensionsService = new LoadExternalExtensionsService()
+  const manageExtensionsCliService = new ManageExtensionsCliService()
   const usersService = new UsersService()
   const setupService = new SetupService()
   const techProviderMutateService = new TechProviderMutateService()
@@ -60,6 +65,13 @@ import { TestsService } from './services/tests/tests-service'
     case loadExtensionsCommand: {
 
       await loadExternalExtensionsService.promptForAndLoadPath(prisma)
+
+      break
+    }
+
+    case manageExtensionsCommand: {
+
+      await manageExtensionsCliService.run(prisma)
 
       break
     }

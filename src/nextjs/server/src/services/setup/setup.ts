@@ -96,6 +96,13 @@ export class SetupService {
           prisma: PrismaClient,
           adminUserProfile: UserProfile) {
 
+    // Setup project
+    const systemProject = await
+            projectsMutateService.getOrCreate(
+              prisma,
+              adminUserProfile.id,
+              ServerOnlyTypes.systemProjectName)
+
     // Setup engine version
     const engineVersion = await
             versionModel.upsert(

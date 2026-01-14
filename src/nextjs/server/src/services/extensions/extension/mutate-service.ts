@@ -3,9 +3,13 @@ import { PrismaClient } from '@prisma/client'
 import { SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
+import { ExtensionQueryService } from './query-service'
 
 // Models
 const sourceNodeModel = new SourceNodeModel()
+
+// Services
+const extensionQueryService = new ExtensionQueryService()
 
 // Class
 export class ExtensionMutateService {
@@ -19,14 +23,11 @@ export class ExtensionMutateService {
           instanceId: string,
           extensionJson: any) {
 
-    // Try to get the node
+    // Try to get the extensions node
     var extensionsNode = await
-          sourceNodeModel.getByUniqueKey(
+          extensionQueryService.getExtensionsNode(
             prisma,
-            null,  // parentId
-            instanceId,
-            SourceNodeTypes.extensionsType,
-            SourceNodeNames.extensionsName)
+            instanceId)
 
     if (extensionsNode == null) {
 

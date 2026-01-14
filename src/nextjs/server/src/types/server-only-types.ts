@@ -1,5 +1,8 @@
 export class ServerOnlyTypes {
 
+  // System project
+  static systemProjectName = 'System'
+
   // Versions
   static engineVersion = '0.0.1'
 

@@ -3,6 +3,8 @@ import path from 'path'
 import { PrismaClient } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { ConsoleService } from '@/serene-core-server/services/console/service'
+import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
+import { ServerOnlyTypes } from '@/types/server-only-types'
 import { ExtensionMutateService } from './mutate-service'
 import { GraphsDeleteService } from '@/services/graphs/general/delete-service'
 import { LoadExternalHooksService } from '../hooks/load-external-service'
@@ -16,6 +18,7 @@ const graphsDeleteService = new GraphsDeleteService()
 const loadExternalHooksService = new LoadExternalHooksService()
 const loadExternalSkillsService = new LoadExternalSkillsService()
 const projectsQueryService = new ProjectsQueryService()
+const walkDirService = new WalkDirService()
 
 // Class
 export class LoadExternalExtensionsService {
@@ -61,13 +64,59 @@ export class LoadExternalExtensionsService {
     return extensionNode
   }
 
-  async loadPath(
+  async loadExtensionsInPath(
           prisma: PrismaClient,
           instanceId: string,
           loadPath: string) {
 
     // Debug
-    const fnName = `${this.clName}.loadPath()`
+    const fnName = `${this.clName}.loadExtensionsInPath()`
+
+    // Walk dir
+    var pathsList: string[] = []
+
+    await walkDirService.walkDir(
+            loadPath,
+            pathsList,
+            {
+              recursive: false
+            })
+
+    // Load extensions
+    for (const fullPath of pathsList) {
+
+      // Skip if not a dir
+      const stats = await fs.statSync(fullPath)
+
+      if (stats.isDirectory(fullPath) === false) {
+        continue
+      }
+
+      // Debug
+      // console.log(`${fnName}: fullPath: ${fullPath}`)
+
+      // Check for extension.json
+      const extensionJsonFilename = `${fullPath}${path.sep}extension.json`
+
+      if (await fs.existsSync(extensionJsonFilename) === false) {
+        continue
+      }
+
+      // Load extension
+      await this.loadExtensionInPath(
+              prisma,
+              instanceId,
+              fullPath)
+    }
+  }
+
+  async loadExtensionInPath(
+          prisma: PrismaClient,
+          instanceId: string,
+          loadPath: string) {
+
+    // Debug
+    const fnName = `${this.clName}.loadExtensionInPath()`
 
     // Validate
     if (instanceId == null) {
@@ -119,22 +168,22 @@ export class LoadExternalExtensionsService {
     const loadPath = await
             consoleService.askQuestion('> ')
 
-    // Load project by cwd
-    const instance = await
-            projectsQueryService.getProjectByPath(
+    // Load into the System project
+    const systemInstance = await
+            projectsQueryService.getProject(
               prisma,
-              loadPath)
+              ServerOnlyTypes.systemProjectName)
 
     // Found
-    if (instance == null) {
-      console.error(`No project found in the current path`)
+    if (systemInstance == null) {
+      console.error(`System project not found (run setup)`)
       return
     }
 
     // Load path
-    await this.loadPath(
+    await this.loadExtensionsInPath(
             prisma,
-            instance.id,
+            systemInstance.id,
             loadPath)
   }
 }

@@ -1,0 +1,63 @@
+{
+  "name": "Bundled Node.js hooks",
+  "context": [
+    {
+      "anyDependency": [
+        {
+          "name": "nodejs",
+          "minVersion": "22"
+        }
+      ]
+    }
+  ],
+  "deps": {
+    "tool": "npm"
+  },
+  "hooks": {
+    "intentcode/newProject": {
+      "commands": [
+        "mkdir -p ${projectDir}",
+        "cd ${projectDir}",
+        "git init",
+        "npx gitignore node",
+        "npm init -y",
+        "npm install typescript",
+        "npm install --save-dev eslint"
+      ],
+      "variables": {
+        "projectName": {
+          "required": true,
+          "type": "string",
+          "description":
+            "Name of the project, creates a directory with this name"
+        }
+      }
+    },
+    "intentcode/installDependencies": {
+      "commands": [
+        "cd ${projectDir}",
+        "npm install"
+      ],
+      "variables": {
+        "projectDir": {
+          "required": true,
+          "type": "path",
+          "description": "Project directory"
+        }
+      }
+    },
+    "intentcode/updateDependencies": {
+      "commands": [
+        "cd ${projectDir}",
+        "npm update"
+      ],
+      "variables": {
+        "projectDir": {
+          "required": true,
+          "type": "path",
+          "description": "Project directory"
+        }
+      }
+    }
+  }
+}

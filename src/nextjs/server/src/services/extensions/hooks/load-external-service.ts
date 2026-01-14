@@ -87,12 +87,6 @@ export class LoadExternalHooksService {
             instanceId,
             extensionNode,
             hooksJson)
-
-    // Set the deps tool for all projects
-    await this.setDepsToolForProjects(
-            prisma,
-            instanceId,
-            hooksJson)
   }
 
   async saveHooks(

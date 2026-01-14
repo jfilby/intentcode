@@ -1,7 +1,8 @@
 const NodeCache = require('node-cache')
-import { PrismaClient } from '@prisma/client'
+import { Instance, PrismaClient } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { InstanceModel } from '@/serene-core-server/models/instances/instance-model'
+import { ConsoleService } from '@/serene-core-server/services/console/service'
 import { InstanceSettingModel } from '@/serene-core-server/models/instances/instance-setting-model'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
@@ -18,6 +19,7 @@ const instanceModel = new InstanceModel()
 const instanceSettingModel = new InstanceSettingModel()
 
 // Services
+const consoleService = new ConsoleService()
 const usersService = new UsersService()
 
 // Class
@@ -87,5 +89,51 @@ export class ProjectsQueryService {
 
     // Not found
     return null
+  }
+
+  async getProjectByList(prisma: PrismaClient) {
+
+    // Get projects
+    const instances = await
+            instanceModel.filter(
+              prisma,
+              null)  // parentId
+
+    // Build and print a list
+    var i = 1
+    var instancesMap = new Map<string, Instance>()
+
+    for (const instance of instances) {
+
+      // Skip System
+      if (instance.name === ServerOnlyTypes.systemProjectName) {
+        continue
+      }
+
+      // Set entry
+      instancesMap.set(
+        `${i}`,
+        instance)
+
+      // Print entry
+      console.log(`${i}: ${instance.name}`)
+
+      // Inc i
+      i += 1
+    }
+
+    // Prompt for project by number
+    const loadProjectNo = await
+            consoleService.askQuestion('> ')
+
+    // Invalid selection?
+    if (!instancesMap.has(loadProjectNo)) {
+
+      console.log(`Invalid selection`)
+      process.exit(1)
+    }
+
+    // Return selected project
+    return instancesMap.get(loadProjectNo)
   }
 }
