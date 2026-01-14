@@ -118,7 +118,7 @@ export class SpecsTechStackMutateService {
     const tech = await
             techQueryService.getTechByEnvKey(
               prisma,
-              LlmEnvNames.indexerEnvName)
+              LlmEnvNames.specsTranslatorEnvName)
 
     // Get prompt
     const prompt = await

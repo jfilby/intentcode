@@ -48,7 +48,8 @@ export enum MessageTypes {
 
 export enum LlmEnvNames {
   compilerEnvName = 'COMPILER_LLM_VARIANT_NAME',
-  indexerEnvName = 'INDEXER_LLM_VARIANT_NAME'
+  indexerEnvName = 'INDEXER_LLM_VARIANT_NAME',
+  specsTranslatorEnvName = `SPECS_TRANSLATOR_LLM_VARIANT_NAME`
 }
 
 export enum VersionNames {
