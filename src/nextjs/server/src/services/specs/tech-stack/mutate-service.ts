@@ -17,7 +17,6 @@ import { ExtensionQueryService } from '@/services/extensions/extension/query-ser
 import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { IntentCodeMessagesService } from '@/services/intentcode/common/messages-service'
 import { ProjectsQueryService } from '@/services/projects/query-service'
-import { SourceCodePathGraphMutateService } from '@/services/graphs/source-code/path-graph-mutate-service'
 import { SpecsGraphMutateService } from '@/services/graphs/specs/graph-mutate-service'
 import { SpecsGraphQueryService } from '@/services/graphs/specs/graph-query-service'
 import { SpecsPathGraphMutateService } from '@/services/graphs/specs/path-graph-mutate-service'
@@ -31,7 +30,6 @@ const extensionQueryService = new ExtensionQueryService()
 const fsUtilsService = new FsUtilsService()
 const intentCodeMessagesService = new IntentCodeMessagesService()
 const projectsQueryService = new ProjectsQueryService()
-const sourceCodePathGraphMutateService = new SourceCodePathGraphMutateService()
 const specsGraphMutateService = new SpecsGraphMutateService()
 const specsGraphQueryService = new SpecsGraphQueryService()
 const specsPathGraphMutateService = new SpecsPathGraphMutateService()
