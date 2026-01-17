@@ -155,7 +155,7 @@ export class SpecsTechStackMutateService {
       prompt: prompt
     }
 
-    // Save the index data
+    // Process the results
     await this.processQueryResults(
             prisma,
             projectNode,
