@@ -306,7 +306,7 @@ export class CompilerMutateService {
       // Write source file
       await fsUtilsService.writeTextFile(
               buildFromFile.targetFullPath,
-              content,
+              content + `\n`,
               true)  // createMissingDirs
     }
 

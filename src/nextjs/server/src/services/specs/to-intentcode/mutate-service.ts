@@ -309,7 +309,7 @@ export class SpecsToIntentCodeMutateService {
         // Write source file
         await fsUtilsService.writeTextFile(
                 intentCodeFullPath,
-                content as string,
+                content + `\n`,
                 true)  // createMissingDirs
       }
     }
