@@ -410,11 +410,11 @@ export class CompilerMutateService {
       var message: string | undefined = undefined;
 
       ({ status, message, content, jsonContent } = await
-              compilerMutateLlmService.llmRequest(
-                prisma,
-                adminUserProfile.id,
-                tech,
-                prompt))
+        compilerMutateLlmService.llmRequest(
+          prisma,
+          adminUserProfile.id,
+          tech,
+          prompt))
     }
 
     // Define SourceNodeGeneration
