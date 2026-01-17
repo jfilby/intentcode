@@ -2,14 +2,12 @@ import { blake3 } from '@noble/hashes/blake3'
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
-import { SourceEdgeNames, SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
+import { SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
-import { SourceEdgeModel } from '@/models/source-graph/source-edge-model'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
-import { SourceNodeGenerationService } from './source-node-generation-service'
+import { SourceNodeGenerationService } from '../general/source-node-generation-service'
 
 // Models
-const sourceEdgeModel = new SourceEdgeModel()
 const sourceNodeGenerationModel = new SourceNodeGenerationModel()
 const sourceNodeModel = new SourceNodeModel()
 

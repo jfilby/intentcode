@@ -13,6 +13,8 @@ import { LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
 import { ExtensionsData, SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
+import { DotIntentCodeGraphQueryService } from '@/services/graphs/dot-intentcode/graph-query-service'
+import { DotIntentCodePathGraphMutateService } from '@/services/graphs/dot-intentcode/path-graph-mutate-service'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
 import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { IntentCodeMessagesService } from '@/services/intentcode/common/messages-service'
@@ -27,6 +29,8 @@ const sourceNodeModel = new SourceNodeModel()
 
 // Services
 const extensionQueryService = new ExtensionQueryService()
+const dotIntentCodeGraphQueryService = new DotIntentCodeGraphQueryService()
+const dotIntentCodePathGraphMutateService = new DotIntentCodePathGraphMutateService()
 const fsUtilsService = new FsUtilsService()
 const intentCodeMessagesService = new IntentCodeMessagesService()
 const projectsQueryService = new ProjectsQueryService()
@@ -93,6 +97,7 @@ export class SpecsTechStackMutateService {
           buildData: BuildData,
           projectNode: SourceNode,
           projectSpecsNode: SourceNode,
+          projectDotIntentCodeNode: SourceNode,
           buildFromFile: BuildFromFile) {
 
     // Debug
@@ -158,8 +163,8 @@ export class SpecsTechStackMutateService {
     // Process the results
     await this.processQueryResults(
             prisma,
-            projectNode,
             projectSpecsNode,
+            projectDotIntentCodeNode,
             buildFromFile,
             sourceNodeGenerationData,
             jsonContent)
@@ -182,6 +187,18 @@ export class SpecsTechStackMutateService {
     // Validate
     if (projectSpecsNode == null) {
       return
+    }
+
+    // Get project specs node
+    const projectDotIntentCodeNode = await
+            dotIntentCodeGraphQueryService.getDotIntentCodeProject(
+              prisma,
+              projectNode)
+
+    // Validate
+    if (projectDotIntentCodeNode == null) {
+      console.error(`Missing .intentcode project node`)
+      process.exit(1)
     }
 
     // Debug
@@ -256,8 +273,8 @@ export class SpecsTechStackMutateService {
 
     // Determine targetFullPath
     const targetFullPath =
-            `${(projectSpecsNode.jsonContent as any).path}${path.sep}` +
-            `.intentcode/tech-stack.json`
+            `${(projectNode.jsonContent as any).path}${path.sep}.intentcode` +
+            `${path.sep}tech-stack.json`
 
     // Build file
     const buildFromFile: BuildFromFile = {
@@ -275,6 +292,7 @@ export class SpecsTechStackMutateService {
             buildData,
             projectNode,
             projectSpecsNode,
+            projectDotIntentCodeNode,
             buildFromFile)
   }
 
@@ -302,6 +320,10 @@ export class SpecsTechStackMutateService {
           `\n` +
           `Any element in the tech stack that isn't supported by an ` +
           `extension or dependency needs to be included in the errors.\n` +
+          `\n` +
+          `## Fields\n` +
+          `\n` +
+          ServerOnlyTypes.messagesPrompting +
           `\n` +
           `## Example output\n` +
           `\n` +
@@ -382,8 +404,8 @@ export class SpecsTechStackMutateService {
 
   async processQueryResults(
           prisma: PrismaClient,
-          projectNode: SourceNode,
           projectSpecsNode: SourceNode,
+          projectDotIntentCodeNode: SourceNode,
           buildFromFile: BuildFromFile,
           sourceNodeGenerationData: SourceNodeGenerationData,
           jsonContent: any) {
@@ -421,10 +443,11 @@ export class SpecsTechStackMutateService {
 
       const content = JSON.stringify(techStackJson)
 
-      // Get/create SourceCode node path
-      await specsPathGraphMutateService.getOrCreateSpecsPathAsGraph(
+      // Get/create .intentcode/tech-stack.json node path
+      await dotIntentCodePathGraphMutateService.getOrCreateDotIntentCodeConfigFilePathAsGraph(
               prisma,
-              projectSpecsNode,
+              projectDotIntentCodeNode,
+              SourceNodeTypes.techStackJsonFile,
               buildFromFile.targetFullPath!)
 
       // Write source file

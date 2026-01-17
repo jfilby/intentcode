@@ -30,6 +30,12 @@ export class ServerOnlyTypes {
 
   // Specs filenames
   static techStackFilename = 'tech-stack.md'
+
+  // Prompting
+  static messagesPrompting =
+    `Warnings and errors are messages have the same structure: an array ` +
+    `containing theline, from, to and text fields. They might not have a ` +
+    `line, from and to numbers, but they always have a text field.\n`
 }
 
 export enum DepDeltaNames {

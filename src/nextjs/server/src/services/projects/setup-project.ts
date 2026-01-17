@@ -6,6 +6,7 @@ import { CustomError } from '@/serene-core-server/types/errors'
 import { ServerOnlyTypes } from '@/types/server-only-types'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { DependenciesMutateService } from '../graphs/dependencies/mutate-service'
+import { DotIntentCodeGraphMutateService } from '../graphs/dot-intentcode/graph-mutate-service'
 import { IntentCodeGraphMutateService } from '../graphs/intentcode/graph-mutate-service'
 import { ProjectGraphMutateService } from '../graphs/project/mutate-service'
 import { SourceCodeGraphMutateService } from '../graphs/source-code/graph-mutate-service'
@@ -16,6 +17,7 @@ const sourceNodeModel = new SourceNodeModel()
 
 // Services
 const dependenciesMutateService = new DependenciesMutateService()
+const dotIntentCodeGraphMutateService = new DotIntentCodeGraphMutateService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
 const projectGraphMutateService = new ProjectGraphMutateService()
 const sourceCodeGraphMutateService = new SourceCodeGraphMutateService()
@@ -125,7 +127,7 @@ export class ProjectSetupService {
               projectPath)
 
     // Infer other paths
-    const configPath = `${projectPath}${path.sep}.intentcode`
+    const dotIntentCodePath = `${projectPath}${path.sep}.intentcode`
     const intentPath = `${projectPath}${path.sep}intent`
     const srcPath = `${projectPath}${path.sep}src`
     const specsPath = `${projectPath}${path.sep}specs`
@@ -133,11 +135,21 @@ export class ProjectSetupService {
     // Get/create specs project node
     if (await fs.existsSync(specsPath)) {
 
-      const specsProjectNode = await
+      const projectSpecsNode = await
               specsGraphMutateService.getOrCreateSpecsProject(
                 prisma,
                 projectNode,
                 specsPath)
+    }
+
+    // Get/create .intentcode project node
+    if (await fs.existsSync(specsPath)) {
+
+      const projectDotIntentCodeNode = await
+              dotIntentCodeGraphMutateService.getOrCreateDotIntentCodeProject(
+                prisma,
+                projectNode,
+                dotIntentCodePath)
     }
 
     // Get/create IntentCode project node
@@ -162,12 +174,12 @@ export class ProjectSetupService {
     }
 
     // Load project-level config files
-    if (await fs.existsSync(configPath)) {
+    if (await fs.existsSync(dotIntentCodePath)) {
 
       await this.loadConfigFiles(
               prisma,
               projectNode,
-              configPath)
+              dotIntentCodePath)
     }
 
     // Return

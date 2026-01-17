@@ -299,6 +299,8 @@ export class IndexerMutateService {
           `- parameter (of function)\n` +
           `- type (of function's return, parameter or field)\n` +
           `\n` +
+          ServerOnlyTypes.messagesPrompting +
+          `\n` +
           `## Example output\n` +  // Generic
           `\n` +
           `{\n` +

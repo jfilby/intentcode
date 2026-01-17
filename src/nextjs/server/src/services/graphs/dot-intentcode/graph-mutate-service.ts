@@ -14,55 +14,55 @@ const sourceNodeModel = new SourceNodeModel()
 // Services
 const sourceNodeGenerationService = new SourceNodeGenerationService()
 
-// Class
-export class SpecsGraphMutateService {
+// Code
+export class DotIntentCodeGraphMutateService {
 
   // Consts
-  clName = 'SpecsGraphMutateService'
+  clName = 'DotIntentCodeGraphMutateService'
 
   // Code
-  async getOrCreateSpecsDir(
+  async getOrCreateDotIntentCodeDir(
           prisma: PrismaClient,
           instanceId: string,
           parentNode: SourceNode,
           name: string) {
 
     // Debug
-    const fnName = `${this.clName}.getOrCreateSpecsDir()`
+    const fnName = `${this.clName}.getOrCreateDotIntentCodeDir()`
 
     // Validate
     if (parentNode == null) {
       throw new CustomError(`${fnName}: parentNode == null`)
     }
 
-    if (![SourceNodeTypes.projectSpecs,
-          SourceNodeTypes.specsDir].includes(
+    if (![SourceNodeTypes.projectIntentCode,
+          SourceNodeTypes.intentCodeDir].includes(
             parentNode.type as SourceNodeTypes)) {
 
       throw new CustomError(`${fnName}: invalid type: ${parentNode.type}`)
     }
 
     // Try to get the node
-    var specsDir = await
+    var dotIntentCodeDir = await
           sourceNodeModel.getByUniqueKey(
             prisma,
             parentNode.id,
             instanceId,
-            SourceNodeTypes.specsDir,
+            SourceNodeTypes.dotIntentCodeDir,
             name)
 
-    if (specsDir != null) {
-      return specsDir
+    if (dotIntentCodeDir != null) {
+      return dotIntentCodeDir
     }
 
     // Create the node
-    specsDir = await
+    dotIntentCodeDir = await
       sourceNodeModel.create(
         prisma,
         parentNode.id,  // parentId
         instanceId,
         BaseDataTypes.activeStatus,
-        SourceNodeTypes.specsDir,
+        SourceNodeTypes.dotIntentCodeDir,
         name,
         null,           // content
         null,           // contentHash
@@ -71,54 +71,61 @@ export class SpecsGraphMutateService {
         null)           // contentUpdated
 
     // Return
-    return specsDir
+    return dotIntentCodeDir
   }
 
-  async getOrCreateSpecsFile(
+  async getOrCreateConfigFile(
           prisma: PrismaClient,
           instanceId: string,
           parentNode: SourceNode,
+          sourceNodeType: SourceNodeTypes,
           name: string,
           relativePath: string) {
 
     // Debug
-    const fnName = `${this.clName}.getOrCreateSpecsFile()`
+    const fnName = `${this.clName}.getOrCreateConfigFile()`
 
     // Validate
     if (parentNode == null) {
       throw new CustomError(`${fnName}: parentNode == null`)
     }
 
-    if (![SourceNodeTypes.projectSpecs,
-          SourceNodeTypes.specsDir].includes(
+    if (![SourceNodeTypes.projectDotIntentCode,
+          SourceNodeTypes.dotIntentCodeDir].includes(
             parentNode.type as SourceNodeTypes)) {
+
+      throw new CustomError(
+        `${fnName}: invalid parent type: ${parentNode.type}`)
+    }
+
+    if (![SourceNodeTypes.techStackJsonFile].includes(sourceNodeType)) {
 
       throw new CustomError(`${fnName}: invalid type: ${parentNode.type}`)
     }
 
     // Try to get the node
-    var specsFile = await
+    var intentCodeFile = await
           sourceNodeModel.getByUniqueKey(
             prisma,
             parentNode.id,
             instanceId,
-            SourceNodeTypes.specsFile,
+            sourceNodeType,
             name)
 
     // console.log(`${fnName}: intentCodeFile: ` + JSON.stringify(intentCodeFile))
 
-    if (specsFile != null) {
-      return specsFile
+    if (intentCodeFile != null) {
+      return intentCodeFile
     }
 
     // Create the node
-    specsFile = await
+    intentCodeFile = await
       sourceNodeModel.create(
         prisma,
         parentNode.id,  // parentId
         instanceId,
         BaseDataTypes.activeStatus,
-        SourceNodeTypes.specsFile,
+        sourceNodeType,
         name,
         null,           // content
         null,           // contentHash
@@ -129,28 +136,28 @@ export class SpecsGraphMutateService {
         null)           // contentUpdated
 
     // Return
-    return specsFile
+    return intentCodeFile
   }
 
-  async getOrCreateSpecsProject(
+  async getOrCreateDotIntentCodeProject(
           prisma: PrismaClient,
           projectNode: SourceNode,
           localPath: string) {
 
     // Debug
-    const fnName = `${this.clName}.getOrCreateSpecsProject()`
+    const fnName = `${this.clName}.getOrCreateDotIntentCodeProject()`
 
     // Try to get the node
-    var specsProject = await
+    var dotIntentCodeProject = await
           sourceNodeModel.getByUniqueKey(
             prisma,
             projectNode.id,  // parentId
             projectNode.instanceId,
-            SourceNodeTypes.projectSpecs,
-            SourceNodeNames.projectSpecs)
+            SourceNodeTypes.projectDotIntentCode,
+            SourceNodeNames.projectDotIntentCode)
 
-    if (specsProject != null) {
-      return specsProject
+    if (dotIntentCodeProject != null) {
+      return dotIntentCodeProject
     }
 
     // Define jsonContent
@@ -168,14 +175,14 @@ export class SpecsGraphMutateService {
     }
 
     // Create the node
-    specsProject = await
+    dotIntentCodeProject = await
       sourceNodeModel.create(
         prisma,
         projectNode.id,  // parentId
         projectNode.instanceId,
         BaseDataTypes.activeStatus,
-        SourceNodeTypes.projectSpecs,
-        SourceNodeNames.projectSpecs,
+        SourceNodeTypes.projectDotIntentCode,
+        SourceNodeNames.projectDotIntentCode,
         null,  // content
         null,  // contentHash
         jsonContent,
@@ -183,29 +190,30 @@ export class SpecsGraphMutateService {
         null)  // contentUpdated
 
     // Return
-    return specsProject
+    return dotIntentCodeProject
   }
 
-  async upsertTechStackJson(
+  async upsertIntentCodeCompilerData(
           prisma: PrismaClient,
           instanceId: string | undefined,
           parentNode: SourceNode | undefined,
+          name: string,
           jsonContent: any,
           sourceNodeGenerationData: SourceNodeGenerationData,
           fileModifiedTime: Date) {
 
     // Debug
-    const fnName = `${this.clName}.upsertTechStackJson()`
+    const fnName = `${this.clName}.upsertIntentCodeCompilerData()`
 
     // Validate
     if (parentNode == null) {
       throw new CustomError(`${fnName}: parentNode == null`)
     }
 
-    if (parentNode.type !== SourceNodeTypes.projectSpecs) {
+    if (parentNode.type !== SourceNodeTypes.intentCodeFile) {
 
       throw new CustomError(`${fnName}: parentNode.type !== ` +
-                            `SourceNodeTypes.projectSpecs`)
+                            `SourceNodeTypes.intentCodeFile`)
     }
 
     // Get jsonContentHash
@@ -218,15 +226,15 @@ export class SpecsGraphMutateService {
     }
 
     // Create the node
-    const techStackJsonSourceNode = await
+    const intentCodeCompilerData = await
             sourceNodeModel.upsert(
               prisma,
               undefined,         // id
               parentNode.id,     // parentId
               instanceId,
               BaseDataTypes.activeStatus,
-              SourceNodeTypes.techStackJsonFile,
-              SourceNodeNames.techStackJsonFile,
+              SourceNodeTypes.intentCodeCompilerData,
+              name,
               null,              // content
               null,              // contentHash
               jsonContent,
@@ -242,7 +250,7 @@ export class SpecsGraphMutateService {
             sourceNodeGenerationModel.upsert(
               prisma,
               undefined,                  // id
-              techStackJsonSourceNode.id,  // sourceNodeId
+              intentCodeCompilerData.id,  // sourceNodeId
               sourceNodeGenerationData.techId,
               sourceNodeGenerationData.temperature ?? null,
               sourceNodeGenerationData.prompt,
@@ -255,9 +263,85 @@ export class SpecsGraphMutateService {
     // Delete old SourceNodeGenerations
     await sourceNodeGenerationService.deleteOld(
             prisma,
-            techStackJsonSourceNode.id)  // sourceNodeId
+            intentCodeCompilerData.id)  // sourceNodeId
 
     // Return
-    return techStackJsonSourceNode
+    return intentCodeCompilerData
+  }
+
+  async upsertIntentCodeIndexedData(
+          prisma: PrismaClient,
+          instanceId: string | undefined,
+          parentNode: SourceNode | undefined,
+          name: string,
+          jsonContent: any,
+          sourceNodeGenerationData: SourceNodeGenerationData,
+          fileModifiedTime: Date) {
+
+    // Debug
+    const fnName = `${this.clName}.upsertIntentCodeIndexedData()`
+
+    // Validate
+    if (parentNode == null) {
+      throw new CustomError(`${fnName}: parentNode == null`)
+    }
+
+    if (parentNode.type !== SourceNodeTypes.intentCodeFile) {
+
+      throw new CustomError(`${fnName}: parentNode.type !== ` +
+                            `SourceNodeTypes.intentCodeFile`)
+    }
+
+    // Get jsonContentHash
+    var jsonContentHash: string | null = null
+
+    if (jsonContent != null) {
+
+      // Blake3 hash
+      jsonContentHash = blake3(JSON.stringify(jsonContent)).toString()
+    }
+
+    // Create the node
+    const intentCodeIndexedData = await
+            sourceNodeModel.upsert(
+              prisma,
+              undefined,         // id
+              parentNode.id,     // parentId
+              instanceId,
+              BaseDataTypes.activeStatus,
+              SourceNodeTypes.intentCodeIndexedData,
+              name,
+              null,              // content
+              null,              // contentHash
+              jsonContent,
+              jsonContentHash,
+              fileModifiedTime)  // contentUpdated
+
+    // Get promptHash
+    const promptHash =
+            blake3(JSON.stringify(sourceNodeGenerationData.prompt)).toString()
+
+    // Upsert SourceNodeGeneration
+    const sourceNodeGeneration = await
+            sourceNodeGenerationModel.upsert(
+              prisma,
+              undefined,                  // id
+              intentCodeIndexedData.id,  // sourceNodeId
+              sourceNodeGenerationData.techId,
+              sourceNodeGenerationData.temperature ?? null,
+              sourceNodeGenerationData.prompt,
+              promptHash,
+              null,  // content
+              null,  // contentHash
+              jsonContent,
+              jsonContentHash)
+
+    // Delete old SourceNodeGenerations
+    await sourceNodeGenerationService.deleteOld(
+            prisma,
+            intentCodeIndexedData.id)  // sourceNodeId
+
+    // Return
+    return intentCodeIndexedData
   }
 }

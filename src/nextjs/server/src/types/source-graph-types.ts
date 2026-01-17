@@ -9,11 +9,16 @@ export enum SourceNodeTypes {
 
   // Project level
   project = 'Project',
+  projectDotIntentCode = 'Project .intentcode',
   projectSpecs = 'Project specs',
   projectIntentCode = 'Project IntentCode',
   projectSourceCode = 'Project source code',
 
+  // Deps
   deps = 'Deps',
+
+  // has parents: projectDotIntentCode
+  dotIntentCodeDir = '.intentcode dir',
 
   // has parents: projectSpecs/specsDir
   specsDir = 'Specs dir',
@@ -52,6 +57,7 @@ export enum SourceNodeTypes {
 export enum SourceNodeNames {
 
   projectSpecs = 'Project specs',
+  projectDotIntentCode = 'Project .intentcode',
   projectIntentCode = 'Project IntentCode',
   projectSourceCode = 'Project source code',
 

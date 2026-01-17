@@ -169,10 +169,9 @@ export class CompilerMutateService {
           `- Don't assume without data: if you don't know something ` +
           `  critical then list it as an error.\n` +
           `\n` +
-          `## Messages\n` +
+          `## Fields\n` +
           `\n` +
-          `Warnings and errors might not have a line, from and to numbers, ` +
-          `but they always have a text field.\n` +
+          ServerOnlyTypes.messagesPrompting +
           `\n` +
           depsPrompting +
           `\n` +

@@ -189,6 +189,7 @@ export class BuildMutateService {
 
         await specsToIntentCodeMutateService.run(
                 prisma,
+                buildData,
                 projectNode)
 
         break

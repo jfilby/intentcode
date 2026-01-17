@@ -5,7 +5,7 @@ import { BaseDataTypes } from '@/shared/types/base-data-types'
 import { SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
-import { SourceNodeGenerationService } from '../intentcode/source-node-generation-service'
+import { SourceNodeGenerationService } from '../general/source-node-generation-service'
 
 // Models
 const sourceNodeGenerationModel = new SourceNodeGenerationModel()
