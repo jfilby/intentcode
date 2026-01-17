@@ -1,10 +1,15 @@
 import { PrismaClient, SourceNode } from '@prisma/client'
+import { CustomError } from '@/serene-core-server/types/errors'
+import { ServerOnlyTypes } from '@/types/server-only-types'
 import { ExtensionsData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
-import { CustomError } from '@/serene-core-server/types/errors'
+import { ProjectsQueryService } from '@/services/projects/query-service'
 
 // Models
 const sourceNodeModel = new SourceNodeModel()
+
+// Services
+const projectsQueryService = new ProjectsQueryService()
 
 // Class
 export class ExtensionQueryService {
@@ -226,6 +231,37 @@ export class ExtensionQueryService {
       extensionNodes: extensionNodes,
       skillNodes: skillNodes,
       hooksNodes: hooksNodes
+    }
+
+    // Return
+    return extensionsData
+  }
+
+  async systemProjectExtensions(prisma: PrismaClient) {
+
+    // Debug
+    const fnName = `${this.clName}.systemProjectExtensions()`
+
+    // Get System project
+    const systemProject = await
+            projectsQueryService.getProject(
+              prisma,
+              ServerOnlyTypes.systemProjectName)
+
+    // Validate
+    if (systemProject == null) {
+      throw new CustomError(`${fnName}: systemProject == null`)
+    }
+
+    // Get system extensions
+    const extensionsData = await
+            this.loadExtensions(
+              prisma,
+              systemProject.id)
+
+    // Validate
+    if (extensionsData == null) {
+      throw new CustomError(`${fnName}: extensionsData == null`)
     }
 
     // Return
