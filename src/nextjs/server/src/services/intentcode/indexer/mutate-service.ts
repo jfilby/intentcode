@@ -166,9 +166,6 @@ export class IndexerMutateService {
             buildFromFile,
             sourceNodeGenerationData,
             jsonContent)
-
-    // Return
-    return
   }
 
   async indexProject(

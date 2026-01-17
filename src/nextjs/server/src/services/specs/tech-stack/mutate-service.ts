@@ -163,9 +163,6 @@ export class SpecsTechStackMutateService {
             buildFromFile,
             sourceNodeGenerationData,
             jsonContent)
-
-    // Return
-    return
   }
 
   async processTechStack(
