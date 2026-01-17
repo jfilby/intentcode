@@ -14,13 +14,14 @@ import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-gen
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
 import { FsUtilsService } from '@/services/utils/fs-utils-service'
+import { IntentCodeCommonTypes } from '@/services/intentcode/common/types'
 import { IntentCodeMessagesService } from '@/services/intentcode/common/messages-service'
+import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
 import { ProjectGraphQueryService } from '@/services/graphs/project/query-service'
 import { SpecsGraphMutateService } from '@/services/graphs/specs/graph-mutate-service'
 import { SpecsGraphQueryService } from '@/services/graphs/specs/graph-query-service'
 import { SpecsMutateLlmService } from './llm-service'
 import { SpecsPathGraphMutateService } from '@/services/graphs/specs/path-graph-mutate-service'
-import { IntentCodeCommonTypes } from '@/services/intentcode/common/types'
 
 // Models
 const sourceNodeGenerationModel = new SourceNodeGenerationModel()
@@ -30,6 +31,7 @@ const sourceNodeModel = new SourceNodeModel()
 const extensionQueryService = new ExtensionQueryService()
 const fsUtilsService = new FsUtilsService()
 const intentCodeMessagesService = new IntentCodeMessagesService()
+const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
 const projectGraphQueryService = new ProjectGraphQueryService()
 const specsGraphMutateService = new SpecsGraphMutateService()
 const specsGraphQueryService = new SpecsGraphQueryService()
@@ -292,9 +294,9 @@ export class SpecsToIntentCodeMutateService {
                 `${intentCodePath}${path.sep}${intentCodeRelativePath}`
 
         // Get/create SourceCode node path
-        await specsPathGraphMutateService.getOrCreateSpecsPathAsGraph(
+        await intentCodePathGraphMutateService.getOrCreateIntentCodePathAsGraph(
                 prisma,
-                projectSpecsNode,
+                projectIntentCodeNode,
                 intentCodeFullPath)
 
         // Write source file
