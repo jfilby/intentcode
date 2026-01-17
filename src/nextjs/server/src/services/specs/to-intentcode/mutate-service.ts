@@ -201,13 +201,17 @@ export class SpecsToIntentCodeMutateService {
 
     for (const buildFromFile of buildFromFiles) {
 
+      // Debug
+      // console.log(`${fnName}: ${buildFromFile.filename}: ` +
+      //             `${buildFromFile.content}`)
+
       // Get relative filename
       const relativePath = buildFromFile.filename.slice(specsPath.length)
 
       // Add to prompt
       prompt +=
         `### ${relativePath}\n` +
-        `\n`
+        `\n` +
         '```md\n' +
         buildFromFile.content +
         `\n` +
@@ -256,6 +260,9 @@ export class SpecsToIntentCodeMutateService {
           `\n`
       }
     }
+
+    // Debug
+    console.log(`${fnName}: prompt: ${prompt}`)
 
     // Return
     return prompt
@@ -398,6 +405,9 @@ export class SpecsToIntentCodeMutateService {
             buildData: BuildData,
             projectNode: SourceNode) {
 
+    // Debug
+    const fnName = `${this.clName}.run()`
+
     // Console output
     console.log(`Compiling specs to IntentCode..`)
 
@@ -475,7 +485,7 @@ export class SpecsToIntentCodeMutateService {
       if (specFileNode?.contentUpdated != null &&
           specFileNode.contentUpdated <= fileModifiedTime) {
 
-        // console.log(`${fnName}: file: ${intentCodeFilename} already indexed`)
+        console.log(`${fnName}: file: ${mdFilename} already processed`)
         return
       }
 
@@ -493,6 +503,10 @@ export class SpecsToIntentCodeMutateService {
           `${relativePath}`
       }
 
+      // Debug
+      // console.log(`${fnName}: ${mdFilename}: ${content}`)
+
+      // Add to buildFromFiles
       buildFromFiles.push({
         filename: mdFilename,
         content: content,
