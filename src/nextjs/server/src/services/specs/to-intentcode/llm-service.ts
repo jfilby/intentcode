@@ -190,7 +190,7 @@ export class SpecsMutateLlmService {
 
     // extensions is required and can't be an array
     if (queryResults.json.intentcode == null ||
-        !Array.isArray(queryResults.json.deps)) {
+        !Array.isArray(queryResults.json.intentcode)) {
 
       console.log(`${fnName}: invalid intentcode`)
       return false
