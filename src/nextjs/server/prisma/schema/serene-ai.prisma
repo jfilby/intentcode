@@ -10,6 +10,7 @@ model LlmCache {
   inputMessage                 String               @map("input_message")
   outputMessage                String?              @map("output_message")
   outputMessages               Json?                @map("output_messages")
+  outputJson                   Json?                @map("output_json")
   created                      DateTime             @default(now())
 
   @@unique([key, techId])

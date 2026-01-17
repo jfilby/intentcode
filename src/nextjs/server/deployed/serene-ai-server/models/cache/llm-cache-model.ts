@@ -12,7 +12,8 @@ export class LlmCacheModel {
           key: string,
           inputMessage: string,
           outputMessage: string | null,
-          outputMessages: any | null) {
+          outputMessages: any | null,
+          outputJson: any | null) {
 
     // Debug
     const fnName = `${this.clName}.create()`
@@ -25,7 +26,8 @@ export class LlmCacheModel {
           key: key,
           inputMessage: inputMessage,
           outputMessage: outputMessage,
-          outputMessages: outputMessages
+          outputMessages: outputMessages,
+          outputJson: outputJson
         }
       })
     } catch(error) {
@@ -146,7 +148,8 @@ export class LlmCacheModel {
           key: string | undefined,
           inputMessage: string | undefined,
           outputMessage: string | null | undefined,
-          outputMessages: any | null | undefined) {
+          outputMessages: any | null | undefined,
+          outputJson: any | null | undefined) {
 
     // Debug
     const fnName = `${this.clName}.update()`
@@ -159,7 +162,8 @@ export class LlmCacheModel {
           key: key,
           inputMessage: inputMessage,
           outputMessage: outputMessage,
-          outputMessages: outputMessages
+          outputMessages: outputMessages,
+          outputJson: outputJson
         },
         where: {
           id: id
@@ -177,7 +181,8 @@ export class LlmCacheModel {
                key: string,
                inputMessage: string | undefined,
                outputMessage: string | null | undefined,
-               outputMessages: any | null | undefined) {
+               outputMessages: any | null | undefined,
+               outputJson: any | null | undefined) {
 
     // Debug
     const fnName = `${this.clName}.upsert()`
@@ -230,6 +235,11 @@ export class LlmCacheModel {
         throw 'Prisma error'
       }
 
+      if (outputJson === undefined) {
+        console.error(`${fnName}: id is null and outputJson is undefined`)
+        throw 'Prisma error'
+      }
+
       return await
                this.create(
                  prisma,
@@ -237,7 +247,8 @@ export class LlmCacheModel {
                  key,
                  inputMessage,
                  outputMessage,
-                 outputMessages)
+                 outputMessages,
+                 outputJson)
     } else {
 
       // Update
@@ -251,7 +262,8 @@ export class LlmCacheModel {
                  key,
                  inputMessage,
                  outputMessage,
-                 outputMessages)
+                 outputMessages,
+                 outputJson)
     }
   }
 }

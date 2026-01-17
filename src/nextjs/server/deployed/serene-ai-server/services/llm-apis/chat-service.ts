@@ -469,6 +469,9 @@ export class ChatService {
               costInCents)
     }
 
+    // Empty json
+    var jsonEmpty: any = undefined
+
     // Get result output as a string
     var messageText = ''
 
@@ -495,15 +498,14 @@ export class ChatService {
                 cacheKey!,
                 inputMessageStr!,
                 results.message,
-                results.messages)
+                results.messages,
+                jsonEmpty)
         }
     } else {
       throw new CustomError(`${fnName}: results == null`)
     }
 
     // Return
-    var jsonEmpty: any
-
     return {
       status: results.status,
       isRateLimited: false,
