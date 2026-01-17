@@ -183,12 +183,9 @@ export class SpecsToIntentCodeMutateService {
           `      "text": "No extension for <tech> available."\n` +
           `    }\n` +
           `  ],\n` +
-          `  "intentcode": [\n` +
-          `    {\n` +
-          `      "filename": "<path>/<target-filename.ext>.md",\n` +
-          `      "content": "<..>"\n` +
-          `    }\n` +
-          `  ]\n` +
+          `  "intentcode": {\n` +
+          `    "<path>/<target-filename.ext>.md": "<content>"\n` +
+          `  }\n` +
           `}\n` +
           `\n`
 
@@ -291,7 +288,8 @@ export class SpecsToIntentCodeMutateService {
            Object.entries(jsonContent.intentcode)) {
 
         // Determine intentCodeFullPath
-        const intentCodeFullPath = `${intentCodePath}${intentCodeRelativePath}`
+        const intentCodeFullPath =
+                `${intentCodePath}${path.sep}${intentCodeRelativePath}`
 
         // Get/create SourceCode node path
         await specsPathGraphMutateService.getOrCreateSpecsPathAsGraph(
@@ -376,7 +374,7 @@ export class SpecsToIntentCodeMutateService {
                 tech,
                 prompt)
 
-      jsonContent = llmResults.queryResults.json
+      jsonContent = llmResults.queryResultsJson
     }
 
     // Define SourceNodeGeneration

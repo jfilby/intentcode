@@ -149,7 +149,7 @@ export class IndexerMutateService {
                 prompt)
 
       jsonContent = {
-        astTree: llmResults.queryResults.json.astTree
+        astTree: llmResults.queryResultsJson.astTree
       }
     }
 

@@ -1,10 +1,11 @@
 import { PrismaClient, Tech } from '@prisma/client'
+import { CustomError } from '@/serene-core-server/types/errors'
 import { FeatureFlags } from '@/serene-ai-server/types/feature-flags'
 import { LlmCacheService } from '@/serene-ai-server/services/cache/service'
 import { AgentLlmService } from '@/serene-ai-server/services/llm-apis/agent-llm-service'
 import { LlmUtilsService } from '@/serene-ai-server/services/llm-apis/utils-service'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
-import { MessageTypes } from '@/types/server-only-types'
+import { MessageTypes, ServerOnlyTypes } from '@/types/server-only-types'
 
 // Services
 const agentLlmService = new AgentLlmService()
@@ -29,9 +30,8 @@ export class SpecsTechStackMutateLlmService {
     // Try to get from cache
     var cacheKey: string | undefined = undefined
     var inputMessageStr: string | undefined = undefined
-    var queryResults: any = undefined
 
-    if (FeatureFlags.tryCacheByDefault === true) {
+    if (ServerOnlyTypes.llmCaching === true) {
 
       // Build the messageWithRoles
       const inputMessagesWithRoles = await
@@ -47,21 +47,26 @@ export class SpecsTechStackMutateLlmService {
                 llmTech.id,
                 inputMessagesWithRoles)
 
+      // Debug
+      // console.log(`${fnName}: cacheResults: ` + JSON.stringify(cacheResults))
+
+      // Get cacheResults fields
       cacheKey = cacheResults.cacheKey
       inputMessageStr = cacheResults.inputMessageStr
-      queryResults = cacheResults.llmCache
+      const queryResultsJson = cacheResults.llmCache?.outputJson
 
       // Found?
-      if (queryResults != null) {
+      if (queryResultsJson != null) {
         return {
           status: true,
           message: undefined,
-          queryResults: queryResults
+          queryResultsJson: queryResultsJson
         }
       }
     }
 
     // LLM request tries
+    var queryResults: any = undefined
     var validated = false
 
     for (var i = 0; i < 5; i++) {
@@ -118,7 +123,8 @@ export class SpecsTechStackMutateLlmService {
                 cacheKey!,
                 inputMessageStr!,
                 queryResults.message,
-                queryResults.messages)
+                queryResults.messages,
+                queryResults.json)
       }
 
       break
@@ -139,7 +145,7 @@ export class SpecsTechStackMutateLlmService {
     return {
       status: true,
       message: undefined,
-      queryResults: queryResults
+      queryResultsJson: queryResults.json
     }
   }
 

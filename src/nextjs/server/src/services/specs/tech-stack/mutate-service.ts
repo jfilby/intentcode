@@ -151,7 +151,7 @@ export class SpecsTechStackMutateService {
                 tech,
                 prompt)
 
-      jsonContent = llmResults.queryResults.json
+      jsonContent = llmResults.queryResultsJson
     }
 
     // Define SourceNodeGeneration

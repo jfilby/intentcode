@@ -4,7 +4,7 @@ import { LlmCacheService } from '@/serene-ai-server/services/cache/service'
 import { AgentLlmService } from '@/serene-ai-server/services/llm-apis/agent-llm-service'
 import { LlmUtilsService } from '@/serene-ai-server/services/llm-apis/utils-service'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
-import { MessageTypes } from '@/types/server-only-types'
+import { MessageTypes, ServerOnlyTypes } from '@/types/server-only-types'
 import { DependenciesQueryService } from '@/services/graphs/dependencies/query-service'
 
 // Services
@@ -31,9 +31,8 @@ export class CompilerMutateLlmService {
     // Try to get from cache
     var cacheKey: string | undefined = undefined
     var inputMessageStr: string | undefined = undefined
-    var queryResults: any = undefined
 
-    if (FeatureFlags.tryCacheByDefault === true) {
+    if (ServerOnlyTypes.llmCaching === true) {
 
       // Build the messageWithRoles
       const inputMessagesWithRoles = await
@@ -51,19 +50,20 @@ export class CompilerMutateLlmService {
 
       cacheKey = cacheResults.cacheKey
       inputMessageStr = cacheResults.inputMessageStr
-      queryResults = cacheResults.llmCache
+      const jsonContent = cacheResults.llmCache?.outputJson
 
       // Found?
       if (queryResults != null) {
         return {
           status: true,
           message: undefined,
-          queryResults: queryResults
+          jsonContent: jsonContent
         }
       }
     }
 
     // LLM request tries
+    var queryResults: any = undefined
     var validated = false
 
     for (var i = 0; i < 5; i++) {
@@ -120,7 +120,8 @@ export class CompilerMutateLlmService {
                 cacheKey!,
                 inputMessageStr!,
                 queryResults.message,
-                queryResults.messages)
+                queryResults.messages,
+                queryResults.json)
       }
 
       break

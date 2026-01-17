@@ -3,6 +3,9 @@ export class ServerOnlyTypes {
   // System project
   static systemProjectName = 'System'
 
+  // Caching
+  static llmCaching = true
+
   // Versions
   static engineVersion = '0.0.1'
 
