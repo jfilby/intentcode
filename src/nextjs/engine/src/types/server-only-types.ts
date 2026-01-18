@@ -29,7 +29,7 @@ export class ServerOnlyTypes {
   static compilerAutoAddLibraries = true
 
   // Valid depsNode keys
-  static depsNodeKeys = ['runtimes', 'tool']
+  static depsNodeKeys = ['extensions', 'runtimes', 'tool']
 
   // Specs filenames
   static techStackFilename = 'tech-stack.md'
