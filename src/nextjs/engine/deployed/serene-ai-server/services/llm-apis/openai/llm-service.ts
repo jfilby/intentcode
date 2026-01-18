@@ -1,4 +1,4 @@
-import OpenAI from 'openai'
+import OpenAI from 'openai/index.mjs'
 import { PrismaClient } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { SereneCoreServerTypes } from '@/serene-core-server/types/user-types'
