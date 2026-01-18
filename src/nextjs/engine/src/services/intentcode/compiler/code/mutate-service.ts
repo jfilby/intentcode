@@ -1,4 +1,3 @@
-import fs from 'fs'
 import { blake3 } from '@noble/hashes/blake3'
 import { PrismaClient, SourceNode, Tech } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
@@ -18,7 +17,6 @@ import { GraphQueryService } from '@/services/graphs/intentcode/graph-query-serv
 import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service'
 import { IntentCodeMessagesService } from '../../common/messages-service'
 import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
-import { IntentCodePathGraphQueryService } from '@/services/graphs/intentcode/path-graph-query-service'
 import { SourceAssistIntentCodeService } from '../../source/source-prompt'
 import { SourceCodePathGraphMutateService } from '@/services/graphs/source-code/path-graph-mutate-service'
 import { SourceCodePathGraphQueryService } from '@/services/graphs/source-code/path-graph-query-service'
@@ -36,7 +34,6 @@ const graphQueryService = new GraphQueryService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
 const intentCodeMessagesService = new IntentCodeMessagesService()
 const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
-const intentCodePathGraphQueryService = new IntentCodePathGraphQueryService()
 const sourceAssistIntentCodeService = new SourceAssistIntentCodeService()
 const sourceCodePathGraphMutateService = new SourceCodePathGraphMutateService()
 const sourceCodePathGraphQueryService = new SourceCodePathGraphQueryService()
