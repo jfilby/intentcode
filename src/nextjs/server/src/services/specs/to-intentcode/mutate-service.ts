@@ -301,7 +301,7 @@ export class SpecsToIntentCodeMutateService {
                 `${intentCodePath}${path.sep}${intentCodeRelativePath}`
 
         // Get/create SourceCode node path
-        await intentCodePathGraphMutateService.getOrCreateIntentCodePathAsGraph(
+        await intentCodePathGraphMutateService.upsertIntentCodePathAsGraph(
                 prisma,
                 projectIntentCodeNode,
                 intentCodeFullPath)

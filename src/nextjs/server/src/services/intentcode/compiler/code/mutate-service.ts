@@ -1,3 +1,4 @@
+import fs from 'fs'
 import { blake3 } from '@noble/hashes/blake3'
 import { PrismaClient, SourceNode, Tech } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
@@ -18,8 +19,11 @@ import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { GraphQueryService } from '@/services/graphs/intentcode/graph-query-service'
 import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service'
 import { IntentCodeMessagesService } from '../../common/messages-service'
+import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
+import { IntentCodePathGraphQueryService } from '@/services/graphs/intentcode/path-graph-query-service'
 import { SourceAssistIntentCodeService } from '../../source/source-prompt'
 import { SourceCodePathGraphMutateService } from '@/services/graphs/source-code/path-graph-mutate-service'
+import { SourceCodePathGraphQueryService } from '@/services/graphs/source-code/path-graph-query-service'
 
 // Models
 const sourceNodeGenerationModel = new SourceNodeGenerationModel()
@@ -34,8 +38,11 @@ const fsUtilsService = new FsUtilsService()
 const graphQueryService = new GraphQueryService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
 const intentCodeMessagesService = new IntentCodeMessagesService()
+const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
+const intentCodePathGraphQueryService = new IntentCodePathGraphQueryService()
 const sourceAssistIntentCodeService = new SourceAssistIntentCodeService()
 const sourceCodePathGraphMutateService = new SourceCodePathGraphMutateService()
+const sourceCodePathGraphQueryService = new SourceCodePathGraphQueryService()
 const techQueryService = new TechQueryService()
 const usersService = new UsersService()
 
@@ -278,6 +285,7 @@ export class CompilerMutateService {
           prisma: PrismaClient,
           projectNode: SourceNode,
           buildFromFile: BuildFromFile,
+          projectIntentCodeNode: SourceNode,
           projectSourceCodeNode: SourceNode,
           sourceNodeGenerationData: SourceNodeGenerationData,
           content: string,
@@ -295,8 +303,8 @@ export class CompilerMutateService {
     // Write source file (if any)
     if (content != null) {
 
-      // Get/create SourceCode node path
-      await sourceCodePathGraphMutateService.getOrCreateSourceCodePathAsGraph(
+      // Upsert SourceCode node path and content
+      await sourceCodePathGraphMutateService.upsertSourceCodePathAsGraph(
               prisma,
               projectSourceCodeNode,
               buildFromFile.targetFullPath,
@@ -320,6 +328,13 @@ export class CompilerMutateService {
               jsonContent.deps)
     }
 
+    // Upsert the IntentCode file contents
+    await intentCodePathGraphMutateService.upsertIntentCodePathAsGraph(
+            prisma,
+            projectIntentCodeNode,
+            buildFromFile.filename,
+            buildFromFile.content)
+
     // Upsert the compiler data node
     const compilerDataSourceNode = await
             intentCodeGraphMutateService.upsertIntentCodeCompilerData(
@@ -333,6 +348,57 @@ export class CompilerMutateService {
 
     // Print warnings and errors (must be at the end of results processing)
     intentCodeMessagesService.handleMessages(jsonContent)
+  }
+
+  async requiresRecompile(
+          projectIntentCodeNode: SourceNode,
+          projectSourceCodeNode: SourceNode,
+          buildFromFile: BuildFromFile) {
+
+    // Debug
+    const fnName = `${this.clName}.requiresRecompile()`
+
+    // Get the IntentCode node
+    const intentCodeNode = await
+            intentCodePathGraphQueryService.getIntentCodePathAsGraph(
+              prisma,
+              projectIntentCodeNode,
+              buildFromFile.filename)
+
+    // Has the IntentCode file's content been changed?
+    if (buildFromFile.content !== intentCodeNode?.content) {
+
+      console.log(`IntentFile has changed, recompile required..`)
+      console.log(`<${buildFromFile.content}> vs <${intentCodeNode?.content}\n>`)
+      return true
+    }
+
+    // Get the source file node
+    const sourceFileNode = await
+            sourceCodePathGraphQueryService.getSourceCodePathAsGraph(
+              prisma,
+              projectSourceCodeNode,
+              buildFromFile.targetFullPath!)
+
+    // Read existing source file (if it exists)
+    var existingSourceCode = ''
+
+    if (await fs.existsSync(buildFromFile.targetFullPath!)) {
+
+      existingSourceCode = await
+        fs.readFileSync(buildFromFile.targetFullPath!, 'utf-8')
+    }
+
+    // Has the source file's content been changed?
+    if (existingSourceCode !== sourceFileNode?.content + `\n`) {
+
+      console.log(`Target source file has changed, recompile required..`)
+      console.log(`<${existingSourceCode}> vs <${sourceFileNode?.content}\n>`)
+      return true
+    }
+
+    // No change
+    return false
   }
 
   async run(prisma: PrismaClient,
@@ -402,6 +468,15 @@ export class CompilerMutateService {
             tech,
             prompt)
 
+    // Check if the file should be recompiled
+    if (await this.requiresRecompile(
+                projectIntentCodeNode,
+                projectSourceCodeNode,
+                buildFromFile) === false) {
+
+      return
+    }
+
     // Run
     if (jsonContent == null) {
 
@@ -427,6 +502,7 @@ export class CompilerMutateService {
             prisma,
             projectNode,
             buildFromFile,
+            projectIntentCodeNode,
             projectSourceCodeNode,
             sourceNodeGenerationData,
             content,

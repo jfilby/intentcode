@@ -1,29 +1,29 @@
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
+import { SourceNodeTypes } from '@/types/source-graph-types'
+import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { FsUtilsService } from '../../utils/fs-utils-service'
-import { SourceCodeGraphMutateService } from './graph-mutate-service'
-import { SourceNodeGenerationData } from '@/types/source-graph-types'
+
+// Models
+const sourceNodeModel = new SourceNodeModel()
 
 // Services
 const fsUtilsService = new FsUtilsService()
-const sourceCodeGraphMutateService = new SourceCodeGraphMutateService()
 
 // Class
-export class SourceCodePathGraphMutateService {
+export class SourceCodePathGraphQueryService {
 
   // Consts
-  clName = 'SourceCodePathGraphMutateService'
+  clName = 'SourceCodePathGraphQueryService'
 
   // Code
-  async upsertSourceCodePathAsGraph(
+  async getSourceCodePathAsGraph(
           prisma: PrismaClient,
           projectSourceCodeNode: SourceNode,
-          fullPath: string,
-          content: string,
-          sourceNodeGenerationData: SourceNodeGenerationData) {
+          fullPath: string) {
 
     // Debug
-    const fnName = `${this.clName}.upsertSourceCodePathAsGraph()`
+    const fnName = `${this.clName}.getSourceCodePathAsGraph()`
 
     // Get project source path
     const projectSourcePath = (projectSourceCodeNode.jsonContent as any)?.path
@@ -52,7 +52,7 @@ export class SourceCodePathGraphMutateService {
     // console.log(`${fnName}: dirs: ${dirs}`)
 
     // Get/create nodes for dirs
-    var dirSourceNode: SourceNode = projectSourceCodeNode
+    var sourceCodeDir: SourceNode = projectSourceCodeNode
 
     for (const dir of dirs) {
 
@@ -60,25 +60,26 @@ export class SourceCodePathGraphMutateService {
         break
       }
 
-      dirSourceNode = await
-        sourceCodeGraphMutateService.getOrCreateSourceCodeDir(
+      // Try to get the dir node
+      sourceCodeDir = await
+        sourceNodeModel.getByUniqueKey(
           prisma,
+          sourceCodeDir.id,
           projectSourceCodeNode.instanceId,
-          dirSourceNode,
+          SourceNodeTypes.sourceCodeDir,
           dir)
     }
 
-    // Get/create nodes for the filename
-    const filenameSourceNode = await
-            sourceCodeGraphMutateService.upsertSourceCodeFile(
+    // Try to get the node
+    const sourceCodeFile = await
+            sourceNodeModel.getByUniqueKey(
               prisma,
+              sourceCodeDir.id,  // parentId
               projectSourceCodeNode.instanceId,
-              dirSourceNode,
-              filename,
-              content,
-              sourceNodeGenerationData)
+              SourceNodeTypes.sourceCodeFile,
+              filename)
 
     // Return filename's node
-    return filenameSourceNode
+    return sourceCodeFile
   }
 }

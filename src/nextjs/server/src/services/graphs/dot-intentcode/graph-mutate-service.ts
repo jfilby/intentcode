@@ -193,17 +193,18 @@ export class DotIntentCodeGraphMutateService {
     return dotIntentCodeProject
   }
 
-  async upsertIntentCodeCompilerData(
+  async upsertConfigData(
           prisma: PrismaClient,
           instanceId: string | undefined,
           parentNode: SourceNode | undefined,
           name: string,
+          content: string,
           jsonContent: any,
           sourceNodeGenerationData: SourceNodeGenerationData,
           fileModifiedTime: Date) {
 
     // Debug
-    const fnName = `${this.clName}.upsertIntentCodeCompilerData()`
+    const fnName = `${this.clName}.upsertConfigData()`
 
     // Validate
     if (parentNode == null) {
@@ -216,12 +217,17 @@ export class DotIntentCodeGraphMutateService {
                             `SourceNodeTypes.intentCodeFile`)
     }
 
+    // Get contentHash
+    var contentHash: string | null = null
+
+    if (content != null) {
+      contentHash = blake3(JSON.stringify(content)).toString()
+    }
+
     // Get jsonContentHash
     var jsonContentHash: string | null = null
 
     if (jsonContent != null) {
-
-      // Blake3 hash
       jsonContentHash = blake3(JSON.stringify(jsonContent)).toString()
     }
 
@@ -235,8 +241,8 @@ export class DotIntentCodeGraphMutateService {
               BaseDataTypes.activeStatus,
               SourceNodeTypes.intentCodeCompilerData,
               name,
-              null,              // content
-              null,              // contentHash
+              content,
+              contentHash,
               jsonContent,
               jsonContentHash,
               fileModifiedTime)  // contentUpdated

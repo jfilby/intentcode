@@ -14,13 +14,14 @@ export class IntentCodePathGraphMutateService {
   clName = 'IntentCodePathGraphMutateService'
 
   // Code
-  async getOrCreateIntentCodePathAsGraph(
+  async upsertIntentCodePathAsGraph(
           prisma: PrismaClient,
           projectIntentCodeNode: SourceNode,
-          fullPath: string) {
+          fullPath: string,
+          content?: string) {
 
     // Debug
-    const fnName = `${this.clName}.getOrCreateIntentCodePathAsGraph()`
+    const fnName = `${this.clName}.upsertIntentCodePathAsGraph()`
 
     // Get project source path
     const projectSourcePath = (projectIntentCodeNode.jsonContent as any)?.path
@@ -67,12 +68,13 @@ export class IntentCodePathGraphMutateService {
 
     // Get/create nodes for the filename
     const filenameSourceNode = await
-            intentCodeGraphMutateService.getOrCreateIntentCodeFile(
+            intentCodeGraphMutateService.upsertIntentCodeFile(
               prisma,
               projectIntentCodeNode.instanceId,
               dirSourceNode,
               filename,
-              relativePath)
+              relativePath,
+              content)
 
     // Return filename's node
     return filenameSourceNode

@@ -213,7 +213,7 @@ export class IndexerMutateService {
 
       // Get/create the file's SourceNode
       const intentFileNode = await
-        intentCodePathGraphMutateService.getOrCreateIntentCodePathAsGraph(
+        intentCodePathGraphMutateService.upsertIntentCodePathAsGraph(
           prisma,
           projectIntentCodeNode,
           intentCodeFilename)

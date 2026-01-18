@@ -74,15 +74,16 @@ export class IntentCodeGraphMutateService {
     return intentCodeDir
   }
 
-  async getOrCreateIntentCodeFile(
+  async upsertIntentCodeFile(
           prisma: PrismaClient,
           instanceId: string,
           parentNode: SourceNode,
           name: string,
-          relativePath: string) {
+          relativePath: string,
+          content?: string) {
 
     // Debug
-    const fnName = `${this.clName}.getOrCreateIntentCodeFile()`
+    const fnName = `${this.clName}.upsertIntentCodeFile()`
 
     // Validate
     if (parentNode == null) {
@@ -107,21 +108,25 @@ export class IntentCodeGraphMutateService {
 
     // console.log(`${fnName}: intentCodeFile: ` + JSON.stringify(intentCodeFile))
 
-    if (intentCodeFile != null) {
-      return intentCodeFile
+    // Get contentHash
+    var contentHash: string | null = null
+
+    if (content != null) {
+      contentHash = blake3(JSON.stringify(content)).toString()
     }
 
     // Create the node
     intentCodeFile = await
-      sourceNodeModel.create(
+      sourceNodeModel.upsert(
         prisma,
+        undefined,      // id
         parentNode.id,  // parentId
         instanceId,
         BaseDataTypes.activeStatus,
         SourceNodeTypes.intentCodeFile,
         name,
-        null,           // content
-        null,           // contentHash
+        content,
+        contentHash,
         {
           relativePath: relativePath
         },              // jsonContent
@@ -162,8 +167,6 @@ export class IntentCodeGraphMutateService {
     var jsonContentHash: string | null = null
 
     if (jsonContent != null) {
-
-      // Blake3 hash
       jsonContentHash = blake3(JSON.stringify(jsonContent)).toString()
     }
 
@@ -213,8 +216,6 @@ export class IntentCodeGraphMutateService {
     var jsonContentHash: string | null = null
 
     if (jsonContent != null) {
-
-      // Blake3 hash
       jsonContentHash = blake3(JSON.stringify(jsonContent)).toString()
     }
 

@@ -1,32 +1,32 @@
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
+import { SourceNodeTypes } from '@/types/source-graph-types'
+import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { FsUtilsService } from '../../utils/fs-utils-service'
-import { SourceCodeGraphMutateService } from './graph-mutate-service'
-import { SourceNodeGenerationData } from '@/types/source-graph-types'
+
+// Models
+const sourceNodeModel = new SourceNodeModel()
 
 // Services
 const fsUtilsService = new FsUtilsService()
-const sourceCodeGraphMutateService = new SourceCodeGraphMutateService()
 
 // Class
-export class SourceCodePathGraphMutateService {
+export class IntentCodePathGraphQueryService {
 
   // Consts
-  clName = 'SourceCodePathGraphMutateService'
+  clName = 'IntentCodePathGraphQueryService'
 
   // Code
-  async upsertSourceCodePathAsGraph(
+  async getIntentCodePathAsGraph(
           prisma: PrismaClient,
-          projectSourceCodeNode: SourceNode,
-          fullPath: string,
-          content: string,
-          sourceNodeGenerationData: SourceNodeGenerationData) {
+          projectIntentCodeNode: SourceNode,
+          fullPath: string) {
 
     // Debug
-    const fnName = `${this.clName}.upsertSourceCodePathAsGraph()`
+    const fnName = `${this.clName}.getIntentCodePathAsGraph()`
 
     // Get project source path
-    const projectSourcePath = (projectSourceCodeNode.jsonContent as any)?.path
+    const projectSourcePath = (projectIntentCodeNode.jsonContent as any)?.path
 
     // Validate project path
     if (projectSourcePath == null ||
@@ -52,7 +52,7 @@ export class SourceCodePathGraphMutateService {
     // console.log(`${fnName}: dirs: ${dirs}`)
 
     // Get/create nodes for dirs
-    var dirSourceNode: SourceNode = projectSourceCodeNode
+    var intentCodeDir: SourceNode = projectIntentCodeNode
 
     for (const dir of dirs) {
 
@@ -60,25 +60,26 @@ export class SourceCodePathGraphMutateService {
         break
       }
 
-      dirSourceNode = await
-        sourceCodeGraphMutateService.getOrCreateSourceCodeDir(
+      // Try to get the dir node
+      intentCodeDir = await
+        sourceNodeModel.getByUniqueKey(
           prisma,
-          projectSourceCodeNode.instanceId,
-          dirSourceNode,
+          intentCodeDir.id,
+          projectIntentCodeNode.instanceId,
+          SourceNodeTypes.intentCodeDir,
           dir)
     }
 
-    // Get/create nodes for the filename
-    const filenameSourceNode = await
-            sourceCodeGraphMutateService.upsertSourceCodeFile(
+    // Try to get the node
+    const intentCodeFile = await
+            sourceNodeModel.getByUniqueKey(
               prisma,
-              projectSourceCodeNode.instanceId,
-              dirSourceNode,
-              filename,
-              content,
-              sourceNodeGenerationData)
+              intentCodeDir.id,  // parentId
+              projectIntentCodeNode.instanceId,
+              SourceNodeTypes.intentCodeFile,
+              filename)
 
     // Return filename's node
-    return filenameSourceNode
+    return intentCodeFile
   }
 }

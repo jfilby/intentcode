@@ -119,18 +119,10 @@ export class ProjectCompileService {
 
       // Get/create the file's SourceNode
       const intentFileNode = await
-        intentCodePathGraphMutateService.getOrCreateIntentCodePathAsGraph(
+        intentCodePathGraphMutateService.upsertIntentCodePathAsGraph(
           prisma,
           projectIntentCodeNode,
           buildFile.intentCodeFilename)
-
-      /* Check if the file has been updated since last indexed
-      if (intentFileNode?.contentUpdated != null &&
-          intentFileNode.contentUpdated <= fileModifiedTime) {
-
-        // console.log(`${fnName}: file: ${fullPath} already indexed`)
-        continue
-      } */
 
       // Define BuildFromFile
       const buildFromFile: BuildFromFile = {
@@ -183,7 +175,7 @@ export class ProjectCompileService {
 
       // Get/create the file's SourceNode
       const intentFileNode = await
-        intentCodePathGraphMutateService.getOrCreateIntentCodePathAsGraph(
+        intentCodePathGraphMutateService.upsertIntentCodePathAsGraph(
           prisma,
           projectIntentCodeNode,
           buildFile.intentCodeFilename)

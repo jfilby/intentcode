@@ -155,37 +155,24 @@ export class SourceCodeGraphMutateService {
     var contentHash: string | null = null
 
     if (content != null) {
-
-      // Blake3 hash
       contentHash = blake3(JSON.stringify(content)).toString()
     }
 
-    // Try to get the node
-    var sourceCodeFile = await
-          sourceNodeModel.getByUniqueKey(
-            prisma,
-            parentNode.id,
-            instanceId,
-            SourceNodeTypes.sourceCodeFile,
-            name)
-
-    if (sourceCodeFile == null) {
-
-      // Create the node
-      sourceCodeFile = await
-        sourceNodeModel.create(
-          prisma,
-          parentNode.id,  // parentId
-          instanceId,
-          BaseDataTypes.activeStatus,
-          SourceNodeTypes.sourceCodeFile,
-          name,
-          content,
-          contentHash,
-          null,           // jsonContent
-          null,           // jsonContentHash
-          new Date())
-    }
+    // Upsert the node
+    const sourceCodeFile = await
+            sourceNodeModel.upsert(
+              prisma,
+              undefined,      // id
+              parentNode.id,  // parentId
+              instanceId,
+              BaseDataTypes.activeStatus,
+              SourceNodeTypes.sourceCodeFile,
+              name,
+              content,
+              contentHash,
+              null,           // jsonContent
+              null,           // jsonContentHash
+              new Date())
 
     // Get promptHash
     const promptHash =
