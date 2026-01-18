@@ -175,6 +175,15 @@ export class CompilerPromptService {
       prompt += `None available.`
     }
 
+    // Return
+    return prompt
+  }
+
+  async addExistingSource(
+          projectSourceCodeNode: SourceNode,
+          buildFromFile: BuildFromFile,
+          prompt: string) {
+
     // Existing source code
     if (ServerOnlyTypes.includeExistingSourceMode === true) {
 

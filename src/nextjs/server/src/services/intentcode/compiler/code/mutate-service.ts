@@ -171,55 +171,44 @@ export class CompilerMutateService {
     intentCodeMessagesService.handleMessages(jsonContent)
   }
 
-  async requiresRecompile(
-          projectIntentCodeNode: SourceNode,
+  async requiresRecompileByPrompt(
+          prisma: PrismaClient,
           projectSourceCodeNode: SourceNode,
+          prompt: string,
           buildFromFile: BuildFromFile) {
 
     // Debug
-    const fnName = `${this.clName}.requiresRecompile()`
+    const fnName = `${this.clName}.requiresRecompileByPrompt()`
 
-    // Get the IntentCode node
-    const intentCodeNode = await
-            intentCodePathGraphQueryService.getIntentCodePathAsGraph(
-              prisma,
-              projectIntentCodeNode,
-              buildFromFile.filename)
-
-    // Has the IntentCode file's content been changed?
-    if (buildFromFile.content !== intentCodeNode?.content) {
-
-      console.log(`IntentFile has changed, recompile required..`)
-      console.log(`<${buildFromFile.content}> vs <${intentCodeNode?.content}\n>`)
-      return true
-    }
-
-    // Get the source file node
-    const sourceFileNode = await
-            sourceCodePathGraphQueryService.getSourceCodePathAsGraph(
+    // Get source code node
+    const sourceCodeNodeGeneration = await
+            sourceCodePathGraphQueryService.getLatestSourceCodeGenerationByPathGraph(
               prisma,
               projectSourceCodeNode,
               buildFromFile.targetFullPath!)
 
-    // Read existing source file (if it exists)
-    var existingSourceCode = ''
+    // Debug
+    // console.log(`${fnName}: sourceCodeNodeGeneration: ` +
+    //             JSON.stringify(sourceCodeNodeGeneration))
 
-    if (await fs.existsSync(buildFromFile.targetFullPath!)) {
-
-      existingSourceCode = await
-        fs.readFileSync(buildFromFile.targetFullPath!, 'utf-8')
-    }
-
-    // Has the source file's content been changed?
-    if (existingSourceCode !== sourceFileNode?.content + `\n`) {
-
-      console.log(`Target source file has changed, recompile required..`)
-      console.log(`<${existingSourceCode}> vs <${sourceFileNode?.content}\n>`)
+    // Recompile if no prev prompt stored
+    if (sourceCodeNodeGeneration == null) {
       return true
     }
 
-    // No change
-    return false
+    // Debug
+    // console.log(`${fnName}: prompt: ${prompt}`)
+
+    // console.log(`${fnName}: sourceCodeNodeGeneration.prompt: ` +
+    //             `${sourceCodeNodeGeneration.prompt}`)
+
+    // Compare prompts (without target source)
+    if (prompt === sourceCodeNodeGeneration.prompt) {
+      return false
+    }
+
+    // Prompts didn't match, recompile required
+    return true
   }
 
   async run(prisma: PrismaClient,
@@ -281,6 +270,13 @@ export class CompilerMutateService {
         buildData.extensionsData,
         indexedDataSourceNodes)
 
+    // Get the final prompt (with existing target source)
+    const finalPrompt = await
+            compilerPromptService.addExistingSource(
+              projectSourceCodeNode,
+              buildFromFile,
+              prompt)
+
     // Already generated?
     var { content, jsonContent } = await
           this.getExistingJsonContent(
@@ -290,9 +286,10 @@ export class CompilerMutateService {
             prompt)
 
     // Check if the file should be recompiled
-    if (await this.requiresRecompile(
-                projectIntentCodeNode,
+    if (await this.requiresRecompileByPrompt(
+                prisma,
                 projectSourceCodeNode,
+                prompt,
                 buildFromFile) === false) {
 
       return
@@ -309,10 +306,11 @@ export class CompilerMutateService {
           prisma,
           adminUserProfile.id,
           tech,
-          prompt))
+          finalPrompt))  // Use the final prompt (with latest target source)
     }
 
     // Define SourceNodeGeneration
+    // Save the initial prompt (without latest target source)
     const sourceNodeGenerationData: SourceNodeGenerationData = {
       techId: tech.id,
       prompt: prompt

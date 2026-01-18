@@ -193,9 +193,6 @@ export class SourceNodeGenerationModel {
 
     try {
       sourceNodeGeneration = await prisma.sourceNodeGeneration.findMany({
-        select: {
-          id: true
-        },
         take: count,
         where: {
           sourceNodeId: sourceNodeId

@@ -1,10 +1,12 @@
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { SourceNodeTypes } from '@/types/source-graph-types'
+import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { FsUtilsService } from '../../utils/fs-utils-service'
 
 // Models
+const sourceNodeGenerationModel = new SourceNodeGenerationModel()
 const sourceNodeModel = new SourceNodeModel()
 
 // Services
@@ -17,6 +19,46 @@ export class SourceCodePathGraphQueryService {
   clName = 'SourceCodePathGraphQueryService'
 
   // Code
+  async getLatestSourceCodeGenerationByPathGraph(
+          prisma: PrismaClient,
+          projectSourceCodeNode: SourceNode,
+          fullPath: string) {
+
+    // Debug
+    const fnName = `${this.clName}.getLatestSourceCodeGenerationByPathGraph()`
+
+    // Get the source code node
+    const sourceCodeNode = await
+            this.getSourceCodePathAsGraph(
+              prisma,
+              projectSourceCodeNode,
+              fullPath)
+
+    // Validate
+    if (sourceCodeNode == null) {
+
+      console.log(`${fnName}: sourceCodeNode == null`)
+      return null
+    }
+
+    // Get latest SourceCodeGeneration
+    const sourceCodeNodeGenerations = await
+            sourceNodeGenerationModel.getLatestForSourceNodeId(
+              prisma,
+              1,  // count
+              sourceCodeNode.id)
+
+    // Validate
+    if (sourceCodeNodeGenerations.length === 0) {
+
+      console.log(`${fnName}: no sourceCodeNodeGenerations found`)
+      return null
+    }
+
+    // Return
+    return sourceCodeNodeGenerations[0]
+  }
+
   async getSourceCodePathAsGraph(
           prisma: PrismaClient,
           projectSourceCodeNode: SourceNode,
