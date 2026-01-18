@@ -8,15 +8,13 @@ import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
 import { BuildData, BuildFromFile } from '@/types/build-types'
-import { IntentCodeCommonTypes } from '../common/types'
 import { LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
-import { ExtensionsData, SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
+import { SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
-import { CompilerQueryService } from '../compiler/code/query-service'
 import { DependenciesMutateService } from '@/services/graphs/dependencies/mutate-service'
-import { DependenciesPromptService } from '@/services/graphs/dependencies/prompt-service'
 import { FsUtilsService } from '@/services/utils/fs-utils-service'
+import { IndexerPromptService } from './prompt-service'
 import { IntentCodeFilenameService } from '../../utils/filename-service'
 import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service'
 import { IntentCodeMessagesService } from '../common/messages-service'
@@ -28,10 +26,9 @@ const sourceNodeModel = new SourceNodeModel()
 
 // Services
 const dependenciesMutateService = new DependenciesMutateService()
-const dependenciesPromptService = new DependenciesPromptService()
-const compilerQueryService = new CompilerQueryService()
 const fsUtilsService = new FsUtilsService()
 const indexerMutateLlmService = new IndexerMutateLlmService()
+const indexerPromptService = new IndexerPromptService()
 const intentCodeFilenameService = new IntentCodeFilenameService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
 const intentCodeMessagesService = new IntentCodeMessagesService()
@@ -124,11 +121,11 @@ export class IndexerMutateService {
 
     // Get prompt
     const prompt = await
-      this.getPrompt(
-        prisma,
-        projectNode,
-        buildData.extensionsData,
-        buildFromFile)
+            indexerPromptService.getPrompt(
+              prisma,
+              projectNode,
+              buildData.extensionsData,
+              buildFromFile)
 
     // Already generated?
     var jsonContent = await
@@ -246,117 +243,6 @@ export class IndexerMutateService {
               projectIntentCodeNode,
               buildFromFile)
     }
-  }
-
-  async getPrompt(
-          prisma: PrismaClient,
-          projectNode: SourceNode,
-          extensionsData: ExtensionsData,
-          buildFromFile: BuildFromFile) {
-
-    // Get rules by targetLang
-    const targetLangPrompting =
-            compilerQueryService.getSkillPrompting(
-              extensionsData,
-              buildFromFile.targetFileExt)
-
-    // Get deps prompting
-    const depsPrompting = await
-            dependenciesPromptService.getDepsPrompting(
-              prisma,
-              projectNode,
-              buildFromFile.fileNode)
-
-    // Start the prompt
-    var prompt = 
-          `## Instructions\n` +  // for TypeScript dialect
-          `\n` +
-          `Identify the structures in the IntentCode:\n` +
-          `- H1 headings are classes, unless they are meant to be run from ` +
-          `  the CLI.\n` +
-          `- H2 headings are functions.\n` +
-          `\n` +
-          `Make an all inclusive AST tree of every required type.\n` +
-          `\n` +
-          `Notes:\n` +
-          `- You can infer parameters and the return type used in the ` +
-          `  steps.\n` +
-          // The `function call` attribute is needed to make the distinction
-          // between calls and definitions to produce correct code.
-          `- Function calls must include the "function call" attribute.\n` +
-          `\n` +
-          IntentCodeCommonTypes.intentCodePrompting +
-          `\n` +
-          depsPrompting +
-          `\n` +
-          `## Output field details\n` +  // TypeScript dialect
-          `\n` +
-          `The astNode can be:\n` +
-          `- class\n` +
-          `- type\n` +
-          `- field (of type)\n` +
-          `- function (of class or function)\n`+
-          `- parameter (of function)\n` +
-          `- type (of function's return, parameter or field)\n` +
-          `\n` +
-          ServerOnlyTypes.messagesPrompting +
-          `\n` +
-          `## Example output\n` +  // Generic
-          `\n` +
-          `{\n` +
-          `  "warnings": [],\n` +
-          `  "errors": [\n` +
-          `    {\n` +
-          `      "line": 5,\n` +
-          `      "from": 6,\n` +
-          `      "to": 7,\n` +
-          `      "text": "Parameters specified without a function"\n` +
-          `    }\n` +
-          `  ],\n` +
-          `  "astTree": [\n` +
-          `    {\n` +
-          `      "astNode": "class",\n` +
-          `      "name": "..",\n` +
-          `      "attributes": [".."],\n` +
-          `      "children": [\n` +
-          `        {\n` +
-          `          "astNode": "function",\n` +
-          `          "name": ".."\n,` +
-          `          "type": ".."\n` +
-          `        }\n` +
-          `      ]\n` +
-          `    }\n` +
-          `  ],\n` +
-          `  "deps": [\n` +
-          `    {\n` +
-          `      "delta": "set",\n` +
-          `      "name": "..",\n` +
-          `      "minVersion": ".."\n` +
-          `    }\n` +
-          `  ]\n` +
-          `}\n` +
-          `\n`
-
-    // Target lang prompting
-    if (targetLangPrompting.length > 0) {
-
-      prompt +=
-        `## ${buildFromFile.targetFileExt} specific\n` +
-        targetLangPrompting +
-        `\n`
-    }
-
-    // Continue prompt
-    prompt +=
-      `## IntentCode\n` +
-      `\n` +
-      '```md\n' +
-      buildFromFile.content +
-      `\n` +
-      '```'
-
-    // Return
-    return prompt
   }
 
   async processQueryResults(
