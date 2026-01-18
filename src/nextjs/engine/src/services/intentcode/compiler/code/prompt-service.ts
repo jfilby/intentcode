@@ -23,7 +23,6 @@ export class CompilerPromptService {
   async getPrompt(
           prisma: PrismaClient,
           projectNode: SourceNode,
-          projectSourceCodeNode: SourceNode,
           buildFromFile: BuildFromFile,
           extensionsData: ExtensionsData,
           indexedDataSourceNodes: SourceNode[]) {

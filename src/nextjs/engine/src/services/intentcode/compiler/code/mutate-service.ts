@@ -265,7 +265,6 @@ export class CompilerMutateService {
       compilerPromptService.getPrompt(
         prisma,
         projectNode,
-        projectSourceCodeNode,
         buildFromFile,
         buildData.extensionsData,
         indexedDataSourceNodes)
