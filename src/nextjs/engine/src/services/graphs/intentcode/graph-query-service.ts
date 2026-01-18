@@ -25,7 +25,8 @@ export class GraphQueryService {
               prisma,
               instanceId,
               SourceNodeTypes.intentCodeIndexedData,
-              true)  // includeParent
+              true,  // includeParent
+              true)  // orderByUniqueKey (for prompt reproducibility)
 
     // Debug
     // console.log(`${fnName}: sourceNodes: ` + JSON.stringify(sourceNodes))

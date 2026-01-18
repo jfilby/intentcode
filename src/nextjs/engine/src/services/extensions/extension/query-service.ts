@@ -206,7 +206,11 @@ export class ExtensionQueryService {
               prisma,
               extensionsNode.id,  // parentId
               instanceId,
-              SourceNodeTypes.extensionType)
+              SourceNodeTypes.extensionType,
+              undefined,
+              undefined,
+              undefined,
+              true)       // orderByUniqueKey (for prompt reproducibility)
 
     // Load extensions
     var skillNodes: SourceNode[] = []

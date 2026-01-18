@@ -81,7 +81,8 @@ export class SourceNodeModel {
           type: string | undefined = undefined,
           name: string | undefined = undefined,
           contentHash: string | null | undefined = undefined,
-          jsonContentHash: string | null | undefined = undefined) {
+          jsonContentHash: string | null | undefined = undefined,
+          orderByUniqueKey: boolean = false) {
 
     // Debug
     const fnName = `${this.clName}.filter()`
@@ -96,7 +97,21 @@ export class SourceNodeModel {
           name: name,
           contentHash: contentHash,
           jsonContentHash: jsonContentHash
-        }
+        },
+        orderBy: orderByUniqueKey ? [
+          {
+            parentId: 'asc'
+          },
+          {
+            instanceId: 'asc'
+          },
+          {
+            type: 'asc'
+          },
+          {
+            name: 'asc'
+          }
+        ] : undefined
       })
     } catch(error: any) {
       console.error(`${fnName}: error: ${error}`)
@@ -224,7 +239,8 @@ export class SourceNodeModel {
           prisma: PrismaClient,
           instanceId: string,
           type: string,
-          includeParent: boolean = false) {
+          includeParent: boolean = false,
+          orderByUniqueKey: boolean = false) {
 
     // Debug
     const fnName = `${this.clName}.getJsonContentByInstanceIdAndType()`
@@ -238,7 +254,16 @@ export class SourceNodeModel {
         where: {
           instanceId: instanceId,
           type: type
-        }
+        },
+        // Order by the unique key fields (excluding those in the where clause)
+        orderBy: orderByUniqueKey ? [
+          {
+            parentId: 'asc'
+          },
+          {
+            name: 'asc'
+          }
+        ] : undefined
       })
     } catch(error: any) {
       console.error(`${fnName}: error: ${error}`)
