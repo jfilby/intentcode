@@ -173,7 +173,9 @@ export class DependenciesMutateService {
 
   async updateDepsNode(
           prisma: PrismaClient,
-          depsNode: SourceNode) {
+          projectNode: SourceNode,
+          depsNode: SourceNode,
+          writeToDepsJson: boolean = true) {
 
     // Get contentHash
     depsNode.contentHash = null
@@ -208,6 +210,15 @@ export class DependenciesMutateService {
         depsNode.jsonContent,
         depsNode.jsonContentHash,
         depsNode.contentUpdated)
+
+    // Write deps.json
+    if (writeToDepsJson === true) {
+
+      await depsJsonService.writeToFile(
+              prisma,
+              projectNode,
+              depsNode)
+    }
   }
 
   async updateNodeDepDeltas(

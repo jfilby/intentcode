@@ -462,13 +462,9 @@ export class SpecsTechStackMutateService {
       // Update depsNode
       await dependenciesMutateService.updateDepsNode(
               prisma,
-              depsNode)
-
-      // Write deps.json
-      await depsJsonService.writeToFile(
-              prisma,
               projectNode,
-              depsNode)
+              depsNode,
+              true)  // writeToDepsJson
     }
 
     // Upsert the tech-stack.json node

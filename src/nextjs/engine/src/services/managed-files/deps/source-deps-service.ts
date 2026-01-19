@@ -77,16 +77,12 @@ export class SourceDepsFileService {
 
     depsNode.jsonContent.source.packageManager = packageManager
 
-    // Update depsNode
-    await dependenciesMutateService.updateDepsNode(
-            prisma,
-            depsNode)
-
-    // Write deps.json
-    await depsJsonService.writeToFile(
-            prisma,
-            projectNode,
-            depsNode)
+      // Update depsNode
+      await dependenciesMutateService.updateDepsNode(
+              prisma,
+              projectNode,
+              depsNode,
+              true)  // writeToDepsJson
   }
 
   async updateAndWriteFile(
