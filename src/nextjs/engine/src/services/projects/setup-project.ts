@@ -136,14 +136,11 @@ export class ProjectSetupService {
     }
 
     // Get/create dotIntentCode node
-    if (await fs.existsSync(specsPath)) {
-
-      const projectDotIntentCodeNode = await
-              dotIntentCodeGraphMutateService.getOrCreateDotIntentCodeProject(
-                prisma,
-                projectNode,
-                dotIntentCodePath)
-    }
+    const projectDotIntentCodeNode = await
+            dotIntentCodeGraphMutateService.getOrCreateDotIntentCodeProject(
+              prisma,
+              projectNode,
+              dotIntentCodePath)
 
     // Get/create IntentCode project node
     if (await fs.existsSync(intentPath)) {
