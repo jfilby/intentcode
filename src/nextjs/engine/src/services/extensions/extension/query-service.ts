@@ -205,6 +205,30 @@ export class ExtensionQueryService {
     return highestExtensionNode
   }
 
+  async getExtensionNodes(
+          prisma: PrismaClient,
+          instanceId: string) {
+
+    // Debug
+    const fnName = `${this.clName}.getExtensionNodes()`
+
+    // Get extensions node
+    const extensionsNode = await
+            this.getExtensionsNode(
+              prisma,
+              instanceId)
+
+    // Get extensions
+    const extensions = await
+            sourceNodeModel.filter(
+              prisma,
+              extensionsNode.id,
+              instanceId)
+
+    // Return
+    return extensions
+  }
+
   async getExtensionsNode(
           prisma: PrismaClient,
           instanceId: string) {
