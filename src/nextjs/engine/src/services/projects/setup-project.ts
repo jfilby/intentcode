@@ -189,6 +189,12 @@ export class ProjectSetupService {
                 srcPath)
     }
 
+    // Get/create extensions node
+    const extensionsNode = await
+            extensionMutateService.getOrCreateExtensionsNode(
+              prisma,
+              instance.id)
+
     // Load project-level config files
     if (await fs.existsSync(dotIntentCodePath)) {
 
