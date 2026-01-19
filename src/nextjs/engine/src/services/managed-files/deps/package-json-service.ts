@@ -127,11 +127,10 @@ export class PackageJsonManagedFileService {
     const existingMin = semver.minVersion(existing)
     const incomingMin = semver.minVersion(minVersionNo)
 
-    if (
-      existingMin &&
-      incomingMin &&
-      semver.lt(existingMin, incomingMin)
-    ) {
+    if (existingMin &&
+        incomingMin &&
+        semver.lt(existingMin, incomingMin)) {
+
       target[dependency] = `^${minVersionNo}`
     }
   }
