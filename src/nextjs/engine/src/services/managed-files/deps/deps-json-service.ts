@@ -2,9 +2,12 @@ import fs from 'fs'
 import path from 'path'
 import * as z from 'zod'
 import { PrismaClient, SourceNode } from '@prisma/client'
+import { CustomError } from '@/serene-core-server/types/errors'
+import { DependenciesQueryService } from '@/services/graphs/dependencies/query-service'
 import { DotIntentCodeGraphQueryService } from '@/services/graphs/dot-intentcode/graph-query-service'
 
 // Services
+const dependenciesQueryService = new DependenciesQueryService()
 const dotIntentCodeGraphQueryService = new DotIntentCodeGraphQueryService()
 
 // Class
@@ -20,7 +23,7 @@ export class DepsJsonService {
           prisma: PrismaClient,
           projectNode: SourceNode) {
 
-    // Get project specs node
+    // Get dotIntentCode node
     const projectDotIntentCodeNode = await
             dotIntentCodeGraphQueryService.getDotIntentCodeProject(
               prisma,
@@ -73,12 +76,44 @@ export class DepsJsonService {
     return data
   }
 
+  async verifyDepsNodeSyncedToDepsJson(
+          prisma: PrismaClient,
+          projectNode: SourceNode) {
+
+    // Debug
+    const fnName = `${this.clName}.verifyDepsNodeSyncedToDepsJson()`
+
+    // Get Deps node
+    const depsNode = await
+            dependenciesQueryService.getDepsNode(
+              prisma,
+              projectNode)
+
+    // Read deps.json
+    const { data, filename } = await
+            this.readFile(
+              prisma,
+              projectNode)
+
+    // Verify that they're the same
+    const depsNodeJsonStr = JSON.stringify(depsNode.jsonContent)
+    const depsJsonFileStr = JSON.stringify(data)
+
+    if (depsNodeJsonStr !== depsJsonFileStr) {
+
+      console.log(`${fnName}: depsNodeJsonStr: ${depsNodeJsonStr}`)
+      console.log(`${fnName}: depsJsonFileStr: ${depsJsonFileStr}`)
+
+      throw new CustomError(`${fnName}: depsNode (jsonContent) !== deps.json`)
+    }
+  }
+
   async writeToFile(
           prisma: PrismaClient,
           projectNode: SourceNode,
           depsNode: any) {
 
-    // Get project specs node
+    // Get dotIntentCode node
     const projectDotIntentCodeNode = await
             dotIntentCodeGraphQueryService.getDotIntentCodeProject(
               prisma,

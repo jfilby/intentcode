@@ -104,10 +104,7 @@ export class SpecsTechStackMutateService {
     const fnName = `${this.clName}.indexFileWithLlm()`
 
     // Verbose output
-    if (ServerOnlyTypes.verbosity === true) {
-
-      console.log(`indexing: ${buildFromFile.filename}..`)
-    }
+    console.log(`processing: ${buildFromFile.filename}..`)
 
     // Get the admin UserProfile
     const adminUserProfile = await
@@ -189,7 +186,7 @@ export class SpecsTechStackMutateService {
       return
     }
 
-    // Get project specs node
+    // Get dotIntentCode node
     const projectDotIntentCodeNode = await
             dotIntentCodeGraphQueryService.getDotIntentCodeProject(
               prisma,

@@ -8,7 +8,9 @@ export enum BuildStageType {
   // IntentCode to Source
   compile = 'compile',
   index = 'index',
-  updateDeps = 'update-deps'
+  updateDeps = 'update-deps',
+  // Verify
+  verifyInternals = 'verify-internals'
 }
 
 export interface BuildFromFile {

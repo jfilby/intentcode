@@ -135,7 +135,7 @@ export class ProjectSetupService {
                 specsPath)
     }
 
-    // Get/create .intentcode project node
+    // Get/create dotIntentCode node
     if (await fs.existsSync(specsPath)) {
 
       const projectDotIntentCodeNode = await
