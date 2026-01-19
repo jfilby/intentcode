@@ -1,3 +1,4 @@
+const semver = require('semver')
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { ServerOnlyTypes } from '@/types/server-only-types'
@@ -125,6 +126,78 @@ export class ExtensionQueryService {
 
     // Return
     return prompting
+  }
+
+  async getExtension(
+          prisma: PrismaClient,
+          instanceId: string,
+          extensionsNodeId: string,
+          getName: string,
+          getMinVersionNo: string) {
+
+    // Debug
+    const fnName = `${this.clName}.getExtension()`
+
+    console.log(
+      `${fnName}: instanceId: ${instanceId} extensionsNodeId: ` +
+      `${extensionsNodeId} getName: ${getName}`)
+
+    // Get potential extension nodes
+    const extensions = await
+            sourceNodeModel.filter(
+              prisma,
+              extensionsNodeId,  // parentId
+              instanceId,
+              SourceNodeTypes.extensionType,
+              getName)
+
+    // Get semantic min version
+    const minVersionNo = semver.minVersion(getMinVersionNo)
+
+    // Get the highest version above minVersionNo
+    var highestExtensionNode: any = undefined
+    var highestVersionNo: string | undefined = undefined
+
+    for (const extension of extensions) {
+
+      // Debug
+      console.log(`${fnName}: trying: ` + JSON.stringify(extension))
+
+      // Get the version no
+      const versionNo = (extension as any).jsonContent.version
+
+      // Validate
+      if (versionNo == null) {
+        throw new CustomError(`${fnName}: extension with SourceNode.id: ${extension.id} doesn't have a version set`)
+      }
+
+      // Is the version above the minimum required?
+      if (semver.lt(
+            versionNo,
+            minVersionNo)) {
+
+        continue
+      }
+
+      // Get if a higher version than the one already known
+      if (highestVersionNo == null) {
+
+        highestExtensionNode = extension
+        highestVersionNo = versionNo
+        continue
+      }
+
+      if (semver.gt(
+            versionNo,
+            highestVersionNo)) {
+
+        highestExtensionNode = extension
+        highestVersionNo = versionNo
+      }
+    }
+
+    // Return
+    return highestExtensionNode
   }
 
   async getExtensionsNode(

@@ -6,6 +6,7 @@ import { ConsoleService } from '@/serene-core-server/services/console/service'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
 import { ServerOnlyTypes } from '@/types/server-only-types'
 import { ExtensionMutateService } from './mutate-service'
+import { ExtensionQueryService } from './query-service'
 import { GraphsDeleteService } from '@/services/graphs/general/delete-service'
 import { LoadExternalHooksService } from '../hooks/load-external-service'
 import { LoadExternalSkillsService } from '../skills/load-external-service'
@@ -14,6 +15,7 @@ import { ProjectsQueryService } from '../../projects/query-service'
 // Services
 const consoleService = new ConsoleService()
 const extensionMutateService = new ExtensionMutateService()
+const extensionQueryService = new ExtensionQueryService()
 const graphsDeleteService = new GraphsDeleteService()
 const loadExternalHooksService = new LoadExternalHooksService()
 const loadExternalSkillsService = new LoadExternalSkillsService()
@@ -53,11 +55,23 @@ export class LoadExternalExtensionsService {
       return
     }
 
+    // Get extensions node
+    const extensionsNode = await
+            extensionQueryService.getExtensionsNode(
+              prisma,
+              instanceId)
+
+    // Validate
+    if (extensionsNode == null) {
+      throw new CustomError(`${fnName}: extensionsNode == null`)
+    }
+
     // Get/create extension node
     const extensionNode = await
             extensionMutateService.getOrSaveExtensionNode(
               prisma,
               instanceId,
+              extensionsNode.id,
               extensionJson)
 
     // Return
@@ -168,13 +182,13 @@ export class LoadExternalExtensionsService {
     const loadPath = await
             consoleService.askQuestion('> ')
 
-    // Load into the System project
+    // Get the System project
     const systemInstance = await
             projectsQueryService.getProject(
               prisma,
               ServerOnlyTypes.systemProjectName)
 
-    // Found
+    // Validate
     if (systemInstance == null) {
       console.error(`System project not found (run setup)`)
       return

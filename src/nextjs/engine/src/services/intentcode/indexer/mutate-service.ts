@@ -145,9 +145,11 @@ export class IndexerMutateService {
                 tech,
                 prompt)
 
-      jsonContent = {
+      /* jsonContent = {
         astTree: llmResults.queryResultsJson.astTree
-      }
+      } */
+
+      jsonContent = llmResults.queryResultsJson
     }
 
     // Define SourceNodeGeneration

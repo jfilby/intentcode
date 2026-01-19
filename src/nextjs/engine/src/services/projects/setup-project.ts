@@ -7,6 +7,7 @@ import { ServerOnlyTypes } from '@/types/server-only-types'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { DependenciesMutateService } from '../graphs/dependencies/mutate-service'
 import { DotIntentCodeGraphMutateService } from '../graphs/dot-intentcode/graph-mutate-service'
+import { ExtensionMutateService } from '../extensions/extension/mutate-service'
 import { IntentCodeGraphMutateService } from '../graphs/intentcode/graph-mutate-service'
 import { ProjectGraphMutateService } from '../graphs/project/mutate-service'
 import { SourceCodeGraphMutateService } from '../graphs/source-code/graph-mutate-service'
@@ -18,6 +19,7 @@ const sourceNodeModel = new SourceNodeModel()
 // Services
 const dependenciesMutateService = new DependenciesMutateService()
 const dotIntentCodeGraphMutateService = new DotIntentCodeGraphMutateService()
+const extensionMutateService = new ExtensionMutateService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
 const projectGraphMutateService = new ProjectGraphMutateService()
 const sourceCodeGraphMutateService = new SourceCodeGraphMutateService()
@@ -72,6 +74,9 @@ export class ProjectSetupService {
       throw new CustomError(`${fnName}: depsJsonContent == null`)
     }
 
+    // Debug
+    // console.log(`${fnName}: depsJsonContent: ${depsJsonContent}`)
+
     // Parse JSON
     const depsJson = JSON.parse(depsJsonContent)
 
@@ -110,6 +115,17 @@ export class ProjectSetupService {
         depsNode.id,
         depsNode.jsonContent,
         depsNode.jsonContentHash)
+
+    // Load in extensions from System
+    if (depsNode.jsonContent?.extensions != null) {
+
+      console.log(`Loading extensions specified in ${filename}..`)
+
+      await extensionMutateService.loadExtensionsInSystemToUserProjectByMap(
+              prisma,
+              projectNode.instanceId,
+              depsNode.jsonContent.extensions)
+    }
   }
 
   async setupProject(
