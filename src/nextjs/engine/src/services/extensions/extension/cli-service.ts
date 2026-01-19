@@ -2,8 +2,8 @@ import { Instance, PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { ConsoleService } from '@/serene-core-server/services/console/service'
 import { ServerOnlyTypes } from '@/types/server-only-types'
-import { SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
+import { ExtensionMutateService } from './mutate-service'
 import { ExtensionQueryService } from './query-service'
 import { GraphsDeleteService } from '@/services/graphs/general/delete-service'
 import { GraphsMutateService } from '@/services/graphs/general/mutate-service'
@@ -11,6 +11,7 @@ import { ProjectsQueryService } from '@/services/projects/query-service'
 
 // Services
 const consoleService = new ConsoleService()
+const extensionMutateService = new ExtensionMutateService()
 const extensionQueryService = new ExtensionQueryService()
 const graphsDeleteService = new GraphsDeleteService()
 const graphsMutateService = new GraphsMutateService()
@@ -30,6 +31,9 @@ export class ManageExtensionsCliService {
           prisma: PrismaClient,
           systemProject: Instance,
           extensionNode: SourceNode) {
+
+    // Debug
+    const fnName = `${this.clName}.loadExtensionIntoProject()`
 
     // Start
     console.log(``)
@@ -53,14 +57,13 @@ export class ManageExtensionsCliService {
 
     // Get the extensions node of the to project
     var extensionsNode = await
-          extensionQueryService.getExtensionsNode(
+          extensionMutateService.getOrCreateExtensionsNode(
             prisma,
             loadToInstance.id)
 
+    // Validate
     if (extensionsNode == null) {
-      console.error(`Extensions node not found for to project`)
-      console.error(`Can't copy extension`)
-      return
+      throw new CustomError(`${fnName}: extensionsNode == null`)
     }
 
     // Load the Extension into the selected project
