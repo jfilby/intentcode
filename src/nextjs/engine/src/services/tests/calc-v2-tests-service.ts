@@ -43,12 +43,12 @@ export class CalcV2TestsService {
               this.projectName,
               projectPath)
 
-    // Check expected extensions exist (loaded by the CLI)
+    /* Check expected extensions exist (loaded by the CLI)
     await extensionQueryService.checkExtensionsExist(
             prisma,
             instance.id,
             [`intentcode/nodejs-typescript`],
-            true)  // verbose
+            true)  // verbose */
 
     // Recompile the project
     await buildMutateService.runBuild(

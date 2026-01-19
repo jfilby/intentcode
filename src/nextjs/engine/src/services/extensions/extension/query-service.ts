@@ -88,6 +88,11 @@ export class ExtensionQueryService {
               SourceNodeTypes.extensionType,
               [SourceNodeTypes.hooksType])
 
+    // No extensions?
+    if (extensionNodes.length === 0) {
+      return null
+    }
+
     // Generate prompting
     var prompting = ``
 
