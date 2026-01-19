@@ -7,6 +7,7 @@ import { SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceEdgeModel } from '@/models/source-graph/source-edge-model'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { DependenciesQueryService } from './query-service'
+import { DepsJsonService } from '@/services/managed-files/deps/deps-json-service'
 
 // Models
 const sourceEdgeModel = new SourceEdgeModel()
@@ -14,6 +15,7 @@ const sourceNodeModel = new SourceNodeModel()
 
 // Services
 const dependenciesQueryService = new DependenciesQueryService()
+const depsJsonService = new DepsJsonService()
 
 // Class
 export class DependenciesMutateService {
@@ -144,6 +146,12 @@ export class DependenciesMutateService {
                 depDelta.name)
       }
     }
+
+    // Write the updated deps.json file
+    await depsJsonService.writeToFile(
+            prisma,
+            projectNode,
+            depsNode)
   }
 
   async setDep(

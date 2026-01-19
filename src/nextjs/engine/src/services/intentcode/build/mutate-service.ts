@@ -4,8 +4,8 @@ import { BuildData, BuildStage, BuildStageType, IntentFileBuild } from '@/types/
 import { SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
-import { ManagedDepsFileService } from '@/services/managed-files/deps/generic-service'
 import { ProjectCompileService } from '@/services/projects/compile-service'
+import { SourceDepsFileService } from '@/services/managed-files/deps/source-deps-service'
 import { SpecsTechStackMutateService } from '@/services/specs/tech-stack/mutate-service'
 import { SpecsToIntentCodeMutateService } from '@/services/specs/to-intentcode/mutate-service'
 
@@ -14,8 +14,8 @@ const sourceNodeModel = new SourceNodeModel()
 
 // Services
 const extensionQueryService = new ExtensionQueryService()
-const managedDepsFileService = new ManagedDepsFileService()
 const projectCompileService = new ProjectCompileService()
+const sourceDepsFileService = new SourceDepsFileService()
 const specsTechStackMutateService = new SpecsTechStackMutateService()
 const specsToIntentCodeMutateService = new SpecsToIntentCodeMutateService()
 
@@ -197,7 +197,7 @@ export class BuildMutateService {
 
       case BuildStageType.updateDeps: {
 
-        await managedDepsFileService.updateAndWriteFile(
+        await sourceDepsFileService.updateAndWriteFile(
                 prisma,
                 projectNode)
 

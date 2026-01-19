@@ -6,6 +6,7 @@ import { CustomError } from '@/serene-core-server/types/errors'
 import { ServerOnlyTypes } from '@/types/server-only-types'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { DependenciesMutateService } from '../graphs/dependencies/mutate-service'
+import { DepsJsonService } from '../managed-files/deps/deps-json-service'
 import { DotIntentCodeGraphMutateService } from '../graphs/dot-intentcode/graph-mutate-service'
 import { ExtensionMutateService } from '../extensions/extension/mutate-service'
 import { IntentCodeGraphMutateService } from '../graphs/intentcode/graph-mutate-service'
@@ -18,6 +19,7 @@ const sourceNodeModel = new SourceNodeModel()
 
 // Services
 const dependenciesMutateService = new DependenciesMutateService()
+const depsJsonService = new DepsJsonService()
 const dotIntentCodeGraphMutateService = new DotIntentCodeGraphMutateService()
 const extensionMutateService = new ExtensionMutateService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
@@ -55,30 +57,11 @@ export class ProjectSetupService {
     // Debug
     const fnName = `${this.clName}.loadDepsConfigFile()`
 
-    // Determine filename and read the file
-    const filename = `${configPath}${path.sep}deps.json`
-
-    // Check if the file exists
-    if (fs.existsSync(filename) === false) {
-
-      // console.log(`Deps config file doesn't exist: ${filename}`)
-      // process.exit(1)
-      return
-    }
-
-    // Read the file
-    const depsJsonContent = fs.readFileSync(filename, 'utf-8')
-
-    // Validate
-    if (depsJsonContent == null) {
-      throw new CustomError(`${fnName}: depsJsonContent == null`)
-    }
-
-    // Debug
-    // console.log(`${fnName}: depsJsonContent: ${depsJsonContent}`)
-
-    // Parse JSON
-    const depsJson = JSON.parse(depsJsonContent)
+    // Read and validate deps.json file
+    const { data, filename } = await
+            depsJsonService.readFile(
+              prisma,
+              projectNode)
 
     // Get/create Deps node
     var depsNode = await
@@ -92,13 +75,7 @@ export class ProjectSetupService {
     }
 
     // Load in depsJson for valid keys only
-    for (const [key, value] of Object.entries(depsJson)) {
-
-      // Invalid key?
-      if (!ServerOnlyTypes.depsNodeKeys.includes(key)) {
-        console.warn(`Skipping unknown key ${key} from ${filename}`)
-        continue
-      }
+    for (const [key, value] of Object.entries(data)) {
 
       // Load key/value
       depsNode.jsonContent[key] = value

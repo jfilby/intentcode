@@ -33,6 +33,7 @@
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5",
     "uuid": "^11.1.0",
-    "yaml": "^2.8.2"
+    "yaml": "^2.8.2",
+    "zod": "^4.3.5"
   }
 }

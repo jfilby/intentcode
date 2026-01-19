@@ -8,10 +8,10 @@ const dependenciesQueryService = new DependenciesQueryService()
 const packageJsonManagedFileService = new PackageJsonManagedFileService()
 
 // Class
-export class ManagedDepsFileService {
+export class SourceDepsFileService {
 
   // Consts
-  clName = 'ManagedDepsFileService'
+  clName = 'SourceDepsFileService'
 
   // Code
   async updateAndWriteFile(
