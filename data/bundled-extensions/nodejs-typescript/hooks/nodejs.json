@@ -11,7 +11,7 @@
     }
   ],
   "deps": {
-    "tool": "npm"
+    "packageManager": "npm"
   },
   "hooks": {
     "intentcode/newProject": {

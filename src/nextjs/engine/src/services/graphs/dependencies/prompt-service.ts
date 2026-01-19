@@ -57,12 +57,12 @@ export class DependenciesPromptService {
     }
 
     // Existing deps
-    if ((intentFileNode.jsonContent as any).deps != null) {
+    if ((intentFileNode.jsonContent as any).source?.deps != null) {
 
       prompting += `Existing deps for this file:\n`
 
       for (const [dependency, minVersion] of
-           Object.entries((intentFileNode.jsonContent as any).deps)) {
+           Object.entries((intentFileNode.jsonContent as any).source.deps)) {
 
         prompting +=
           `- ${dependency}: minVersion: ${minVersion}\n`
@@ -94,7 +94,7 @@ export class DependenciesPromptService {
     const fnName = `${this.clName}.getProjectDepsPrompting()`
 
     // Validate
-    if (depsJsonContent?.deps == null) {
+    if (depsJsonContent?.source?.deps == null) {
       return
     }
 
@@ -102,7 +102,7 @@ export class DependenciesPromptService {
     var prompting = `Full list of dependencies in this project:\n`
 
     for (const [depName, depDetails] of
-         Object.entries(depsJsonContent.deps)) {
+         Object.entries(depsJsonContent.source.deps)) {
 
       prompting +=
         `- ${depName}: minVersion: ${(depDetails as any).minVersion}\n`

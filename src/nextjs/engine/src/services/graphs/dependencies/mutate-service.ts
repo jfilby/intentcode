@@ -222,8 +222,12 @@ export class DependenciesMutateService {
       depsJson = {}
     }
 
-    if (depsJson.deps == null) {
-      depsJson.deps = {}
+    if (depsJson.source == null) {
+      depsJson.source = {}
+    }
+
+    if (depsJson.source.deps == null) {
+      depsJson.source.deps = {}
     }
 
     // Process each delta
@@ -233,13 +237,13 @@ export class DependenciesMutateService {
       if (node.type !== SourceNodeTypes.deps &&
           depDelta.delta === DepDeltaNames.del) {
 
-        depsJson.deps[depDelta.name] = undefined
+        depsJson.source.deps[depDelta.name] = undefined
       }
 
       // Set deps
       if (depDelta.delta === DepDeltaNames.set) {
 
-        depsJson.deps[depDelta.name] = depDelta.minVersion
+        depsJson.source.deps[depDelta.name] = depDelta.minVersion
       }
     }
 

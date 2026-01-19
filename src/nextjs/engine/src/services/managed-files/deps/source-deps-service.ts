@@ -43,7 +43,7 @@ export class SourceDepsFileService {
                 JSON.stringify(depsNode.jsonContent))
 
     // Continue validating
-    if (depsNode.jsonContent.tool == null) {
+    if (depsNode.jsonContent.source?.packageManager == null) {
 
       console.log(
         `No deps tool specified.\n` +
@@ -54,7 +54,7 @@ export class SourceDepsFileService {
     }
 
     // Process by tool name
-    switch (depsNode.jsonContent.tool) {
+    switch (depsNode.jsonContent.source.packageManager) {
 
       case DepsTools.npm: {
         await packageJsonManagedFileService.run(
@@ -66,7 +66,9 @@ export class SourceDepsFileService {
       }
 
       default: {
-        console.log(`Unhandled deps tool: ${depsNode.jsonContent.tool}`)
+        console.log(
+          `Unhandled deps tool: ${depsNode.jsonContent.source.packageManager}`)
+
         process.exit(1)
       }
     }

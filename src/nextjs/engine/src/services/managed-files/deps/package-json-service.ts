@@ -39,8 +39,13 @@ export class PackageJsonManagedFileService {
     // Debug
     const fnName = `${this.clName}.enrichFromDepsNode()`
 
+    // Validate
+    if (depsNodeJson.source?.deps == null) {
+      return
+    }
+
     // Add to importsData
-    for (const [name, minVersionNo] of Object.entries(depsNodeJson.deps)) {
+    for (const [name, minVersionNo] of Object.entries(depsNodeJson.source.deps)) {
 
       importsData.dependencies[name] = minVersionNo as string
     }
@@ -98,7 +103,7 @@ export class PackageJsonManagedFileService {
               projectSourcePath)
 
     // Get min versions and any potentially missing imports from deps graph
-    if (depsNodeJson?.deps != null) {
+    if (depsNodeJson?.source?.deps != null) {
 
       this.enrichFromDepsNode(
         depsNodeJson,

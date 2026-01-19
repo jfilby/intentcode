@@ -1,5 +1,4 @@
 import { PrismaClient, Tech } from '@prisma/client'
-import { FeatureFlags } from '@/serene-ai-server/types/feature-flags'
 import { LlmCacheService } from '@/serene-ai-server/services/cache/service'
 import { AgentLlmService } from '@/serene-ai-server/services/llm-apis/agent-llm-service'
 import { LlmUtilsService } from '@/serene-ai-server/services/llm-apis/utils-service'
@@ -188,10 +187,11 @@ export class IndexerMutateLlmService {
       }
     }
 
-    if (queryResults.json.deps != null) {
+    if (queryResults.json.source?.deps != null) {
 
       const entryValidated =
-              dependenciesQueryService.verifyDepsDeltas(queryResults.json.deps)
+              dependenciesQueryService.verifyDepsDeltas(
+                queryResults.json.source?.deps)
 
       if (entryValidated === false) {
         return false

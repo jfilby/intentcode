@@ -137,13 +137,13 @@ export class CompilerMutateService {
     }
 
     // Update the IntentCode node with deps
-    if (jsonContent.deps != null) {
+    if (jsonContent.source?.deps != null) {
 
       await dependenciesMutateService.processDeps(
               prisma,
               projectNode,
               buildFromFile.fileNode,
-              jsonContent.deps)
+              jsonContent.source.deps)
     }
 
     // Upsert the IntentCode file contents

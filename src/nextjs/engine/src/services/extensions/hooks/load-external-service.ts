@@ -160,9 +160,9 @@ export class LoadExternalHooksService {
     }
 
     // Check for a specified deps tool
-    var depsTool = hooksJson.deps?.tool
+    var packageManager = hooksJson.deps?.packageManager
 
-    if (depsTool == null) {
+    if (packageManager == null) {
 
       // Debug
       // console.log(`${fnName}: hooksJson: ` + JSON.stringify(hooksJson))
@@ -175,22 +175,22 @@ export class LoadExternalHooksService {
     // Set deps tool for each project
     for (const projectNode of projectNodes) {
 
-      await this.setDepsToolForProject(
+      await this.setPackageManagerForProject(
               prisma,
               instanceId,
               projectNode,
-              depsTool)
+              packageManager)
     }
   }
 
-  async setDepsToolForProject(
+  async setPackageManagerForProject(
           prisma: PrismaClient,
           instanceId: string,
           projectNode: SourceNode,
-          depsTool: string) {
+          packageManager: string) {
 
     // Debug
-    const fnName = `${this.clName}.setDepsToolForProject()`
+    const fnName = `${this.clName}.setPackageManagerForProject()`
 
     console.log(`${fnName}: setting up deps tool for project..`)
 
@@ -204,8 +204,11 @@ export class LoadExternalHooksService {
             projectNode)
 
     // Already set?
-    if (depsNode.jsonContent?.tool === depsTool) {
-      console.log(`${fnName}: skipping, deps tool already set as expected`)
+    if (depsNode.jsonContent?.source?.packageManager === packageManager) {
+
+      console.log(
+        `${fnName}: skipping, package manager already set as expected`)
+
       return
     }
 
@@ -215,7 +218,11 @@ export class LoadExternalHooksService {
     }
 
     // Set deps tool
-    depsNode.jsonContent.tool = depsTool
+    if (depsNode.jsonContent.source == null) {
+      depsNode.jsonContent.source = {}
+    }
+
+    depsNode.jsonContent.source.packageManager = packageManager
 
     // Debug
     // console.log(`${fnName}: depsNode.jsonContent: ` +

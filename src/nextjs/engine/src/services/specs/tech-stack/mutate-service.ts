@@ -446,13 +446,17 @@ export class SpecsTechStackMutateService {
         depsNode.jsonContent.extensions[key] = value
       }
 
-      if (depsNode.jsonContent.deps == null) {
-        depsNode.jsonContent.deps = {}
+      if (depsNode.jsonContent.source == null) {
+        depsNode.jsonContent.source = {}
       }
 
-      for (const [key, value] of Object.entries(jsonContent.deps)) {
+      if (depsNode.jsonContent.source.deps == null) {
+        depsNode.jsonContent.source.deps = {}
+      }
 
-        depsNode.jsonContent.deps[key] = value
+      for (const [key, value] of Object.entries(jsonContent.source.deps)) {
+
+        depsNode.jsonContent.source.deps[key] = value
       }
 
       // Update depsNode
