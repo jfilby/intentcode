@@ -75,7 +75,7 @@ export class GraphsMutateService {
               fromProjectId,
               toProjectId,
               fromChildNode.id,
-              fromNodeId)  // parentFromNodeId
+              toNode.id)  // parentFromNodeId
     }
   }
 }
