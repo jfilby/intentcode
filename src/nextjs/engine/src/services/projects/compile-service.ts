@@ -163,6 +163,9 @@ export class ProjectCompileService {
     // Index IntentCode
     for (const buildFile of buildFileList) {
 
+      // Debug
+      // console.log(`${fnName}: buildFile: ` + JSON.stringify(buildFile))
+
       // Get last save time of the file
       const fileModifiedTime = await
               fsUtilsService.getLastUpdateTime(buildFile.intentCodeFilename)

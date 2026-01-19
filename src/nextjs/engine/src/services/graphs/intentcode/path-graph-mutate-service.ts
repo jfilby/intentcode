@@ -23,6 +23,8 @@ export class IntentCodePathGraphMutateService {
     // Debug
     const fnName = `${this.clName}.upsertIntentCodePathAsGraph()`
 
+    // console.log(`${fnName}: fullPath: ${fullPath}`)
+
     // Get project source path
     const projectSourcePath = (projectIntentCodeNode.jsonContent as any)?.path
 
