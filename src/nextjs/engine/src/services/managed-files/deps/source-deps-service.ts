@@ -3,14 +3,12 @@ import { CustomError } from '@/serene-core-server/types/errors'
 import { DependenciesQueryService } from '@/services/graphs/dependencies/query-service'
 import { DepsTools } from '@/types/build-types'
 import { DependenciesMutateService } from '@/services/graphs/dependencies/mutate-service'
-import { DepsJsonService } from './deps-json-service'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
 import { PackageJsonManagedFileService } from './package-json-service'
 
 // Services
 const dependenciesMutateService = new DependenciesMutateService()
 const dependenciesQueryService = new DependenciesQueryService()
-const depsJsonService = new DepsJsonService()
 const extensionQueryService = new ExtensionQueryService()
 const packageJsonManagedFileService = new PackageJsonManagedFileService()
 
