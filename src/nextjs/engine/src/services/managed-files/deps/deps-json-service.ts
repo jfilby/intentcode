@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import * as z from 'zod'
+import { isEqual } from 'lodash'
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { DependenciesQueryService } from '@/services/graphs/dependencies/query-service'
@@ -23,6 +24,12 @@ export class DepsJsonService {
           prisma: PrismaClient,
           projectNode: SourceNode) {
 
+    // Debug
+    const fnName = `${this.clName}.readFile()`
+
+    // Found var
+    var found = false
+
     // Get dotIntentCode node
     const projectDotIntentCodeNode = await
             dotIntentCodeGraphQueryService.getDotIntentCodeProject(
@@ -39,17 +46,29 @@ export class DepsJsonService {
     const dotIntentFilePath = projectDotIntentCodeNode.jsonContent?.path
     const filename = `${dotIntentFilePath}${path.sep}${this.depsJson}`
 
+    // Check if the file exists
+    if (await fs.existsSync(filename) === false) {
+      return { found, undefined, filename }
+    }
+
+    found = true
+
     // Read the file
     const depsNodeStr = await
             fs.readFileSync(filename, 'utf-8')
 
-    const depsNode = JSON.parse(depsNodeStr)
+    // Debug
+    console.log(`${fnName}: depsNodeStr: ${depsNodeStr}`)
 
-    // Validate by schema
-    const data = this.validate(depsNode)
+    // Parse JSON
+    const data = JSON.parse(depsNodeStr)
+
+    // Validate by schema, but don't use the return object, it could differ
+    // from the original
+    const validatedData = this.validate(data)
 
     // Return
-    return { data, filename }
+    return { found, data, filename }
   }
 
   validate(depsNode: any) {
@@ -64,8 +83,11 @@ export class DepsJsonService {
       tool: z.string().optional(),
 
       runtimes: z.record(
-        z.string(),  // key
-        z.string(),  // value
+        z.string(),
+        z.record(
+          z.string(),
+          z.string()
+        ).optional()
       ).optional()
     })
 
@@ -78,7 +100,8 @@ export class DepsJsonService {
 
   async verifyDepsNodeSyncedToDepsJson(
           prisma: PrismaClient,
-          projectNode: SourceNode) {
+          projectNode: SourceNode,
+          writeIfFileNotFound: boolean = true) {
 
     // Debug
     const fnName = `${this.clName}.verifyDepsNodeSyncedToDepsJson()`
@@ -90,19 +113,37 @@ export class DepsJsonService {
               projectNode)
 
     // Read deps.json
-    const { data, filename } = await
+    const { found, data, filename } = await
             this.readFile(
               prisma,
               projectNode)
 
+    // File not found?
+    if (found === false) {
+
+      // Write file if not found?
+      if (writeIfFileNotFound === true) {
+
+        await this.writeToFile(
+                prisma,
+                projectNode,
+                depsNode)
+      }
+
+      // Done
+      return
+    }
+
     // Verify that they're the same
-    const depsNodeJsonStr = JSON.stringify(depsNode.jsonContent)
-    const depsJsonFileStr = JSON.stringify(data)
+    if (isEqual(
+          depsNode.jsonContent,
+          data) === false) {
 
-    if (depsNodeJsonStr !== depsJsonFileStr) {
+      console.log(`${fnName}: depsNode.jsonContent: ` +
+                  JSON.stringify(depsNode.jsonContent))
 
-      console.log(`${fnName}: depsNodeJsonStr: ${depsNodeJsonStr}`)
-      console.log(`${fnName}: depsJsonFileStr: ${depsJsonFileStr}`)
+      console.log(`${fnName}: ${filename}`)
+      console.log(`${fnName}: deps.json file: ` + JSON.stringify(data))
 
       throw new CustomError(`${fnName}: depsNode (jsonContent) !== deps.json`)
     }
@@ -126,7 +167,7 @@ export class DepsJsonService {
     }
 
     // Validate by schema
-    const data = this.validate(depsNode)
+    const data = this.validate(depsNode.jsonContent)
 
     // Determine the filename
     const dotIntentFilePath = projectDotIntentCodeNode.jsonContent?.path
@@ -135,7 +176,7 @@ export class DepsJsonService {
     // Write the file
     const prettyData =
             JSON.stringify(
-              data,
+              depsNode.jsonContent,
               null,
               2) +
             `\n`

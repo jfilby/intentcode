@@ -58,7 +58,7 @@ export class ProjectSetupService {
     const fnName = `${this.clName}.loadDepsConfigFile()`
 
     // Read and validate deps.json file
-    const { data, filename } = await
+    const { found, data, filename } = await
             depsJsonService.readFile(
               prisma,
               projectNode)
@@ -75,10 +75,13 @@ export class ProjectSetupService {
     }
 
     // Load in depsJson for valid keys only
-    for (const [key, value] of Object.entries(data)) {
+    if (data != null) {
 
-      // Load key/value
-      depsNode.jsonContent[key] = value
+      for (const [key, value] of Object.entries(data)) {
+
+        // Load key/value
+        depsNode.jsonContent[key] = value
+      }
     }
 
     // Get jsonContentHash
