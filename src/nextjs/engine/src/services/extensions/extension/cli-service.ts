@@ -2,7 +2,6 @@ import { Instance, PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { ConsoleService } from '@/serene-core-server/services/console/service'
 import { ServerOnlyTypes } from '@/types/server-only-types'
-import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { ExtensionMutateService } from './mutate-service'
 import { ExtensionQueryService } from './query-service'
 import { GraphsDeleteService } from '@/services/graphs/general/delete-service'
@@ -16,9 +15,6 @@ const extensionQueryService = new ExtensionQueryService()
 const graphsDeleteService = new GraphsDeleteService()
 const graphsMutateService = new GraphsMutateService()
 const projectsQueryService = new ProjectsQueryService()
-
-// Models
-const sourceNodeModel = new SourceNodeModel()
 
 // Class
 export class ManageExtensionsCliService {
