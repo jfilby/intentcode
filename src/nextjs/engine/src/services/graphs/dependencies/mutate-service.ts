@@ -115,13 +115,13 @@ export class DependenciesMutateService {
               projectNode)
 
     // Update jsonContent of intentFileNode
-    await this.updateNodeDeps(
+    await this.updateNodeDepDeltas(
             prisma,
             intentFileNode,
             depDeltas)
 
     // Update jsonContent of depsNode
-    await this.updateNodeDeps(
+    await this.updateNodeDepDeltas(
             prisma,
             depsNode,
             depDeltas)
@@ -171,7 +171,46 @@ export class DependenciesMutateService {
               name)
   }
 
-  async updateNodeDeps(
+  async updateDepsNode(
+          prisma: PrismaClient,
+          depsNode: SourceNode) {
+
+    // Get contentHash
+    depsNode.contentHash = null
+
+    if (depsNode.content != null) {
+
+      depsNode.contentHash =
+        blake3(JSON.stringify(depsNode.content)).toString()
+    }
+
+    // Get jsonContentHash
+    depsNode.jsonContentHash = null
+
+    if (depsNode.jsonContent != null) {
+
+      depsNode.jsonContentHash =
+        blake3(JSON.stringify(depsNode.jsonContent)).toString()
+    }
+
+    // Update
+    depsNode = await
+      sourceNodeModel.update(
+        prisma,
+        depsNode.id,
+        depsNode.parentId,
+        depsNode.instanceId,
+        BaseDataTypes.activeStatus,
+        SourceNodeTypes.deps,
+        SourceNodeNames.depsName,
+        depsNode.content,
+        depsNode.contentHash,
+        depsNode.jsonContent,
+        depsNode.jsonContentHash,
+        depsNode.contentUpdated)
+  }
+
+  async updateNodeDepDeltas(
           prisma: PrismaClient,
           node: SourceNode,
           depDeltas: DepDelta[]) {

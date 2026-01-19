@@ -455,6 +455,11 @@ export class SpecsTechStackMutateService {
         depsNode.jsonContent.deps[key] = value
       }
 
+      // Update depsNode
+      await dependenciesMutateService.updateDepsNode(
+              prisma,
+              depsNode)
+
       // Write deps.json
       await depsJsonService.writeToFile(
               prisma,
