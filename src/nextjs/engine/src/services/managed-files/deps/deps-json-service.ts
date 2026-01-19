@@ -58,7 +58,7 @@ export class DepsJsonService {
             fs.readFileSync(filename, 'utf-8')
 
     // Debug
-    console.log(`${fnName}: depsNodeStr: ${depsNodeStr}`)
+    // console.log(`${fnName}: depsNodeStr: ${depsNodeStr}`)
 
     // Parse JSON
     const data = JSON.parse(depsNodeStr)

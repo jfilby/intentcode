@@ -148,8 +148,8 @@ export class PackageJsonManagedFileService {
     // Debug
     const fnName = `${this.clName}.updateAndWriteFile()`
 
-    console.log(`${fnName}: depsNodeJson.runtimes: ` +
-                JSON.stringify(depsNodeJson.runtimes))
+    console.log(`${fnName}: depsNodeJsonsource.source.runtimes: ` +
+                JSON.stringify(depsNodeJson.source.runtimes))
 
     // Define filenames
     const packageJsonFilename = `${projectPath}${path.sep}package.json`
@@ -261,8 +261,13 @@ export class PackageJsonManagedFileService {
     // Debug
     const fnName = `${this.clName}.updateForRuntimes()`
 
+    // Validate
+    if (depsNodeJson.source?.runtimes == null) {
+      return
+    }
+
     // Runtimes
-    for (const [runtime, value] of Object.entries(depsNodeJson.runtimes)) {
+    for (const [runtime, value] of Object.entries(depsNodeJson.source.runtimes)) {
 
       const obj = value as any
 

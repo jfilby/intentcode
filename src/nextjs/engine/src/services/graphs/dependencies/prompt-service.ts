@@ -123,14 +123,14 @@ export class DependenciesPromptService {
                 JSON.stringify(depsJsonContent))
 
     // Validate
-    if (depsJsonContent?.runtimes == null) {
+    if (depsJsonContent?.source?.runtimes == null) {
       return null
     }
 
     // Iterate runtimes
     var prompting = ``
 
-    for (const [runtime, obj] of Object.entries(depsJsonContent?.runtimes)) {
+    for (const [runtime, obj] of Object.entries(depsJsonContent?.source?.runtimes)) {
 
       // Strip any leading dot from the run filename
       var runCheck = (obj as any).run as string
