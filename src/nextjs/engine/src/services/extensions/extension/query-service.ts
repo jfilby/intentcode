@@ -138,9 +138,9 @@ export class ExtensionQueryService {
     // Debug
     const fnName = `${this.clName}.getExtension()`
 
-    console.log(
-      `${fnName}: instanceId: ${instanceId} extensionsNodeId: ` +
-      `${extensionsNodeId} getName: ${getName}`)
+    // console.log(
+    //   `${fnName}: instanceId: ${instanceId} extensionsNodeId: ` +
+    //   `${extensionsNodeId} getName: ${getName}`)
 
     // Get potential extension nodes
     const extensions = await
@@ -161,7 +161,7 @@ export class ExtensionQueryService {
     for (const extension of extensions) {
 
       // Debug
-      console.log(`${fnName}: trying: ` + JSON.stringify(extension))
+      // console.log(`${fnName}: trying: ` + JSON.stringify(extension))
 
       // Get the version no
       const versionNo = (extension as any).jsonContent.version
