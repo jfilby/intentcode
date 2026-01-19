@@ -125,7 +125,7 @@ export class IntentCodeGraphMutateService {
         BaseDataTypes.activeStatus,
         SourceNodeTypes.intentCodeFile,
         name,
-        content,
+        content ?? null,
         contentHash,
         {
           relativePath: relativePath
