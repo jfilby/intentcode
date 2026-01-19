@@ -13,8 +13,9 @@ import { LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
 import { ExtensionsData, SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
+import { DependenciesMutateService } from '@/services/graphs/dependencies/mutate-service'
+import { DepsJsonService } from '@/services/managed-files/deps/deps-json-service'
 import { DotIntentCodeGraphQueryService } from '@/services/graphs/dot-intentcode/graph-query-service'
-import { DotIntentCodePathGraphMutateService } from '@/services/graphs/dot-intentcode/path-graph-mutate-service'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
 import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { IntentCodeMessagesService } from '@/services/intentcode/common/messages-service'
@@ -29,8 +30,9 @@ const sourceNodeModel = new SourceNodeModel()
 
 // Services
 const extensionQueryService = new ExtensionQueryService()
+const dependenciesMutateService = new DependenciesMutateService()
+const depsJsonService = new DepsJsonService()
 const dotIntentCodeGraphQueryService = new DotIntentCodeGraphQueryService()
-const dotIntentCodePathGraphMutateService = new DotIntentCodePathGraphMutateService()
 const fsUtilsService = new FsUtilsService()
 const intentCodeMessagesService = new IntentCodeMessagesService()
 const projectsQueryService = new ProjectsQueryService()
@@ -160,6 +162,7 @@ export class SpecsTechStackMutateService {
     // Process the results
     await this.processQueryResults(
             prisma,
+            projectNode,
             projectSpecsNode,
             projectDotIntentCodeNode,
             buildFromFile,
@@ -268,19 +271,13 @@ export class SpecsTechStackMutateService {
       return
     }
 
-    // Determine targetFullPath
-    const targetFullPath =
-            `${(projectNode.jsonContent as any).path}${path.sep}.intentcode` +
-            `${path.sep}tech-stack.json`
-
     // Build file
     const buildFromFile: BuildFromFile = {
       filename: techStackFilename,
       content: techStack,
       fileModifiedTime: fileModifiedTime,
       fileNode: techStackNode,
-      targetFileExt: '.json',
-      targetFullPath: targetFullPath
+      targetFileExt: '.json'
     }
 
     // Process tech-stack.md
@@ -401,6 +398,7 @@ export class SpecsTechStackMutateService {
 
   async processQueryResults(
           prisma: PrismaClient,
+          projectNode: SourceNode,
           projectSpecsNode: SourceNode,
           projectDotIntentCodeNode: SourceNode,
           buildFromFile: BuildFromFile,
@@ -428,30 +426,40 @@ export class SpecsTechStackMutateService {
     // Debug
     console.log(`${fnName}: jsonContent: ` + JSON.stringify(jsonContent))
 
-    // Write .intentcode/tech-stack.json
+    // Update DepsNode and write it to .intentcode/deps.json
     if (jsonContent.extensions != null ||
         jsonContent.deps != null) {
 
-      // Determine techStackJson and content
-      var techStackJson: any = {}
+      // Get/create deps node
+      const depsNode = await
+              dependenciesMutateService.getOrCreateDepsNode(
+                prisma,
+                projectNode)
 
-      techStackJson.extensions = jsonContent.extensions
-      techStackJson.deps = jsonContent.deps
+      // Update depsNode
+      if (depsNode.jsonContent.extensions == null) {
+        depsNode.jsonContent.extensions = {}
+      }
 
-      const content = JSON.stringify(techStackJson)
+      for (const [key, value] of Object.entries(jsonContent.extensions)) {
 
-      // Get/create .intentcode/tech-stack.json node path
-      await dotIntentCodePathGraphMutateService.getOrCreateDotIntentCodeConfigFilePathAsGraph(
+        depsNode.jsonContent.extensions[key] = value
+      }
+
+      if (depsNode.jsonContent.deps == null) {
+        depsNode.jsonContent.deps = {}
+      }
+
+      for (const [key, value] of Object.entries(jsonContent.deps)) {
+
+        depsNode.jsonContent.deps[key] = value
+      }
+
+      // Write deps.json
+      await depsJsonService.writeToFile(
               prisma,
-              projectDotIntentCodeNode,
-              SourceNodeTypes.techStackJsonFile,
-              buildFromFile.targetFullPath!)
-
-      // Write source file
-      await fsUtilsService.writeTextFile(
-              buildFromFile.targetFullPath!,
-              content + `\n`,
-              true)  // createMissingDirs
+              projectNode,
+              depsNode)
     }
 
     // Upsert the tech-stack.json node
