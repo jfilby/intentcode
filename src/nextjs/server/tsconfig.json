@@ -19,7 +19,9 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@/shared/*": ["../shared/src/*"],
+      "@/serene-core-server/*": ["./deployed/serene-core-server/*"],
     }
   },
   "include": [

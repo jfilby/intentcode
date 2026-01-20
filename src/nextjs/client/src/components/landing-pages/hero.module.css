@@ -1,0 +1,60 @@
+.hero {
+  background-image: url('/hero.jpg');
+  background-size: cover;
+  position: relative;
+  padding: 2em;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* background: rgba(255, 255, 255, 0.9); /* white overlay at 70% */
+  z-index: 0;
+  background: rgba(0, 0, 0, 0.7); /* dark overlay */
+}
+
+.hero h1, .hero h2, .hero h3, .hero h4, .hero h5, .hero h6, .hero p {
+  position: relative;
+  z-index: 2;
+  color: #fff;
+}
+
+.hero button {
+  background: transparent;
+  border: 2px solid white;
+  color: white;
+  padding: 12px 32px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.hero button:hover {
+  background: white;
+  color: #1a1a1a;
+}
+
+.hero .form-group {
+  margin-bottom: 20px;
+}
+
+.hero label {
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.hero input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 12px 16px;
+  font-size: 16px;
+}

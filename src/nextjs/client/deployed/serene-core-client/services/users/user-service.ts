@@ -178,7 +178,8 @@ export class UsersService {
           apolloClient)
 
     } else {
-      signedOutId = this.getSignedOutUserIdFromCookie({ req, res })
+      // Note: don't remove the await (getCookie needs it)
+      signedOutId = await this.getSignedOutUserIdFromCookie({ req, res })
     }
 
     // Signed-out get/create user

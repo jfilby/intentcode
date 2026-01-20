@@ -1,0 +1,498 @@
+// Serene Core
+
+// User Management (non-NextAuth)
+model ExternalUserIntegration {
+  id                         String          @id @default(cuid())
+  userProfileId              String          @map("user_profile_id")
+  userProfile                UserProfile     @relation(fields: [userProfileId], references: [id])
+  externalIntegrationUserId  String          @map("external_integration_user_id")
+  externalIntegration        String          @map("external_integration")
+
+  @@index([userProfileId])
+  @@unique([externalIntegrationUserId, externalIntegration])
+  @@map("external_user_integration")
+  @@schema("public")
+}
+
+model UserGroup {
+  id                        String          @id @default(cuid())
+  ownerUserProfileId        String          @map("owner_user_profile_id")
+  ownerUserProfile          UserProfile     @relation(fields: [ownerUserProfileId], references: [id])
+  name                      String          @unique
+  created                   DateTime        @default(now())
+  updated                   DateTime        @updatedAt
+
+  ofUserGroupMembers        UserGroupMember[]
+
+  @@unique([ownerUserProfileId, name], name: "user_group_uq")
+  @@map("user_group")
+  @@schema("public")
+}
+
+model UserGroupMember {
+  id                        String          @id @default(cuid())
+  userGroupId               String          @map("user_group_id")
+  userGroup                 UserGroup       @relation(fields: [userGroupId], references: [id])
+  userProfileId             String          @map("user_profile_id")
+  userProfile               UserProfile     @relation(fields: [userProfileId], references: [id])
+  isGroupAdmin              Boolean         @map("is_group_admin")
+  created                   DateTime        @default(now())
+
+  @@unique([userProfileId, userGroupId], name: "user_group_member_uq")
+  @@map("user_group_member")
+  @@schema("public")
+}
+
+model UserPreference {
+  id                        String          @id @default(cuid())
+  userProfileId             String          @map("user_profile_id")
+  userProfile               UserProfile     @relation(fields: [userProfileId], references: [id])
+  category                  String
+  key                       String
+  value                     String?
+  values                    String[]
+  created                   DateTime        @default(now())
+
+  @@unique([userProfileId, key], name: "user_preference_uq")
+  @@map("user_preference")
+  @@schema("public")
+}
+
+model UserProfile {
+  id                        String        @id @default(cuid())
+  userId                    String?       @map("user_id") @unique // Map to NextAuth's User model
+  user                      User?         @relation(fields: [userId], references: [id])
+  isAdmin                   Boolean       @map("is_admin")
+  ownerType                 String?       @map("owner_type")
+  roles                     String[]
+  created                   DateTime      @default(now())
+  updated                   DateTime      @updatedAt
+  deletePending             DateTime?     @map("delete_pending")  // Start date/time of delete pending
+
+  ofAgentUsers                  AgentUser[]
+  ofChatMessagesCreated         ChatMessageCreated[]
+  ofChatParticipants            ChatParticipant[]
+  ofChatSessions                ChatSession[]
+  ofChatSettings                ChatSettings[]
+  ofExternalUserIntegrations    ExternalUserIntegration[]
+  ofFeatureFlags                FeatureFlag[]
+  ofInstances                   Instance[]
+  ofRateLimitedApiEvents        RateLimitedApiEvent[]
+  ofResourceQuotaTotals         ResourceQuotaTotal[]
+  ofResourceQuotaUsages         ResourceQuotaUsage[]
+  ofTipGotIts                   TipGotIt[]
+  ofUserGroups                  UserGroup[]
+  ofUserGroupMembers            UserGroupMember[]
+  ofUserPreferences             UserPreference[]
+  ofUserErrors                  UserError[]
+  ofEndUserErrors               UserError[]                @relation("end_user_profile")
+  ofUserErrorSummaries          UserErrorSummary[]
+
+  ofBatchJobs                   BatchJob[]
+
+  @@map("user_profile")
+  @@schema("public")
+}
+
+// Chat
+
+model AgentUser {
+  id                   String         @id @default(cuid())
+  userProfileId        String         @map("user_profile_id") @unique
+  userProfile          UserProfile    @relation(fields: [userProfileId], references: [id])
+  uniqueRefId          String?        @map("unique_ref_id") @unique
+  name                 String
+  role                 String
+  maxPrevMessages      Int?           @map("max_prev_messages")  // The max previous messages in the session to include in the prompt
+  defaultPrompt        String?        @map("default_prompt")
+
+  ofChatSettings       ChatSettings[]
+
+  @@map("agent_user")
+  @@schema("public")
+}
+
+model ChatMessage {
+  // chatSessionId is optional to allow for direct messages.
+  id                           String            @id @default(cuid())
+  chatSessionId                String?           @map("chat_session_id")
+  chatSession                  ChatSession?      @relation(fields: [chatSessionId], references: [id])
+  replyToId                    String?           @map("reply_to_id")
+  fromChatParticipantId        String            @map("from_chat_participant_id")
+  fromChatParticipant          ChatParticipant   @relation("fromChatParticipant", fields: [fromChatParticipantId], references: [id])
+  toChatParticipantId          String?           @map("to_chat_participant_id")
+  toChatParticipant            ChatParticipant?  @relation("toChatParticipant", fields: [toChatParticipantId], references: [id])
+  externalId                   String?           @map("external_id")
+  sentByAi                     Boolean           @map("sent_by_ai")
+  message                      String
+  created                      DateTime          @default(now())
+  updated                      DateTime          @updatedAt
+
+  @@index([chatSessionId])
+  @@index([created])
+  @@unique([chatSessionId, externalId])
+  @@map("chat_message")
+  @@schema("public")
+}
+
+model ChatMessageCreated {
+  // Used for quotas and rate-limiting, as ChatMessage can be deleted from as
+  // needed. Possibly add a FK from ChatMessage if costs per actual message
+  // ever need to be tracked (when the ChatMessage is available).
+  id                           String               @id @default(cuid())
+  userProfileId                String               @map("user_profile_id")
+  userProfile                  UserProfile          @relation(fields: [userProfileId], references: [id])
+  instanceId                   String?              @map("instance_id")
+  instance                     Instance?            @relation(fields: [instanceId], references: [id])
+  techId                       String               @map("tech_id")
+  tech                         Tech                 @relation(fields: [techId], references: [id])
+  sentByAi                     Boolean              @map("sent_by_ai")
+  inputTokens                  Int                  @map("input_tokens")
+  outputTokens                 Int                  @map("output_tokens")
+  costInCents                  Int                  @map("cost_in_cents")
+  created                      DateTime             @default(now())
+
+  @@unique([userProfileId, created])
+  @@map("chat_message_created")
+  @@schema("public")
+}
+
+model ChatParticipant {
+  // An optional projectId is available for use with inter-project chats.
+  id                            String               @id @default(cuid())
+  chatSessionId                 String               @map("chat_session_id")
+  chatSession                   ChatSession          @relation(fields: [chatSessionId], references: [id])
+  userProfileId                 String               @map("user_profile_id")
+  userProfile                   UserProfile          @relation(fields: [userProfileId], references: [id])
+
+  ofChatMessagesFrom            ChatMessage[]        @relation("fromChatParticipant")
+  ofChatMessagesTo              ChatMessage[]        @relation("toChatParticipant")
+
+  @@index([chatSessionId])
+  @@map("chat_participant")
+  @@schema("public")
+}
+
+model ChatSession {
+  id                           String               @id @default(cuid())
+  chatSettingsId               String               @map("chat_settings_id")
+  chatSettings                 ChatSettings         @relation(fields: [chatSettingsId], references: [id])
+  instanceId                   String?              @map("instance_id")
+  instance                     Instance?            @relation(fields: [instanceId], references: [id])
+  status                       String               @db.Char(1)
+  isEncryptedAtRest            Boolean              @map("is_encrypted_at_rest")
+  token                        String
+  name                         String?
+  externalIntegration          String?              @map("external_integration")
+  externalId                   String?              @map("external_id")
+  createdById                  String               @map("created_by_id")
+  createdByUserProfile         UserProfile          @relation(fields: [createdById], references: [id])
+  created                      DateTime             @default(now())
+  updated                      DateTime             @updatedAt
+
+  ofChatMessages               ChatMessage[]
+  ofChatParticipants           ChatParticipant[]
+
+  @@index([externalId])
+  @@map("chat_session")
+  @@schema("public")
+}
+
+model ChatSettings {
+  id                           String               @id @default(cuid())
+  baseChatSettingsId           String?              @map("base_chat_settings_id")
+  baseChatSettings             ChatSettings?        @relation("base", fields: [baseChatSettingsId], references: [id])
+  status                       String               @db.Char(1)
+  isEncryptedAtRest            Boolean              @map("is_encrypted_at_rest")
+  isJsonMode                   Boolean              @map("is_json_mode")
+  isPinned                     Boolean              @map("is_pinned")
+  name                         String?              @unique                // Only unique for baseChatSettingsId == null
+  agentUserId                  String               @map("agent_user_id")
+  agentUser                    AgentUser            @relation(fields: [agentUserId], references: [id])
+  prompt                       String?
+  agentRole                    String?              @map("agent_role")
+  appCustom                    Json?                @map("app_custom")   // For additional fields/values (app specific)
+  createdById                  String               @map("created_by_id")
+  createdByUserProfile         UserProfile          @relation(fields: [createdById], references: [id])
+  created                      DateTime             @default(now())
+  updated                      DateTime             @updatedAt
+
+  ofBaseChatSettings           ChatSettings[]       @relation("base")
+  ofChatSessions               ChatSession[]
+
+  @@map("chat_settings")
+  @@schema("public")
+}
+
+// Feature flags
+
+model FeatureFlag {
+  id                           String               @id @default(cuid())
+  userProfileId                String?              @map("user_profile_id")
+  userProfile                  UserProfile?         @relation(fields: [userProfileId], references: [id])
+  instanceId                   String?              @map("instance_id")
+  instance                     Instance?            @relation(fields: [instanceId], references: [id])
+  name                         String
+  enabled                      Boolean
+
+  @@map("feature_flag")
+  @@schema("public")
+}
+
+// Instances
+
+model Instance {
+  // An instance is a project
+  id                           String               @id @default(cuid())
+  parentId                     String?              @map("parent_id")
+  parent                       Instance?            @relation("parent", fields: [parentId], references: [id])
+  userProfileId                String               @map("user_profile_id")
+  userProfile                  UserProfile          @relation(fields: [userProfileId], references: [id])
+  status                       String               @db.Char(1)
+  name                         String
+  created                      DateTime             @default(now())
+  updated                      DateTime             @updatedAt
+  // Additional fields (should be moved to InstanceSetting)
+  instanceType                 String               @map("instance_type") @db.Char(1)  // P (project), E (environment)
+  projectType                  String?              @map("project_type")               // Char 1: B (back-end), A (app), W (web-app), char 2: L (library)?
+  isDefault                    Boolean              @map("is_default")
+  isDemo                       Boolean              @map("is_demo")
+  publicAccess                 String?              @map("public_access") @db.Char(1)  // E.g. R/W
+  // basePathDocNodeId            String?              @map("base_path_doc_node_id")
+  // basePathDocNode              DocNode?             @relation("base_path", fields: [basePathDocNodeId], references: [id])
+  // envVersionBranchId           String?              @map("env_version_branch_id")
+  // envVersionBranch             VersionBranch?       @relation("env_version_branch", fields: [envVersionBranchId], references: [id])
+
+  ofChatMessagesCreated        ChatMessageCreated[]
+  ofChatSessions               ChatSession[]
+  ofFeatureFlags               FeatureFlag[]
+  ofInstances                  Instance[]           @relation("parent")
+  ofInstanceSettings           InstanceSetting[]
+  ofUserErrors                 UserError[]
+  ofUserErrorSummaries         UserErrorSummary[]
+
+  ofBatchJobs                  BatchJob[]
+
+  @@unique([userProfileId, parentId, name])
+  @@map("instance")
+  @@schema("public")
+}
+
+model InstanceSetting {
+  id                           String               @id @default(cuid())
+  instanceId                   String               @map("instance_id")
+  instance                     Instance             @relation(fields: [instanceId], references: [id])
+  name                         String
+  value                        String
+  created                      DateTime             @default(now())
+  updated                      DateTime             @updatedAt
+
+  @@unique([instanceId, name], name: "instance_setting_uq")
+  @@map("instance_setting")
+  @@schema("public")
+}
+
+// Generic tech
+model RateLimitedApi {
+  id                           String               @id @default(cuid())
+  techId                       String?              @map("tech_id")
+  tech                         Tech?                @relation(fields: [techId], references: [id])
+  ratePerMinute                Int                  @map("rate_per_minute")
+
+  ofRateLimitedApiEvents       RateLimitedApiEvent[]
+
+  @@map("rate_limited_api")
+  @@schema("public")
+}
+
+model RateLimitedApiEvent {
+  // Using a separate table from ChatMessage, because ChatMessage is populated
+  // after the LLM API returns, but the rate limited event should be tracked
+  // from just before the API call is made.
+  id                           String               @id @default(cuid())
+  rateLimitedApiId             String               @map("api_rate_limited_id")
+  rateLimitedApi               RateLimitedApi       @relation(fields: [rateLimitedApiId], references: [id])
+  userProfileId                String               @map("user_profile_id")
+  userProfile                  UserProfile          @relation(fields: [userProfileId], references: [id])
+  created                      DateTime             @default(now())
+
+  @@index([created])
+  @@map("rate_limited_api_event")
+  @@schema("public")
+}
+
+model ResourceQuotaTotal {
+  // TODO: set the total quota monthly by looking at the Serene Store payment
+  // records for the past 31 days. Used quota is kept at a daily level.
+  id                         String         @id @default(cuid())
+  userProfileId              String         @map("user_profile_id")
+  userProfile                UserProfile    @relation(fields: [userProfileId], references: [id])
+  resource                   String         // E.g. LLMs
+  fromDay                    DateTime       @map("from_day") @db.Date
+  toDay                      DateTime       @map("to_day") @db.Date
+  quota                      Float          // In cents
+
+  @@unique([userProfileId, resource, fromDay, toDay])
+  @@map("resource_quota_total")
+  @@schema("public")
+}
+
+model ResourceQuotaUsage {
+  id                         String         @id @default(cuid())
+  userProfileId              String         @map("user_profile_id")
+  userProfile                UserProfile    @relation(fields: [userProfileId], references: [id])
+  resource                   String         // E.g. LLMs
+  day                        DateTime       @db.Date
+  usage                      Float          // In cents
+  created                    DateTime       @default(now())
+  updated                    DateTime       @updatedAt
+
+  @@unique([userProfileId, resource, day])
+  @@map("resource_quota_usage")
+  @@schema("public")
+}
+
+model Tech {
+  id                           String               @id @default(cuid())
+  techProviderId               String               @map("tech_provider_id")
+  techProvider                 TechProvider         @relation(fields: [techProviderId], references: [id])
+  status                       String               @db.Char(1)
+  variantName                  String               @map("variant_name") @unique
+  resource                     String
+  model                        String?
+  protocol                     String?              // E.g. for LLMs 'OpenAI' or 'Gemini'
+  pricingTier                  String               @map("pricing_tier")
+  isDefaultProvider            Boolean              @map("is_default_provider")
+  isAdminOnly                  Boolean              @map("is_admin_only")
+
+  ofChatMessagesCreated        ChatMessageCreated[]
+  ofRateLimitedApis            RateLimitedApi[]
+
+  @@map("tech")
+  @@schema("public")
+}
+
+model TechProvider {
+  id                           String               @id @default(cuid())
+  status                       String               @db.Char(1)
+  name                         String               @unique
+  baseUrl                      String?              @map("base_url")
+
+  ofTechs                      Tech[]
+  ofTechProviderApiKeys        TechProviderApiKey[]
+
+  @@map("tech_provider")
+  @@schema("public")
+}
+
+model TechProviderApiKey {
+  id                           String               @id @default(cuid())
+  techProviderId               String               @map("tech_provider_id")
+  techProvider                 TechProvider         @relation(fields: [techProviderId], references: [id])
+  status                       String               @db.Char(1)
+  name                         String
+  accountEmail                 String               @map("account_email")
+  apiKey                       String               @map("api_key")
+  pricingTier                  String?              @map("pricing_tier")
+
+  @@unique([techProviderId, name])
+  @@unique([techProviderId, apiKey])
+  @@map("tech_provider_api_key")
+  @@schema("public")
+}
+
+// Mailing lists
+model MailingList {
+  id                       String        @id @default(cuid())
+  name                     String        @unique
+  title                    String        @unique
+  created                  DateTime      @default(now())
+  updated                  DateTime      @updatedAt
+
+  ofMailingListSubscribers  MailingListSubscriber[]
+
+  @@map("mailing_list")
+  @@schema("public")
+}
+
+model MailingListSubscriber {
+  id                       String        @id @default(cuid())
+  mailingListId            String        @map("mailing_list_id")
+  mailingList              MailingList   @relation(fields: [mailingListId], references: [id])
+  email                    String
+  firstName                String?
+  verificationCode         String?       @map("verification_code")
+  verified                 DateTime?
+  created                  DateTime      @default(now())
+  updated                  DateTime      @updatedAt
+
+  @@unique([mailingListId, email])
+  @@map("mailing_list_subscriber")
+  @@schema("public")
+}
+
+// Tips
+
+model Tip {
+  id                           String               @id @default(cuid())
+  name                         String               @unique
+  tags                         String[]
+
+  ofTipGotIts                  TipGotIt[]
+
+  @@index([tags])
+  @@map("tip")
+  @@schema("public")
+}
+
+model TipGotIt {
+  id                           String               @id @default(cuid())
+  tipId                        String               @map("tip_id")
+  tip                          Tip                  @relation(fields: [tipId], references: [id])
+  userProfileId                String               @map("user_profile_id")
+  userProfile                  UserProfile          @relation(fields: [userProfileId], references: [id])
+
+  @@unique([tipId, userProfileId], name: "tip_got_it_uq")
+  @@index([userProfileId])
+  @@map("tip_got_it")
+  @@schema("public")
+}
+
+// User-specific
+
+model UserError {
+  id                           String               @id @default(cuid())
+  userErrorSummaryId           String               @map("user_error_summary_id")
+  userErrorSummary             UserErrorSummary     @relation(fields: [userErrorSummaryId], references: [id])
+  userProfileId                String               @map("user_profile_id")
+  userProfile                  UserProfile          @relation(fields: [userProfileId], references: [id])
+  endUserProfileId             String?              @map("end_user_profile_id")
+  endUserProfile               UserProfile?         @relation("end_user_profile", fields: [endUserProfileId], references: [id])
+  instanceId                   String?              @map("instance_id")
+  instance                     Instance?            @relation(fields: [instanceId], references: [id])
+  origin                       String
+  message                      String
+  techMessage                  String?              @map("tech_message")  // Meant for developers only
+  created                      DateTime             @default(now())
+  updated                      DateTime             @updatedAt
+
+  @@map("user_error")
+  @@schema("public")
+}
+
+model UserErrorSummary {
+  id                           String               @id @default(cuid())
+  userProfileId                String               @map("user_profile_id")
+  userProfile                  UserProfile          @relation(fields: [userProfileId], references: [id])
+  instanceId                   String?              @map("instance_id")
+  instance                     Instance?            @relation(fields: [instanceId], references: [id])
+  origin                       String?
+  message                      String               // Abstracts UserError.message (no user or time specific info)
+  count                        Int
+
+  ofUserErrors                 UserError[]
+
+  @@unique([userProfileId, instanceId, origin, message])
+  @@map("user_error_summary")
+  @@schema("public")
+}
