@@ -105,7 +105,7 @@ export class UsersService {
     const fnName = `${this.clName}.getUserIdFromCookieAndVerify()`
 
     // Get signed-in userId
-    const idValue: string | undefined =
+    const idValue: string | undefined = await
             getCookie(
               this.signedInCookieName,
               { req, res })
