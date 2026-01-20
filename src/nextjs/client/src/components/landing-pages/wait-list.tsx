@@ -129,7 +129,7 @@ export default function WaitListLandingPage({
             }
           </div>
 
-          <div style={{ marginBottom: '5em' }} />
+          {/* <div style={{ marginBottom: '5em' }} />
 
           <h1>February 2026: Gemini 3 hackathon deadline</h1>
           <ul>
@@ -138,7 +138,7 @@ export default function WaitListLandingPage({
                 Try a new way to code with natural language.
               </Typography>
             </li>
-          </ul>
+          </ul> */}
 
         </div>
       </FullHeightLayout>
