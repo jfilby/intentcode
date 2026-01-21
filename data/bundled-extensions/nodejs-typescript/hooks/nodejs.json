@@ -32,32 +32,6 @@
             "Name of the project, creates a directory with this name"
         }
       }
-    },
-    "intentcode/installDependencies": {
-      "commands": [
-        "cd ${projectDir}",
-        "npm install"
-      ],
-      "variables": {
-        "projectDir": {
-          "required": true,
-          "type": "path",
-          "description": "Project directory"
-        }
-      }
-    },
-    "intentcode/updateDependencies": {
-      "commands": [
-        "cd ${projectDir}",
-        "npm update"
-      ],
-      "variables": {
-        "projectDir": {
-          "required": true,
-          "type": "path",
-          "description": "Project directory"
-        }
-      }
     }
   }
 }
