@@ -102,6 +102,7 @@ export class ExtensionMutateService {
     const systemProject = await
             projectsQueryService.getProject(
               prisma,
+              null,  // parentId
               ServerOnlyTypes.systemProjectName)
 
     // Validate

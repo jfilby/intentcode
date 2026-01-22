@@ -353,6 +353,7 @@ export class SpecsTechStackMutateService {
     const systemProject = await
             projectsQueryService.getProject(
               prisma,
+              null,  // parentId
               ServerOnlyTypes.systemProjectName)
 
     const systemExtensionsPrompting = await

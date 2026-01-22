@@ -90,6 +90,10 @@ export class FsUtilsService {
     }
   }
 
+  getPathRoot(p = process.cwd()) {
+    return path.parse(path.resolve(p)).root
+  }
+
   getRelativePath(
     fullPath: string,
     basePath: string) {

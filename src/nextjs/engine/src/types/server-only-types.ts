@@ -47,7 +47,7 @@ export enum DepDeltaNames {
 }
 
 export enum InstanceSettingNames {
-  projectPath = 'project path'
+  projectPath = 'Project path'
 }
 
 export enum MessageTypes {

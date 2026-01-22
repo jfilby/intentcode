@@ -1,13 +1,11 @@
 import { PrismaClient, UserProfile } from '@prisma/client'
 import { BuildMutateService } from '../intentcode/build/mutate-service'
 import { ExtensionQueryService } from '../extensions/extension/query-service'
-import { ProjectsMutateService } from '../projects/mutate-service'
 import { ProjectSetupService } from '../projects/setup-project'
 
 // Services
 const buildMutateService = new BuildMutateService()
 const extensionQueryService = new ExtensionQueryService()
-const projectsMutateService = new ProjectsMutateService()
 const projectSetupService = new ProjectSetupService()
 
 // Class
@@ -15,8 +13,6 @@ export class CalcTestsService {
 
   // Consts
   clName = 'CalcTestsService'
-
-  projectName = `Calc`
 
   // Code
   async tests(prisma: PrismaClient,
@@ -26,22 +22,14 @@ export class CalcTestsService {
     // Debug
     const fnName = `${this.clName}.tests()`
 
-    // Get/create the project
-    const instance = await
-            projectsMutateService.getOrCreate(
-              prisma,
-              adminUserProfile.id,
-              this.projectName)
-
-    // Setup the project
+    // Initialize the project
     const projectPath = `${process.env.LOCAL_TESTS_PATH}/calc`
 
-    const projectNode = await
-            projectSetupService.setupProject(
+    const { instance, projectNode, projectName } = await
+            projectSetupService.initProject(
               prisma,
-              instance,
-              this.projectName,
-              projectPath)
+              projectPath,
+              adminUserProfile)
 
     // Check expected extensions exist (loaded by the CLI)
     await extensionQueryService.checkExtensionsExist(
@@ -53,6 +41,6 @@ export class CalcTestsService {
     await buildMutateService.runBuild(
             prisma,
             instance.id,
-            this.projectName)
+            projectName)
   }
 }

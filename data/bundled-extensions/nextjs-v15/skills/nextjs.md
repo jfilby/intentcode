@@ -12,6 +12,9 @@ context:
 
 ## Preferred libraries
 
-When writing CLI code prefer:
+- Prisma 6.x ORM.
+- Apollo GraphQL.
+
+If running a CLI script prefer:
 - readline-sync: get input from the cli
 

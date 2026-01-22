@@ -1,4 +1,5 @@
 const NodeCache = require('node-cache')
+import path from 'path'
 import { Instance, PrismaClient } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { InstanceModel } from '@/serene-core-server/models/instances/instance-model'
@@ -8,6 +9,8 @@ import { UsersService } from '@/serene-core-server/services/users/service'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { InstanceSettingNames, ServerOnlyTypes } from '@/types/server-only-types'
+import { SourceNodeModel } from '@/models/source-graph/source-node-model'
+import { FsUtilsService } from '../utils/fs-utils-service'
 
 // Cache objects must be global, to access all data (e.g. ability to delete
 // an item from an object if InstanceService).
@@ -20,6 +23,8 @@ const instanceSettingModel = new InstanceSettingModel()
 
 // Services
 const consoleService = new ConsoleService()
+const fsUtilsService = new FsUtilsService()
+const sourceNodeModel = new SourceNodeModel()
 const usersService = new UsersService()
 
 // Class
@@ -29,12 +34,65 @@ export class ProjectsQueryService {
   clName = 'ProjectsQueryService'
 
   // Code
+  async getParentProjectByPath(
+          prisma: PrismaClient,
+          fullPath: string) {
+
+    // Debug
+    const fnName = `${this.clName}.getParentProjectByPath()`
+
+    // Get path root
+    const root = fsUtilsService.getPathRoot(fullPath)
+    var curPath = fullPath
+
+    // Debug
+    // console.log(`${fnName}: root: ${root}`)
+    // console.log(`${fnName}: curPath: ${curPath}`)
+
+    // Iterate
+    var i = 0
+
+    while (curPath !== root) {
+
+      // Get parent directory
+      const parentPath = path.dirname(curPath)
+
+      // Debug
+      // console.log(`${fnName}: parentPath: ${parentPath}`)
+
+      // Check for a project
+      const instance = await
+              this.getProjectByPath(
+                prisma,
+                parentPath)
+
+      // Found?
+      if (instance != null) {
+        return instance
+      }
+
+      // Set curPath
+      curPath = parentPath
+
+      /* Safety iterator
+      i += 1
+
+      if (i > 1000) {
+        throw new CustomError(`${fnName}: path too deep!`)
+      } */
+    }
+
+    // Not found
+    return undefined
+  }
+
   async getProject(
           prisma: PrismaClient,
+          parentId: string | null,
           projectName: string) {
 
     // Debug
-    const fnName = `${this.clName}.getSystemProject()`
+    const fnName = `${this.clName}.getProject()`
 
     // Get the admin UserProfile
     const adminUserProfile = await
@@ -51,7 +109,7 @@ export class ProjectsQueryService {
     const project = await
             instanceModel.getByParentIdAndNameAndUserProfileId(
               prisma,
-              null,  // parentId
+              parentId,
               projectName,
               adminUserProfile.id)
 
@@ -63,6 +121,12 @@ export class ProjectsQueryService {
           prisma: PrismaClient,
           fullPath: string) {
 
+    // Debug
+    const fnName = `${this.clName}.getProject()`
+
+    // Debug
+    // console.log(`${fnName}: fullPath: ${fullPath}`)
+
     // Get project's path
     const projectPaths = await
             instanceSettingModel.filter(
@@ -70,6 +134,9 @@ export class ProjectsQueryService {
               undefined,  // instanceId
               InstanceSettingNames.projectPath,
               undefined)  // value
+
+    // Debug
+    // console.log(`${fnName}: projectPaths: ` + JSON.stringify(projectPaths))
 
     // Matching
     for (const projectPath of projectPaths) {

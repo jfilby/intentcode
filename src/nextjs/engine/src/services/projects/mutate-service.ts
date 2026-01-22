@@ -1,8 +1,9 @@
 const NodeCache = require('node-cache')
 import { PrismaClient } from '@prisma/client'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
-import { ServerOnlyTypes } from '@/types/server-only-types'
+import { InstanceSettingNames, ServerOnlyTypes } from '@/types/server-only-types'
 import { InstanceModel } from '@/serene-core-server/models/instances/instance-model'
+import { InstanceSettingModel } from '@/serene-core-server/models/instances/instance-setting-model'
 
 // Cache objects must be global, to access all data (e.g. ability to delete
 // an item from an object if InstanceService).
@@ -11,6 +12,7 @@ const cachedInstancesWithIncludes = new NodeCache()
 
 // Models
 const instanceModel = new InstanceModel()
+const instanceSettingModel = new InstanceSettingModel()
 
 // Class
 export class ProjectsMutateService {
@@ -52,6 +54,23 @@ export class ProjectsMutateService {
 
     // Return
     return project
+  }
+
+  async setProjectPath(
+          prisma: PrismaClient,
+          instanceId: string,
+          path: string) {
+
+    // Upsert
+    const instanceSetting = await
+            instanceSettingModel.upsert(
+              prisma,
+              undefined,  // id
+              instanceId,
+              InstanceSettingNames.projectPath,
+              path)
+
+    return instanceSetting
   }
 
   async upsert(

@@ -1,15 +1,20 @@
 import fs from 'fs'
 import path from 'path'
 import { blake3 } from '@noble/hashes/blake3'
-import { Instance, PrismaClient, SourceNode } from '@prisma/client'
+import { Instance, PrismaClient, SourceNode, UserProfile } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
+import { ConsoleService } from '@/serene-core-server/services/console/service'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { DependenciesMutateService } from '../graphs/dependencies/mutate-service'
 import { DepsJsonService } from '../managed-files/deps/deps-json-service'
 import { DotIntentCodeGraphMutateService } from '../graphs/dot-intentcode/graph-mutate-service'
 import { ExtensionMutateService } from '../extensions/extension/mutate-service'
+import { FsUtilsService } from '../utils/fs-utils-service'
 import { IntentCodeGraphMutateService } from '../graphs/intentcode/graph-mutate-service'
+import { ProjectsMutateService } from './mutate-service'
+import { ProjectsQueryService } from './query-service'
 import { ProjectGraphMutateService } from '../graphs/project/mutate-service'
+import { ProjectGraphQueryService } from '../graphs/project/query-service'
 import { SourceCodeGraphMutateService } from '../graphs/source-code/graph-mutate-service'
 import { SpecsGraphMutateService } from '../graphs/specs/graph-mutate-service'
 
@@ -17,12 +22,17 @@ import { SpecsGraphMutateService } from '../graphs/specs/graph-mutate-service'
 const sourceNodeModel = new SourceNodeModel()
 
 // Services
+const consoleService = new ConsoleService()
 const dependenciesMutateService = new DependenciesMutateService()
 const depsJsonService = new DepsJsonService()
 const dotIntentCodeGraphMutateService = new DotIntentCodeGraphMutateService()
 const extensionMutateService = new ExtensionMutateService()
+const fsUtilsService = new FsUtilsService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
+const projectsMutateService = new ProjectsMutateService()
+const projectsQueryService = new ProjectsQueryService()
 const projectGraphMutateService = new ProjectGraphMutateService()
+const projectGraphQueryService = new ProjectGraphQueryService()
 const sourceCodeGraphMutateService = new SourceCodeGraphMutateService()
 const specsGraphMutateService = new SpecsGraphMutateService()
 
@@ -33,6 +43,128 @@ export class ProjectSetupService {
   clName = 'ProjectSetupService'
 
   // Code
+  async getOrPromptForProjectName(
+          prisma: PrismaClient,
+          parentInstance: Instance,
+          path: string) {
+
+    // Debug
+    const fnName = `${this.clName}.getOrPromptForProjectName()`
+
+    // Try to use the last part of the path as the project name
+    var projectName = fsUtilsService.getLastPathPart(path)
+
+    var instance = await
+          projectsQueryService.getProject(
+            prisma,
+            parentInstance != null ? parentInstance.id : null,
+            projectName!)
+
+    // Loop until a project name that doesn't clash is given
+    while (instance != null) {
+
+      // Prompt
+      console.log(`The project name ${projectName} isn't unique`)
+      
+      if (parentInstance != null) {
+        console.log(`.. under the parent project: ${parentInstance.name}`)
+      }
+
+      projectName = await
+        consoleService.askQuestion('project name> ')
+
+      // Check for another instance that already exists for the parent
+      instance = await
+        projectsQueryService.getProject(
+          prisma,
+          parentInstance != null ? parentInstance.id : null,
+          projectName)
+    }
+
+    // Return
+    return projectName
+  }
+
+  async initProject(
+          prisma: PrismaClient,
+          path: string,
+          adminUserProfile: UserProfile) {
+
+    // Debug
+    const fnName = `${this.clName}.initProject()`
+
+    // Check if the path exists
+    if (await fs.existsSync(path) === false) {
+
+      console.error(`Path doesn't exist: ${path}`)
+      process.exit(1)
+    }
+
+    // Try to get an existing project by the path
+    var instance = await
+          projectsQueryService.getProjectByPath(
+            prisma,
+            path)
+
+    if (instance != null) {
+
+      // Get project node
+      const projectNode = await
+              projectGraphQueryService.getProjectNode(
+                prisma,
+                instance.id)
+
+      // Project name
+      const existingProjectName = instance.name!
+
+      // Console output
+      console.log(`Project already exists: ${instance.name}`)
+
+      // Return
+      return {
+        instance,
+        projectNode,
+        projectName: existingProjectName
+      }
+    }
+
+    // Lookup parent project (if any)
+    const parentInstance = await
+            projectsQueryService.getParentProjectByPath(
+              prisma,
+              path)
+
+    // Get the last part of the path
+    const projectName = await
+            this.getOrPromptForProjectName(
+              prisma,
+              parentInstance,
+              path)
+
+    // Validate
+    if (projectName == null) {
+      throw new CustomError(`${fnName}: projectName == null`)
+    }
+
+    // Create instance
+    instance = await
+      projectsMutateService.getOrCreate(
+        prisma,
+        adminUserProfile.id,
+        projectName)
+
+    // Setup project node
+    const projectNode = await
+            this.setupProject(
+              prisma,
+              instance,
+              projectName,
+              path)
+
+    // Return
+    return { instance, projectNode, projectName }
+  }
+
   async loadConfigFiles(
           prisma: PrismaClient,
           projectNode: SourceNode,
@@ -112,6 +244,12 @@ export class ProjectSetupService {
           instance: Instance,
           projectName: string,
           projectPath: string) {
+
+    // Set the path
+    await projectsMutateService.setProjectPath(
+            prisma,
+            instance.id,
+            projectPath)
 
     // Get/create project node
     const projectNode = await

@@ -40,6 +40,33 @@ export class ProjectGraphQueryService {
     return sourceCodeProject
   }
 
+  async getProjectNode(
+          prisma: PrismaClient,
+          instanceId: string) {
+
+    // Debug
+    const fnName = `${this.clName}.getProjectNode()`
+
+    // Try to get the node
+    const projectNodes = await
+            sourceNodeModel.filter(
+              prisma,
+              null,  // parentId
+              instanceId,
+              SourceNodeTypes.project)
+
+    // Validate
+    if (projectNodes.length === 0) {
+      return undefined
+
+    } else if (projectNodes.length > 1) {
+      throw new CustomError(`${fnName}: projectNodes.length > 1`)
+    }
+
+    // Return
+    return projectNodes[0]
+  }
+
   async getSourceProjectNode(
           prisma: PrismaClient,
           projectNode: SourceNode) {
