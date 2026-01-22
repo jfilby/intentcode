@@ -8,6 +8,7 @@ import { UsersService } from '../deployed/serene-core-server/services/users/serv
 import { ServerTestTypes } from './types/server-test-types'
 import { LoadExternalExtensionsService } from './services/extensions/extension/load-external-service'
 import { ManageExtensionsCliService } from './services/extensions/extension/cli-service'
+import { ProjectSetupService } from './services/projects/setup-project'
 import { SetupService } from './services/setup/setup'
 import { TestsService } from './services/tests/tests-service'
 
@@ -18,6 +19,7 @@ import { TestsService } from './services/tests/tests-service'
   const fnName = 'cli.ts'
 
   // Consts
+  const initProjectCommand = 'init-project'
   const loadExtensionsCommand = 'load-extensions'
   const manageExtensionsCommand = 'manage-extensions'
   const loadTechProviderApiKeysCommand = 'load-tech-provider-api-keys'
@@ -25,6 +27,7 @@ import { TestsService } from './services/tests/tests-service'
   const testsCommand = 'tests'
 
   const commands = [
+          initProjectCommand,
           loadExtensionsCommand,
           manageExtensionsCommand,
           loadTechProviderApiKeysCommand,
@@ -40,6 +43,7 @@ import { TestsService } from './services/tests/tests-service'
   // Services
   const loadExternalExtensionsService = new LoadExternalExtensionsService()
   const manageExtensionsCliService = new ManageExtensionsCliService()
+  const projectSetupService = new ProjectSetupService()
   const usersService = new UsersService()
   const setupService = new SetupService()
   const techProviderMutateService = new TechProviderMutateService()
@@ -61,6 +65,15 @@ import { TestsService } from './services/tests/tests-service'
 
   // Run the chosen command
   switch (command) {
+
+    case initProjectCommand: {
+
+      await projectSetupService.initProjectFromCli(
+              prisma,
+              adminUserProfile)
+
+      break
+    }
 
     case loadExtensionsCommand: {
 

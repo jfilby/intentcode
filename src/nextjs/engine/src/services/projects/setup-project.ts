@@ -165,6 +165,31 @@ export class ProjectSetupService {
     return { instance, projectNode, projectName }
   }
 
+  async initProjectFromCli(
+          prisma: PrismaClient,
+          adminUserProfile: UserProfile) {
+
+    // Console output.
+    console.log(`Project path? Press enter to use the current path`)
+
+    // Prompt for project path
+    const inputProjectPath = await
+            consoleService.askQuestion('project path> ')
+
+    // Determine project path
+    var projectPath = inputProjectPath
+
+    if (inputProjectPath.trim.length === 0) {
+      projectPath = process.cwd()
+    }
+
+    // Init project
+    await this.initProject(
+            prisma,
+            projectPath,
+            adminUserProfile)
+  }
+
   async loadConfigFiles(
           prisma: PrismaClient,
           projectNode: SourceNode,
