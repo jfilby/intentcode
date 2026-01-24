@@ -107,7 +107,8 @@ export class SpecsToIntentCodePromptService {
         '```md\n' +
         buildFromFile.content +
         `\n` +
-        '```'
+        '```\n' +
+        `\n`
     }
 
     // Add numbered projects

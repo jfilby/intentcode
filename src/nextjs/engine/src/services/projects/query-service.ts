@@ -42,7 +42,7 @@ export class ProjectsQueryService {
           instanceId: string,
           instance: Instance | undefined,
           projectsMap: Map<number, ProjectDetails>,
-          maxProjectNo: number = 0,
+          maxProjectNo: number = 1,
           indents: number = 0) {
 
     // Debug
@@ -100,22 +100,35 @@ export class ProjectsQueryService {
 
   getProjectsPrompting(projectsMap: Map<number, ProjectDetails>) {
 
+    // Debug
+    const fnName = `${this.clName}.getProjectsPrompting()`
+
+    // Start prompting for projects
     var prompting =
       `## Projects\n` +
       `\n` +
       `By project no:\n` +
       `\n`
 
+    // Debug
+    // console.log(`${fnName}: projectsMap: ${projectsMap.size}`)
+
+    // Iter projectsMap
     for (const [projectNo, projectDetails] of
          projectsMap.entries()) {
 
+      // Add to prompting
       const indents = ' '.repeat(projectDetails.indents * 2)
 
       prompting +=
         `${indents}- ${projectNo}: ${projectDetails.instance.name}`
     }
 
+    // Final new-line
     prompting += `\n`
+
+    // Return
+    return prompting
   }
 
   async getParentProjectByPath(
