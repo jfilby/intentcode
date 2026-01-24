@@ -46,7 +46,9 @@ export class SpecsToIntentCodePromptService {
           `\n` +
           ServerOnlyTypes.messagesPrompting +
           `\n` +
-          `The intentcode array contains a list of filenames and content.\n` +
+          `- The intentcode array contains a list of filenames and content.\n` +
+          `- The relativePath must include the source extension, e.g. if ` +
+          `  a TypeScript file an example is: /src/index.ts.md.` +
           `\n` +
           `## Example IntentCode\n` +
           `\n` +
@@ -76,7 +78,7 @@ export class SpecsToIntentCodePromptService {
           `  "intentcode": [\n `+
           `    {\n` +
           `      "projectNo": <projectNo>,\n` +
-          `      "relativePath", "<target-filename.ext>.md",\n` +
+          `      "relativePath": "<targetFilename>.<srcExt>.md",\n` +
           `      "content": "<content>"\n` +
           `    }\n` +
           `  ]\n` +
