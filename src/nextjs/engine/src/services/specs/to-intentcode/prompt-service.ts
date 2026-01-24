@@ -114,7 +114,7 @@ export class SpecsToIntentCodePromptService {
     if (buildData.projectsMap != null) {
 
       prompt +=
-        projectsQueryService.getProjectsPrompt(
+        projectsQueryService.getProjectsPrompting(
           buildData.projectsMap)
     }
 

@@ -103,7 +103,7 @@ export class ProjectsQueryService {
     return projectsMap
   }
 
-  getProjectsPrompt(projectsMap: Map<ProjectIndex, ProjectDetails>) {
+  getProjectsPrompting(projectsMap: Map<ProjectIndex, ProjectDetails>) {
 
     var prompting =
       `## Projects\n` +
