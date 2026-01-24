@@ -304,7 +304,7 @@ export class PackageJsonManagedFileService {
 
       console.log(
         `File not found: ${filename}\n` +
-        `Please create the initial project directory first.`)
+        `Please create the initial project files first.`)
 
       process.exit(1)
     }
