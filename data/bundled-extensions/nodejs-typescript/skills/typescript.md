@@ -3,6 +3,9 @@ name: Bundled TypeScript
 description: TypeScript skill
 
 context:
+  anyDependency:
+    - name: typescript
+      minVersion: 5
   fileExts: .ts, .tsx
 ---
 
