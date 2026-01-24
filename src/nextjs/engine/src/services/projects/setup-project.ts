@@ -208,7 +208,7 @@ export class ProjectSetupService {
   async loadDepsConfigFile(
           prisma: PrismaClient,
           projectNode: SourceNode,
-          configPath: string) {
+          configPath?: string) {
 
     // Debug
     const fnName = `${this.clName}.loadDepsConfigFile()`

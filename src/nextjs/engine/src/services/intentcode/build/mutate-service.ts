@@ -4,11 +4,11 @@ import { BuildData, BuildStage, BuildStageType, IntentFileBuild } from '@/types/
 import { ProjectDetails } from '@/types/server-only-types'
 import { SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
+import { DepsUpdateService } from '@/services/managed-files/deps/update-service'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
 import { ProjectsQueryService } from '@/services/projects/query-service'
 import { ProjectCompileService } from '@/services/projects/compile-service'
 import { ProjectVerifyService } from '@/services/projects/verify-service'
-import { SourceDepsFileService } from '@/services/managed-files/deps/source-deps-service'
 import { SpecsTechStackMutateService } from '@/services/specs/tech-stack/mutate-service'
 import { SpecsToIntentCodeMutateService } from '@/services/specs/to-intentcode/mutate-service'
 
@@ -16,11 +16,11 @@ import { SpecsToIntentCodeMutateService } from '@/services/specs/to-intentcode/m
 const sourceNodeModel = new SourceNodeModel()
 
 // Services
+const depsUpdateService = new DepsUpdateService()
 const extensionQueryService = new ExtensionQueryService()
 const projectCompileService = new ProjectCompileService()
 const projectsQueryService = new ProjectsQueryService()
 const projectVerifyService = new ProjectVerifyService()
-const sourceDepsFileService = new SourceDepsFileService()
 const specsTechStackMutateService = new SpecsTechStackMutateService()
 const specsToIntentCodeMutateService = new SpecsToIntentCodeMutateService()
 
@@ -216,7 +216,7 @@ export class BuildMutateService {
 
       case BuildStageType.updateDeps: {
 
-        await sourceDepsFileService.updateAndWriteFile(
+        await depsUpdateService.update(
                 prisma,
                 projectNode)
 
