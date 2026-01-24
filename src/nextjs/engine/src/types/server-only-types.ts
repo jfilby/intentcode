@@ -73,12 +73,11 @@ export interface DepDelta {
   minVersion: string
 }
 
-export interface ProjectIndex {
-  projectNo: number
-  indents: number
-}
-
 export interface ProjectDetails {
+  // Indents relative to project hierarchy
+  indents: number
+
+  // Project objects
   instance: Instance
   projectNode: SourceNode
   dotIntentCodeProjectNode: SourceNode

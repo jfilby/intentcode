@@ -1,7 +1,7 @@
-import { Instance, PrismaClient, SourceNode } from '@prisma/client'
+import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { BuildData, BuildStage, BuildStageType, IntentFileBuild } from '@/types/build-types'
-import { ProjectIndex, ProjectDetails } from '@/types/server-only-types'
+import { ProjectDetails } from '@/types/server-only-types'
 import { SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
@@ -104,7 +104,7 @@ export class BuildMutateService {
     const buildStages: BuildStage[] = []
 
     // Get numbered projects map
-    const projectsMap = new Map<ProjectIndex, ProjectDetails>()
+    const projectsMap = new Map<number, ProjectDetails>()
 
     await projectsQueryService.getProjectsMap(
             prisma,

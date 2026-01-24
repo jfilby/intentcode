@@ -7,7 +7,7 @@ import { ConsoleService } from '@/serene-core-server/services/console/service'
 import { InstanceSettingModel } from '@/serene-core-server/models/instances/instance-setting-model'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { ServerTestTypes } from '@/types/server-test-types'
-import { InstanceSettingNames, ProjectIndex, ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types'
+import { InstanceSettingNames, ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types'
 import { DotIntentCodeGraphQueryService } from '../graphs/dot-intentcode/graph-query-service'
 import { FsUtilsService } from '../utils/fs-utils-service'
 import { ProjectGraphQueryService } from '../graphs/project/query-service'
@@ -41,7 +41,7 @@ export class ProjectsQueryService {
           prisma: PrismaClient,
           instanceId: string,
           instance: Instance | undefined,
-          projectsMap: Map<ProjectIndex, ProjectDetails>,
+          projectsMap: Map<number, ProjectDetails>,
           maxProjectNo: number = 0,
           indents: number = 0) {
 
@@ -62,21 +62,16 @@ export class ProjectsQueryService {
       throw new CustomError(`${fnName}: instance == null`)
     }
 
-    // Define ProjectIndex
-    const projectIndex: ProjectIndex = {
-      projectNo: maxProjectNo,
-      indents: indents
-    }
-
     // Get ProjectDetails
     const projectDetails = await
             this.getProjectDetails(
               prisma,
+              indents,
               instance)
 
     // Add instance to the map
     projectsMap.set(
-      projectIndex,
+      maxProjectNo,
       projectDetails)
 
     maxProjectNo += 1
@@ -103,7 +98,7 @@ export class ProjectsQueryService {
     return projectsMap
   }
 
-  getProjectsPrompting(projectsMap: Map<ProjectIndex, ProjectDetails>) {
+  getProjectsPrompting(projectsMap: Map<number, ProjectDetails>) {
 
     var prompting =
       `## Projects\n` +
@@ -111,14 +106,13 @@ export class ProjectsQueryService {
       `By project no:\n` +
       `\n`
 
-    for (const [projectIndex, projectDetails] of
+    for (const [projectNo, projectDetails] of
          projectsMap.entries()) {
 
-      const indents = ' '.repeat(projectIndex.indents * 2)
+      const indents = ' '.repeat(projectDetails.indents * 2)
 
       prompting +=
-        `${indents}- ${projectIndex.projectNo}: ` +
-        `${projectDetails.instance.name}`
+        `${indents}- ${projectNo}: ${projectDetails.instance.name}`
     }
 
     prompting += `\n`
@@ -296,6 +290,7 @@ export class ProjectsQueryService {
 
   async getProjectDetails(
           prisma: PrismaClient,
+          indents: number,
           instance: Instance) {
 
     // Debug
@@ -338,6 +333,7 @@ export class ProjectsQueryService {
 
     // Define ProjectDetails
     const projectDetails: ProjectDetails = {
+      indents: indents,
       instance: instance,
       projectNode: projectNode,
       dotIntentCodeProjectNode: dotIntentCodeProjectNode,
