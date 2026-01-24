@@ -141,7 +141,7 @@ export class SpecsGraphMutateService {
     const fnName = `${this.clName}.getOrCreateSpecsProject()`
 
     // Try to get the node
-    var specsProject = await
+    var specsProjectNode = await
           sourceNodeModel.getByUniqueKey(
             prisma,
             projectNode.id,  // parentId
@@ -149,8 +149,8 @@ export class SpecsGraphMutateService {
             SourceNodeTypes.projectSpecs,
             SourceNodeNames.projectSpecs)
 
-    if (specsProject != null) {
-      return specsProject
+    if (specsProjectNode != null) {
+      return specsProjectNode
     }
 
     // Define jsonContent
@@ -168,7 +168,7 @@ export class SpecsGraphMutateService {
     }
 
     // Create the node
-    specsProject = await
+    specsProjectNode = await
       sourceNodeModel.create(
         prisma,
         projectNode.id,  // parentId
@@ -183,7 +183,7 @@ export class SpecsGraphMutateService {
         null)  // contentUpdated
 
     // Return
-    return specsProject
+    return specsProjectNode
   }
 
   async upsertTechStackJson(

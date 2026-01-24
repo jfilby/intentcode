@@ -1,5 +1,6 @@
 import { SourceNode } from '@prisma/client'
 import { ExtensionsData } from './source-graph-types'
+import { NumProject, ProjectDetails } from './server-only-types'
 
 export enum BuildStageType {
   // Specs to IntentCode
@@ -69,4 +70,7 @@ export interface BuildData {
 
   // Extensions
   extensionsData: ExtensionsData
+
+  // Numbered projects
+  numberedProjectsMap: Map<NumProject, ProjectDetails>
 }

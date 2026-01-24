@@ -12,15 +12,15 @@ export class SpecsGraphQueryService {
   clName = 'SpecsGraphQueryService'
 
   // Code
-  async getSpecsProject(
+  async getSpecsProjectNode(
           prisma: PrismaClient,
           projectNode: SourceNode) {
 
     // Debug
-    const fnName = `${this.clName}.getSpecsProject()`
+    const fnName = `${this.clName}.getSpecsProjectNode()`
 
     // Get the node
-    var specsProject = await
+    var specsProjectNode = await
           sourceNodeModel.getByUniqueKey(
             prisma,
             projectNode.id,  // parentId
@@ -29,6 +29,6 @@ export class SpecsGraphQueryService {
             SourceNodeNames.projectSpecs)
 
     // Return
-    return specsProject
+    return specsProjectNode
   }
 }

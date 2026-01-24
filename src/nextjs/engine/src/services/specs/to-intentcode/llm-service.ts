@@ -4,6 +4,7 @@ import { LlmCacheService } from '@/serene-ai-server/services/cache/service'
 import { AgentLlmService } from '@/serene-ai-server/services/llm-apis/agent-llm-service'
 import { LlmUtilsService } from '@/serene-ai-server/services/llm-apis/utils-service'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
+import { BuildData } from '@/types/build-types'
 import { MessageTypes, ServerOnlyTypes } from '@/types/server-only-types'
 
 // Services
@@ -19,6 +20,7 @@ export class SpecsMutateLlmService {
   // Code
   async llmRequest(
           prisma: PrismaClient,
+          buildData: BuildData,
           userProfileId: string,
           llmTech: Tech,
           prompt: string) {
@@ -94,6 +96,7 @@ export class SpecsMutateLlmService {
         validated = await
           this.validateQueryResults(
             prisma,
+            buildData,
             queryResults)
       }
 
@@ -149,6 +152,7 @@ export class SpecsMutateLlmService {
 
   async validateQueryResults(
           prisma: PrismaClient,
+          buildData: BuildData,
           queryResults: any) {
 
     // Debug
@@ -191,10 +195,40 @@ export class SpecsMutateLlmService {
 
     // extensions is required and can't be an array
     if (queryResults.json.intentcode == null ||
-        Array.isArray(queryResults.json.intentcode)) {
+        !Array.isArray(queryResults.json.intentcode)) {
 
       console.log(`${fnName}: invalid intentcode`)
       return false
+    }
+
+    // Iterate intentcode entries
+    if (this.validateIntentcode(
+          buildData,
+          queryResults.json.intentcode) === false) {
+
+      return false
+    }
+
+    // Validated OK
+    return true
+  }
+
+  validateIntentcode(
+    buildData: BuildData,
+    intentcode: any[]) {
+
+    // Debug
+    const fnName = `${this.clName}.validateIntentcode()`
+
+    // Validate each entries
+    for (const intentCode of intentcode) {
+
+      // Validate projectNo
+      if (!buildData.numberedProjectsMap.has(intentCode.projectNo)) {
+
+        console.log(`${fnName}: invalid projectNo: ${intentCode.projectNo}`)
+        return false
+      }
     }
 
     // Validated OK

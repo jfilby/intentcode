@@ -148,7 +148,7 @@ export class DotIntentCodeGraphMutateService {
     const fnName = `${this.clName}.getOrCreateDotIntentCodeProject()`
 
     // Try to get the node
-    var dotIntentCodeProject = await
+    var projectDotIntentCodeNode = await
           sourceNodeModel.getByUniqueKey(
             prisma,
             projectNode.id,  // parentId
@@ -156,8 +156,8 @@ export class DotIntentCodeGraphMutateService {
             SourceNodeTypes.projectDotIntentCode,
             SourceNodeNames.projectDotIntentCode)
 
-    if (dotIntentCodeProject != null) {
-      return dotIntentCodeProject
+    if (projectDotIntentCodeNode != null) {
+      return projectDotIntentCodeNode
     }
 
     // Define jsonContent
@@ -175,7 +175,7 @@ export class DotIntentCodeGraphMutateService {
     }
 
     // Create the node
-    dotIntentCodeProject = await
+    projectDotIntentCodeNode = await
       sourceNodeModel.create(
         prisma,
         projectNode.id,  // parentId
@@ -190,7 +190,7 @@ export class DotIntentCodeGraphMutateService {
         null)  // contentUpdated
 
     // Return
-    return dotIntentCodeProject
+    return projectDotIntentCodeNode
   }
 
   async upsertConfigData(

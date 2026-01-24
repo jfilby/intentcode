@@ -6,11 +6,12 @@ import { InstanceModel } from '@/serene-core-server/models/instances/instance-mo
 import { ConsoleService } from '@/serene-core-server/services/console/service'
 import { InstanceSettingModel } from '@/serene-core-server/models/instances/instance-setting-model'
 import { UsersService } from '@/serene-core-server/services/users/service'
-import { BaseDataTypes } from '@/shared/types/base-data-types'
 import { ServerTestTypes } from '@/types/server-test-types'
-import { InstanceSettingNames, ServerOnlyTypes } from '@/types/server-only-types'
-import { SourceNodeModel } from '@/models/source-graph/source-node-model'
+import { InstanceSettingNames, NumProject, ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types'
+import { DotIntentCodeGraphQueryService } from '../graphs/dot-intentcode/graph-query-service'
 import { FsUtilsService } from '../utils/fs-utils-service'
+import { ProjectGraphQueryService } from '../graphs/project/query-service'
+import { SpecsGraphQueryService } from '../graphs/specs/graph-query-service'
 
 // Cache objects must be global, to access all data (e.g. ability to delete
 // an item from an object if InstanceService).
@@ -23,8 +24,10 @@ const instanceSettingModel = new InstanceSettingModel()
 
 // Services
 const consoleService = new ConsoleService()
+const dotIntentCodeGraphQueryService = new DotIntentCodeGraphQueryService()
 const fsUtilsService = new FsUtilsService()
-const sourceNodeModel = new SourceNodeModel()
+const projectGraphQueryService = new ProjectGraphQueryService()
+const specsGraphQueryService = new SpecsGraphQueryService()
 const usersService = new UsersService()
 
 // Class
@@ -34,6 +37,92 @@ export class ProjectsQueryService {
   clName = 'ProjectsQueryService'
 
   // Code
+  async getNumberedProjectsMap(
+          prisma: PrismaClient,
+          instanceId: string,
+          instance: Instance | undefined,
+          numberedProjectsMap: Map<NumProject, ProjectDetails>,
+          maxProjectNo: number = 0,
+          indents: number = 0) {
+
+    // Debug
+    const fnName = `${this.clName}.getNumberedProjectsMap()`
+
+    // Get instance (and add it to the map) if not known
+    if (instance == null) {
+
+      instance = await
+        instanceModel.getById(
+          prisma,
+          instanceId)
+    }
+
+    // Validate
+    if (instance == null) {
+      throw new CustomError(`${fnName}: instance == null`)
+    }
+
+    // Define NumProject
+    const numProject: NumProject = {
+      projectNo: maxProjectNo,
+      indents: indents
+    }
+
+    // Get ProjectDetails
+    const projectDetails = await
+            this.getProjectDetails(
+              prisma,
+              instance)
+
+    // Add instance to the map
+    numberedProjectsMap.set(
+      numProject,
+      projectDetails)
+
+    maxProjectNo += 1
+
+    // Get child instances
+    const childInstances = await
+            instanceModel.filter(
+              prisma,
+              instanceId)  // parentId
+
+    // Cascade to child instances
+    for (const childInstance of childInstances) {
+
+      await this.getNumberedProjectsMap(
+              prisma,
+              childInstance.id,
+              childInstance,
+              numberedProjectsMap,
+              maxProjectNo,
+              indents + 1)
+    }
+
+    // Return
+    return numberedProjectsMap
+  }
+
+  getNumberedProjectsPrompt(
+    numberedProjectsMap: Map<NumProject, ProjectDetails>) {
+
+    var prompting =
+      `## Projects\n` +
+      `\n` +
+      `By project no:\n` +
+      `\n`
+
+    for (const [numProject, projectDetails] of numberedProjectsMap.entries()) {
+
+      const indents = ' '.repeat(numProject.indents * 2)
+
+      prompting +=
+        `${indents}- ${numProject.projectNo}: ${projectDetails.instance.name}`
+    }
+
+    prompting += `\n`
+  }
+
   async getParentProjectByPath(
           prisma: PrismaClient,
           fullPath: string) {
@@ -202,5 +291,61 @@ export class ProjectsQueryService {
 
     // Return selected project
     return instancesMap.get(loadProjectNo)
+  }
+
+  async getProjectDetails(
+          prisma: PrismaClient,
+          instance: Instance) {
+
+    // Debug
+    const fnName = `${this.clName}.getProjectDetails()`
+
+    // Get ProjectNode
+    const projectNode = await
+            projectGraphQueryService.getProjectNode(
+              prisma,
+              instance.id)
+
+    // Validate
+    if (projectNode == null) {
+      throw new CustomError(`${fnName}: projectNode == null`)
+    }
+
+    // Get DotIntentCodeProjectNode
+    const dotIntentCodeProjectNode = await
+            dotIntentCodeGraphQueryService.getDotIntentCodeProject(
+              prisma,
+              projectNode)
+
+    // Get ProjectSpecsNode
+    const projectSpecsNode = await
+            specsGraphQueryService.getSpecsProjectNode(
+              prisma,
+              projectNode)
+
+    // Get ProjectIntentCodeNode
+    const projectIntentCodeNode = await
+            projectGraphQueryService.getIntentCodeProjectNode(
+              prisma,
+              projectNode)
+
+    // Get ProjectSourceNode
+    const projectSourceNode = await
+            projectGraphQueryService.getSourceProjectNode(
+              prisma,
+              projectNode)
+
+    // Define ProjectDetails
+    const projectDetails: ProjectDetails = {
+      instance: instance,
+      projectNode: projectNode,
+      dotIntentCodeProjectNode: dotIntentCodeProjectNode,
+      projectSpecsNode: projectSpecsNode,
+      projectIntentCodeNode: projectIntentCodeNode,
+      projectSourceNode: projectSourceNode
+    }
+
+    // Return
+    return projectDetails
   }
 }

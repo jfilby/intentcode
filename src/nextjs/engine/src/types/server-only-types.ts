@@ -1,3 +1,5 @@
+import { Instance, SourceNode } from '@prisma/client'
+
 export class ServerOnlyTypes {
 
   // System project
@@ -69,4 +71,18 @@ export interface DepDelta {
   delta: string
   name: string
   minVersion: string
+}
+
+export interface NumProject {
+  projectNo: number
+  indents: number
+}
+
+export interface ProjectDetails {
+  instance: Instance
+  projectNode: SourceNode
+  dotIntentCodeProjectNode: SourceNode
+  projectSpecsNode: SourceNode
+  projectIntentCodeNode: SourceNode
+  projectSourceNode: SourceNode
 }

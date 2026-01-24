@@ -1,14 +1,15 @@
 import fs from 'fs'
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
-import { BuildFromFile } from '@/types/build-types'
-import { ExtensionsData } from '@/types/source-graph-types'
+import { BuildData, BuildFromFile } from '@/types/build-types'
 import { IntentCodeCommonTypes } from '@/services/intentcode/common/types'
 import { ServerOnlyTypes } from '@/types/server-only-types'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
+import { ProjectsQueryService } from '@/services/projects/query-service'
 
 // Services
 const extensionQueryService = new ExtensionQueryService()
+const projectsQueryService = new ProjectsQueryService()
 const walkDirService = new WalkDirService()
 
 // Class
@@ -61,7 +62,7 @@ export class SpecsToIntentCodePromptService {
           projectNode: SourceNode,
           projectSpecsNode: SourceNode,
           projectIntentCodeNode: SourceNode,
-          extensionsData: ExtensionsData,
+          buildData: BuildData,
           buildFromFiles: BuildFromFile[]) {
 
     // Debug
@@ -106,15 +107,20 @@ export class SpecsToIntentCodePromptService {
           `  "warnings": [],\n` +
           `  "errors": [\n` +
           `    {\n` +
+          `      "projectNo": <projectNo>,\n` +
           `      "line": 5,\n` +
           `      "from": 6,\n` +
           `      "to": 7,\n` +
           `      "text": "No extension for <tech> available."\n` +
           `    }\n` +
           `  ],\n` +
-          `  "intentcode": {\n` +
-          `    "<path>/<target-filename.ext>.md": "<content>"\n` +
-          `  }\n` +
+          `  "intentcode": [\n `+
+          `    {\n` +
+          `      "projectNo": <projectNo>,\n` +
+          `      "relativePath", "<target-filename.ext>.md",\n` +
+          `      "content": "<content>"\n` +
+          `    }\n` +
+          `  ]\n` +
           `}\n` +
           `\n`
 
@@ -143,6 +149,14 @@ export class SpecsToIntentCodePromptService {
         buildFromFile.content +
         `\n` +
         '```'
+    }
+
+    // Add numbered projects
+    if (buildData.numberedProjectsMap != null) {
+
+      prompt +=
+        projectsQueryService.getNumberedProjectsPrompt(
+          buildData.numberedProjectsMap)
     }
 
     // Add installed extensions

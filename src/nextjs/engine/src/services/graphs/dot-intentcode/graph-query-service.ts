@@ -20,7 +20,7 @@ export class DotIntentCodeGraphQueryService {
     const fnName = `${this.clName}.getDotIntentCodeProject()`
 
     // Get the node
-    var specsProject = await
+    var projectDotIntentCodeNode = await
           sourceNodeModel.getByUniqueKey(
             prisma,
             projectNode.id,  // parentId
@@ -29,6 +29,6 @@ export class DotIntentCodeGraphQueryService {
             SourceNodeNames.projectDotIntentCode)
 
     // Return
-    return specsProject
+    return projectDotIntentCodeNode
   }
 }

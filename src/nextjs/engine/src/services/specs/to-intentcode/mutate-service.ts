@@ -21,6 +21,7 @@ import { SpecsGraphQueryService } from '@/services/graphs/specs/graph-query-serv
 import { SpecsMutateLlmService } from './llm-service'
 import { SpecsPathGraphMutateService } from '@/services/graphs/specs/path-graph-mutate-service'
 import { SpecsToIntentCodePromptService } from './prompt-service'
+import { ProjectsQueryService } from '@/services/projects/query-service'
 
 // Models
 const sourceNodeGenerationModel = new SourceNodeGenerationModel()
@@ -31,6 +32,7 @@ const fsUtilsService = new FsUtilsService()
 const intentCodeMessagesService = new IntentCodeMessagesService()
 const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
 const projectGraphQueryService = new ProjectGraphQueryService()
+const projectsQueryService = new ProjectsQueryService()
 const specsGraphMutateService = new SpecsGraphMutateService()
 const specsGraphQueryService = new SpecsGraphQueryService()
 const specsMutateLlmService = new SpecsMutateLlmService()
@@ -92,18 +94,13 @@ export class SpecsToIntentCodeMutateService {
 
   async processQueryResults(
             prisma: PrismaClient,
+            buildData: BuildData,
             projectSpecsNode: SourceNode,
-            projectIntentCodeNode: SourceNode,
             sourceNodeGenerationData: SourceNodeGenerationData,
             jsonContent: any) {
 
     // Debug
     const fnName = `${this.clName}.processQueryResults()`
-
-    // Validate
-    if (projectSpecsNode == null) {
-      throw new CustomError(`${fnName}: projectSpecsNode == null`)
-    }
 
     // Debug
     console.log(`${fnName}: jsonContent: ` + JSON.stringify(jsonContent))
@@ -111,27 +108,36 @@ export class SpecsToIntentCodeMutateService {
     // Write IntentCode files
     if (jsonContent.intentcode != null) {
 
-      // Get IntentCode path
-      const intentCodePath = (projectIntentCodeNode.jsonContent as any).path
+      // Iterate intentcode entries
+      for (const intentCode of jsonContent.intentcode) {
 
-      // Iterate files
-      for (const [intentCodeRelativePath, content] of
-           Object.entries(jsonContent.intentcode)) {
+        // Get projectDetails
+        const projectDetails =
+                buildData.numberedProjectsMap.get(intentCode.projectNo)
+
+        // Validate
+        if (projectDetails == null) {
+          throw new CustomError(`${fnName}: projectDetails == null`)
+        }
+
+        // Get IntentCode path
+        const intentCodePath =
+                (projectDetails.projectIntentCodeNode.jsonContent as any).path
 
         // Determine intentCodeFullPath
         const intentCodeFullPath =
-                `${intentCodePath}${path.sep}${intentCodeRelativePath}`
+                `${intentCodePath}${path.sep}${intentCode.relativePath}`
 
         // Get/create SourceCode node path
         await intentCodePathGraphMutateService.upsertIntentCodePathAsGraph(
                 prisma,
-                projectIntentCodeNode,
+                projectDetails.projectIntentCodeNode,
                 intentCodeFullPath)
 
         // Write source file
         await fsUtilsService.writeTextFile(
                 intentCodeFullPath,
-                content + `\n`,
+                intentCode.content + `\n`,
                 true)  // createMissingDirs
       }
     }
@@ -184,7 +190,7 @@ export class SpecsToIntentCodeMutateService {
         projectNode,
         projectSpecsNode,
         projectIntentCodeNode,
-        buildData.extensionsData,
+        buildData,
         buildFromFiles)
 
     // Already generated?
@@ -201,6 +207,7 @@ export class SpecsToIntentCodeMutateService {
       const llmResults = await
               specsMutateLlmService.llmRequest(
                 prisma,
+                buildData,
                 adminUserProfile.id,
                 tech,
                 prompt)
@@ -217,8 +224,8 @@ export class SpecsToIntentCodeMutateService {
     // Process the results
     await this.processQueryResults(
             prisma,
+            buildData,
             projectSpecsNode,
-            projectIntentCodeNode,
             sourceNodeGenerationData,
             jsonContent)
   }
@@ -235,7 +242,7 @@ export class SpecsToIntentCodeMutateService {
 
     // Get project specs node
     const projectSpecsNode = await
-            specsGraphQueryService.getSpecsProject(
+            specsGraphQueryService.getSpecsProjectNode(
               prisma,
               projectNode)
 

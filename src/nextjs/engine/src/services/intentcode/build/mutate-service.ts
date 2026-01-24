@@ -1,9 +1,11 @@
-import { PrismaClient, SourceNode } from '@prisma/client'
+import { Instance, PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { BuildData, BuildStage, BuildStageType, IntentFileBuild } from '@/types/build-types'
+import { NumProject, ProjectDetails } from '@/types/server-only-types'
 import { SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
+import { ProjectsQueryService } from '@/services/projects/query-service'
 import { ProjectCompileService } from '@/services/projects/compile-service'
 import { ProjectVerifyService } from '@/services/projects/verify-service'
 import { SourceDepsFileService } from '@/services/managed-files/deps/source-deps-service'
@@ -16,6 +18,7 @@ const sourceNodeModel = new SourceNodeModel()
 // Services
 const extensionQueryService = new ExtensionQueryService()
 const projectCompileService = new ProjectCompileService()
+const projectsQueryService = new ProjectsQueryService()
 const projectVerifyService = new ProjectVerifyService()
 const sourceDepsFileService = new SourceDepsFileService()
 const specsTechStackMutateService = new SpecsTechStackMutateService()
@@ -100,6 +103,15 @@ export class BuildMutateService {
     // Initial builds array
     const buildStages: BuildStage[] = []
 
+    // Get numbered projects map
+    const numberedProjectsMap = new Map<NumProject, ProjectDetails>()
+
+    await projectsQueryService.getNumberedProjectsMap(
+            prisma,
+            instanceId,
+            undefined,  // instance
+            numberedProjectsMap)
+
     // Load extensions
     const extensionsData = await
             extensionQueryService.loadExtensions(
@@ -116,7 +128,8 @@ export class BuildMutateService {
       curBuildNo: 0,  // Not yet started
       buildStages: buildStages,
       buildStageTypes: buildStageTypes,
-      extensionsData: extensionsData
+      extensionsData: extensionsData,
+      numberedProjectsMap: numberedProjectsMap
     }
 
     // Return

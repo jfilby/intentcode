@@ -180,7 +180,7 @@ export class SpecsTechStackMutateService {
 
     // Get project specs node
     const projectSpecsNode = await
-            specsGraphQueryService.getSpecsProject(
+            specsGraphQueryService.getSpecsProjectNode(
               prisma,
               projectNode)
 
