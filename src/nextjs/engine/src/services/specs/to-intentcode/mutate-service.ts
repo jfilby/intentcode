@@ -113,7 +113,7 @@ export class SpecsToIntentCodeMutateService {
 
         // Get projectDetails
         const projectDetails =
-                buildData.numberedProjectsMap.get(intentCode.projectNo)
+                buildData.projectsMap.get(intentCode.projectNo)
 
         // Validate
         if (projectDetails == null) {
@@ -159,9 +159,7 @@ export class SpecsToIntentCodeMutateService {
   async processSpecFilesWithLlm(
           prisma: PrismaClient,
           buildData: BuildData,
-          projectNode: SourceNode,
           projectSpecsNode: SourceNode,
-          projectIntentCodeNode: SourceNode,
           buildFromFiles: BuildFromFile[]) {
 
     // Debug
@@ -187,9 +185,7 @@ export class SpecsToIntentCodeMutateService {
     const prompt = await
       specsToIntentCodePromptService.getPrompt(
         prisma,
-        projectNode,
         projectSpecsNode,
-        projectIntentCodeNode,
         buildData,
         buildFromFiles)
 
@@ -356,9 +352,7 @@ export class SpecsToIntentCodeMutateService {
     await this.processSpecFilesWithLlm(
             prisma,
             buildData,
-            projectNode,
             projectSpecsNode,
-            projectIntentCodeNode,
             buildFromFiles)
   }
 }

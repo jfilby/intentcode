@@ -224,7 +224,7 @@ export class SpecsMutateLlmService {
     for (const intentCode of intentcode) {
 
       // Validate projectNo
-      if (!buildData.numberedProjectsMap.has(intentCode.projectNo)) {
+      if (!buildData.projectsMap.has(intentCode.projectNo)) {
 
         console.log(`${fnName}: invalid projectNo: ${intentCode.projectNo}`)
         return false

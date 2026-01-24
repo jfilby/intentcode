@@ -2,7 +2,7 @@ import fs from 'fs'
 import { SourceNode } from '@prisma/client'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
 import { BuildData } from '@/types/build-types'
-import { NumProject, ProjectDetails } from '@/types/server-only-types'
+import { ProjectIndex, ProjectDetails } from '@/types/server-only-types'
 
 // Services
 const walkDirService = new WalkDirService()
@@ -15,7 +15,7 @@ export class IntentCodePromptingService {
 
   // Code
   async addProjectFilesPrompting(
-          numProject: NumProject,
+          projectIndex: ProjectIndex,
           projectDetails: ProjectDetails) {
 
     // Add existing IntentCode files
@@ -28,7 +28,7 @@ export class IntentCodePromptingService {
 
     // Add prompting
     var prompting =
-      `### Project no: ${numProject.projectNo}\n` +
+      `### Project no: ${projectIndex.projectNo}\n` +
       `\n`
 
     // Add each file
@@ -55,12 +55,13 @@ export class IntentCodePromptingService {
           `\n`
 
     // Iterate projects
-    for (const [numProject, projectDetails] of buildData.numberedProjectsMap) {
+    for (const [projectIndex, projectDetails] of
+         buildData.projectsMap) {
 
       // Add each project's files
       const projectPromping = await
               this.addProjectFilesPrompting(
-                numProject,
+                projectIndex,
                 projectDetails)
 
       if (projectPromping != null) {

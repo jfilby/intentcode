@@ -73,7 +73,7 @@ export interface DepDelta {
   minVersion: string
 }
 
-export interface NumProject {
+export interface ProjectIndex {
   projectNo: number
   indents: number
 }
