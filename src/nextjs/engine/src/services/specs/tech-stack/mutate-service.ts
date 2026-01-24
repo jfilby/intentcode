@@ -10,36 +10,32 @@ import { UsersService } from '@/serene-core-server/services/users/service'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
 import { BuildData, BuildFromFile } from '@/types/build-types'
 import { LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
-import { ExtensionsData, SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
+import { SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { DependenciesMutateService } from '@/services/graphs/dependencies/mutate-service'
-import { DepsJsonService } from '@/services/managed-files/deps/deps-json-service'
 import { DotIntentCodeGraphQueryService } from '@/services/graphs/dot-intentcode/graph-query-service'
-import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
 import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { IntentCodeMessagesService } from '@/services/intentcode/common/messages-service'
-import { ProjectsQueryService } from '@/services/projects/query-service'
 import { SpecsGraphMutateService } from '@/services/graphs/specs/graph-mutate-service'
 import { SpecsGraphQueryService } from '@/services/graphs/specs/graph-query-service'
 import { SpecsPathGraphMutateService } from '@/services/graphs/specs/path-graph-mutate-service'
+import { SpecsTechStackPromptService } from './prompt-service'
 
 // Models
 const sourceNodeGenerationModel = new SourceNodeGenerationModel()
 const sourceNodeModel = new SourceNodeModel()
 
 // Services
-const extensionQueryService = new ExtensionQueryService()
 const dependenciesMutateService = new DependenciesMutateService()
-const depsJsonService = new DepsJsonService()
 const dotIntentCodeGraphQueryService = new DotIntentCodeGraphQueryService()
 const fsUtilsService = new FsUtilsService()
 const intentCodeMessagesService = new IntentCodeMessagesService()
-const projectsQueryService = new ProjectsQueryService()
 const specsGraphMutateService = new SpecsGraphMutateService()
 const specsGraphQueryService = new SpecsGraphQueryService()
 const specsPathGraphMutateService = new SpecsPathGraphMutateService()
 const specsTechStackMutateLlmService = new SpecsTechStackMutateLlmService()
+const specsTechStackPromptService = new SpecsTechStackPromptService()
 const techQueryService = new TechQueryService()
 const walkDirService = new WalkDirService()
 const usersService = new UsersService()
@@ -126,7 +122,7 @@ export class SpecsTechStackMutateService {
 
     // Get prompt
     const prompt = await
-      this.getPrompt(
+      specsTechStackPromptService.getPrompt(
         prisma,
         projectNode,
         buildData.extensionsData,
@@ -290,113 +286,6 @@ export class SpecsTechStackMutateService {
             buildFromFile)
   }
 
-  async getPrompt(
-          prisma: PrismaClient,
-          projectNode: SourceNode,
-          extensionsData: ExtensionsData,
-          buildFromFile: BuildFromFile) {
-
-    // Debug
-    const fnName = `${this.clName}.getPrompt()`
-
-    // Start the prompt
-    var prompt = 
-          `## Instructions\n` +
-          `\n` +
-          `Convert the Tech stack spec (natural language) into json guided ` +
-          `by the example output.\n` +
-          `\n` +
-          `You need to identify the best matching extensions in the System ` +
-          `project, as well as any dependencies as required by the spec.\n` +
-          `\n` +
-          `If an extension is already listed as installed for the User ` +
-          `project then there needs to be a good reason not to list it.\n` +
-          `\n` +
-          `Any element in the tech stack that isn't supported by an ` +
-          `extension or dependency needs to be included in the errors.\n` +
-          `\n` +
-          `## Fields\n` +
-          `\n` +
-          ServerOnlyTypes.messagesPrompting +
-          `\n` +
-          `## Example output\n` +
-          `\n` +
-          `{\n` +
-          `  "warnings": [],\n` +
-          `  "errors": [\n` +
-          `    {\n` +
-          `      "line": 5,\n` +
-          `      "from": 6,\n` +
-          `      "to": 7,\n` +
-          `      "text": "No extension for <tech> available."\n` +
-          `    }\n` +
-          `  ],\n` +
-          `  "extensions": {\n` +
-          `    "<id>": "<minVersionNo>",\n` +
-          `  },\n` +
-          `  "deps": {\n` +
-          `    "<name>": "<minVersion>"\n` +
-          `  }\n` +
-          `}\n` +
-          `\n`
-
-    // Add the tech stack spec
-    prompt +=
-      `## Tech stack spec\n` +
-      `\n` +
-      '```md\n' +
-      buildFromFile.content +
-      `\n` +
-      '```'
-
-    // System (available extensions)
-    const systemProject = await
-            projectsQueryService.getProject(
-              prisma,
-              null,  // parentId
-              ServerOnlyTypes.systemProjectName)
-
-    const systemExtensionsPrompting = await
-            extensionQueryService.getAsPrompting(
-              prisma,
-              systemProject.id)
-
-    if (systemExtensionsPrompting != null) {
-
-      prompt +=
-        `## System extensions\n` +
-        `\n` +
-        `These extensions are those that are available to be installed in ` +
-        `the user project.\n` +
-        `\n` +
-        systemExtensionsPrompting
-    }
-
-    // Add installed extensions
-    const projectExtensionsPrompting = await
-            extensionQueryService.getAsPrompting(
-              prisma,
-              systemProject.id)
-
-    if (projectExtensionsPrompting != null) {
-
-      prompt +=
-        `## User project extensions\n` +
-        `\n` +
-        `These extensions are those that are already installed for this ` +
-        `project.\n` +
-        `\n` +
-        projectExtensionsPrompting
-    }
-
-    // Debug
-    // console.log(`${fnName}: prompt: ${prompt}`)
-    // throw new CustomError(`${fnName}: TEST STOP`)
-
-    // Return
-    return prompt
-  }
-
   async processQueryResults(
           prisma: PrismaClient,
           projectNode: SourceNode,
@@ -429,7 +318,7 @@ export class SpecsTechStackMutateService {
 
     // Update DepsNode and write it to .intentcode/deps.json
     if (jsonContent.extensions != null ||
-        jsonContent.deps != null) {
+        jsonContent.source?.deps != null) {
 
       // Get/create deps node
       const depsNode = await
