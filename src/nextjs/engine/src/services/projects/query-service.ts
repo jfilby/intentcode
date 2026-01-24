@@ -223,7 +223,7 @@ export class ProjectsQueryService {
               prisma,
               undefined,  // instanceId
               InstanceSettingNames.projectPath,
-              undefined)  // value
+              fullPath)   // value
 
     // Debug
     // console.log(`${fnName}: projectPaths: ` + JSON.stringify(projectPaths))
