@@ -1,16 +1,15 @@
-import fs from 'fs'
 import { PrismaClient, SourceNode } from '@prisma/client'
-import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
 import { BuildData, BuildFromFile } from '@/types/build-types'
 import { IntentCodeCommonTypes } from '@/services/intentcode/common/types'
 import { ServerOnlyTypes } from '@/types/server-only-types'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
+import { IntentCodePromptingService } from '@/services/intentcode/build/prompting-service'
 import { ProjectsQueryService } from '@/services/projects/query-service'
 
 // Services
 const extensionQueryService = new ExtensionQueryService()
+const intentCodePromptingService = new IntentCodePromptingService()
 const projectsQueryService = new ProjectsQueryService()
-const walkDirService = new WalkDirService()
 
 // Class
 export class SpecsToIntentCodePromptService {
@@ -19,49 +18,9 @@ export class SpecsToIntentCodePromptService {
   clName = 'SpecsToIntentCodePromptService'
 
   // Code
-  async getIntentCodeFiles(projectIntentCodeNode: SourceNode) {
-
-    // Get IntentCode path
-    const intentCodePath = (projectIntentCodeNode.jsonContent as any).path
-
-    // Walk dir
-    var mdFilesList: string[] = []
-
-    await walkDirService.walkDir(
-            intentCodePath,
-            mdFilesList,
-            {
-              recursive: true,
-              fileExts: ['.md']
-            })
-
-    // Read files
-    var intentCodeFiles: any = {}
-
-    for (const mdFilename of mdFilesList) {
-
-      // Get relative path
-      const relativePath = mdFilename.slice(intentCodePath.length)
-
-      // Read file
-      const content = await
-              fs.readFileSync(
-                mdFilename,
-                { encoding: 'utf8', flag: 'r' })
-
-      // Add to intentCodeFiles
-      intentCodeFiles[relativePath] = content
-    }
-
-    // Return
-    return intentCodeFiles
-  }
-
   async getPrompt(
           prisma: PrismaClient,
-          projectNode: SourceNode,
           projectSpecsNode: SourceNode,
-          projectIntentCodeNode: SourceNode,
           buildData: BuildData,
           buildFromFiles: BuildFromFile[]) {
 
@@ -176,30 +135,11 @@ export class SpecsToIntentCodePromptService {
     }
 
     // Add existing IntentCode files
-    const intentCodeFiles = await
-            this.getIntentCodeFiles(projectIntentCodeNode)
+    const intentCodePrompting = await
+            intentCodePromptingService.getAllPrompting(buildData)
 
-    if (intentCodeFiles.size > 0) {
-
-      // Add prompting
-      prompt +=
-        `## IntentCode files\n` +
-        `\n` +
-        `These are the existing IntentCode files.\n` +
-        `\n`
-
-      // Add each file
-      for (const [intentCodeFilename, content] of
-           Object.entries(intentCodeFiles)) {
-
-        prompt +=
-          `### ${intentCodeFilename}\n` +
-          `\n` +
-          '```md\n' +
-          `${content}\n` +
-          '```' +
-          `\n`
-      }
+    if (intentCodePrompting != null) {
+      prompt += intentCodePrompting
     }
 
     // Debug
