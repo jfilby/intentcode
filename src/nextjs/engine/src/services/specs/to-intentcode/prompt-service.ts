@@ -1,5 +1,6 @@
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { BuildData, BuildFromFile } from '@/types/build-types'
+import { CustomError } from '@/serene-core-server/types/errors'
 import { IntentCodeCommonTypes } from '@/services/intentcode/common/types'
 import { ServerOnlyTypes } from '@/types/server-only-types'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
@@ -32,7 +33,9 @@ export class SpecsToIntentCodePromptService {
           `## Instructions\n` +
           `\n` +
           `Convert the specs (natural language) into IntentCode, which is ` +
-          `closer to source, but focuses on intent.\n` +
+          `closer to source, but focuses on intent. Don't recreate existing ` +
+          `IntentCode which is already correct. Try to adjust existing ` +
+          `IntentCode instead of creating new approaches.\n` +
           `\n` +
           `Split the functionality across multiple files, using the single ` +
           `responsibility principle.\n` +
