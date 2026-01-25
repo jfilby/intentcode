@@ -43,6 +43,9 @@ export class IntentCodePromptingService {
         '```' +
         `\n`
     }
+
+    // Return
+    return prompting
   }
 
   async getAllPrompting(buildData: BuildData) {
