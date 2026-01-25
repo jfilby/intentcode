@@ -1,8 +1,10 @@
+import fs from 'fs'
 import { blake3 } from '@noble/hashes/blake3'
 import { PrismaClient, SourceNode, Tech } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-service'
 import { UsersService } from '@/serene-core-server/services/users/service'
+import { TextParsingService } from '@/serene-ai-server/services/content/text-parsing-service'
 import { BuildData, BuildFromFile } from '@/types/build-types'
 import { LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
@@ -38,6 +40,7 @@ const sourceAssistIntentCodeService = new SourceAssistIntentCodeService()
 const sourceCodePathGraphMutateService = new SourceCodePathGraphMutateService()
 const sourceCodePathGraphQueryService = new SourceCodePathGraphQueryService()
 const techQueryService = new TechQueryService()
+const textParsingService = new TextParsingService()
 const usersService = new UsersService()
 
 // Class
@@ -118,6 +121,15 @@ export class CompilerMutateService {
         `${fnName}: buildFromFile.sourceFullPath == null`)
     }
 
+    // Debug
+    console.log(`${fnName}: content: ${content}`)
+
+    // Pre-process the content (if needed)
+    const contentExtracts = textParsingService.getTextExtracts(content)
+
+    content =
+      textParsingService.combineTextExtracts(contentExtracts.extracts, '')
+
     // Write source file (if any)
     if (content != null) {
 
@@ -190,6 +202,11 @@ export class CompilerMutateService {
 
     // Recompile if no prev prompt stored
     if (sourceCodeNodeGeneration == null) {
+      return true
+    }
+
+    // Recompile if the file doesn't exist
+    if (!await fs.existsSync(buildFromFile.targetFullPath!)) {
       return true
     }
 
@@ -292,7 +309,8 @@ export class CompilerMutateService {
     }
 
     // Run
-    if (jsonContent == null) {
+    if (content == null ||
+        jsonContent == null) {
 
       var status = false
       var message: string | undefined = undefined;
