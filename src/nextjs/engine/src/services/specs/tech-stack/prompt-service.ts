@@ -50,7 +50,7 @@ export class SpecsTechStackPromptService {
           `- Specify the latest version you know if no specific version is ` +
           `  specified.\n` +
           `\n` +
-          `## Example output\n` +
+          `## Example JSON output\n` +
           `\n` +
           `{\n` +
           `  "warnings": [],\n` +

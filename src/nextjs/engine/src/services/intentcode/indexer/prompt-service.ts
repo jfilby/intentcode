@@ -70,7 +70,7 @@ export class IndexerPromptService {
           `\n` +
           ServerOnlyTypes.messagesPrompting +
           `\n` +
-          `## Example output\n` +  // Generic
+          `## Example JSON output\n` +  // Generic
           `\n` +
           `{\n` +
           `  "warnings": [],\n` +

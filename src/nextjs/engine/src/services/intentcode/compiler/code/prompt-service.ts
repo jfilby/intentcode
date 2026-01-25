@@ -92,7 +92,7 @@ export class CompilerPromptService {
           `\n` +
           depsPrompting +
           `\n` +
-          `## Example output\n` +
+          `## Example JSON output\n` +
           `\n` +
           `This is an example of the output structure only. Don't try to ` +
           `use it as a source of any kind of data.\n` +

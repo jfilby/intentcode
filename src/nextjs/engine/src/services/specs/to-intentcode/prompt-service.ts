@@ -62,7 +62,7 @@ export class SpecsToIntentCodePromptService {
           `- Return the answer.\n` +
           '```\n`' +
           `\n` +
-          `## Example output\n` +
+          `## Example JSON output\n` +
           `\n` +
           `{\n` +
           `  "warnings": [],\n` +
