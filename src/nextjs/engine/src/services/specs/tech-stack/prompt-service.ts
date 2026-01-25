@@ -49,6 +49,7 @@ export class SpecsTechStackPromptService {
           `  highest major version only, e.g. "^5".\n` +
           `- Specify the latest version you know if no specific version is ` +
           `  specified.\n` +
+          `- Don't add the packageManager to the deps.\n` +
           `\n` +
           `## Example JSON output\n` +
           `\n` +
