@@ -1,14 +1,10 @@
 import fs from 'fs'
 import path from 'path'
 import * as z from 'zod'
-import { isEqual } from 'lodash'
 import { PrismaClient, SourceNode } from '@prisma/client'
-import { CustomError } from '@/serene-core-server/types/errors'
-import { DependenciesQueryService } from '@/services/graphs/dependencies/query-service'
 import { DotIntentCodeGraphQueryService } from '@/services/graphs/dot-intentcode/graph-query-service'
 
 // Services
-const dependenciesQueryService = new DependenciesQueryService()
 const dotIntentCodeGraphQueryService = new DotIntentCodeGraphQueryService()
 
 // Class
@@ -98,67 +94,24 @@ export class DepsJsonService {
     return data
   }
 
-  async verifyDepsNodeSyncedToDepsJson(
-          prisma: PrismaClient,
-          projectNode: SourceNode,
-          writeIfFileNotFound: boolean = true) {
-
-    // Debug
-    const fnName = `${this.clName}.verifyDepsNodeSyncedToDepsJson()`
-
-    // Get Deps node
-    const depsNode = await
-            dependenciesQueryService.getDepsNode(
-              prisma,
-              projectNode)
-
-    // Read deps.json
-    const { found, data, filename } = await
-            this.readFile(
-              prisma,
-              projectNode)
-
-    // File not found?
-    if (found === false) {
-
-      // Write file if not found?
-      if (writeIfFileNotFound === true) {
-
-        await this.writeToFile(
-                prisma,
-                projectNode,
-                depsNode)
-      }
-
-      // Done
-      return
-    }
-
-    // Verify that they're the same
-    if (isEqual(
-          depsNode.jsonContent,
-          data) === false) {
-
-      console.log(`${fnName}: depsNode.jsonContent: ` +
-                  JSON.stringify(depsNode.jsonContent))
-
-      console.log(`${fnName}: ${filename}`)
-      console.log(`${fnName}: deps.json file: ` + JSON.stringify(data))
-
-      throw new CustomError(`${fnName}: depsNode (jsonContent) !== deps.json`)
-    }
-  }
-
   async writeToFile(
           prisma: PrismaClient,
           projectNode: SourceNode,
           depsNode: any) {
 
+    // Debug
+    const fnName = `${this.clName}.writeToFile()`
+
+    console.log(`${fnName}: writing deps source file..`)
+
+    console.log(`${fnName}: depsNode.jsonContent: ` +
+                JSON.stringify(depsNode.jsonContent))
+
     // Get dotIntentCode node
     const projectDotIntentCodeNode = await
-            dotIntentCodeGraphQueryService.getDotIntentCodeProject(
-              prisma,
-              projectNode)
+      dotIntentCodeGraphQueryService.getDotIntentCodeProject(
+        prisma,
+        projectNode)
 
     // Validate
     if (projectDotIntentCodeNode == null) {
@@ -175,14 +128,14 @@ export class DepsJsonService {
 
     // Write the file
     const prettyData =
-            JSON.stringify(
-              depsNode.jsonContent,
-              null,
-              2) +
-            `\n`
+      JSON.stringify(
+      depsNode.jsonContent,
+      null,
+      2) +
+      `\n`
 
     await fs.writeFileSync(
-            filename,
-            prettyData)
+      filename,
+      prettyData)
   }
 }

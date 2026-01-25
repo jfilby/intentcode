@@ -21,6 +21,45 @@ export class IntentCodeGraphMutateService {
   clName = 'IntentCodeGraphMutateService'
 
   // Code
+  async deleteIntentCodeFile(
+          prisma: PrismaClient,
+          instanceId: string,
+          parentNode: SourceNode,
+          filename: string) {
+
+    // Debug
+    const fnName = `${this.clName}.deleteIntentCodeFile()`
+
+    // Validate
+    if (parentNode == null) {
+      throw new CustomError(`${fnName}: parentNode == null`)
+    }
+
+    if (![SourceNodeTypes.projectIntentCode,
+          SourceNodeTypes.intentCodeDir].includes(
+            parentNode.type as SourceNodeTypes)) {
+
+      throw new CustomError(`${fnName}: invalid type: ${parentNode.type}`)
+    }
+
+    // Try to get the node
+    var intentCodeFile = await
+          sourceNodeModel.getByUniqueKey(
+            prisma,
+            parentNode.id,
+            instanceId,
+            SourceNodeTypes.intentCodeFile,
+            filename)
+
+    // Delete the node if found
+    if (intentCodeFile != null) {
+
+      await sourceNodeModel.deleteById(
+        prisma,
+        intentCodeFile.id)
+    }
+  }
+
   async getOrCreateIntentCodeDir(
           prisma: PrismaClient,
           instanceId: string,

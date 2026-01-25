@@ -2,7 +2,7 @@ import { PrismaClient, SourceNode } from '@prisma/client'
 import { BuildData, BuildFromFile } from '@/types/build-types'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { IntentCodeCommonTypes } from '@/services/intentcode/common/types'
-import { ServerOnlyTypes } from '@/types/server-only-types'
+import { FileDeltas, ServerOnlyTypes } from '@/types/server-only-types'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
 import { IntentCodePromptingService } from '@/services/intentcode/build/prompting-service'
 import { ProjectsQueryService } from '@/services/projects/query-service'
@@ -52,6 +52,9 @@ export class SpecsToIntentCodePromptService {
           `- The intentcode array contains a list of filenames and content.\n` +
           `- The relativePath must include the source extension, e.g. if ` +
           `  a TypeScript file an example is: /src/index.ts.md.` +
+          `- Field fileDelta can be ${FileDeltas.set} or ${FileDeltas.del}.\n` +
+          `- Don't specify the content field if fileDelta is ` +
+          `  ${FileDeltas.del}.\n` +
           `\n` +
           `## Example IntentCode\n` +
           `\n` +
@@ -81,6 +84,7 @@ export class SpecsToIntentCodePromptService {
           `  "intentcode": [\n `+
           `    {\n` +
           `      "projectNo": <projectNo>,\n` +
+          `      "fileDelta": <fileDelta>,\n` +
           `      "relativePath": "<targetFilename>.<srcExt>.md",\n` +
           `      "content": "<content>"\n` +
           `    }\n` +

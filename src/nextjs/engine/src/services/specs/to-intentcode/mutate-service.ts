@@ -7,7 +7,7 @@ import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
 import { BuildData, BuildFromFile } from '@/types/build-types'
-import { LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
+import { FileDeltas, LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
@@ -128,17 +128,32 @@ export class SpecsToIntentCodeMutateService {
         const intentCodeFullPath =
                 `${intentCodePath}${path.sep}${intentCode.relativePath}`
 
-        // Get/create SourceCode node path
-        await intentCodePathGraphMutateService.upsertIntentCodePathAsGraph(
-                prisma,
-                projectDetails.projectIntentCodeNode,
-                intentCodeFullPath)
+        // Upsert SourceCode node path
+        if (intentCode.fileDelta === FileDeltas.set) {
 
-        // Write source file
-        await fsUtilsService.writeTextFile(
-                intentCodeFullPath,
-                intentCode.content + `\n`,
-                true)  // createMissingDirs
+          // Upsert IntentCode path graph
+          await intentCodePathGraphMutateService.upsertIntentCodePathAsGraph(
+                  prisma,
+                  projectDetails.projectIntentCodeNode,
+                  intentCodeFullPath)
+
+          // Write source file
+          await fsUtilsService.writeTextFile(
+                  intentCodeFullPath,
+                  intentCode.content + `\n`,
+                  true)  // createMissingDirs
+
+        } else if (intentCode.fileDelta === FileDeltas.del) {
+
+          // Delete IntentCode path graph
+          await intentCodePathGraphMutateService.deleteIntentCodePathAsGraph(
+                  prisma,
+                  projectDetails.projectIntentCodeNode,
+                  intentCodeFullPath)
+
+          // Delete file
+          await fs.unlinkSync(intentCodeFullPath)
+        }
       }
     }
 

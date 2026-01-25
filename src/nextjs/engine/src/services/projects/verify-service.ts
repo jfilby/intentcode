@@ -1,8 +1,8 @@
 import { PrismaClient, SourceNode } from '@prisma/client'
-import { DepsJsonService } from '../managed-files/deps/deps-json-service'
+import { DepsVerifyService } from '../managed-files/deps/verify-service'
 
 // Services
-const depsJsonService = new DepsJsonService()
+const depsVerifyService = new DepsVerifyService()
 
 // Class
 export class ProjectVerifyService {
@@ -14,9 +14,9 @@ export class ProjectVerifyService {
   async run(prisma: PrismaClient,
             projectNode: SourceNode) {
 
-    // Verify depsNode matches deps.json
-    await depsJsonService.verifyDepsNodeSyncedToDepsJson(
-            prisma,
-            projectNode)
+    // Verify depsNode
+    await depsVerifyService.verifyDepsNode(
+      prisma,
+      projectNode)
   }
 }

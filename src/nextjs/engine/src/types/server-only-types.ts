@@ -48,6 +48,11 @@ export enum DepDeltaNames {
   del = 'del'
 }
 
+export enum FileDeltas {
+  set = 'set',
+  del = 'del'
+}
+
 export enum InstanceSettingNames {
   projectPath = 'Project path'
 }

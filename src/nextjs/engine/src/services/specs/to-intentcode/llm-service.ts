@@ -228,6 +228,31 @@ export class SpecsMutateLlmService {
         console.log(`${fnName}: invalid projectNo: ${entry.projectNo}`)
         return false
       }
+
+      // Validate fileDelta
+      if (entry.fileDelta == null ||
+          !['set', 'delete'].includes(entry.fileDelta)) {
+
+        console.log(`${fnName}: invalid fileDelta: ${entry.fileDelta}`)
+        return false
+      }
+
+      // Validate relativePath
+      if (entry.relativePath == null ||
+          entry.relativePath.length === 0) {
+
+        console.log(`${fnName}: invalid relativePath: ${entry.relativePath}`)
+        return false
+      }
+
+      // Validate content
+      if (entry.fileDelta === 'set' &&
+          (entry.content == null ||
+           entry.content.length === 0)) {
+
+        console.log(`${fnName}: invalid content (for set): ${entry.content}`)
+        return false
+      }
     }
 
     // Validated OK

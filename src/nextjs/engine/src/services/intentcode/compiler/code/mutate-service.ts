@@ -13,8 +13,8 @@ import { CompilerMutateLlmService } from './llm-service'
 import { CompilerPromptService } from './prompt-service'
 import { DependenciesMutateService } from '@/services/graphs/dependencies/mutate-service'
 import { FsUtilsService } from '@/services/utils/fs-utils-service'
-import { GraphQueryService } from '@/services/graphs/intentcode/graph-query-service'
 import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service'
+import { IntentCodeGraphQueryService } from '@/services/graphs/intentcode/graph-query-service'
 import { IntentCodeMessagesService } from '../../common/messages-service'
 import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
 import { SourceAssistIntentCodeService } from '../../source/source-prompt'
@@ -30,8 +30,8 @@ const compilerMutateLlmService = new CompilerMutateLlmService()
 const compilerPromptService = new CompilerPromptService()
 const dependenciesMutateService = new DependenciesMutateService()
 const fsUtilsService = new FsUtilsService()
-const graphQueryService = new GraphQueryService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
+const intentCodeGraphQueryService = new IntentCodeGraphQueryService()
 const intentCodeMessagesService = new IntentCodeMessagesService()
 const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
 const sourceAssistIntentCodeService = new SourceAssistIntentCodeService()
@@ -227,7 +227,7 @@ export class CompilerMutateService {
 
     // Get all related indexed data, including for this file
     const indexedDataSourceNodes = await
-            graphQueryService.getAllIndexedData(
+            intentCodeGraphQueryService.getAllIndexedData(
               prisma,
               projectIntentCodeNode.instanceId)
 
