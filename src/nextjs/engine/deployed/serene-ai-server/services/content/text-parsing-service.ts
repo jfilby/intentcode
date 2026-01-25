@@ -9,15 +9,18 @@ export class TextParsingService {
   // Code
   combineTextExtracts(
     extracts: any[],  // Extracted using this.getTextExtracts()
-    syntax: string) {
+    syntax: string = '') {
 
     var textExtracts: string[] = []
 
     for (const extract of extracts) {
 
       textExtracts.push(
+        extract.text
+        // Remove opening & closing backticks
+        .replace(/^`|`$/g, '')
         // Remove lines starting with ```
-        extract.text.replace(/^[ \t]*```.*$\n?/gm, ''))
+        .replace(/^[ \t]*```.*$\n?/gm, ''))
     }
 
     var output = textExtracts.join('\n')
