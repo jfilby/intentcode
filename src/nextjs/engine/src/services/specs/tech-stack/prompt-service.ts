@@ -45,6 +45,11 @@ export class SpecsTechStackPromptService {
           `\n` +
           ServerOnlyTypes.messagesPrompting +
           `\n` +
+          `- Use a valid semver for minVersion, but prefer to specfiy the ` +
+          `  highest major version only, e.g. "^5".\n` +
+          `- Specify the latest version you know if no specific version is ` +
+          `  specified.\n` +
+          `\n` +
           `## Example output\n` +
           `\n` +
           `{\n` +
