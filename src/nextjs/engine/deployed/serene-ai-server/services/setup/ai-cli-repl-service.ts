@@ -48,8 +48,8 @@ export class AiModelCliReplService {
     if (techProvidersMap.has(menuNo)) {
 
       await this.addApiKeyWithTechProvider(
-              prisma,
-              techProvidersMap.get(menuNo)!)
+        prisma,
+        techProvidersMap.get(menuNo)!)
 
     } else if (menuNo === `1`) {
       return
@@ -61,7 +61,7 @@ export class AiModelCliReplService {
     techProvider: TechProvider) {
 
     // Gemini keys need to specify free/paid
-    var pricingTier: string | null = null
+    var pricingTier = SereneCoreServerTypes.paid
 
     if (techProvider.name === AiTechDefs.googleGeminiProvider) {
 
