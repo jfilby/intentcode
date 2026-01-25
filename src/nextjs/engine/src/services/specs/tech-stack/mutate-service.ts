@@ -139,6 +139,10 @@ export class SpecsTechStackMutateService {
     // Run
     if (jsonContent == null) {
 
+      // Debug
+      // console.log(`${fnName}: LLM request..`)
+
+      // LLM request
       const llmResults = await
               specsTechStackMutateLlmService.llmRequest(
                 prisma,

@@ -83,13 +83,16 @@ export class SpecsMutateLlmService {
           true)       // isJsonMode
 
       // Debug
-      console.log(`${fnName}: json: ` + JSON.stringify(queryResults.json))
+      // console.log(`${fnName}: json: ` + JSON.stringify(queryResults.json))
 
       // Validate
       validated = true
 
       if (queryResults == null ||
           queryResults.json == null) {
+
+        console.error(`${fnName}: null results: ` +
+          JSON.stringify(queryResults))
 
         validated = false
       } else {
@@ -135,11 +138,7 @@ export class SpecsMutateLlmService {
     if (validated === false) {
 
       console.log(`${fnName}: failed validation after retries`)
-
-      return {
-        status: false,
-        message: `${fnName}: failed validation`
-      }
+      process.exit(1)
     }
 
     // OK

@@ -91,6 +91,9 @@ export class SpecsTechStackMutateLlmService {
       if (queryResults == null ||
           queryResults.json == null) {
 
+        console.error(`${fnName}: null results: ` +
+          JSON.stringify(queryResults))
+
         validated = false
       } else {
         validated = await
@@ -134,11 +137,7 @@ export class SpecsTechStackMutateLlmService {
     if (validated === false) {
 
       console.log(`${fnName}: failed validation after retries`)
-
-      return {
-        status: false,
-        message: `${fnName}: failed validation`
-      }
+      process.exit(1)
     }
 
     // OK
