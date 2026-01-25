@@ -407,19 +407,22 @@ export class ChatService {
                 `${messagesResults.estimatedOutputTokens}`) */
 
     // Is there quota available for this user?
-    const isQuotaAvailable = await
-            resourceQuotasService.isQuotaAvailable(
-              prisma,
-              userProfile.id,
-              SereneCoreServerTypes.credits,
-              estimatedCostInCents)
+    if (process.env.CHECK_USER_QUOTAS !== 'false') {
 
-    if (isQuotaAvailable === false) {
+      const isQuotaAvailable = await
+              resourceQuotasService.isQuotaAvailable(
+                prisma,
+                userProfile.id,
+                SereneCoreServerTypes.credits,
+                estimatedCostInCents)
 
-      return {
-        status: false,
-        message: `Insufficient quota, please buy or upgrade your subscription`,
-        isRateLimited: null
+      if (isQuotaAvailable === false) {
+
+        return {
+          status: false,
+          message: `Insufficient quota, please buy or upgrade your subscription`,
+          isRateLimited: null
+        }
       }
     }
 
