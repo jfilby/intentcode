@@ -1,0 +1,266 @@
+import { PrismaClient, TechProvider, TechProviderApiKey } from '@prisma/client'
+import { TechProviderApiKeyModel } from '@/serene-core-server/models/tech/tech-provider-api-key-model'
+import { TechProviderModel } from '@/serene-core-server/models/tech/tech-provider-model'
+import { SereneCoreServerTypes } from '@/serene-core-server/types/user-types'
+import { ConsoleService } from '@/serene-core-server/services/console/service'
+import { SereneAiProviderProvides } from '../../types/server-only-types'
+import { AiTechDefs } from '../../types/tech-defs'
+
+// Models
+const techProviderApiKeyModel = new TechProviderApiKeyModel()
+const techProviderModel = new TechProviderModel()
+
+// Services
+const consoleService = new ConsoleService()
+
+// Class
+export class AiModelCliReplService {
+
+  // Consts
+  clName = 'AiModelCliReplService'
+
+  // Code
+  async addApiKey(prisma: PrismaClient) {
+
+    // Banner
+    console.log(``)
+    console.log(`Add an API key`)
+
+    // Create a map of tech providers
+    const techProvidersMap = await
+      this.createTechProvidersMap(prisma)
+
+    // List options
+    console.log(``)
+    console.log(`Select a provider:`)
+    console.log(`1. Back`)
+
+    for (const [techProviderNo, techProvider] of techProvidersMap.entries()) {
+
+      console.log(`${techProviderNo}. ${techProvider.name}`)
+    }
+
+    // Get menu no
+    const menuNo = await
+      consoleService.askQuestion('> ')
+
+    // Read the selection
+    if (techProvidersMap.has(menuNo)) {
+
+      await this.addApiKeyWithTechProvider(
+              prisma,
+              techProvidersMap.get(menuNo)!)
+
+    } else if (menuNo === `1`) {
+      return
+    }
+  }
+
+  async addApiKeyWithTechProvider(
+    prisma: PrismaClient,
+    techProvider: TechProvider) {
+
+    // Gemini keys need to specify free/paid
+    var pricingTier: string | null = null
+
+    if (techProvider.name === AiTechDefs.googleGeminiProvider) {
+
+      const pricingTier = await
+        this.getPricingTier()
+
+      if (pricingTier == null) {
+        return
+      }
+    }
+
+    // API key banner
+    console.log(``)
+    console.log(`Enter your API key`)
+
+    // Get api key
+    const apiKey = await
+      consoleService.askQuestion('> ')
+
+    // Define key name
+    var keyName = techProvider.name
+
+    if (pricingTier != null) {
+      keyName += ` ${pricingTier}`
+    }
+
+    keyName += ` key`
+
+    // Add entry
+    await techProviderApiKeyModel.upsert(
+      prisma,
+      undefined,  // id
+      techProvider.id,
+      SereneCoreServerTypes.activeStatus,
+      keyName,
+      null,       // accountEmail
+      apiKey,
+      pricingTier)
+  }
+
+  async createTechProvidersMap(prisma: PrismaClient) {
+
+    // Get tech providers for LLMs
+    const techProviders = await
+      techProviderModel.filter(
+        prisma,
+        SereneCoreServerTypes.activeStatus,
+        [SereneAiProviderProvides.multiModalAi])
+
+    // Create numbered map, starting at 2 (1 is back)
+    var techProviderNo = 2
+    const techProvidersMap = new Map<string, TechProvider>()
+
+    for (const techProvider of techProviders) {
+
+      techProvidersMap.set(
+        `${techProviderNo}`,
+        techProvider)
+
+      techProviderNo += 1
+    }
+
+    // Return
+    return techProvidersMap
+  }
+
+  async getPricingTier() {
+
+    while (true) {
+
+      // Banner
+      console.log(``)
+      console.log(`Is your key free or paid?`)
+      console.log(`1. Back`)
+      console.log(`2. Free`)
+      console.log(`3. Paid`)
+
+      // Get input
+      const input = await
+        consoleService.askQuestion('> ')
+
+      switch (input) {
+
+        case '1': {
+          return undefined
+        }
+
+        case '2': {
+          return SereneCoreServerTypes.free
+        }
+
+        case '3': {
+          return SereneCoreServerTypes.paid
+        }
+      }
+    }
+  }
+
+  async listApiKeys(prisma: PrismaClient) {
+
+    // Get API keys
+    const apiKeys = await
+      techProviderApiKeyModel.filter(prisma)
+
+    // Create a selection map from the keys
+    var selection = 2
+    const apiKeysMap = new Map<string, TechProviderApiKey>()
+
+    for (const apiKey of apiKeys) {
+
+      apiKeysMap.set(
+        `${selection}`,
+        apiKey)
+
+      selection += 1
+    }
+
+    // Banner and options
+    console.log(``)
+    console.log(`Available keys`)
+    console.log(`1. Back`)
+
+    for (const [selection, apiKey] of apiKeysMap) {
+
+      console.log(`${selection}. ${apiKey.name}`)
+    }
+
+    // Get menu no
+    const menuNo = await
+      consoleService.askQuestion('> ')
+
+    // Handle selection
+    if (apiKeysMap.has(menuNo)) {
+
+      await this.viewApiKey(
+        prisma,
+        apiKeysMap.get(menuNo)!)
+    }
+  }
+
+  async main(prisma: PrismaClient) {
+
+    while (true) {
+
+      // Banner and options
+      console.log(``)
+      console.log(`AI models maintenance`)
+      console.log(`1. Back`)
+      console.log(`2. Add an API key`)
+      console.log(`3. List existing API keys`)
+
+      // Get menu no
+      const menuNo = await
+        consoleService.askQuestion('> ')
+
+      // Handle menu no
+      switch (menuNo) {
+
+        case '1': {
+          return
+        }
+
+        case '2': {
+          await this.addApiKey(prisma)
+          break
+        }
+
+        case '3': {
+          await this.listApiKeys(prisma)
+          break
+        }
+
+        default: {
+          console.log(`Invalid selection`)
+        }
+      }
+    }
+  }
+
+  async viewApiKey(
+    prisma: PrismaClient,
+    apiKey: TechProviderApiKey) {
+
+    // Banner
+    console.log(`Delete this key?`)
+    console.log(`Y/N`)
+
+    // Get menu no
+    const input = await
+      consoleService.askQuestion('> ')
+
+    // Delete?
+    if (!['Y', 'y'].includes(input.trim())) {
+      return
+    }
+
+    // Delete the key
+    await techProviderApiKeyModel.deleteById(
+      prisma,
+      apiKey.id)
+  }
+}

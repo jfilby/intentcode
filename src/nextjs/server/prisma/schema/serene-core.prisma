@@ -377,6 +377,7 @@ model TechProvider {
   status                       String               @db.Char(1)
   name                         String               @unique
   baseUrl                      String?              @map("base_url")
+  provides                     String[]
 
   ofTechs                      Tech[]
   ofTechProviderApiKeys        TechProviderApiKey[]
@@ -391,7 +392,7 @@ model TechProviderApiKey {
   techProvider                 TechProvider         @relation(fields: [techProviderId], references: [id])
   status                       String               @db.Char(1)
   name                         String
-  accountEmail                 String               @map("account_email")
+  accountEmail                 String?              @map("account_email")
   apiKey                       String               @map("api_key")
   pricingTier                  String?              @map("pricing_tier")
 

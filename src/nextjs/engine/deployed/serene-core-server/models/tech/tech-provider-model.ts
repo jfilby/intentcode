@@ -11,7 +11,8 @@ export class TechProviderModel {
           prisma: PrismaClient,
           status: string,
           name: string,
-          baseUrl: string | null) {
+          baseUrl: string | null,
+          provides: string[]) {
 
     // Debug
     const fnName = `${this.clName}.create()`
@@ -22,7 +23,8 @@ export class TechProviderModel {
         data: {
           status: status,
           name: name,
-          baseUrl: baseUrl
+          baseUrl: baseUrl,
+          provides: provides
         }
       })
     } catch(error) {
@@ -33,7 +35,8 @@ export class TechProviderModel {
 
   async filter(
           prisma: PrismaClient,
-          status: string | undefined) {
+          status: string | undefined,
+          provides: string[] | undefined = undefined) {
 
     // Debug
     const fnName = `${this.clName}.filter()`
@@ -46,7 +49,10 @@ export class TechProviderModel {
     try {
       techProvider = await prisma.techProvider.findMany({
         where: {
-          status: status
+          status: status,
+          provides: provides ? {
+            hasEvery: provides
+          } : undefined
         },
         orderBy: [
           {
@@ -138,7 +144,8 @@ export class TechProviderModel {
           id: string,
           status: string | undefined,
           name: string | undefined,
-          baseUrl: string | null | undefined) {
+          baseUrl: string | null | undefined,
+          provides: string[] | undefined) {
 
     // Debug
     const fnName = `${this.clName}.update()`
@@ -149,7 +156,8 @@ export class TechProviderModel {
         data: {
           status: status,
           name: name,
-          baseUrl: baseUrl
+          baseUrl: baseUrl,
+          provides: provides
         },
         where: {
           id: id
@@ -165,7 +173,8 @@ export class TechProviderModel {
                id: string | undefined,
                status: string | undefined,
                name: string | undefined,
-               baseUrl: string | null | undefined) {
+               baseUrl: string | null | undefined,
+               provides: string[] | undefined = undefined) {
 
     // Debug
     const fnName = `${this.clName}.upsert()`
@@ -203,6 +212,11 @@ export class TechProviderModel {
         throw 'Prisma error'
       }
 
+      if (provides == null) {
+        console.error(`${fnName}: id is null and provides is null`)
+        throw 'Prisma error'
+      }
+
       // Create
       // console.log(`${fnName}: create..`)
 
@@ -211,7 +225,8 @@ export class TechProviderModel {
                  prisma,
                  status,
                  name,
-                 baseUrl)
+                 baseUrl,
+                 provides)
     } else {
 
       // Update
@@ -223,7 +238,8 @@ export class TechProviderModel {
                  id,
                  status,
                  name,
-                 baseUrl)
+                 baseUrl,
+                 provides)
     }
   }
 }

@@ -6,6 +6,7 @@ import { prisma } from './db'
 import { TechProviderMutateService } from '@/serene-core-server/services/tech/tech-provider-mutate-service'
 import { UsersService } from '../deployed/serene-core-server/services/users/service'
 import { ServerTestTypes } from './types/server-test-types'
+import { AiModelCliReplService } from '@/serene-ai-server/services/setup/ai-cli-repl-service'
 import { LoadExternalExtensionsService } from './services/extensions/extension/load-external-service'
 import { ManageExtensionsCliService } from './services/extensions/extension/cli-service'
 import { ProjectSetupService } from './services/projects/setup-project'
@@ -21,16 +22,18 @@ import { TestsService } from './services/tests/tests-service'
   // Consts
   const initProjectCommand = 'init-project'
   const loadExtensionsCommand = 'load-extensions'
+  const manageAiKeysCommand = 'manage-ai-keys'
   const manageExtensionsCommand = 'manage-extensions'
-  const loadTechProviderApiKeysCommand = 'load-tech-provider-api-keys'
+  // const loadTechProviderApiKeysCommand = 'load-tech-provider-api-keys'
   const setupCommand = 'setup'
   const testsCommand = 'tests'
 
   const commands = [
           initProjectCommand,
           loadExtensionsCommand,
+          manageAiKeysCommand,
           manageExtensionsCommand,
-          loadTechProviderApiKeysCommand,
+          // loadTechProviderApiKeysCommand,
           setupCommand,
           testsCommand
         ]
@@ -41,6 +44,7 @@ import { TestsService } from './services/tests/tests-service'
   console.log(`${fnName}: comand to run: ${command}`)
 
   // Services
+  const aiModelCliReplService = new AiModelCliReplService()
   const loadExternalExtensionsService = new LoadExternalExtensionsService()
   const manageExtensionsCliService = new ManageExtensionsCliService()
   const projectSetupService = new ProjectSetupService()
@@ -82,6 +86,12 @@ import { TestsService } from './services/tests/tests-service'
       break
     }
 
+    case manageAiKeysCommand: {
+
+      await aiModelCliReplService.main(prisma)
+      break
+    }
+
     case manageExtensionsCommand: {
 
       await manageExtensionsCliService.run(prisma)
@@ -89,12 +99,12 @@ import { TestsService } from './services/tests/tests-service'
       break
     }
 
-    case loadTechProviderApiKeysCommand: {
+    /* case loadTechProviderApiKeysCommand: {
 
       await techProviderMutateService.cliLoadJsonStr(prisma)
 
       break
-    }
+    } */
 
     case setupCommand: {
 

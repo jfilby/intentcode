@@ -147,6 +147,7 @@ export class ManageExtensionsCliService {
     console.log(`1. Yes, by current directory`)
     console.log(`2. Yes, by list`)
     console.log(`3. No (system only)`)
+    console.log(`4. Back`)
 
     // Prompt for project load method
     const loadProjectMethod = await
@@ -175,6 +176,10 @@ export class ManageExtensionsCliService {
 
       case '3': {
         break
+      }
+
+      case '4': {
+        return
       }
 
       default: {
@@ -221,7 +226,7 @@ export class ManageExtensionsCliService {
     console.log(``)
     console.log(`Project: ${systemProject.name}`)
     console.log(`---`)
-    console.log(`1. Go back to manage extensions`)
+    console.log(`1. Back`)
 
     // List project extensions
     var i = 2
@@ -279,7 +284,7 @@ export class ManageExtensionsCliService {
     console.log(``)
     console.log(`Project: ${instance.name}`)
     console.log(`---`)
-    console.log(`1. Go back to manage extensions`)
+    console.log(`1. Back`)
 
     // List project extensions
     var i = 2
@@ -329,7 +334,7 @@ export class ManageExtensionsCliService {
     // Print details
     console.log(`Options:`)
     console.log(`---`)
-    console.log(`1. Go back to project extensions`)
+    console.log(`1. Back`)
 
     var loadExtensionNo = -1
     var deleteNo = 2

@@ -12,7 +12,7 @@ export class TechProviderApiKeyModel {
           techProviderId: string,
           status: string,
           name: string,
-          accountEmail: string,
+          accountEmail: string | null,
           apiKey: string,
           pricingTier: string | null) {
 
@@ -37,12 +37,32 @@ export class TechProviderApiKeyModel {
     }
   }
 
+  async deleteById(
+          prisma: PrismaClient,
+          id: string) {
+
+    // Debug
+    const fnName = `${this.clName}.deleteById()`
+
+    // Delete record
+    try {
+      return await prisma.techProviderApiKey.delete({
+        where: {
+          id: id
+        }
+      })
+    } catch(error) {
+      console.error(`${fnName}: error: ${error}`)
+      throw 'Prisma error'
+    }
+  }
+
   async filter(
           prisma: PrismaClient,
-          techProviderId: string | undefined,
-          status: string | undefined,
-          accountEmail: string | undefined,
-          pricingTier: string | null | undefined) {
+          techProviderId: string | undefined = undefined,
+          status: string | undefined = undefined,
+          accountEmail: string | null | undefined = undefined,
+          pricingTier: string | null | undefined = undefined) {
 
     // Debug
     const fnName = `${this.clName}.filter()`
@@ -57,6 +77,7 @@ export class TechProviderApiKeyModel {
         where: {
           techProviderId: techProviderId,
           status: status,
+          accountEmail: accountEmail,
           pricingTier: pricingTier
         }
       })
@@ -146,7 +167,7 @@ export class TechProviderApiKeyModel {
           techProviderId: string | undefined,
           status: string | undefined,
           name: string | undefined,
-          accountEmail: string | undefined,
+          accountEmail: string | null | undefined,
           apiKey: string | undefined,
           pricingTier: string | null | undefined) {
 
@@ -179,7 +200,7 @@ export class TechProviderApiKeyModel {
                techProviderId: string | undefined,
                status: string | undefined,
                name: string | undefined,
-               accountEmail: string | undefined,
+               accountEmail: string | null | undefined,
                apiKey: string | undefined,
                pricingTier: string | null | undefined) {
 

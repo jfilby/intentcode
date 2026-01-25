@@ -4,7 +4,7 @@ import { RateLimitedApiModel } from '@/serene-core-server/models/tech/rate-limit
 import { TechModel } from '@/serene-core-server/models/tech/tech-model'
 import { TechProviderModel } from '@/serene-core-server/models/tech/tech-provider-model'
 import { AiTechDefs } from '../../types/tech-defs'
-import { SereneAiServerOnlyTypes } from '../../types/server-only-types'
+import { SereneAiProviderProvides, SereneAiServerOnlyTypes } from '../../types/server-only-types'
 import { SereneCoreServerTypes } from '@/serene-core-server/types/user-types'
 
 export class SereneAiSetup {
@@ -31,7 +31,8 @@ export class SereneAiSetup {
               undefined,  // id
               SereneAiServerOnlyTypes.activeStatus,
               'Apollo.io',
-              null)       // baseUrl
+              null,       // baseUrl
+              [])         // provides
 
     const apolloIoApiTech = await
             this.techModel.upsert(
@@ -72,7 +73,8 @@ export class SereneAiSetup {
                 undefined,  // id
                 SereneAiServerOnlyTypes.activeStatus,
                 llmTechProvider.name,
-                baseUrl)
+                baseUrl,
+                [SereneAiProviderProvides.multiModalAi])  // provides
 
       // Set techProviders entry
       techProviders.set(

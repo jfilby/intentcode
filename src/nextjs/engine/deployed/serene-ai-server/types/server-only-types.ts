@@ -28,4 +28,10 @@ export class SereneAiServerOnlyTypes {
 
   // Tech protocols: APIs
   static graphQlProtocol = 'GraphQL'
+
+}
+
+// Provides
+export enum SereneAiProviderProvides {
+  multiModalAi = 'Multimodal AI'
 }
