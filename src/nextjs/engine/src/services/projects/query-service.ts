@@ -349,7 +349,7 @@ export class ProjectsQueryService {
     // Determine paths
     const projectPath = (projectNode.jsonContent as any).path
     const intentPath = `${projectPath}${path.sep}intent`
-    const srcPath = `${projectPath}${path.sep}src`
+    const srcPath = `${projectPath}`
 
     // Get DotIntentCodeProjectNode
     const dotIntentCodeProjectNode = await
