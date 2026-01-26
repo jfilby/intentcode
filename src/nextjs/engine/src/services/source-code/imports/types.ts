@@ -14,6 +14,11 @@ export class JsTsSrcTypes {
   ]
 
   static ignoredDirs = new Set([
+
+    // IntentCode
+    '.intentcode',
+    'intent',
+
     // Package managers
     'node_modules',
     'bower_components',
