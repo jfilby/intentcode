@@ -111,6 +111,13 @@ export class SpecsToIntentCodeMutateService {
       // Iterate intentcode entries
       for (const intentCode of jsonContent.intentcode) {
 
+        // Pre-process the content (if needed)
+        const contentExtracts =
+          textParsingService.getTextExtracts(intentCode.content)
+
+        intentCode.content =
+          textParsingService.combineTextExtracts(contentExtracts.extracts, '')
+
         // Get projectDetails
         const projectDetails =
                 buildData.projectsMap.get(intentCode.projectNo)
@@ -136,13 +143,6 @@ export class SpecsToIntentCodeMutateService {
                   prisma,
                   projectDetails.projectIntentCodeNode,
                   intentCodeFullPath)
-
-          // Pre-process the content (if needed)
-          const contentExtracts =
-            textParsingService.getTextExtracts(intentCode.content)
-
-          intentCode.content =
-            textParsingService.combineTextExtracts(contentExtracts.extracts, '')
 
           // Write source file
           await fsUtilsService.writeTextFile(
