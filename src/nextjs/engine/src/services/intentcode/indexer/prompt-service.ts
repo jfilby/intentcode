@@ -40,11 +40,6 @@ export class IndexerPromptService {
     var prompt = 
           `## Instructions\n` +  // for TypeScript dialect
           `\n` +
-          `Identify the structures in the IntentCode:\n` +
-          `- H1 headings are classes, unless they are meant to be run from ` +
-          `  the CLI.\n` +
-          `- H2 headings are functions.\n` +
-          `\n` +
           `Make an all inclusive AST tree of every required type.\n` +
           `\n` +
           `Notes:\n` +
