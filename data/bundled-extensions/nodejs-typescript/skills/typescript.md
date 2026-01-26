@@ -13,11 +13,13 @@ context:
 
 ## General instructions
 
-Wrap functions and basic types in a class where possible. Use the H1 name as
-the class name.
+Wrap functions and methods in classes where relevant.
+Use the H1 name as the class name.
 
 Make use of and adhere to these attributes where relevant:
 async, export, generator, static, instance.
+
+Only use async when awaiting.
 
 
 ## Opinionated and correct coding
