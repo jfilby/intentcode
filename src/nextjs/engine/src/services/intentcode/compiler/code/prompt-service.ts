@@ -149,6 +149,9 @@ export class CompilerPromptService {
       '```\n' +
       `\n` +
       `## Index data\n` +
+      `\n` +
+      `Indexed data has been generated for each target file, based on ` +
+      `IntentCode. This is to provide assistance when generating source.\n` +
       `\n`
 
     // List all indexed data
