@@ -268,6 +268,10 @@ export class IndexerMutateService {
         `${fnName}: intentFileNode.jsonContent.relativePath == null`)
     }
 
+    // Set the relative path of the file indexed
+    jsonContent.relativePath =
+      (buildFromFile.fileNode.jsonContent as any).relativePath
+
     // Update the IntentCode node with deps
     if (jsonContent.source?.deps != null) {
 
@@ -288,6 +292,9 @@ export class IndexerMutateService {
               jsonContent,
               sourceNodeGenerationData,
               buildFromFile.fileModifiedTime)
+
+    // Debug
+    // console.log(`${fnName}: index node set: ${indexerDataSourceNode.id}`)
 
     // Print warnings and errors (must be at the end of results processing)
     intentCodeMessagesService.handleMessages(jsonContent)

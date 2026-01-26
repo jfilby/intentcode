@@ -248,7 +248,7 @@ export class CompilerMutateService {
     const indexedDataSourceNodes = await
             intentCodeGraphQueryService.getAllIndexedData(
               prisma,
-              projectDetails.instance.id)
+              projectDetails.projectIntentCodeNode)
 
     if (indexedDataSourceNodes.length === 0) {
       throw new CustomError(`${fnName}: indexedDataSourceNodes.length === 0`)

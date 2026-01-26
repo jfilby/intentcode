@@ -331,16 +331,14 @@ export class IntentCodeGraphMutateService {
 
     if (parentNode.type !== SourceNodeTypes.intentCodeFile) {
 
-      throw new CustomError(`${fnName}: parentNode.type !== ` +
-                            `SourceNodeTypes.intentCodeFile`)
+      throw new CustomError(
+        `${fnName}: parentNode.type !== SourceNodeTypes.intentCodeFile`)
     }
 
     // Get jsonContentHash
     var jsonContentHash: string | null = null
 
     if (jsonContent != null) {
-
-      // Blake3 hash
       jsonContentHash = blake3(JSON.stringify(jsonContent)).toString()
     }
 

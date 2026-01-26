@@ -235,15 +235,15 @@ export class SourceNodeModel {
     return sourceNode
   }
 
-  async getJsonContentByInstanceIdAndType(
+  async getJsonContentByParentIdAndType(
           prisma: PrismaClient,
-          instanceId: string,
+          parentId: string,
           type: string,
           includeParent: boolean = false,
           orderByUniqueKey: boolean = false) {
 
     // Debug
-    const fnName = `${this.clName}.getJsonContentByInstanceIdAndType()`
+    const fnName = `${this.clName}.getJsonContentByParentIdAndType()`
 
     // Query
     try {
@@ -252,7 +252,7 @@ export class SourceNodeModel {
           parent: includeParent
         },
         where: {
-          instanceId: instanceId,
+          parentId: parentId,
           type: type
         },
         // Order by the unique key fields (excluding those in the where clause)

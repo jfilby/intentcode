@@ -64,6 +64,8 @@ export class CompilerPromptService {
           `- Use the indexed data for this file as a structural starting ` +
           `  point. Imports depend on this to be accurate.\n` +
           `- Write idiomatic code, this is for actual use.\n` +
+          `- Use the available index data to determine the names of classes ` +
+          `  and other named entities in other files.\n` +
           `\n` +
           IntentCodeCommonTypes.intentCodePrompting +
           `\n` +
