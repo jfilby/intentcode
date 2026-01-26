@@ -1,6 +1,6 @@
-# Index
+# file:Index
 
-## main()
+## fn:main
 
 - Print: 
   - Welcome to the Calculator demo!
