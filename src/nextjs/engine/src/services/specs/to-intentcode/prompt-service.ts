@@ -3,11 +3,13 @@ import { BuildData, BuildFromFile } from '@/types/build-types'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { IntentCodeCommonTypes } from '@/services/intentcode/common/types'
 import { FileDeltas, ServerOnlyTypes } from '@/types/server-only-types'
+import { CompilerQueryService } from '@/services/intentcode/compiler/code/query-service'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
 import { IntentCodePromptingService } from '@/services/intentcode/build/prompting-service'
 import { ProjectsQueryService } from '@/services/projects/query-service'
 
 // Services
+const compilerQueryService = new CompilerQueryService()
 const extensionQueryService = new ExtensionQueryService()
 const intentCodePromptingService = new IntentCodePromptingService()
 const projectsQueryService = new ProjectsQueryService()
@@ -27,6 +29,25 @@ export class SpecsToIntentCodePromptService {
 
     // Debug
     const fnName = `${this.clName}.getPrompt()`
+
+    // Get rules by targetLang
+    const skillsMap = new Map<string, string>()
+
+    for (const buildFromFile of buildFromFiles) {
+
+      if (skillsMap.has(buildFromFile.targetFileExt)) {
+        continue
+      }
+
+      const targetLangPrompting =
+        compilerQueryService.getSkillPrompting(
+          buildData.extensionsData,
+          buildFromFile.targetFileExt)
+
+      skillsMap.set(
+        buildFromFile.targetFileExt,
+        targetLangPrompting)
+    }
 
     // Start the prompt
     var prompt = 
@@ -150,6 +171,15 @@ export class SpecsToIntentCodePromptService {
 
     if (intentCodePrompting != null) {
       prompt += intentCodePrompting
+    }
+
+    // Target lang prompting
+    for (const [targetFileExt, targetLangPrompting] of skillsMap.entries()) {
+
+      prompt +=
+        `## ${targetFileExt} specific\n` +
+        targetLangPrompting +
+        `\n`
     }
 
     // Debug
