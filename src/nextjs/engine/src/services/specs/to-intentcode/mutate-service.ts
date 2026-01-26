@@ -6,6 +6,7 @@ import { CustomError } from '@/serene-core-server/types/errors'
 import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-service'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
+import { TextParsingService } from '@/serene-ai-server/services/content/text-parsing-service'
 import { BuildData, BuildFromFile } from '@/types/build-types'
 import { FileDeltas, LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
@@ -37,6 +38,7 @@ const specsMutateLlmService = new SpecsMutateLlmService()
 const specsPathGraphMutateService = new SpecsPathGraphMutateService()
 const specsToIntentCodePromptService = new SpecsToIntentCodePromptService()
 const techQueryService = new TechQueryService()
+const textParsingService = new TextParsingService()
 const usersService = new UsersService()
 const walkDirService = new WalkDirService()
 
@@ -134,6 +136,13 @@ export class SpecsToIntentCodeMutateService {
                   prisma,
                   projectDetails.projectIntentCodeNode,
                   intentCodeFullPath)
+
+          // Pre-process the content (if needed)
+          const contentExtracts =
+            textParsingService.getTextExtracts(intentCode.content)
+
+          intentCode.content =
+            textParsingService.combineTextExtracts(contentExtracts.extracts, '')
 
           // Write source file
           await fsUtilsService.writeTextFile(
