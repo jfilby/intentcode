@@ -8,7 +8,8 @@ import { FsUtilsService } from '../utils/fs-utils-service'
 import { IndexerMutateService } from '../intentcode/indexer/mutate-service'
 import { IntentCodeFilenameService } from '../utils/filename-service'
 import { IntentCodePathGraphMutateService } from '../graphs/intentcode/path-graph-mutate-service'
-import { ProjectGraphQueryService } from '../graphs/project/query-service'
+import { ProjectsQueryService } from './query-service'
+import { ProjectDetails } from '@/types/server-only-types'
 
 // Services
 const compilerMutateService = new CompilerMutateService()
@@ -16,7 +17,7 @@ const fsUtilsService = new FsUtilsService()
 const indexerMutateService = new IndexerMutateService()
 const intentCodeFilenameService = new IntentCodeFilenameService()
 const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
-const projectGraphQueryService = new ProjectGraphQueryService()
+const projectsQueryService = new ProjectsQueryService()
 const walkDirService = new WalkDirService()
 
 export class ProjectCompileService {
@@ -25,30 +26,16 @@ export class ProjectCompileService {
   clName = 'ProjectCompileService'
 
   // Code
-  async prepForIntentCodeStage(
-          prisma: PrismaClient,
-          projectNode: SourceNode) {
+  async getBuildFileList(projectDetails: ProjectDetails) {
 
     // Debug
     const fnName = `${this.clName}.prepForIntentCodeStage()`
-
-    // Get projectIntentCodeNode
-    const projectIntentCodeNode = await
-            projectGraphQueryService.getIntentCodeProjectNode(
-              prisma,
-              projectNode)
-
-    // Get sourceProjectNode
-    const projectSourceCodeNode = await
-            projectGraphQueryService.getSourceProjectNode(
-              prisma,
-              projectNode)
 
     // Get IntentCode to compile
     var intentCodeList: string[] = []
 
     await walkDirService.walkDir(
-            (projectIntentCodeNode.jsonContent as any).path,
+            (projectDetails.projectIntentCodeNode.jsonContent as any).path,
             intentCodeList,
             {
               recursive: true
@@ -81,11 +68,7 @@ export class ProjectCompileService {
     }
 
     // Return
-    return {
-      projectIntentCodeNode,
-      projectSourceCodeNode,
-      buildFileList
-    }
+    return buildFileList
   }
 
   async runCompileBuildStage(
@@ -98,11 +81,19 @@ export class ProjectCompileService {
 
     console.log(`Compiling IntentCode..`)
 
-    // Prep for stage
-    const { projectIntentCodeNode, projectSourceCodeNode, buildFileList } = await
-            this.prepForIntentCodeStage(
-              prisma,
-              projectNode)
+    // Get ProjectDetails
+    const projectDetails =
+            projectsQueryService.getProjectDetailsByInstanceId(
+              projectNode.instanceId,
+              buildData.projectsMap)
+
+    if (projectDetails == null) {
+      throw new CustomError(`${fnName}: projectDetails == null`)
+    }
+
+    // Get build file list
+    const buildFileList = await
+      this.getBuildFileList(projectDetails)
 
     // Compile IntentCode to source
     for (const buildFile of buildFileList) {
@@ -121,7 +112,7 @@ export class ProjectCompileService {
       const intentFileNode = await
         intentCodePathGraphMutateService.upsertIntentCodePathAsGraph(
           prisma,
-          projectIntentCodeNode,
+          projectDetails.projectIntentCodeNode,
           buildFile.intentCodeFilename)
 
       // Define BuildFromFile
@@ -138,8 +129,7 @@ export class ProjectCompileService {
               prisma,
               buildData,
               projectNode,
-              projectIntentCodeNode,
-              projectSourceCodeNode,
+              projectDetails,
               buildFromFile)
     }
   }
@@ -154,11 +144,15 @@ export class ProjectCompileService {
 
     console.log(`Indexing IntentCode..`)
 
+    // Get ProjectDetails
+    const projectDetails =
+            projectsQueryService.getProjectDetailsByInstanceId(
+              projectNode.instanceId,
+              buildData.projectsMap)
+
     // Prep for stage
-    const { projectIntentCodeNode, projectSourceCodeNode, buildFileList } = await
-            this.prepForIntentCodeStage(
-              prisma,
-              projectNode)
+    const buildFileList = await
+      this.getBuildFileList(projectDetails)
 
     // Index IntentCode
     for (const buildFile of buildFileList) {
@@ -180,7 +174,7 @@ export class ProjectCompileService {
       const intentFileNode = await
         intentCodePathGraphMutateService.upsertIntentCodePathAsGraph(
           prisma,
-          projectIntentCodeNode,
+          projectDetails.projectIntentCodeNode,
           buildFile.intentCodeFilename)
 
       // Check if the file has been updated since last indexed
@@ -205,7 +199,7 @@ export class ProjectCompileService {
               prisma,
               buildData,
               projectNode,
-              projectIntentCodeNode,
+              projectDetails.projectIntentCodeNode,
               buildFromFile)
     }
   }

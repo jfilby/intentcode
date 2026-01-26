@@ -179,7 +179,7 @@ export class CompilerPromptService {
   }
 
   async addExistingSource(
-          projectSourceCodeNode: SourceNode,
+          projectSourceNode: SourceNode,
           buildFromFile: BuildFromFile,
           prompt: string) {
 
@@ -188,7 +188,7 @@ export class CompilerPromptService {
 
       const existingSourcePrompting = await
               sourceAssistIntentCodeService.getExistingSourcePrompting(
-                projectSourceCodeNode,
+                projectSourceNode,
                 buildFromFile)
 
       if (existingSourcePrompting != null) {

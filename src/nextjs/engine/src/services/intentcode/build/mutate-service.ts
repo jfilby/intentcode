@@ -98,7 +98,7 @@ export class BuildMutateService {
 
     // Create initial build stages
     var buildStageTypes: BuildStageType[] =
-          this.getBuildStageTypes()
+      this.getBuildStageTypes()
 
     // Initial builds array
     const buildStages: BuildStage[] = []
@@ -106,17 +106,17 @@ export class BuildMutateService {
     // Get numbered projects map
     const projectsMap = new Map<number, ProjectDetails>()
 
-    await projectsQueryService.getProjectsMap(
-            prisma,
-            instanceId,
-            undefined,  // instance
-            projectsMap)
+    await projectsQueryService.createProjectsMap(
+      prisma,
+      instanceId,
+      undefined,  // instance
+      projectsMap)
 
     // Load extensions
     const extensionsData = await
-            extensionQueryService.loadExtensions(
-              prisma,
-              instanceId)
+      extensionQueryService.loadExtensions(
+        prisma,
+        instanceId)
 
     // Validate
     if (extensionsData == null) {
@@ -218,6 +218,7 @@ export class BuildMutateService {
 
         await depsUpdateService.update(
                 prisma,
+                buildData,
                 projectNode)
 
         break

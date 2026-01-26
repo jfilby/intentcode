@@ -8,9 +8,12 @@ import { InstanceSettingModel } from '@/serene-core-server/models/instances/inst
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { InstanceSettingNames, ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types'
+import { BuildsGraphMutateService } from '../graphs/builds/mutate-service'
 import { DotIntentCodeGraphQueryService } from '../graphs/dot-intentcode/graph-query-service'
 import { FsUtilsService } from '../utils/fs-utils-service'
+import { IntentCodeGraphMutateService } from '../graphs/intentcode/graph-mutate-service'
 import { ProjectGraphQueryService } from '../graphs/project/query-service'
+import { SourceCodeGraphMutateService } from '../graphs/source-code/graph-mutate-service'
 import { SpecsGraphQueryService } from '../graphs/specs/graph-query-service'
 
 // Cache objects must be global, to access all data (e.g. ability to delete
@@ -23,10 +26,13 @@ const instanceModel = new InstanceModel()
 const instanceSettingModel = new InstanceSettingModel()
 
 // Services
+const buildsGraphMutateService = new BuildsGraphMutateService()
 const consoleService = new ConsoleService()
 const dotIntentCodeGraphQueryService = new DotIntentCodeGraphQueryService()
 const fsUtilsService = new FsUtilsService()
+const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
 const projectGraphQueryService = new ProjectGraphQueryService()
+const sourceCodeGraphMutateService = new SourceCodeGraphMutateService()
 const specsGraphQueryService = new SpecsGraphQueryService()
 const usersService = new UsersService()
 
@@ -37,7 +43,27 @@ export class ProjectsQueryService {
   clName = 'ProjectsQueryService'
 
   // Code
-  async getProjectsMap(
+  getProjectDetailsByInstanceId(
+    instanceId: string,
+    projectsMap: Map<number, ProjectDetails>) {
+
+    // Debug
+    const fnName = `${this.clName}.getProjectsPrompting()`
+
+    // Find projectDetails
+    for (const projectDetails of projectsMap.values()) {
+
+      if (projectDetails.instance.id === instanceId) {
+        return projectDetails
+      }
+    }
+
+    // Not found
+    throw new CustomError(
+      `${fnName}: projectDetails not found for instanceId: ${instanceId}`)
+  }
+
+  async createProjectsMap(
           prisma: PrismaClient,
           instanceId: string,
           instance: Instance | undefined,
@@ -46,7 +72,7 @@ export class ProjectsQueryService {
           indents: number = 0) {
 
     // Debug
-    const fnName = `${this.clName}.getProjectsMap()`
+    const fnName = `${this.clName}.createProjectsMap()`
 
     // Get instance (and add it to the map) if not known
     if (instance == null) {
@@ -64,7 +90,7 @@ export class ProjectsQueryService {
 
     // Get ProjectDetails
     const projectDetails = await
-            this.getProjectDetails(
+            this.createProjectDetails(
               prisma,
               indents,
               instance)
@@ -85,7 +111,7 @@ export class ProjectsQueryService {
     // Cascade to child instances
     for (const childInstance of childInstances) {
 
-      await this.getProjectsMap(
+      await this.createProjectsMap(
               prisma,
               childInstance.id,
               childInstance,
@@ -301,13 +327,13 @@ export class ProjectsQueryService {
     return instancesMap.get(loadProjectNo)
   }
 
-  async getProjectDetails(
+  async createProjectDetails(
           prisma: PrismaClient,
           indents: number,
           instance: Instance) {
 
     // Debug
-    const fnName = `${this.clName}.getProjectDetails()`
+    const fnName = `${this.clName}.createProjectDetails()`
 
     // Get ProjectNode
     const projectNode = await
@@ -320,29 +346,48 @@ export class ProjectsQueryService {
       throw new CustomError(`${fnName}: projectNode == null`)
     }
 
+    // Determine paths
+    const projectPath = (projectNode.jsonContent as any).path
+    const intentPath = `${projectPath}${path.sep}intent`
+    const srcPath = `${projectPath}${path.sep}src`
+
     // Get DotIntentCodeProjectNode
     const dotIntentCodeProjectNode = await
-            dotIntentCodeGraphQueryService.getDotIntentCodeProject(
-              prisma,
-              projectNode)
+      dotIntentCodeGraphQueryService.getDotIntentCodeProject(
+        prisma,
+        projectNode)
 
     // Get ProjectSpecsNode
     const projectSpecsNode = await
-            specsGraphQueryService.getSpecsProjectNode(
-              prisma,
-              projectNode)
+      specsGraphQueryService.getSpecsProjectNode(
+        prisma,
+        projectNode)
 
-    // Get ProjectIntentCodeNode
+    // Get/create builds node
+    const buildsNode = await
+     buildsGraphMutateService.getOrCreateBuildsNode(
+      prisma,
+      projectNode)
+
+    // Create a new build node
+    const buildNode = await
+      buildsGraphMutateService.createBuildNode(
+        prisma,
+        buildsNode)
+
+    // Get or create ProjectIntentCodeNode
     const projectIntentCodeNode = await
-            projectGraphQueryService.getIntentCodeProjectNode(
-              prisma,
-              projectNode)
+      intentCodeGraphMutateService.getOrCreateIntentCodeProjectNode(
+        prisma,
+        buildNode,
+        intentPath)
 
-    // Get ProjectSourceNode
+    // Get or create ProjectSourceNode
     const projectSourceNode = await
-            projectGraphQueryService.getSourceProjectNode(
-              prisma,
-              projectNode)
+      sourceCodeGraphMutateService.getOrCreateSourceCodeProject(
+        prisma,
+        buildNode,
+        srcPath)
 
     // Define ProjectDetails
     const projectDetails: ProjectDetails = {

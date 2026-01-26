@@ -15,13 +15,12 @@ import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { IntentCodeMessagesService } from '@/services/intentcode/common/messages-service'
 import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
-import { ProjectGraphQueryService } from '@/services/graphs/project/query-service'
 import { SpecsGraphMutateService } from '@/services/graphs/specs/graph-mutate-service'
+import { ProjectsQueryService } from '@/services/projects/query-service'
 import { SpecsGraphQueryService } from '@/services/graphs/specs/graph-query-service'
 import { SpecsMutateLlmService } from './llm-service'
 import { SpecsPathGraphMutateService } from '@/services/graphs/specs/path-graph-mutate-service'
 import { SpecsToIntentCodePromptService } from './prompt-service'
-import { ProjectsQueryService } from '@/services/projects/query-service'
 
 // Models
 const sourceNodeGenerationModel = new SourceNodeGenerationModel()
@@ -31,7 +30,6 @@ const sourceNodeModel = new SourceNodeModel()
 const fsUtilsService = new FsUtilsService()
 const intentCodeMessagesService = new IntentCodeMessagesService()
 const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
-const projectGraphQueryService = new ProjectGraphQueryService()
 const projectsQueryService = new ProjectsQueryService()
 const specsGraphMutateService = new SpecsGraphMutateService()
 const specsGraphQueryService = new SpecsGraphQueryService()
@@ -251,22 +249,20 @@ export class SpecsToIntentCodeMutateService {
     // Console output
     console.log(`Compiling specs to IntentCode..`)
 
+    // Get ProjectDetails
+    const projectDetails =
+            projectsQueryService.getProjectDetailsByInstanceId(
+              projectNode.instanceId,
+              buildData.projectsMap)
+
     // Get project specs node
     const projectSpecsNode = await
             specsGraphQueryService.getSpecsProjectNode(
               prisma,
               projectNode)
 
-    // Get projectIntentCodeNode
-    const projectIntentCodeNode = await
-            projectGraphQueryService.getIntentCodeProjectNode(
-              prisma,
-              projectNode)
-
     // Validate
-    if (projectSpecsNode == null ||
-        projectIntentCodeNode == null) {
-
+    if (projectSpecsNode == null) {
       return
     }
 
@@ -339,8 +335,8 @@ export class SpecsToIntentCodeMutateService {
 
         // Determine target full path
         targetFullPath =
-          `${(projectIntentCodeNode.jsonContent as any).path}${path.sep}` +
-          `${relativePath}`
+          `${(projectDetails.projectIntentCodeNode.jsonContent as any).path}` +
+          `${path.sep}${relativePath}`
       }
 
       // Debug

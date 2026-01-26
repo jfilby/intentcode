@@ -1,4 +1,5 @@
 import { PrismaClient, SourceNode } from '@prisma/client'
+import { BuildData } from '@/types/build-types'
 import { SourceDepsFileService } from './source-deps-service'
 import { ProjectSetupService } from '@/services/projects/setup-project'
 
@@ -15,6 +16,7 @@ export class DepsUpdateService {
   // Code
   async update(
           prisma: PrismaClient,
+          buildData: BuildData,
           projectNode: SourceNode) {
 
     // Load any new extensions
@@ -25,6 +27,7 @@ export class DepsUpdateService {
     // Update and write the package manager file
     await sourceDepsFileService.updateAndWriteFile(
             prisma,
+            buildData,
             projectNode)
   }
 }

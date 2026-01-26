@@ -6,7 +6,7 @@ import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { TextParsingService } from '@/serene-ai-server/services/content/text-parsing-service'
 import { BuildData, BuildFromFile } from '@/types/build-types'
-import { LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
+import { LlmEnvNames, ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { SourceNodeNames, SourceNodeGenerationData, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
@@ -106,8 +106,7 @@ export class CompilerMutateService {
           prisma: PrismaClient,
           projectNode: SourceNode,
           buildFromFile: BuildFromFile,
-          projectIntentCodeNode: SourceNode,
-          projectSourceCodeNode: SourceNode,
+          projectDetails: ProjectDetails,
           sourceNodeGenerationData: SourceNodeGenerationData,
           content: string,
           jsonContent: any) {
@@ -122,7 +121,7 @@ export class CompilerMutateService {
     }
 
     // Debug
-    console.log(`${fnName}: content: ${content}`)
+    // console.log(`${fnName}: content: ${content}`)
 
     // Pre-process the content (if needed)
     const contentExtracts = textParsingService.getTextExtracts(content)
@@ -136,7 +135,7 @@ export class CompilerMutateService {
       // Upsert SourceCode node path and content
       await sourceCodePathGraphMutateService.upsertSourceCodePathAsGraph(
               prisma,
-              projectSourceCodeNode,
+              projectDetails.projectSourceNode,
               buildFromFile.targetFullPath,
               content,
               sourceNodeGenerationData)
@@ -161,7 +160,7 @@ export class CompilerMutateService {
     // Upsert the IntentCode file contents
     await intentCodePathGraphMutateService.upsertIntentCodePathAsGraph(
             prisma,
-            projectIntentCodeNode,
+            projectDetails.projectIntentCodeNode,
             buildFromFile.filename,
             buildFromFile.content)
 
@@ -182,7 +181,7 @@ export class CompilerMutateService {
 
   async requiresRecompileByPrompt(
           prisma: PrismaClient,
-          projectSourceCodeNode: SourceNode,
+          projectSourceNode: SourceNode,
           prompt: string,
           buildFromFile: BuildFromFile) {
 
@@ -193,7 +192,7 @@ export class CompilerMutateService {
     const sourceCodeNodeGeneration = await
             sourceCodePathGraphQueryService.getLatestSourceCodeGenerationByPathGraph(
               prisma,
-              projectSourceCodeNode,
+              projectSourceNode,
               buildFromFile.targetFullPath!)
 
     // Debug
@@ -228,8 +227,7 @@ export class CompilerMutateService {
   async run(prisma: PrismaClient,
             buildData: BuildData,
             projectNode: SourceNode,
-            projectIntentCodeNode: SourceNode,
-            projectSourceCodeNode: SourceNode,
+            projectDetails: ProjectDetails,
             buildFromFile: BuildFromFile) {
 
     // Debug
@@ -246,7 +244,7 @@ export class CompilerMutateService {
     const indexedDataSourceNodes = await
             intentCodeGraphQueryService.getAllIndexedData(
               prisma,
-              projectIntentCodeNode.instanceId)
+              projectDetails.instance.id)
 
     if (indexedDataSourceNodes.length === 0) {
       throw new CustomError(`${fnName}: indexedDataSourceNodes.length === 0`)
@@ -271,7 +269,7 @@ export class CompilerMutateService {
     // Get source code's full path
     buildFromFile.targetFullPath =
       sourceAssistIntentCodeService.getSourceCodeFullPath(
-        projectSourceCodeNode,
+        projectDetails.projectSourceNode,
         buildFromFile.fileNode)
 
     // Get prompt
@@ -286,7 +284,7 @@ export class CompilerMutateService {
     // Get the final prompt (with existing target source)
     const finalPrompt = await
             compilerPromptService.addExistingSource(
-              projectSourceCodeNode,
+              projectDetails.projectSourceNode,
               buildFromFile,
               prompt)
 
@@ -301,7 +299,7 @@ export class CompilerMutateService {
     // Check if the file should be recompiled
     if (await this.requiresRecompileByPrompt(
                 prisma,
-                projectSourceCodeNode,
+                projectDetails.projectSourceNode,
                 prompt,
                 buildFromFile) === false) {
 
@@ -335,8 +333,7 @@ export class CompilerMutateService {
             prisma,
             projectNode,
             buildFromFile,
-            projectIntentCodeNode,
-            projectSourceCodeNode,
+            projectDetails,
             sourceNodeGenerationData,
             content,
             jsonContent)

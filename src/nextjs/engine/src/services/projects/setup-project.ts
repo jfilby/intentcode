@@ -106,63 +106,45 @@ export class ProjectSetupService {
             prisma,
             path)
 
-    if (instance != null) {
+    // New project?
+    if (instance == null) {
 
-      // Get project node
-      const projectNode = await
-              projectGraphQueryService.getProjectNode(
+      // Lookup parent project (if any)
+      const parentInstance = await
+              projectsQueryService.getParentProjectByPath(
                 prisma,
-                instance.id)
+                path)
 
-      // Project name
-      const existingProjectName = instance.name!
+      // Get the last part of the path
+      const projectName = await
+              this.getOrPromptForProjectName(
+                prisma,
+                parentInstance,
+                path)
 
-      // Console output
-      console.log(`Project already exists: ${instance.name}`)
-
-      // Return
-      return {
-        instance,
-        projectNode,
-        projectName: existingProjectName
+      // Validate
+      if (projectName == null) {
+        throw new CustomError(`${fnName}: projectName == null`)
       }
+
+      // Create instance
+      instance = await
+        projectsMutateService.getOrCreate(
+          prisma,
+          adminUserProfile.id,
+          projectName)
     }
-
-    // Lookup parent project (if any)
-    const parentInstance = await
-            projectsQueryService.getParentProjectByPath(
-              prisma,
-              path)
-
-    // Get the last part of the path
-    const projectName = await
-            this.getOrPromptForProjectName(
-              prisma,
-              parentInstance,
-              path)
-
-    // Validate
-    if (projectName == null) {
-      throw new CustomError(`${fnName}: projectName == null`)
-    }
-
-    // Create instance
-    instance = await
-      projectsMutateService.getOrCreate(
-        prisma,
-        adminUserProfile.id,
-        projectName)
 
     // Setup project node
     const projectNode = await
             this.setupProject(
               prisma,
               instance,
-              projectName,
+              instance.name,
               path)
 
     // Return
-    return { instance, projectNode, projectName }
+    return { instance, projectNode, projectName: instance.name }
   }
 
   async initProjectFromCli(
@@ -286,8 +268,6 @@ export class ProjectSetupService {
 
     // Infer other paths
     const dotIntentCodePath = `${projectPath}${path.sep}.intentcode`
-    const intentPath = `${projectPath}${path.sep}intent`
-    const srcPath = `${projectPath}${path.sep}src`
     const specsPath = `${projectPath}${path.sep}specs`
 
     // Get/create specs project node
@@ -306,27 +286,6 @@ export class ProjectSetupService {
               prisma,
               projectNode,
               dotIntentCodePath)
-
-    // Get/create IntentCode project node
-    if (await fs.existsSync(intentPath)) {
-
-      const projectIntentCodeNode = await
-              intentCodeGraphMutateService.getOrCreateIntentCodeProject(
-                prisma,
-                projectNode,
-                intentPath)
-    }
-
-    // Get/create source code project node
-    if (await fs.existsSync(intentPath) ||
-        await fs.existsSync(srcPath)) {
-
-      const projectSourceCodeNode = await
-              sourceCodeGraphMutateService.getOrCreateSourceCodeProject(
-                prisma,
-                projectNode,
-                srcPath)
-    }
 
     // Get/create extensions node
     const extensionsNode = await

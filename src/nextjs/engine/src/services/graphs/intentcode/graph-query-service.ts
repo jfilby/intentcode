@@ -1,6 +1,6 @@
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
-import { SourceNodeTypes } from '@/types/source-graph-types'
+import { SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 
 // Models
@@ -68,5 +68,32 @@ export class IntentCodeGraphQueryService {
 
     // Return
     return intentCodeDir
+  }
+
+  async getIntentCodeProjectNode(
+          prisma: PrismaClient,
+          buildNode: SourceNode) {
+
+    // Debug
+    const fnName = `${this.clName}.getIntentCodeProjectNode()`
+
+    // Validate
+    if (buildNode.type !== SourceNodeTypes.build) {
+
+      throw new CustomError(
+        `${fnName}: projectNode.type !== SourceNodeTypes.project`)
+    }
+
+    // Get source node
+    const sourceCodeProject = await
+            sourceNodeModel.getByUniqueKey(
+              prisma,
+              buildNode.id,
+              buildNode.instanceId,
+              SourceNodeTypes.projectIntentCode,
+              SourceNodeNames.projectIntentCode)
+
+    // Return
+    return sourceCodeProject
   }
 }

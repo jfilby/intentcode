@@ -21,7 +21,7 @@ export class SourceCodePathGraphQueryService {
   // Code
   async getLatestSourceCodeGenerationByPathGraph(
           prisma: PrismaClient,
-          projectSourceCodeNode: SourceNode,
+          projectSourceNode: SourceNode,
           fullPath: string) {
 
     // Debug
@@ -31,7 +31,7 @@ export class SourceCodePathGraphQueryService {
     const sourceCodeNode = await
             this.getSourceCodePathAsGraph(
               prisma,
-              projectSourceCodeNode,
+              projectSourceNode,
               fullPath)
 
     // Validate
@@ -61,14 +61,14 @@ export class SourceCodePathGraphQueryService {
 
   async getSourceCodePathAsGraph(
           prisma: PrismaClient,
-          projectSourceCodeNode: SourceNode,
+          projectSourceNode: SourceNode,
           fullPath: string) {
 
     // Debug
     const fnName = `${this.clName}.getSourceCodePathAsGraph()`
 
     // Get project source path
-    const projectSourcePath = (projectSourceCodeNode.jsonContent as any)?.path
+    const projectSourcePath = (projectSourceNode.jsonContent as any)?.path
 
     // Validate project path
     if (projectSourcePath == null ||
@@ -94,7 +94,7 @@ export class SourceCodePathGraphQueryService {
     // console.log(`${fnName}: dirs: ${dirs}`)
 
     // Get/create nodes for dirs
-    var sourceCodeDir: SourceNode = projectSourceCodeNode
+    var sourceCodeDir: SourceNode = projectSourceNode
 
     for (const dir of dirs) {
 
@@ -107,7 +107,7 @@ export class SourceCodePathGraphQueryService {
         sourceNodeModel.getByUniqueKey(
           prisma,
           sourceCodeDir.id,
-          projectSourceCodeNode.instanceId,
+          projectSourceNode.instanceId,
           SourceNodeTypes.sourceCodeDir,
           dir)
     }
@@ -117,7 +117,7 @@ export class SourceCodePathGraphQueryService {
             sourceNodeModel.getByUniqueKey(
               prisma,
               sourceCodeDir.id,  // parentId
-              projectSourceCodeNode.instanceId,
+              projectSourceNode.instanceId,
               SourceNodeTypes.sourceCodeFile,
               filename)
 

@@ -176,20 +176,30 @@ export class IntentCodeGraphMutateService {
     return intentCodeFile
   }
 
-  async getOrCreateIntentCodeProject(
+  async getOrCreateIntentCodeProjectNode(
           prisma: PrismaClient,
-          projectNode: SourceNode,
+          buildNode: SourceNode,
           localPath: string) {
 
     // Debug
-    const fnName = `${this.clName}.getOrCreateIntentCodeProject()`
+    const fnName = `${this.clName}.getOrCreateIntentCodeProjectNode()`
+
+    // Validate
+    if (buildNode == null) {
+      throw new CustomError(`${fnName}: buildNode == null`)
+    }
+
+    if (buildNode.type !== SourceNodeTypes.build) {
+
+      throw new CustomError(`${fnName}: invalid type: ${buildNode.type}`)
+    }
 
     // Try to get the node
     var intentCodeProject = await
           sourceNodeModel.getByUniqueKey(
             prisma,
-            projectNode.id,  // parentId
-            projectNode.instanceId,
+            buildNode.id,  // parentId
+            buildNode.instanceId,
             SourceNodeTypes.projectIntentCode,
             SourceNodeNames.projectIntentCode)
 
@@ -213,8 +223,8 @@ export class IntentCodeGraphMutateService {
     intentCodeProject = await
       sourceNodeModel.create(
         prisma,
-        projectNode.id,  // parentId
-        projectNode.instanceId,
+        buildNode.id,  // parentId
+        buildNode.instanceId,
         BaseDataTypes.activeStatus,
         SourceNodeTypes.projectIntentCode,
         SourceNodeNames.projectIntentCode,

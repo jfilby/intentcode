@@ -23,18 +23,27 @@ export class SourceCodeGraphMutateService {
   // Code
   async getOrCreateSourceCodeProject(
           prisma: PrismaClient,
-          projectNode: SourceNode,
+          buildNode: SourceNode,
           localPath: string) {
 
     // Debug
     const fnName = `${this.clName}.getOrCreateSourceCodeProject()`
 
+    // Validate
+    if (buildNode == null) {
+      throw new CustomError(`${fnName}: buildNode == null`)
+    }
+
+    if (buildNode.type !== SourceNodeTypes.build) {
+      throw new CustomError(`${fnName}: invalid type: ${buildNode.type}`)
+    }
+
     // Try to get the node
     var sourceCodeProject = await
           sourceNodeModel.getByUniqueKey(
             prisma,
-            projectNode.id,  // parentId
-            projectNode.instanceId,
+            buildNode.id,  // parentId
+            buildNode.instanceId,
             SourceNodeTypes.projectSourceCode,
             SourceNodeNames.projectSourceCode)
 
@@ -60,8 +69,8 @@ export class SourceCodeGraphMutateService {
     sourceCodeProject = await
       sourceNodeModel.create(
         prisma,
-        projectNode.id,  // parentId
-        projectNode.instanceId,
+        buildNode.id,  // parentId
+        buildNode.instanceId,
         BaseDataTypes.activeStatus,
         SourceNodeTypes.projectSourceCode,
         SourceNodeNames.projectSourceCode,

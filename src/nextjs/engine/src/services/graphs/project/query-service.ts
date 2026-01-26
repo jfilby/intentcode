@@ -13,33 +13,6 @@ export class ProjectGraphQueryService {
   clName = 'ProjectGraphQueryService'
 
   // Code
-  async getIntentCodeProjectNode(
-          prisma: PrismaClient,
-          projectNode: SourceNode) {
-
-    // Debug
-    const fnName = `${this.clName}.getIntentCodeProjectNode()`
-
-    // Validate
-    if (projectNode.type !== SourceNodeTypes.project) {
-
-      throw new CustomError(
-        `${fnName}: projectNode.type !== SourceNodeTypes.project`)
-    }
-
-    // Get source node
-    const sourceCodeProject = await
-            sourceNodeModel.getByUniqueKey(
-              prisma,
-              projectNode.id,
-              projectNode.instanceId,
-              SourceNodeTypes.projectIntentCode,
-              SourceNodeNames.projectIntentCode)
-
-    // Return
-    return sourceCodeProject
-  }
-
   async getProjectNode(
           prisma: PrismaClient,
           instanceId: string) {

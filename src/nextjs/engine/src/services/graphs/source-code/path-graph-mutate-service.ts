@@ -17,7 +17,7 @@ export class SourceCodePathGraphMutateService {
   // Code
   async upsertSourceCodePathAsGraph(
           prisma: PrismaClient,
-          projectSourceCodeNode: SourceNode,
+          projectSourceNode: SourceNode,
           fullPath: string,
           content: string,
           sourceNodeGenerationData: SourceNodeGenerationData) {
@@ -26,7 +26,7 @@ export class SourceCodePathGraphMutateService {
     const fnName = `${this.clName}.upsertSourceCodePathAsGraph()`
 
     // Get project source path
-    const projectSourcePath = (projectSourceCodeNode.jsonContent as any)?.path
+    const projectSourcePath = (projectSourceNode.jsonContent as any)?.path
 
     // Validate project path
     if (projectSourcePath == null ||
@@ -52,7 +52,7 @@ export class SourceCodePathGraphMutateService {
     // console.log(`${fnName}: dirs: ${dirs}`)
 
     // Get/create nodes for dirs
-    var dirSourceNode: SourceNode = projectSourceCodeNode
+    var dirSourceNode: SourceNode = projectSourceNode
 
     for (const dir of dirs) {
 
@@ -63,7 +63,7 @@ export class SourceCodePathGraphMutateService {
       dirSourceNode = await
         sourceCodeGraphMutateService.getOrCreateSourceCodeDir(
           prisma,
-          projectSourceCodeNode.instanceId,
+          projectSourceNode.instanceId,
           dirSourceNode,
           dir)
     }
@@ -72,7 +72,7 @@ export class SourceCodePathGraphMutateService {
     const filenameSourceNode = await
             sourceCodeGraphMutateService.upsertSourceCodeFile(
               prisma,
-              projectSourceCodeNode.instanceId,
+              projectSourceNode.instanceId,
               dirSourceNode,
               filename,
               content,

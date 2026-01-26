@@ -1,7 +1,7 @@
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { DependenciesQueryService } from '@/services/graphs/dependencies/query-service'
-import { DepsTools } from '@/types/build-types'
+import { BuildData, DepsTools } from '@/types/build-types'
 import { DependenciesMutateService } from '@/services/graphs/dependencies/mutate-service'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
 import { PackageJsonManagedFileService } from './package-json-service'
@@ -85,6 +85,7 @@ export class SourceDepsFileService {
 
   async updateAndWriteFile(
           prisma: PrismaClient,
+          buildData: BuildData,
           projectNode: SourceNode) {
 
     // Debug
@@ -138,6 +139,7 @@ export class SourceDepsFileService {
       case DepsTools.npm: {
         await packageJsonManagedFileService.run(
                 prisma,
+                buildData,
                 projectNode,
                 depsNode)
 

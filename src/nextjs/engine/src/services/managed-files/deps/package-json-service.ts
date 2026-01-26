@@ -4,12 +4,13 @@ const semver = require('semver')
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { SourceNodeTypes } from '@/types/source-graph-types'
+import { BuildData } from '@/types/build-types'
 import { ImportsData } from '@/services/source-code/imports/types'
-import { ProjectGraphQueryService } from '@/services/graphs/project/query-service'
+import { ProjectsQueryService } from '@/services/projects/query-service'
 import { ReadJsTsSourceImportsService } from '@/services/source-code/imports/read-js-ts-service'
 
 // Services
-const projectGraphQueryService = new ProjectGraphQueryService()
+const projectsQueryService = new ProjectsQueryService()
 const readJsTsSourceImportsService = new ReadJsTsSourceImportsService()
 
 // Class
@@ -52,6 +53,7 @@ export class PackageJsonManagedFileService {
   }
 
   async run(prisma: PrismaClient,
+            buildData: BuildData,
             projectNode: SourceNode,
             depsNode: SourceNode) {
 
@@ -67,16 +69,11 @@ export class PackageJsonManagedFileService {
         `${fnName}: projectNode.type !== SourceNodeTypes.project`)
     }
 
-    // Get projectSourceCodeNode
-    const projectSourceCodeNode = await
-            projectGraphQueryService.getSourceProjectNode(
-              prisma,
-              projectNode)
-
-    // Validate
-    if (projectSourceCodeNode == null) {
-      throw new CustomError(`${fnName}: projectSourceCodeNode == null`)
-    }
+    // Get ProjectDetails
+    const projectDetails =
+            projectsQueryService.getProjectDetailsByInstanceId(
+              projectNode.instanceId,
+              buildData.projectsMap)
 
     // Validate
     var depsNodeJson: any = null
@@ -90,7 +87,9 @@ export class PackageJsonManagedFileService {
 
     // Get paths
     const projectPath = (projectNode.jsonContent as any).path
-    const projectSourcePath = (projectSourceCodeNode.jsonContent as any).path
+
+    const projectSourcePath =
+      (projectDetails.projectSourceNode.jsonContent as any).path
 
     // Test for an existing package.json file
     await this.verifyPackageJsonExists(projectPath)
