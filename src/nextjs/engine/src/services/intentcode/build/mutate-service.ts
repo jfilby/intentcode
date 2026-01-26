@@ -4,6 +4,7 @@ import { BuildData, BuildStage, BuildStageType, IntentFileBuild } from '@/types/
 import { ProjectDetails } from '@/types/server-only-types'
 import { SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
+import { DeleteBuildService } from './delete-service'
 import { DepsUpdateService } from '@/services/managed-files/deps/update-service'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
 import { ProjectsQueryService } from '@/services/projects/query-service'
@@ -16,6 +17,7 @@ import { SpecsToIntentCodeMutateService } from '@/services/specs/to-intentcode/m
 const sourceNodeModel = new SourceNodeModel()
 
 // Services
+const deleteBuildService = new DeleteBuildService()
 const depsUpdateService = new DepsUpdateService()
 const extensionQueryService = new ExtensionQueryService()
 const projectCompileService = new ProjectCompileService()
@@ -122,6 +124,11 @@ export class BuildMutateService {
     if (extensionsData == null) {
       throw new CustomError(`${fnName}: extensionsData == null`)
     }
+
+    // Delete old build graphs
+    await deleteBuildService.deleteOldBuildGraphs(
+      prisma,
+      projectsMap)
 
     // Create BuildData
     const buildData: BuildData = {

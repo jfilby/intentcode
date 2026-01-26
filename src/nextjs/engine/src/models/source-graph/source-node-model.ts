@@ -271,6 +271,35 @@ export class SourceNodeModel {
     }
   }
 
+  async getOldest(
+    prisma: PrismaClient,
+    parentId: string,
+    type: string,
+    latestRecordsIgnored: number) {
+
+    // Debug
+    const fnName = `${this.clName}.getOldest()`
+
+    // Query
+    try {
+      return await prisma.sourceNode.findMany({
+        skip: latestRecordsIgnored,
+        where: {
+          parentId: parentId,
+          type: type
+        },
+        orderBy: [
+          {
+            created: 'desc'
+          }
+        ]
+      })
+    } catch(error: any) {
+      console.error(`${fnName}: error: ${error}`)
+      throw 'Prisma error'
+    }
+  }
+
   async setJsonContent(
           prisma: PrismaClient,
           id: string,

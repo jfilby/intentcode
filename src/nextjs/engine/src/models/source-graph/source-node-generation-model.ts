@@ -64,6 +64,28 @@ export class SourceNodeGenerationModel {
     }
   }
 
+  async deleteBySourceNodeId(
+          prisma: PrismaClient,
+          sourceNodeId: string) {
+
+    // Debug
+    const fnName = `${this.clName}.deleteBySourceNodeId()`
+
+    // Delete
+    try {
+      return await prisma.sourceNodeGeneration.deleteMany({
+        where: {
+          sourceNodeId: sourceNodeId
+        }
+      })
+    } catch(error: any) {
+      if (!(error instanceof error.NotFound)) {
+        console.error(`${fnName}: error: ${error}`)
+        throw 'Prisma error'
+      }
+    }
+  }
+
   async deleteNotInAndSourceNodeId(
           prisma: PrismaClient,
           keepIds: string[],

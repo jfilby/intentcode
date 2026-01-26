@@ -20,6 +20,9 @@ export class ServerOnlyTypes {
   // Verbosity
   static verbosity = true
 
+  // Builds
+  static oldBuildsToKeep = 3
+
   // Source node generation
   static keepOldSourceNodeGenerations = 3
 
