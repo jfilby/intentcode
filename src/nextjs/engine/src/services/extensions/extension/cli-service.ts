@@ -68,7 +68,7 @@ export class ManageExtensionsCliService {
             systemProject.id,
             loadToInstance.id,
             extensionNode.id,
-            extensionsNode.id)  // parentFromNodeId
+            extensionsNode.id)  // parentToNodeId
 
     console.log(``)
     console.log(`Extension copied OK`)

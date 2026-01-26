@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
@@ -18,7 +18,7 @@ export class GraphsMutateService {
           fromProjectId: string,
           toProjectId: string,
           fromNodeId: string,
-          parentFromNodeId: string | null | undefined = null) {
+          parentToNodeId: string | null | undefined = null) {
 
     // Note: any related edges are not copied
 
@@ -44,12 +44,18 @@ export class GraphsMutateService {
               prisma,
               fromNodeId)
 
+    // Validate
+    if (fromNode.parentId === parentToNodeId) {
+      throw new CustomError(
+        `${fnName}: fromNode.parentId === parentToNodeId`)
+    }
+
     // Create the extension node
     const toNode = await
             sourceNodeModel.upsert(
               prisma,
               undefined,         // id
-              parentFromNodeId,  // parentId
+              parentToNodeId,    // parentId
               toProjectId,
               BaseDataTypes.activeStatus,
               fromNode.type,
@@ -59,6 +65,9 @@ export class GraphsMutateService {
               fromNode.jsonContent,
               fromNode.jsonContentHash,
               fromNode.contentUpdated)
+
+    // Debug
+    // console.log(`${fnName}: copied from ${fromNode.id} to ${toNode.id}`)
 
     // Get child nodes
     const fromChildNodes = await
@@ -75,7 +84,7 @@ export class GraphsMutateService {
               fromProjectId,
               toProjectId,
               fromChildNode.id,
-              toNode.id)  // parentFromNodeId
+              toNode.id)  // parentToNodeId
     }
   }
 }

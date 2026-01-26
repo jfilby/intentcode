@@ -1,8 +1,9 @@
 import { blake3 } from '@noble/hashes/blake3'
-import { PrismaClient } from '@prisma/client'
+import { Instance, PrismaClient } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { ServerOnlyTypes } from '@/types/server-only-types'
 import { SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
+import { InstanceModel } from '@/serene-core-server/models/instances/instance-model'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
 import { ExtensionQueryService } from './query-service'
@@ -10,6 +11,7 @@ import { GraphsMutateService } from '@/services/graphs/general/mutate-service'
 import { ProjectsQueryService } from '@/services/projects/query-service'
 
 // Models
+const instanceModel = new InstanceModel()
 const sourceNodeModel = new SourceNodeModel()
 
 // Services
@@ -157,7 +159,94 @@ export class ExtensionMutateService {
               systemProject.id,
               loadToInstanceId,
               extensionNode.id,
-              extensionsNode.id)  // parentFromNodeId
+              extensionsNode.id)  // parentToNodeId
     }
+  }
+
+  async upgradeToUserProject(
+    prisma: PrismaClient,
+    userProject: Instance,
+    systemExtensionNode: any) {
+
+    // Debug
+    const fnName = `${this.clName}.upgradeToUserProject()`
+
+    // Get extensions node
+    const extensionsNode = await
+      extensionQueryService.getExtensionsNode(
+        prisma,
+        userProject.id)
+
+    // Validate
+    if (extensionsNode == null) {
+      throw new CustomError(`${fnName}: extensionsNode == null`)
+    }
+
+    // Does the extension already exist in the user project?
+    var extensionNode = await
+      sourceNodeModel.getByUniqueKey(
+        prisma,
+        extensionsNode.id,
+        userProject.id,
+        SourceNodeTypes.extensionType,
+        systemExtensionNode.name)
+
+    // Don't proceed if the user project's extension doesn't exist
+    if (extensionNode == null) {
+      return false
+    }
+
+    // Upgrading output
+    console.log(
+      `Upgrading extension: ${systemExtensionNode.name} to project: ` +
+      `${userProject.name}`)
+
+    // Load the Extension into the user project
+    await graphsMutateService.copyNodesToProject(
+      prisma,
+      systemExtensionNode.instanceId,
+      userProject.id,
+      systemExtensionNode.id,
+      extensionsNode.id)  // parentToNodeId
+
+    // Return
+    return true
+  }
+
+  async upgradeToUserProjects(
+    prisma: PrismaClient,
+    extensionNodes: any[]) {
+
+    // Get user projects
+    const instances = await
+      instanceModel.filter(prisma)
+
+    // Per user project/extensionNode
+    var copyCount = 0
+
+    for (const instance of instances) {
+
+      // Skip System project
+      if (instance.name === ServerOnlyTypes.systemProjectName) {
+        continue
+      }
+
+      // Per extensionNode
+      for (const extensionNode of extensionNodes) {
+
+        const copied = await
+          this.upgradeToUserProject(
+            prisma,
+            instance,
+            extensionNode)
+
+        if (copied === true) {
+          copyCount += 1
+        }
+      }
+    }
+
+    // Return
+    return copyCount
   }
 }

@@ -1,6 +1,6 @@
 const fs = require('fs')
 import path from 'path'
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { ConsoleService } from '@/serene-core-server/services/console/service'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
@@ -95,6 +95,8 @@ export class LoadExternalExtensionsService {
             })
 
     // Load extensions
+    const extensionNodes: SourceNode[] = []
+
     for (const fullPath of pathsList) {
 
       // Skip if not a dir
@@ -115,11 +117,20 @@ export class LoadExternalExtensionsService {
       }
 
       // Load extension
-      await this.loadExtensionInPath(
-              prisma,
-              instanceId,
-              fullPath)
+      const extensionNode = await
+        this.loadExtensionInPath(
+          prisma,
+          instanceId,
+          fullPath)
+
+      // Add to extensionNodes
+      if (extensionNode != null) {
+        extensionNodes.push(extensionNode)
+      }
     }
+
+    // Return
+    return extensionNodes
   }
 
   async loadExtensionInPath(
@@ -170,6 +181,9 @@ export class LoadExternalExtensionsService {
             instanceId,
             extensionNode,
             `${loadPath}/hooks`)
+
+    // Return
+    return extensionNode
   }
 
   async promptForAndLoadPath(prisma: PrismaClient) {
@@ -194,9 +208,29 @@ export class LoadExternalExtensionsService {
     }
 
     // Load path
-    await this.loadExtensionsInPath(
-            prisma,
-            systemInstance.id,
-            loadPath)
+    const extensionNodes = await
+      this.loadExtensionsInPath(
+        prisma,
+        systemInstance.id,
+        loadPath)
+
+    // Prompt whether to load into user projects
+    console.log(`Copy new versions to existing user projects? Y/N`)
+
+    const loadToUserProjects = await
+            consoleService.askQuestion('> ')
+
+    if (loadToUserProjects.toLowerCase() !== 'y') {
+      return
+    }
+
+    // Load into user projects
+    const copyCount = await
+      extensionMutateService.upgradeToUserProjects(
+        prisma,
+        extensionNodes)
+
+    // Done
+    console.log(`Copied to ${copyCount} user projects`)
   }
 }
