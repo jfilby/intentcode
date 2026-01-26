@@ -115,6 +115,10 @@ export class CompilerMutateService {
     const fnName = `${this.clName}.processResults()`
 
     // Validate
+    if (content == null) {
+      throw new CustomError(`${fnName}: content == null`)
+    }
+
     if (buildFromFile.targetFullPath == null) {
       throw new CustomError(
         `${fnName}: buildFromFile.sourceFullPath == null`)
