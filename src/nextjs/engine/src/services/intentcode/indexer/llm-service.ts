@@ -49,10 +49,19 @@ export class IndexerMutateLlmService {
 
       cacheKey = cacheResults.cacheKey
       inputMessageStr = cacheResults.inputMessageStr
-      const queryResultsJson = cacheResults.llmCache
+      const queryResultsJson = cacheResults.llmCache?.outputJson
+
+      // Debug
+      // console.log(`${fnName}: cacheKey: ${cacheKey}`)
+      // console.log(`${fnName}: queryResults: ` + JSON.stringify(queryResults))
 
       // Found?
-      if (queryResults != null) {
+      if (queryResultsJson != null) {
+
+        // Debug
+        // console.log(`${fnName}: cached results found`)
+
+        // Return
         return {
           status: true,
           message: undefined,
