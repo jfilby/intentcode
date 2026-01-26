@@ -54,8 +54,9 @@ export class CompilerPromptService {
           `You need to:\n` +
           `- Determine the assumptions needed in the IntentCode to make it ` +
           `  unambiguous.\n` +
-          `- Scan for warnings and errors. If there are any errors then ` +
-          `  don't return any target source.\n` +
+          `- Scan for warnings and errors, but not in the existing source. ` +
+          `  If there are any errors in the new source then don't return ` +
+          `  any target source.\n` +
           `- Try to fix and errors and warnings in the fixedIntentCode ` +
           `  field.\n` +
           `- Convert the input IntentCode (if no errors) to ` +
