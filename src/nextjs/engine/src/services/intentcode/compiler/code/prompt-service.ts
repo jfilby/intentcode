@@ -30,12 +30,6 @@ export class CompilerPromptService {
     // Debug
     const fnName = `${this.clName}.getPrompt()`
 
-    // Get rules by targetLang
-    const targetLangPrompting =
-            compilerQueryService.getSkillPrompting(
-              extensionsData,
-              buildFromFile.targetFileExt)
-
     // Get deps prompting
     const depsPrompting = await
             dependenciesPromptService.getDepsPrompting(
@@ -43,6 +37,12 @@ export class CompilerPromptService {
               projectNode,
               buildFromFile.fileNode,
               buildFromFile.targetFullPath)
+
+    // Get rules by targetLang
+    const targetLangPrompting =
+            compilerQueryService.getSkillPrompting(
+              extensionsData,
+              buildFromFile.targetFileExt)
 
     // Debug
     // console.log(`${fnName}: targetLangPrompting: ${targetLangPrompting}`)
