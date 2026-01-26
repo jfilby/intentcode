@@ -59,9 +59,9 @@ export class SpecsToIntentCodePromptService {
           `## Example IntentCode\n` +
           `\n` +
           '```md\n`' +
-          `# Calc\n` +
+          `# class:Calc\n` +
           `\n` +
-          `## parseInput()\n` +
+          `## fn:parseInput\n` +
           `\n` +
           `- Convert input parameter str to string array of numbers and ` +
           `  operations.\n` +
