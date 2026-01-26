@@ -202,8 +202,11 @@ export class CompilerMutateLlmService {
       }
     }
 
-    if (queryResults.json.targetSource == null) {
-      console.log(`${fnName}: targetSource not specified`)
+    if (queryResults.json.errors == null &&
+        queryResults.json.errors.length === 0 &&
+        queryResults.json.targetSource == null) {
+
+      console.log(`${fnName}: targetSource not specified (and no errors)`)
       return false
     }
 
