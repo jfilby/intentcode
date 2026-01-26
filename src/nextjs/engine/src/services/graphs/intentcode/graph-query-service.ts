@@ -27,7 +27,33 @@ export class IntentCodeGraphQueryService {
               instanceId,
               SourceNodeTypes.intentCodeIndexedData,
               true,  // includeParent
-              true)  // orderByUniqueKey (for prompt reproducibility)
+              false)
+
+    // Validate
+    for (const sourceNode of sourceNodes) {
+
+      if ((sourceNode.jsonContent as any)?.path == null) {
+        throw new CustomError(
+          `${fnName}: sourceNode.jsonContent?.path == null`)
+      }
+    }
+
+    // Order by relativePath, as these nodes are new for each build they can't
+    // be ordered by parentIds.
+    sourceNodes.sort((a, b) => {
+
+      if ((a.jsonContent as any).relativePath <
+          (b.jsonContent as any).relativePath) {
+        return -1
+      }
+
+      if ((a.jsonContent as any).relativePath >
+          (b.jsonContent as any).relativePath) {
+        return 1
+      }
+
+      return 0
+    })
 
     // Debug
     // console.log(`${fnName}: sourceNodes: ` + JSON.stringify(sourceNodes))
