@@ -102,7 +102,7 @@ export class SpecsToIntentCodePromptService {
           `      "text": "No extension for <tech> available."\n` +
           `    }\n` +
           `  ],\n` +
-          `  "intentcode": [\n `+
+          `  "intentCode": [\n `+
           `    {\n` +
           `      "projectNo": <projectNo>,\n` +
           `      "fileDelta": <fileDelta>,\n` +
