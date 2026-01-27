@@ -11,7 +11,7 @@ import { ServerTestTypes } from '@/types/server-test-types'
 import { SourceNodeNames, SourceNodeGenerationData, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
-import { CompilerMutateLlmService } from './llm-service'
+import { CompilerLlmService } from './llm-service'
 import { CompilerPromptService } from './prompt-service'
 import { DependenciesMutateService } from '@/services/graphs/dependencies/mutate-service'
 import { FsUtilsService } from '@/services/utils/fs-utils-service'
@@ -28,7 +28,7 @@ const sourceNodeGenerationModel = new SourceNodeGenerationModel()
 const sourceNodeModel = new SourceNodeModel()
 
 // Services
-const compilerMutateLlmService = new CompilerMutateLlmService()
+const compilerLlmService = new CompilerLlmService()
 const compilerPromptService = new CompilerPromptService()
 const dependenciesMutateService = new DependenciesMutateService()
 const fsUtilsService = new FsUtilsService()
@@ -318,7 +318,7 @@ export class CompilerMutateService {
       var message: string | undefined = undefined;
 
       ({ status, message, content, jsonContent } = await
-        compilerMutateLlmService.llmRequest(
+        compilerLlmService.llmRequest(
           prisma,
           adminUserProfile.id,
           tech,
