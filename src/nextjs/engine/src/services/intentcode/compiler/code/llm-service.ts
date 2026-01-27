@@ -193,11 +193,11 @@ export class CompilerLlmService {
 
     if (queryResults.json.source?.deps != null) {
 
-      const entryValidated =
+      const depsValidated =
               dependenciesQueryService.verifyDepsDeltas(
                 queryResults.json.source.deps)
 
-      if (entryValidated === false) {
+      if (depsValidated === false) {
         return false
       }
     }
