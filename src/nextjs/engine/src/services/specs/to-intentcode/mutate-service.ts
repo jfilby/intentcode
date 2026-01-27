@@ -106,10 +106,10 @@ export class SpecsToIntentCodeMutateService {
     console.log(`${fnName}: jsonContent: ` + JSON.stringify(jsonContent))
 
     // Write IntentCode files
-    if (jsonContent.intentcode != null) {
+    if (jsonContent.intentCode != null) {
 
-      // Iterate intentcode entries
-      for (const intentCode of jsonContent.intentcode) {
+      // Iterate intentCode entries
+      for (const intentCode of jsonContent.intentCode) {
 
         // Pre-process the content (if needed)
         const contentExtracts =

@@ -5,7 +5,7 @@ import { AgentLlmService } from '@/serene-ai-server/services/llm-apis/agent-llm-
 import { LlmUtilsService } from '@/serene-ai-server/services/llm-apis/utils-service'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
 import { BuildData } from '@/types/build-types'
-import { MessageTypes, ServerOnlyTypes } from '@/types/server-only-types'
+import { FileDeltas, MessageTypes, ServerOnlyTypes } from '@/types/server-only-types'
 
 // Services
 const agentLlmService = new AgentLlmService()
@@ -193,17 +193,17 @@ export class SpecsMutateLlmService {
     }
 
     // extensions is required and can't be an array
-    if (queryResults.json.intentcode == null ||
-        !Array.isArray(queryResults.json.intentcode)) {
+    if (queryResults.json.intentCode == null ||
+        !Array.isArray(queryResults.json.intentCode)) {
 
       console.log(`${fnName}: invalid intentcode`)
       return false
     }
 
     // Iterate intentcode entries
-    if (this.validateIntentcode(
+    if (this.validateIntentCode(
           buildData,
-          queryResults.json.intentcode) === false) {
+          queryResults.json.intentCode) === false) {
 
       return false
     }
@@ -212,15 +212,15 @@ export class SpecsMutateLlmService {
     return true
   }
 
-  validateIntentcode(
+  validateIntentCode(
     buildData: BuildData,
-    intentcode: any[]) {
+    intentCode: any[]) {
 
     // Debug
-    const fnName = `${this.clName}.validateIntentcode()`
+    const fnName = `${this.clName}.validateIntentCode()`
 
     // Validate each entries
-    for (const entry of intentcode) {
+    for (const entry of intentCode) {
 
       // Validate projectNo
       if (!buildData.projectsMap.has(entry.projectNo)) {
@@ -231,7 +231,7 @@ export class SpecsMutateLlmService {
 
       // Validate fileDelta
       if (entry.fileDelta == null ||
-          !['set', 'delete'].includes(entry.fileDelta)) {
+          ![FileDeltas.set, FileDeltas.del].includes(entry.fileDelta)) {
 
         console.log(`${fnName}: invalid fileDelta: ${entry.fileDelta}`)
         return false
@@ -246,7 +246,7 @@ export class SpecsMutateLlmService {
       }
 
       // Validate content
-      if (entry.fileDelta === 'set' &&
+      if (entry.fileDelta === FileDeltas.set &&
           (entry.content == null ||
            entry.content.length === 0)) {
 
