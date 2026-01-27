@@ -23,7 +23,7 @@ export class IndexerPromptService {
           extensionsData: ExtensionsData,
           buildFromFile: BuildFromFile) {
 
-    // Get rules by targetLang
+    // Get skills by targetLang
     const targetLangPrompting =
             compilerQueryService.getSkillPrompting(
               extensionsData,

@@ -38,7 +38,7 @@ export class CompilerPromptService {
               buildFromFile.fileNode,
               buildFromFile.targetFullPath)
 
-    // Get rules by targetLang
+    // Get skills by targetLang
     const targetLangPrompting =
             compilerQueryService.getSkillPrompting(
               extensionsData,

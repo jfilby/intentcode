@@ -30,24 +30,11 @@ export class SpecsToIntentCodePromptService {
     // Debug
     const fnName = `${this.clName}.getPrompt()`
 
-    // Get rules by targetLang
-    const skillsMap = new Map<string, string>()
-
-    for (const buildFromFile of buildFromFiles) {
-
-      if (skillsMap.has(buildFromFile.targetFileExt)) {
-        continue
-      }
-
-      const targetLangPrompting =
-        compilerQueryService.getSkillPrompting(
-          buildData.extensionsData,
-          buildFromFile.targetFileExt)
-
-      skillsMap.set(
-        buildFromFile.targetFileExt,
-        targetLangPrompting)
-    }
+    // Get skills used across files
+    const skillsMap =
+      compilerQueryService.getMultiFileSkillPrompting(
+        buildData,
+        buildFromFiles)
 
     // Start the prompt
     var prompt = 

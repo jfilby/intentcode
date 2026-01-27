@@ -1,3 +1,4 @@
+import { BuildData, BuildFromFile } from '@/types/build-types'
 import { ExtensionsData } from '@/types/source-graph-types'
 
 export class CompilerQueryService {
@@ -57,5 +58,30 @@ export class CompilerQueryService {
 
     // Return
     return prompting
+  }
+
+  getMultiFileSkillPrompting(
+    buildData: BuildData,
+    buildFromFiles: BuildFromFile[]) {
+
+    // Var for skills by targetFileExt
+    const skillsMap = new Map<string, string>()
+
+    // Iterate buildFromFiles
+    for (const buildFromFile of buildFromFiles) {
+
+      if (skillsMap.has(buildFromFile.targetFileExt)) {
+        continue
+      }
+
+      const targetLangPrompting =
+        this.getSkillPrompting(
+          buildData.extensionsData,
+          buildFromFile.targetFileExt)
+
+      skillsMap.set(
+        buildFromFile.targetFileExt,
+        targetLangPrompting)
+    }
   }
 }
