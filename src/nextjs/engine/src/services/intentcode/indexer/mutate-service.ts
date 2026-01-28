@@ -2,7 +2,7 @@ const fs = require('fs')
 import { blake3 } from '@noble/hashes/blake3'
 import { PrismaClient, SourceNode, Tech } from '@prisma/client'
 import { ServerTestTypes } from '@/types/server-test-types'
-import { IndexerMutateLlmService } from './llm-service'
+import { IndexerLlmService } from './llm-service'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-service'
 import { UsersService } from '@/serene-core-server/services/users/service'
@@ -27,7 +27,7 @@ const sourceNodeModel = new SourceNodeModel()
 // Services
 const dependenciesMutateService = new DependenciesMutateService()
 const fsUtilsService = new FsUtilsService()
-const indexerMutateLlmService = new IndexerMutateLlmService()
+const indexerLlmService = new IndexerLlmService()
 const indexerPromptService = new IndexerPromptService()
 const intentCodeFilenameService = new IntentCodeFilenameService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
@@ -139,7 +139,7 @@ export class IndexerMutateService {
     if (jsonContent == null) {
 
       const llmResults = await
-              indexerMutateLlmService.llmRequest(
+              indexerLlmService.llmRequest(
                 prisma,
                 adminUserProfile.id,
                 tech,

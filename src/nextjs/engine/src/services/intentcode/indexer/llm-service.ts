@@ -12,10 +12,10 @@ const dependenciesQueryService = new DependenciesQueryService()
 const llmCacheService = new LlmCacheService()
 const llmUtilsService = new LlmUtilsService()
 
-export class IndexerMutateLlmService {
+export class IndexerLlmService {
 
   // Consts
-  clName = 'IndexerMutateLlmService'
+  clName = 'IndexerLlmService'
 
   // Code
   async llmRequest(

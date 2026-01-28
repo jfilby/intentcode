@@ -3,7 +3,7 @@ import path from 'path'
 import { blake3 } from '@noble/hashes/blake3'
 import { PrismaClient, SourceNode, Tech } from '@prisma/client'
 import { ServerTestTypes } from '@/types/server-test-types'
-import { SpecsTechStackMutateLlmService } from './llm-service'
+import { SpecsTechStackLlmService } from './llm-service'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-service'
 import { UsersService } from '@/serene-core-server/services/users/service'
@@ -34,7 +34,7 @@ const intentCodeMessagesService = new IntentCodeMessagesService()
 const specsGraphMutateService = new SpecsGraphMutateService()
 const specsGraphQueryService = new SpecsGraphQueryService()
 const specsPathGraphMutateService = new SpecsPathGraphMutateService()
-const specsTechStackMutateLlmService = new SpecsTechStackMutateLlmService()
+const specsTechStackLlmService = new SpecsTechStackLlmService()
 const specsTechStackPromptService = new SpecsTechStackPromptService()
 const techQueryService = new TechQueryService()
 const walkDirService = new WalkDirService()
@@ -144,7 +144,7 @@ export class SpecsTechStackMutateService {
 
       // LLM request
       const llmResults = await
-              specsTechStackMutateLlmService.llmRequest(
+              specsTechStackLlmService.llmRequest(
                 prisma,
                 adminUserProfile.id,
                 tech,

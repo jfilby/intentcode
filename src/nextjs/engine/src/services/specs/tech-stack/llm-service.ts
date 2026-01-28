@@ -12,10 +12,10 @@ const agentLlmService = new AgentLlmService()
 const llmCacheService = new LlmCacheService()
 const llmUtilsService = new LlmUtilsService()
 
-export class SpecsTechStackMutateLlmService {
+export class SpecsTechStackLlmService {
 
   // Consts
-  clName = 'SpecsTechStackMutateLlmService'
+  clName = 'SpecsTechStackLlmService'
 
   // Code
   async llmRequest(

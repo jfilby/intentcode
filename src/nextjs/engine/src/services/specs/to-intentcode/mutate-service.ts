@@ -19,7 +19,7 @@ import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/p
 import { SpecsGraphMutateService } from '@/services/graphs/specs/graph-mutate-service'
 import { ProjectsQueryService } from '@/services/projects/query-service'
 import { SpecsGraphQueryService } from '@/services/graphs/specs/graph-query-service'
-import { SpecsMutateLlmService } from './llm-service'
+import { SpecsLlmService } from './llm-service'
 import { SpecsPathGraphMutateService } from '@/services/graphs/specs/path-graph-mutate-service'
 import { SpecsToIntentCodePromptService } from './prompt-service'
 
@@ -34,7 +34,7 @@ const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
 const projectsQueryService = new ProjectsQueryService()
 const specsGraphMutateService = new SpecsGraphMutateService()
 const specsGraphQueryService = new SpecsGraphQueryService()
-const specsMutateLlmService = new SpecsMutateLlmService()
+const specsLlmService = new SpecsLlmService()
 const specsPathGraphMutateService = new SpecsPathGraphMutateService()
 const specsToIntentCodePromptService = new SpecsToIntentCodePromptService()
 const techQueryService = new TechQueryService()
@@ -223,7 +223,7 @@ export class SpecsToIntentCodeMutateService {
     if (jsonContent == null) {
 
       const llmResults = await
-              specsMutateLlmService.llmRequest(
+              specsLlmService.llmRequest(
                 prisma,
                 buildData,
                 adminUserProfile.id,
