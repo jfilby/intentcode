@@ -83,5 +83,8 @@ export class CompilerQueryService {
         buildFromFile.targetFileExt,
         targetLangPrompting)
     }
+
+    // Return
+    return skillsMap
   }
 }
