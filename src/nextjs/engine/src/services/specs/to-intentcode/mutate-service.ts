@@ -58,19 +58,6 @@ export class SpecsToIntentCodeMutateService {
     // Debug
     const fnName = `${this.clName}.getExistingJsonContent()`
 
-    // Try to get existing indexer data SourceNode
-    const indexerDataSourceNode = await
-            sourceNodeModel.getByUniqueKey(
-              prisma,
-              projectSpecsNode.id,  // parentId
-              projectSpecsNode.instanceId,
-              SourceNodeTypes.projectSpecs,
-              SourceNodeNames.projectSpecs)
-
-    if (indexerDataSourceNode == null) {
-      return null
-    }
-
     // Get promptHash
     const promptHash = blake3(JSON.stringify(prompt)).toString()
 
@@ -78,7 +65,7 @@ export class SpecsToIntentCodeMutateService {
     const sourceNodeGeneration = await
             sourceNodeGenerationModel.getByUniqueKey(
               prisma,
-              indexerDataSourceNode.id,
+              projectSpecsNode.id,
               tech.id,
               promptHash)
 

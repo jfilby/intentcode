@@ -11,6 +11,7 @@ import { InstanceSettingNames, ProjectDetails, ServerOnlyTypes } from '@/types/s
 import { BuildsGraphMutateService } from '../graphs/builds/mutate-service'
 import { DotIntentCodeGraphQueryService } from '../graphs/dot-intentcode/graph-query-service'
 import { FsUtilsService } from '../utils/fs-utils-service'
+import { IntentCodeAnalysisGraphMutateService } from '../graphs/intentcode-analysis/mutate-service'
 import { IntentCodeGraphMutateService } from '../graphs/intentcode/graph-mutate-service'
 import { ProjectGraphQueryService } from '../graphs/project/query-service'
 import { SourceCodeGraphMutateService } from '../graphs/source-code/graph-mutate-service'
@@ -30,6 +31,7 @@ const buildsGraphMutateService = new BuildsGraphMutateService()
 const consoleService = new ConsoleService()
 const dotIntentCodeGraphQueryService = new DotIntentCodeGraphQueryService()
 const fsUtilsService = new FsUtilsService()
+const intentCodeAnalysisGraphMutateService = new IntentCodeAnalysisGraphMutateService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
 const projectGraphQueryService = new ProjectGraphQueryService()
 const sourceCodeGraphMutateService = new SourceCodeGraphMutateService()
@@ -389,6 +391,12 @@ export class ProjectsQueryService {
         buildNode,
         srcPath)
 
+    // Get or create ProjectIntentCodeAnalysisNode
+    const projectIntentCodeAnalysisNode = await
+      intentCodeAnalysisGraphMutateService.getOrCreateProjectIntentCodeAnalysisNode(
+        prisma,
+        buildNode)
+
     // Define ProjectDetails
     const projectDetails: ProjectDetails = {
       indents: indents,
@@ -397,7 +405,8 @@ export class ProjectsQueryService {
       dotIntentCodeProjectNode: dotIntentCodeProjectNode,
       projectSpecsNode: projectSpecsNode,
       projectIntentCodeNode: projectIntentCodeNode,
-      projectSourceNode: projectSourceNode
+      projectSourceNode: projectSourceNode,
+      projectIntentCodeAnalysisNode: projectIntentCodeAnalysisNode
     }
 
     // Return

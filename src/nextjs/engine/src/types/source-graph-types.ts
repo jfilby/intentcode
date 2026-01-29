@@ -21,35 +21,22 @@ export enum SourceNodeTypes {
   builds = 'Builds',
   build = 'Build',
 
-  // has parents: projectDotIntentCode
   dotIntentCodeDir = '.intentcode dir',
-
-  // has parents: projectSpecs/specsDir
   specsDir = 'Specs dir',
-
-  // has parents: projectSpecs/specsDir
   specsFile = 'Specs file',
-
-  // has parents: projectSpecs
   techStackJsonFile = 'Tech stack JSON file',
 
-  // has parents: projectIntentCode/intentCodeDir
   intentCodeDir = 'IntentCode dir',
-
-  // has parents: projectIntentCode/intentCodeDir
   intentCodeFile = 'IntentCode file',
 
-  // has parents: intentCodeFile
   intentCodeIndexedData = 'IntentCode indexed data',
-
-  // has parents: intentCodeFile
   intentCodeCompilerData = 'IntentCode compiler data',
 
-  // has parents: projectSourceCode/sourceCodeDir
   sourceCodeDir = 'Source code dir',
-
-  // has parents: projectSourceCode/sourceCodeDir
   sourceCodeFile = 'Source code file',
+
+  projectIntentCodeAnalysisNode = 'IntentCode analysis',
+  suggestion = 'Suggestion',
 
   // Extensions
   extensionsType = 'Extensions',
@@ -72,6 +59,8 @@ export enum SourceNodeNames {
 
   compilerData = 'Compiler data',
   indexedData = 'Indexed data',
+
+  projectIntentCodeAnalysisNode = 'IntentCode analysis',
 
   depsName = 'Dependencies',
   extensionsName = 'Extensions'

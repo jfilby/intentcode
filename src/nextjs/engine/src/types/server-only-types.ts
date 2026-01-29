@@ -92,4 +92,5 @@ export interface ProjectDetails {
   projectSpecsNode: SourceNode
   projectIntentCodeNode: SourceNode
   projectSourceNode: SourceNode
+  projectIntentCodeAnalysisNode: SourceNode
 }

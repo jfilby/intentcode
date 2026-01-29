@@ -7,6 +7,7 @@ import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { DeleteBuildService } from './delete-service'
 import { DepsUpdateService } from '@/services/managed-files/deps/update-service'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
+import { IntentCodeAnalyzerMutateService } from '../analyzer/mutate-service'
 import { ProjectsQueryService } from '@/services/projects/query-service'
 import { ProjectCompileService } from '@/services/projects/compile-service'
 import { ProjectVerifyService } from '@/services/projects/verify-service'
@@ -20,6 +21,7 @@ const sourceNodeModel = new SourceNodeModel()
 const deleteBuildService = new DeleteBuildService()
 const depsUpdateService = new DepsUpdateService()
 const extensionQueryService = new ExtensionQueryService()
+const intentCodeAnalyzerMutateService = new IntentCodeAnalyzerMutateService()
 const projectCompileService = new ProjectCompileService()
 const projectsQueryService = new ProjectsQueryService()
 const projectVerifyService = new ProjectVerifyService()
@@ -83,6 +85,7 @@ export class BuildMutateService {
       BuildStageType.specsToIntentCode,
       // IntentCode to source
       BuildStageType.updateDeps,
+      BuildStageType.intentCodeDiscovery,
       BuildStageType.index,
       BuildStageType.compile,
       BuildStageType.updateDeps,
@@ -204,9 +207,19 @@ export class BuildMutateService {
       case BuildStageType.defineTechStack: {
 
         await specsTechStackMutateService.processTechStack(
-                prisma,
-                buildData,
-                projectNode)
+          prisma,
+          buildData,
+          projectNode)
+
+        break
+      }
+
+      case BuildStageType.intentCodeDiscovery: {
+
+        await intentCodeAnalyzerMutateService.run(
+          prisma,
+          buildData,
+          projectNode)
 
         break
       }
@@ -214,9 +227,9 @@ export class BuildMutateService {
       case BuildStageType.specsToIntentCode: {
 
         await specsToIntentCodeMutateService.run(
-                prisma,
-                buildData,
-                projectNode)
+          prisma,
+          buildData,
+          projectNode)
 
         break
       }
@@ -224,9 +237,9 @@ export class BuildMutateService {
       case BuildStageType.updateDeps: {
 
         await depsUpdateService.update(
-                prisma,
-                buildData,
-                projectNode)
+          prisma,
+          buildData,
+          projectNode)
 
         break
       }
@@ -234,9 +247,9 @@ export class BuildMutateService {
       case BuildStageType.index: {
 
         await projectCompileService.runIndexBuildStage(
-                prisma,
-                buildData,
-                projectNode)
+          prisma,
+          buildData,
+          projectNode)
 
         break
       }
@@ -244,9 +257,9 @@ export class BuildMutateService {
       case BuildStageType.compile: {
 
         await projectCompileService.runCompileBuildStage(
-                prisma,
-                buildData,
-                projectNode)
+          prisma,
+          buildData,
+          projectNode)
 
         break
       }
@@ -254,8 +267,8 @@ export class BuildMutateService {
       case BuildStageType.verifyInternals: {
 
         await projectVerifyService.run(
-                prisma,
-                projectNode)
+          prisma,
+          projectNode)
 
         break
       }
