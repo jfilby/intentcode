@@ -4,7 +4,7 @@ import { AgentLlmService } from '@/serene-ai-server/services/llm-apis/agent-llm-
 import { LlmUtilsService } from '@/serene-ai-server/services/llm-apis/utils-service'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
 import { BuildData } from '@/types/build-types'
-import { FileDeltas, MessageTypes, ServerOnlyTypes } from '@/types/server-only-types'
+import { FileOps, MessageTypes, ServerOnlyTypes } from '@/types/server-only-types'
 import { DependenciesQueryService } from '@/services/graphs/dependencies/query-service'
 
 // Services
@@ -217,14 +217,14 @@ export class IntentCodeAnalyzerLlmService {
       return false
     }
 
-    // Validae fileDeltas
+    // Validate fileDeltas
     for (const fileDelta of suggestion.fileDeltas) {
 
-      // Validate fileDelta
-      if (fileDelta.fileDelta == null ||
-          ![FileDeltas.set, FileDeltas.del].includes(fileDelta.fileDelta)) {
+      // Validate fileOp
+      if (fileDelta.fileOp == null ||
+          ![FileOps.set, FileOps.del].includes(fileDelta.fileDelta)) {
 
-        console.log(`${fnName}: invalid fileDelta: ${fileDelta.fileDelta}`)
+        console.log(`${fnName}: invalid fileOp: ${fileDelta.fileOp}`)
         return false
       }
 
@@ -239,7 +239,7 @@ export class IntentCodeAnalyzerLlmService {
       }
 
       // Validate change
-      if (fileDelta.fileDelta === FileDeltas.set &&
+      if (fileDelta.fileDelta === FileOps.set &&
           (fileDelta.change == null ||
            fileDelta.change.length === 0)) {
 

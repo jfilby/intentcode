@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { TextParsingService } from '@/serene-ai-server/services/content/text-parsing-service'
 import { BuildData } from '@/types/build-types'
-import { FileDelta, FileDeltas, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
+import { FileDelta, FileOps, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
 import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
 
@@ -58,11 +58,11 @@ export class IntentCodeUpdaterMutateService {
 
     if (ServerOnlyTypes.verbosity >= VerbosityLevels.min) {
 
-      console.log(`.. ${fileDelta.fileDelta} ${intentCodeFullPath}`)
+      console.log(`.. ${fileDelta.fileOp} ${intentCodeFullPath}`)
     }
 
     // Upsert SourceCode node path
-    if (fileDelta.fileDelta === FileDeltas.set) {
+    if (fileDelta.fileOp === FileOps.set) {
 
       // Upsert IntentCode path graph
       await intentCodePathGraphMutateService.upsertIntentCodePathAsGraph(
@@ -76,7 +76,7 @@ export class IntentCodeUpdaterMutateService {
         fileDelta.content + `\n`,
         true)  // createMissingDirs
 
-    } else if (fileDelta.fileDelta === FileDeltas.del) {
+    } else if (fileDelta.fileOp === FileOps.del) {
 
       // Delete IntentCode path graph
       await intentCodePathGraphMutateService.deleteIntentCodePathAsGraph(

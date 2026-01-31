@@ -1,5 +1,5 @@
 import { BuildData } from '@/types/build-types'
-import { FileDeltas } from '@/types/server-only-types'
+import { FileOps } from '@/types/server-only-types'
 
 // Class
 export class IntentCodeUpdaterQueryService {
@@ -16,37 +16,37 @@ export class IntentCodeUpdaterQueryService {
     const fnName = `${this.clName}.validateFileDelta()`
 
     // Validate each entries
-    for (const entry of intentCode) {
+    for (const fileDelta of intentCode) {
 
       // Validate projectNo
-      if (!buildData.projectsMap.has(entry.projectNo)) {
+      if (!buildData.projectsMap.has(fileDelta.projectNo)) {
 
-        console.log(`${fnName}: invalid projectNo: ${entry.projectNo}`)
+        console.log(`${fnName}: invalid projectNo: ${fileDelta.projectNo}`)
         return false
       }
 
-      // Validate fileDelta
-      if (entry.fileDelta == null ||
-          ![FileDeltas.set, FileDeltas.del].includes(entry.fileDelta)) {
+      // Validate fileOp
+      if (fileDelta.fileOp == null ||
+          ![FileOps.set, FileOps.del].includes(fileDelta.fileOp)) {
 
-        console.log(`${fnName}: invalid fileDelta: ${entry.fileDelta}`)
+        console.log(`${fnName}: invalid fileOp: ${fileDelta.fileOp}`)
         return false
       }
 
       // Validate relativePath
-      if (entry.relativePath == null ||
-          entry.relativePath.length === 0) {
+      if (fileDelta.relativePath == null ||
+          fileDelta.relativePath.length === 0) {
 
-        console.log(`${fnName}: invalid relativePath: ${entry.relativePath}`)
+        console.log(`${fnName}: invalid relativePath: ${fileDelta.relativePath}`)
         return false
       }
 
       // Validate content
-      if (entry.fileDelta === FileDeltas.set &&
-          (entry.content == null ||
-           entry.content.length === 0)) {
+      if (fileDelta.fileOp === FileOps.set &&
+          (fileDelta.content == null ||
+           fileDelta.content.length === 0)) {
 
-        console.log(`${fnName}: invalid content (for set): ${entry.content}`)
+        console.log(`${fnName}: invalid content (for set): ${fileDelta.content}`)
         return false
       }
     }

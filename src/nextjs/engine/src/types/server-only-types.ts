@@ -57,7 +57,7 @@ export enum DepDeltaNames {
   del = 'del'
 }
 
-export enum FileDeltas {
+export enum FileOps {
   set = 'set',
   del = 'del'
 }
@@ -90,7 +90,7 @@ export interface DepDelta {
 export interface FileDelta {
   projectNo: number
   relativePath: string
-  fileDelta: FileDeltas
+  fileOp: FileOps
   content?: string
 }
 

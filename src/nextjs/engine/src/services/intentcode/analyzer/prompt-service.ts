@@ -2,7 +2,7 @@ import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { BuildData, BuildFromFile } from '@/types/build-types'
 import { IntentCodeCommonTypes } from '../common/types'
-import { FileDeltas, ServerOnlyTypes } from '@/types/server-only-types'
+import { FileOps, ServerOnlyTypes } from '@/types/server-only-types'
 import { CompilerQueryService } from '../compiler/code/query-service'
 import { DependenciesPromptService } from '@/services/graphs/dependencies/prompt-service'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
@@ -70,7 +70,7 @@ export class IntentCodeAnalyzerPromptService {
           `- The content is optional where IntentCode can be specified for ` +
           `  a file. Whether existing or modified.\n` +
           `- Suggestion priorities are from 1 (urgent) to 5 (low).\n` +
-          `- The fileDelta can be: ` + JSON.stringify(FileDeltas) + `\n` +
+          `- The fileOp can be: ` + JSON.stringify(FileOps) + `\n` +
           `- The change per fileDelta is a brief description of the change ` +
           `  and not the new contents to set.\n` +
           `\n` +
@@ -89,7 +89,7 @@ export class IntentCodeAnalyzerPromptService {
           `      "projectNo": <projectNo>,\n` +
           `      "fileDeltas": [\n `+
           `        {\n` +
-          `          "fileDelta": "<fileDelta>",\n` +
+          `          "fileOp": "<fileOp>",\n` +
           `          "relativePath": "<targetFilename>.<srcExt>.md",\n` +
           `          "change": "<change>"\n` +
           `        }\n` +

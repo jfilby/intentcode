@@ -102,7 +102,7 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
 
     for (const fileDelta of suggestion.fileDeltas) {
 
-      console.log(`.. ${fileDelta.fileDelta} ${fileDelta.relativePath}: ` +
+      console.log(`.. ${fileDelta.fileOp} ${fileDelta.relativePath}: ` +
         `${fileDelta.change}`)
     }
 

@@ -4,7 +4,7 @@ import { AgentLlmService } from '@/serene-ai-server/services/llm-apis/agent-llm-
 import { LlmUtilsService } from '@/serene-ai-server/services/llm-apis/utils-service'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
 import { BuildData } from '@/types/build-types'
-import { FileDeltas, MessageTypes, ServerOnlyTypes } from '@/types/server-only-types'
+import { FileOps, MessageTypes, ServerOnlyTypes } from '@/types/server-only-types'
 import { DependenciesQueryService } from '@/services/graphs/dependencies/query-service'
 import { IntentCodeUpdaterQueryService } from '../updater/query-service'
 
