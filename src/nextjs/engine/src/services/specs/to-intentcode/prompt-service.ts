@@ -55,26 +55,11 @@ export class SpecsToIntentCodePromptService {
           `\n` +
           `## Fields\n` +
           `\n` +
+          IntentCodeCommonTypes.intentCodeFileDeltasPrompting +
+          `\n` +
           ServerOnlyTypes.messagesPrompting +
           `\n` +
-          `- The intentcode array contains a list of filenames and content.\n` +
-          `- The relativePath must include the source extension, e.g. if ` +
-          `  a TypeScript file an example is: /src/index.ts.md.` +
-          `- Field fileDelta can be ${FileDeltas.set} or ${FileDeltas.del}.\n` +
-          `- Don't specify the content field if fileDelta is ` +
-          `  ${FileDeltas.del}.\n` +
-          `\n` +
-          `## Example IntentCode\n` +
-          `\n` +
-          '```md\n`' +
-          `# class:Calc\n` +
-          `\n` +
-          `## fn:parseInput\n` +
-          `\n` +
-          `- Convert input parameter str to string array of numbers and ` +
-          `  operations.\n` +
-          `- Return the answer.\n` +
-          '```\n`' +
+          `- The intentCode array contains a list of fileDeltas.\n` +
           `\n` +
           `## Example JSON output\n` +
           `\n` +

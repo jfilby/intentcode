@@ -1,3 +1,5 @@
+import { FileDeltas } from '@/types/server-only-types'
+
 export class IntentCodeCommonTypes {
 
   static intentCodePrompting =
@@ -41,4 +43,13 @@ export class IntentCodeCommonTypes {
     `\n` +
     '```\n' +
     `\n`
+
+  static intentCodeFileDeltasPrompting =
+    `- The relativePath must include the source extension, e.g. if ` +
+    `  a TypeScript file an example is: /src/index.ts.md.` +
+    `- Field fileDelta can be ${FileDeltas.set} or ${FileDeltas.del}.\n` +
+    `- Don't specify the content field if fileDelta is ` +
+    `  ${FileDeltas.del}.\n` +
+    `- Don't include a ${FileDeltas.del} fileDelta for a file also ` +
+    `  included as ${FileDeltas.set}.\n`
 }

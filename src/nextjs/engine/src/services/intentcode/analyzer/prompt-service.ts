@@ -61,7 +61,7 @@ export class IntentCodeAnalyzerPromptService {
           `- Any external libraries that are needed or recommended?\n` +
           `- Any logical errors can you identify?\n` +
           `- Which new files would be helpful? Especially for defining ` +
-          `  shared types.\n` +
+          `  types that could be imported by multiple files.\n` +
           `\n` +
           IntentCodeCommonTypes.intentCodePrompting +
           `\n` +

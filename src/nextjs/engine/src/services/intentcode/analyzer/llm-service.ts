@@ -197,7 +197,7 @@ export class IntentCodeAnalyzerLlmService {
 
     // Validate projectNo
     if (suggestion.priority == null ||
-        !['1', '2', '3', '4', '5'].includes(suggestion.priority)) {
+        ![1, 2, 3, 4, 5].includes(suggestion.priority)) {
 
       console.log(`${fnName}: invalid priority: ${suggestion.priority}`)
       return false

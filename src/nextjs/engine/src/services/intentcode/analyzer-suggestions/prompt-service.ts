@@ -59,7 +59,7 @@ export class IntentCodeAnalyzerSuggestionsPromptService {
           `\n` +
           `## Fields\n` +
           `\n` +
-          `- The content field is only where fileDelta is "set".\n` +
+          IntentCodeCommonTypes.intentCodeFileDeltasPrompting +
           `\n` +
           // depsPrompting +
           `\n` +
