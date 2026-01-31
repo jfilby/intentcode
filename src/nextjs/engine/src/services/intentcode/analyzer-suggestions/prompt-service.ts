@@ -125,6 +125,9 @@ export class IntentCodeAnalyzerSuggestionsPromptService {
         `\n`
     }
 
+    // Debug
+    // console.log(`${fnName}: prompt: ${prompt}`)
+
     // Return
     return prompt
   }

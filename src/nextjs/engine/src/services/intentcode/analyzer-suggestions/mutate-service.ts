@@ -82,6 +82,8 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
     // Debug
     const fnName = `${this.clName}.processSuggestionChanges()`
 
+    // console.log(`${fnName}: jsonContent: ` + JSON.stringify(jsonContent))
+
     // Process fileDelta
     await intentCodeUpdaterMutateService.processFileDeltas(
       prisma,
