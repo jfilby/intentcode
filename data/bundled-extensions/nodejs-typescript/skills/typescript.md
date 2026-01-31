@@ -35,6 +35,15 @@ Classes must be stateless. No mutable fields, cursors, or stored inputs. All
 state must be passed explicitly through function arguments and return values.
 
 
+### Error handling
+
+- User-facing errors: propagate up so they can be handled/displayed.
+- Internal errors: throw an exception to indicate a bug or unexpected state.
+
+Only add custom error handling in IntentCode if it falls outside of these
+defaults.
+
+
 ## Avoid errors
 
 Do not declare classes inside other classes. All classes must be top-level
