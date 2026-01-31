@@ -35,7 +35,7 @@ Classes must be stateless. No mutable fields, cursors, or stored inputs. All
 state must be passed explicitly through function arguments and return values.
 
 
-### Imports
+## Imports
 
 Imports can be 3rd party libraries or a relative path to another IntentCode
 file (even from another project using an @). An example of all three:
@@ -46,7 +46,7 @@ import:
 - @docs/help.ts.md
 
 
-### Error handling
+## Error handling
 
 - User-facing errors: propagate up so they can be handled/displayed.
 - Internal errors: throw an exception to indicate a bug or unexpected state.
