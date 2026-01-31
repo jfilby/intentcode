@@ -71,6 +71,8 @@ export class IntentCodeAnalyzerPromptService {
           `  a file. Whether existing or modified.\n` +
           `- Suggestion priorities are from 1 (urgent) to 5 (low).\n` +
           `- The fileDelta can be: ` + JSON.stringify(FileDeltas) + `\n` +
+          `- The change per fileDelta is a brief description of the change ` +
+          `  and not the new contents to set.\n` +
           `\n` +
           // depsPrompting +
           `\n` +
