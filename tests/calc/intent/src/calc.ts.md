@@ -1,6 +1,6 @@
 # Calc
 
-## enum:Operation
+## Operation (enum)
 
 plus = '+'
 minus = '-'
@@ -8,13 +8,13 @@ multiple = '*'
 divide = '/'
 
 
-## types:InputType
+## InputType (type)
 
 op?: Operation
 value?: number
 
 
-## fn:run
+## run (fn)
 
 parameters:
 - input: string

@@ -5,6 +5,9 @@ export class IntentCodeCommonTypes {
     `- Is pseudo-code, don't interpret it as literal code.\n` +
     `- Has a focus on intent and doesn't include programming details.\n` +
     `- Uses Markdown format to reflect high-level code structure.\n` +
+    `- Markdown headings should specify a type, and optionally other ` +
+    `  attributes such as async, in parentheses after the name. E.g. ` +
+    '  `## test (fn)`\n' +
     `- Isn't overcomplicated or overly detailed with anything that an LLM ` +
     `  could infer.\n` +
     `- Prefer referencing algorithms and approaches only, unless there's a ` +
