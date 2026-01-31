@@ -1,5 +1,11 @@
 import { Instance, SourceNode } from '@prisma/client'
 
+export enum VerbosityLevels {
+  off = 'off',
+  min = 'min',
+  max = 'max'
+}
+
 export class ServerOnlyTypes {
 
   // System project
@@ -18,7 +24,7 @@ export class ServerOnlyTypes {
   static dotMdFileExt = '.md'
 
   // Verbosity
-  static verbosity = true
+  static verbosity = VerbosityLevels.max
 
   // Builds
   static oldBuildsToKeep = 3

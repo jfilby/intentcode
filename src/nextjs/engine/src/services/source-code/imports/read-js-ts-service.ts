@@ -2,6 +2,7 @@ import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
 import { ImportsData, JsTsSrcTypes } from './types'
+import { ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
 import { ParseJsTsImportsService } from './parse-js-ts-service'
 
 // Services
@@ -55,14 +56,18 @@ export class ReadJsTsSourceImportsService {
     // Debug
     const fnName = `${this.clName}.processSrcFile()`
 
-    console.log(`${fnName}: starting with srcFilePath: ${srcFilePath}`)
+    if (ServerOnlyTypes.verbosity === VerbosityLevels.max) {
+      console.log(`${fnName}: starting with srcFilePath: ${srcFilePath}`)
+    }
 
     // Parse for imports
     const importsResults = await
             parseJsTsImportsService.parseImports(srcFilePath)
 
     // Debug
-    console.log(`${fnName}: importsResults: ` + JSON.stringify(importsResults))
+    if (ServerOnlyTypes.verbosity === VerbosityLevels.max) {
+      console.log(`${fnName}: importsResults: ` + JSON.stringify(importsResults))
+    }
 
     // Process imports
     for (const importResult of importsResults) {
