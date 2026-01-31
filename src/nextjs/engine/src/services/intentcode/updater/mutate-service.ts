@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { TextParsingService } from '@/serene-ai-server/services/content/text-parsing-service'
 import { BuildData } from '@/types/build-types'
-import { FileDelta, FileDeltas } from '@/types/server-only-types'
+import { FileDelta, FileDeltas, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
 import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
 
@@ -28,6 +28,7 @@ export class IntentCodeUpdaterMutateService {
     // Debug
     const fnName = `${this.clName}.processFileDelta()`
 
+    // Output
     // Pre-process the content (if needed)
     if (fileDelta.content != null) {
 
@@ -54,6 +55,11 @@ export class IntentCodeUpdaterMutateService {
     // Determine intentCodeFullPath
     const intentCodeFullPath =
       `${intentCodePath}${path.sep}${fileDelta.relativePath}`
+
+    if (ServerOnlyTypes.verbosity >= VerbosityLevels.min) {
+
+      console.log(`.. ${fileDelta.fileDelta} ${intentCodeFullPath}`)
+    }
 
     // Upsert SourceCode node path
     if (fileDelta.fileDelta === FileDeltas.set) {
@@ -88,6 +94,20 @@ export class IntentCodeUpdaterMutateService {
     buildData: BuildData,
     fileDeltas: FileDelta[]) {
 
+    // Output
+    if (ServerOnlyTypes.verbosity >= VerbosityLevels.min) {
+
+      // No changes?
+      if (fileDeltas.length === 0) {
+
+        console.log(`No changes to IntentCode`)
+      } else {
+
+        console.log(`${fileDeltas.length} IntentCode changes..`)
+      }
+    }
+
+    // Iterate fileDeltas
     for (const fileDelta of fileDeltas) {
 
       // Process fileDelta
