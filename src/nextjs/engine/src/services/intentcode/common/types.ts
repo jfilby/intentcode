@@ -13,6 +13,9 @@ export class IntentCodeCommonTypes {
     `  could infer.\n` +
     `- Prefer referencing algorithms and approaches only, unless there's a ` +
     `  good reason to describe the details.\n` +
+    `- Imports are only for when entities are needed from another file and ` +
+    `  referenced in the imported IntentCode file.\n` +
+    `- Avoid circular imports, that would be an error.\n` +
     `\n` +
     `Example IntentCode, for style ref only (wrapped in a Markdown block):\n` +
     `\n` +
