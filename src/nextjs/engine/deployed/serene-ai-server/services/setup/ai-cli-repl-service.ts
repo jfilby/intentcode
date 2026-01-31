@@ -33,7 +33,7 @@ export class AiModelCliReplService {
     // List options
     console.log(``)
     console.log(`Select a provider:`)
-    console.log(`1. Back`)
+    console.log(`[b] Back`)
 
     for (const [techProviderNo, techProvider] of techProvidersMap.entries()) {
 
@@ -51,7 +51,7 @@ export class AiModelCliReplService {
         prisma,
         techProvidersMap.get(menuNo)!)
 
-    } else if (menuNo === `1`) {
+    } else if (menuNo === 'b') {
       return
     }
   }
@@ -135,9 +135,9 @@ export class AiModelCliReplService {
       // Banner
       console.log(``)
       console.log(`Is your key free or paid?`)
-      console.log(`1. Back`)
-      console.log(`2. Free`)
-      console.log(`3. Paid`)
+      console.log(`[b] Back`)
+      console.log(`[f] Free`)
+      console.log(`[p] Paid`)
 
       // Get input
       const input = await
@@ -145,15 +145,15 @@ export class AiModelCliReplService {
 
       switch (input) {
 
-        case '1': {
+        case 'b': {
           return undefined
         }
 
-        case '2': {
+        case 'f': {
           return SereneCoreServerTypes.free
         }
 
-        case '3': {
+        case 'p': {
           return SereneCoreServerTypes.paid
         }
       }
@@ -182,7 +182,7 @@ export class AiModelCliReplService {
     // Banner and options
     console.log(``)
     console.log(`Available keys`)
-    console.log(`1. Back`)
+    console.log(`[b] Back`)
 
     for (const [selection, apiKey] of apiKeysMap) {
 
@@ -209,9 +209,9 @@ export class AiModelCliReplService {
       // Banner and options
       console.log(``)
       console.log(`AI models maintenance`)
-      console.log(`1. Back`)
-      console.log(`2. Add an API key`)
-      console.log(`3. List existing API keys`)
+      console.log(`[b] Back`)
+      console.log(`[a] Add an API key`)
+      console.log(`[l] List existing API keys`)
 
       // Get menu no
       const menuNo = await
@@ -220,16 +220,16 @@ export class AiModelCliReplService {
       // Handle menu no
       switch (menuNo) {
 
-        case '1': {
+        case 'b': {
           return
         }
 
-        case '2': {
+        case 'a': {
           await this.addApiKey(prisma)
           break
         }
 
-        case '3': {
+        case 'l': {
           await this.listApiKeys(prisma)
           break
         }
@@ -247,7 +247,7 @@ export class AiModelCliReplService {
 
     // Banner
     console.log(`Delete this key?`)
-    console.log(`Y/N`)
+    console.log(`[y] or [n]`)
 
     // Get menu no
     const input = await

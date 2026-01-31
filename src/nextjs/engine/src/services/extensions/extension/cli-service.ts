@@ -84,23 +84,16 @@ export class ManageExtensionsCliService {
     // Loop
     while (true) {
 
-      // Iteration vars
-      var projectExtensionsNo = ''
-      var exitNo = 2
-
       // Print options
       console.log(``)
       console.log(`Extension management options:`)
-      console.log(`1. All available extensions in the system`)
+      console.log(`[s] All available extensions in the system`)
 
       if (instance != null) {
-        console.log(`2. Enabled extensions for this project`)
-
-        projectExtensionsNo = '2'
-        exitNo += 1
+        console.log(`[p] Enabled extensions for this project`)
       }
 
-      console.log(`${exitNo}. Exit`)
+      console.log(`[x] Exit`)
 
       // Prompt for project load method
       const selection = await
@@ -112,12 +105,12 @@ export class ManageExtensionsCliService {
           break
         }
 
-        case '1': {
+        case 's': {
           await this.systemProjectExtensions(prisma)
           break
         }
 
-        case projectExtensionsNo: {
+        case 'p': {
           await this.userProjectExtensions(
                   prisma,
                   instance!)
@@ -125,8 +118,7 @@ export class ManageExtensionsCliService {
           break
         }
 
-        case `${exitNo}`:
-        case 'exit': {
+        case 'x': {
           process.exit(0)
         }
 
@@ -144,10 +136,10 @@ export class ManageExtensionsCliService {
 
     // Ask for project load method
     console.log(`Do you want to specify a project?`)
-    console.log(`1. Yes, by current directory`)
-    console.log(`2. Yes, by list`)
-    console.log(`3. No (system only)`)
-    console.log(`4. Back`)
+    console.log(`[c] Yes, by current directory`)
+    console.log(`[l] Yes, by list`)
+    console.log(`[s] No (system only)`)
+    console.log(`[b] Back`)
 
     // Prompt for project load method
     const loadProjectMethod = await
@@ -158,7 +150,7 @@ export class ManageExtensionsCliService {
 
     switch (loadProjectMethod) {
 
-      case '1': {
+      case 'c': {
         instance = await
           projectsQueryService.getProjectByPath(
             prisma,
@@ -167,18 +159,18 @@ export class ManageExtensionsCliService {
         break
       }
 
-      case '2': {
+      case 'l': {
         instance = await
           projectsQueryService.getProjectByList(prisma)
 
         break
       }
 
-      case '3': {
+      case 's': {
         break
       }
 
-      case '4': {
+      case 'b': {
         return
       }
 
@@ -226,10 +218,10 @@ export class ManageExtensionsCliService {
     console.log(``)
     console.log(`Project: ${systemProject.name}`)
     console.log(`---`)
-    console.log(`1. Back`)
+    console.log(`[b] Back`)
 
     // List project extensions
-    var i = 2
+    var i = 1
     var extensionsMap = new Map<string, SourceNode>()
 
     for (const extension of extensionsData.extensionNodes) {
@@ -248,7 +240,7 @@ export class ManageExtensionsCliService {
             consoleService.askQuestion('> ')
 
     // Handle selection
-    if (selection === '1') {
+    if (selection === 'b') {
       return
     }
 
@@ -284,15 +276,15 @@ export class ManageExtensionsCliService {
     console.log(``)
     console.log(`Project: ${instance.name}`)
     console.log(`---`)
-    console.log(`1. Back`)
+    console.log(`[b] Back`)
 
     // List project extensions
-    var i = 2
+    var i = 1
     var extensionsMap = new Map<string, SourceNode>()
 
     for (const extension of extensionsData.extensionNodes) {
 
-      console.log(`${i}: ${extension.name}`)
+      console.log(`[${i}] ${extension.name}`)
 
       extensionsMap.set(
         `${i}`,
@@ -306,7 +298,7 @@ export class ManageExtensionsCliService {
             consoleService.askQuestion('> ')
 
     // Handle selection
-    if (selection === '1') {
+    if (selection === 'b') {
       return
     }
 
@@ -334,20 +326,14 @@ export class ManageExtensionsCliService {
     // Print details
     console.log(`Options:`)
     console.log(`---`)
-    console.log(`1. Back`)
-
-    var loadExtensionNo = -1
-    var deleteNo = 2
+    console.log(`[b] Back`)
 
     if (instance.name === ServerOnlyTypes.systemProjectName) {
 
-      console.log(`2. Load extension into a project`)
-
-      loadExtensionNo = 2
-      deleteNo += 1
+      console.log(`[l] Load extension into a project`)
     }
 
-    console.log(`${deleteNo}. Delete this extension`)
+    console.log(`[d] Delete this extension`)
 
     // Prompt for selection
     const selection = await
@@ -356,11 +342,11 @@ export class ManageExtensionsCliService {
     // Handle selection
     switch (selection) {
 
-      case '1': {
+      case 'b': {
         break
       }
 
-      case `${loadExtensionNo}`: {
+      case 'l': {
         await this.loadExtensionIntoProject(
                 prisma,
                 instance,
@@ -369,7 +355,7 @@ export class ManageExtensionsCliService {
         break
       }
 
-      case `${deleteNo}`: {
+      case 'd': {
         await graphsDeleteService.deleteSourceNodeCascade(
                 prisma,
                 extensionNode.id,

@@ -89,7 +89,26 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
       jsonContent.intentCode)
   }
 
-  async reviewSuggestions(suggestions: any[]) {
+  async reviewSuggestionsByOverview(suggestions: any[]) {
+
+    // Iterate the suggestions
+    for (const suggestion of suggestions) {
+
+      // Print the suggestion
+      ;
+
+      // Print user options
+      ;
+
+      // Get user selection
+      ;
+
+      // Approve/next handling based on selection
+      ;
+    }
+  }
+
+  async reviewSuggestionsOneByOne(suggestions: any[]) {
 
     // Iterate the suggestions
     for (const suggestion of suggestions) {
@@ -125,9 +144,10 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
       // Output
       console.log(``)
       console.log(`Options:`)
-      console.log(`1. Review suggestions (recommended)`)
-      console.log(`2. Approve all suggestions`)
-      console.log(`3. Ignore all suggestions`)
+      console.log(`[r] Review suggestions one-by-one`)
+      console.log(`[o] Review suggestions by overview`)
+      console.log(`[a] Approve all suggestions`)
+      console.log(`[i] Ignore all suggestions`)
 
       // Get selection
       const selection = await
@@ -136,13 +156,19 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
       // Handle the selection
       switch (selection) {
 
-        case '1': {
+        case 'r': {
 
-          await this.reviewSuggestions(suggestions)
+          await this.reviewSuggestionsOneByOne(suggestions)
           return
         }
 
-        case '2': {
+        case 'o': {
+
+          await this.reviewSuggestionsByOverview(suggestions)
+          return
+        }
+
+        case 'a': {
 
           await this.approveSuggestions(
             prisma,
@@ -153,7 +179,7 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
           return
         }
 
-        case '3': {
+        case 'i': {
 
           // Ignore (for now)
           return
