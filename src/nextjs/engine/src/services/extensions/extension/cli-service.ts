@@ -99,6 +99,7 @@ export class ManageExtensionsCliService {
       const selection = await
               consoleService.askQuestion('> ')
 
+      // Handle the user selection
       switch (selection.trim()) {
 
         case '': {
