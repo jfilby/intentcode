@@ -4,19 +4,21 @@ import { AgentLlmService } from '@/serene-ai-server/services/llm-apis/agent-llm-
 import { LlmUtilsService } from '@/serene-ai-server/services/llm-apis/utils-service'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
 import { BuildData } from '@/types/build-types'
-import { MessageTypes, ServerOnlyTypes } from '@/types/server-only-types'
-import { IntentCodeUpdaterQueryService } from '@/services/intentcode/updater/query-service'
+import { FileDeltas, MessageTypes, ServerOnlyTypes } from '@/types/server-only-types'
+import { DependenciesQueryService } from '@/services/graphs/dependencies/query-service'
+import { IntentCodeUpdaterQueryService } from '../updater/query-service'
 
 // Services
 const agentLlmService = new AgentLlmService()
+const dependenciesQueryService = new DependenciesQueryService()
 const intentCodeUpdaterQueryService = new IntentCodeUpdaterQueryService()
 const llmCacheService = new LlmCacheService()
 const llmUtilsService = new LlmUtilsService()
 
-export class SpecsLlmService {
+export class IntentCodeAnalyzerSuggestionsLlmService {
 
   // Consts
-  clName = 'SpecsLlmService'
+  clName = 'IntentCodeAnalyzerSuggestionsLlmService'
 
   // Code
   async llmRequest(
@@ -51,14 +53,14 @@ export class SpecsLlmService {
 
       cacheKey = cacheResults.cacheKey
       inputMessageStr = cacheResults.inputMessageStr
-      const queryResultsJson = cacheResults.llmCache?.outputJson
+      const jsonContent = cacheResults.llmCache?.outputJson
 
       // Found?
-      if (queryResultsJson != null) {
+      if (queryResults != null) {
         return {
           status: true,
           message: undefined,
-          queryResultsJson: queryResultsJson
+          jsonContent: jsonContent
         }
       }
     }
@@ -82,9 +84,6 @@ export class SpecsLlmService {
           BaseDataTypes.coderAgentRole,
           prompt,
           true)       // isJsonMode
-
-      // Debug
-      // console.log(`${fnName}: json: ` + JSON.stringify(queryResults.json))
 
       // Validate
       validated = true
@@ -123,13 +122,13 @@ export class SpecsLlmService {
       if (cacheKey != null) {
 
         await llmCacheService.save(
-                prisma,
-                llmTech.id,
-                cacheKey!,
-                inputMessageStr!,
-                queryResults.message,
-                queryResults.messages,
-                queryResults.json)
+          prisma,
+          llmTech.id,
+          cacheKey!,
+          inputMessageStr!,
+          queryResults.message,
+          queryResults.messages,
+          queryResults.json)
       }
 
       break
@@ -146,7 +145,7 @@ export class SpecsLlmService {
     return {
       status: true,
       message: undefined,
-      queryResultsJson: queryResults.json
+      jsonContent: queryResults.json
     }
   }
 
@@ -162,80 +161,28 @@ export class SpecsLlmService {
     // text to analyze overrode the prompt.
     if (Array.isArray(queryResults.json) === true) {
 
-      console.log(`${fnName}: queryResults.json should be a map: ` +
-                  JSON.stringify(queryResults))
+      console.log(`${fnName}: queryResults.json should be an object: ` +
+        JSON.stringify(queryResults))
 
       return false
     }
 
     // Validate the JSON
-    if (queryResults.json.warnings != null) {
-
-      const entryValidated =
-              this.validateMessages(
-                MessageTypes.warnings,
-                queryResults.json.warnings)
-
-      if (entryValidated === false) {
-        return false
-      }
-    }
-
-    if (queryResults.json.errors != null) {
-
-      const entryValidated =
-              this.validateMessages(
-                MessageTypes.errors,
-                queryResults.json.errors)
-
-      if (entryValidated === false) {
-        return false
-      }
-    }
-
-    // extensions is required and can't be an array
     if (queryResults.json.intentCode == null ||
-        !Array.isArray(queryResults.json.intentCode)) {
+        Array.isArray(queryResults.json.intentCode) === false) {
 
-      console.log(`${fnName}: invalid intentcode`)
+      console.log(`${fnName}: queryResults.json.intentCode is missing or ` +
+        `not an array: ` + JSON.stringify(queryResults))
+
       return false
     }
 
-    // Iterate intentcode entries
+    // Validate intentCode JSON
     if (intentCodeUpdaterQueryService.validateFileDelta(
           buildData,
           queryResults.json.intentCode) === false) {
 
       return false
-    }
-
-    // Validated OK
-    return true
-  }
-
-  validateMessages(
-    name: string,
-    messages: any[]) {
-
-    // Debug
-    const fnName = `${this.clName}.validateMessages()`
-
-    // console.log(`${fnName}: messages: ` + JSON.stringify(messages))
-
-    // Validate array structure
-    if (Array.isArray(messages) === false) {
-
-      console.log(`${fnName}: ${name} isn't an array`)
-      return false
-    }
-
-    for (const message of messages) {
-
-      if (message.text == null) {
-
-        console.log(`${fnName}: ${name} message is missing text`)
-        return false
-      }
     }
 
     // Validated OK

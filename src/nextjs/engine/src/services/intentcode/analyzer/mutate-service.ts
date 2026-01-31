@@ -12,6 +12,7 @@ import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { IntentCodeAnalysisGraphMutateService } from '@/services/graphs/intentcode-analysis/mutate-service'
 import { IntentCodeAnalyzerLlmService } from './llm-service'
 import { IntentCodeAnalyzerPromptService } from './prompt-service'
+import { IntentCodeAnalyzerSuggestionsMutateService } from '../analyzer-suggestions/mutate-service'
 import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
 import { ProjectCompileService } from '@/services/projects/compile-service'
 import { ProjectsQueryService } from '@/services/projects/query-service'
@@ -23,6 +24,7 @@ const fsUtilsService = new FsUtilsService()
 const intentCodeAnalysisGraphMutateService = new IntentCodeAnalysisGraphMutateService()
 const intentCodeAnalyzerLlmService = new IntentCodeAnalyzerLlmService()
 const intentCodeAnalyzerPromptService = new IntentCodeAnalyzerPromptService()
+const intentCodeAnalyzerSuggestionsMutateService = new IntentCodeAnalyzerSuggestionsMutateService()
 const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
 const projectCompileService = new ProjectCompileService()
 const projectsQueryService = new ProjectsQueryService()
@@ -69,52 +71,10 @@ export class IntentCodeAnalyzerMutateService {
     return str
   }
 
-  /* async getExistingJsonContent(
-          prisma: PrismaClient,
-          projectSpecsNode: SourceNode,
-          tech: Tech,
-          prompt: string) {
-
-    // Debug
-    const fnName = `${this.clName}.getExistingJsonContent()`
-
-    // Try to get existing indexer data SourceNode
-    const indexerDataSourceNode = await
-            sourceNodeModel.getByUniqueKey(
-              prisma,
-              projectSpecsNode.id,  // parentId
-              projectSpecsNode.instanceId,
-              SourceNodeTypes.projectSpecs,
-              SourceNodeNames.projectSpecs)
-
-    if (indexerDataSourceNode == null) {
-      return null
-    }
-
-    // Get promptHash
-    const promptHash = blake3(JSON.stringify(prompt)).toString()
-
-    // Try to get existing SourceNodeGeneration
-    const sourceNodeGeneration = await
-            sourceNodeGenerationModel.getByUniqueKey(
-              prisma,
-              indexerDataSourceNode.id,
-              tech.id,
-              promptHash)
-
-    if (sourceNodeGeneration == null ||
-        sourceNodeGeneration.prompt !== prompt) {
-
-      return
-    }
-
-    // Return jsonContent
-    return sourceNodeGeneration.jsonContent
-  } */
-
   async processQueryResults(
             prisma: PrismaClient,
             buildData: BuildData,
+            buildFromFiles: BuildFromFile[],
             projectSpecsNode: SourceNode,
             sourceNodeGenerationData: SourceNodeGenerationData,
             jsonContent: any) {
@@ -157,23 +117,20 @@ export class IntentCodeAnalyzerMutateService {
 
       console.log(countByPriorityStr)
 
-      // Output
-      console.log(``)
-      console.log(`Options:`)
-      console.log(`1. Review each suggestion`)
-      console.log(`2. Approve all suggestions`)
-      console.log(`3. Reject all suggestions`)
-
-      // Get selection
-      ;
+      // User to decide on how to handle the suggestions
+      await intentCodeAnalyzerSuggestionsMutateService.userMenu(
+        prisma,
+        buildData,
+        buildFromFiles,
+        jsonContent.suggestions)
     }
   }
 
   async processDiscoveryWithLlm(
           prisma: PrismaClient,
           buildData: BuildData,
-          projectSpecsNode: SourceNode,
-          buildFromFiles: BuildFromFile[]) {
+          buildFromFiles: BuildFromFile[],
+          projectSpecsNode: SourceNode) {
 
     // Debug
     const fnName = `${this.clName}.processDiscoveryWithLlm()`
@@ -234,6 +191,7 @@ export class IntentCodeAnalyzerMutateService {
     await this.processQueryResults(
             prisma,
             buildData,
+            buildFromFiles,
             projectSpecsNode,
             sourceNodeGenerationData,
             jsonContent)
@@ -303,10 +261,7 @@ export class IntentCodeAnalyzerMutateService {
     await this.processDiscoveryWithLlm(
             prisma,
             buildData,
-            projectSpecsNode,
-            buildFromFiles)
-
-    // TEST STOP
-    throw new CustomError(`${fnName}: TEST STOP`)
+            buildFromFiles,
+            projectSpecsNode)
   }
 }

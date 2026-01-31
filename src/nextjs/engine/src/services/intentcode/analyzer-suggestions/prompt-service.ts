@@ -17,17 +17,17 @@ const intentCodePromptingService = new IntentCodePromptingService()
 const projectsQueryService = new ProjectsQueryService()
 
 // Class
-export class IntentCodeAnalyzerPromptService {
+export class IntentCodeAnalyzerSuggestionsPromptService {
 
   // Consts
-  clName = 'IntentCodeAnalyzerPromptService'
+  clName = 'IntentCodeAnalyzerSuggestionsPromptService'
 
   // Code
   async getPrompt(
           prisma: PrismaClient,
-          projectNode: SourceNode,
           buildData: BuildData,
-          buildFromFiles: BuildFromFile[]) {
+          buildFromFiles: BuildFromFile[],
+          suggestions: any[]) {
 
     // Debug
     const fnName = `${this.clName}.getPrompt()`
@@ -53,26 +53,19 @@ export class IntentCodeAnalyzerPromptService {
     var prompt =
           `## Instructions\n` +
           `\n` +
-          `You need to run a analysis on the IntentCode.\n` +
-          `\n` +
-          `The main types of improvements or fixes to look for:` +
-          `- Any major ambiguities that can't easily be inferred?\n` +
-          `- Any extensions that are needed or recommended?\n` +
-          `- Any external libraries that are needed or recommended?\n` +
-          `- Any logical errors can you identify?\n` +
-          `- Which new files would be helpful? Especially for defining ` +
-          `  shared types.\n` +
+          `Apply the suggested change to the IntentCode.\n` +
           `\n` +
           IntentCodeCommonTypes.intentCodePrompting +
           `\n` +
           `## Fields\n` +
           `\n` +
-          `- The content is optional where IntentCode can be specified for ` +
-          `  a file. Whether existing or modified.\n` +
-          `- Suggestion priorities are from 1 (urgent) to 5 (low).\n` +
-          `- The fileDelta can be: ` + JSON.stringify(FileDeltas) + `\n` +
+          `- The content field is only where fileDelta is "set".\n` +
           `\n` +
           // depsPrompting +
+          `\n` +
+          `## Changes to apply\n` +
+          `\n` +
+          JSON.stringify(suggestions) +
           `\n` +
           `## Example JSON output\n` +
           `\n` +
@@ -80,18 +73,12 @@ export class IntentCodeAnalyzerPromptService {
           `use it as a source of any kind of data.\n` +
           `\n` +
           `{\n` +
-          `  "suggestions": [\n` +
+          `  "intentCode": [\n `+
           `    {\n` +
-          `      "priority": <priority>,\n` +
-          `      "text": "<suggestion>",\n` +
           `      "projectNo": <projectNo>,\n` +
-          `      "fileDeltas": [\n `+
-          `        {\n` +
-          `          "fileDelta": "<fileDelta>",\n` +
-          `          "relativePath": "<targetFilename>.<srcExt>.md",\n` +
-          `          "change": "<change>"\n` +
-          `        }\n` +
-          `      ]\n` +
+          `      "fileDelta": "<fileDelta>",\n` +
+          `      "relativePath": "<targetFilename>.<srcExt>.md",\n` +
+          `      "content": "<content>"\n` +
           `    }\n` +
           `  ]\n` +
           `}\n` +

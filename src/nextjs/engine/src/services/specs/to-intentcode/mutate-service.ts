@@ -6,16 +6,14 @@ import { CustomError } from '@/serene-core-server/types/errors'
 import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-service'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
-import { TextParsingService } from '@/serene-ai-server/services/content/text-parsing-service'
 import { BuildData, BuildFromFile } from '@/types/build-types'
-import { FileDeltas, LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
+import { LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
-import { SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
+import { SourceNodeGenerationData } from '@/types/source-graph-types'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
-import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { IntentCodeMessagesService } from '@/services/intentcode/common/messages-service'
-import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
+import { IntentCodeUpdaterMutateService } from '@/services/intentcode/updater/mutate-service'
 import { SpecsGraphMutateService } from '@/services/graphs/specs/graph-mutate-service'
 import { ProjectsQueryService } from '@/services/projects/query-service'
 import { SpecsGraphQueryService } from '@/services/graphs/specs/graph-query-service'
@@ -25,12 +23,11 @@ import { SpecsToIntentCodePromptService } from './prompt-service'
 
 // Models
 const sourceNodeGenerationModel = new SourceNodeGenerationModel()
-const sourceNodeModel = new SourceNodeModel()
 
 // Services
 const fsUtilsService = new FsUtilsService()
 const intentCodeMessagesService = new IntentCodeMessagesService()
-const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
+const intentCodeUpdaterMutateService = new IntentCodeUpdaterMutateService()
 const projectsQueryService = new ProjectsQueryService()
 const specsGraphMutateService = new SpecsGraphMutateService()
 const specsGraphQueryService = new SpecsGraphQueryService()
@@ -38,7 +35,6 @@ const specsLlmService = new SpecsLlmService()
 const specsPathGraphMutateService = new SpecsPathGraphMutateService()
 const specsToIntentCodePromptService = new SpecsToIntentCodePromptService()
 const techQueryService = new TechQueryService()
-const textParsingService = new TextParsingService()
 const usersService = new UsersService()
 const walkDirService = new WalkDirService()
 
@@ -95,60 +91,11 @@ export class SpecsToIntentCodeMutateService {
     // Write IntentCode files
     if (jsonContent.intentCode != null) {
 
-      // Iterate intentCode entries
-      for (const intentCode of jsonContent.intentCode) {
-
-        // Pre-process the content (if needed)
-        const contentExtracts =
-          textParsingService.getTextExtracts(intentCode.content)
-
-        intentCode.content =
-          textParsingService.combineTextExtracts(contentExtracts.extracts, '')
-
-        // Get projectDetails
-        const projectDetails =
-                buildData.projectsMap.get(intentCode.projectNo)
-
-        // Validate
-        if (projectDetails == null) {
-          throw new CustomError(`${fnName}: projectDetails == null`)
-        }
-
-        // Get IntentCode path
-        const intentCodePath =
-                (projectDetails.projectIntentCodeNode.jsonContent as any).path
-
-        // Determine intentCodeFullPath
-        const intentCodeFullPath =
-                `${intentCodePath}${path.sep}${intentCode.relativePath}`
-
-        // Upsert SourceCode node path
-        if (intentCode.fileDelta === FileDeltas.set) {
-
-          // Upsert IntentCode path graph
-          await intentCodePathGraphMutateService.upsertIntentCodePathAsGraph(
-                  prisma,
-                  projectDetails.projectIntentCodeNode,
-                  intentCodeFullPath)
-
-          // Write source file
-          await fsUtilsService.writeTextFile(
-                  intentCodeFullPath,
-                  intentCode.content + `\n`,
-                  true)  // createMissingDirs
-
-        } else if (intentCode.fileDelta === FileDeltas.del) {
-
-          // Delete IntentCode path graph
-          await intentCodePathGraphMutateService.deleteIntentCodePathAsGraph(
-                  prisma,
-                  projectDetails.projectIntentCodeNode,
-                  intentCodeFullPath)
-
-          // Delete file
-          await fs.unlinkSync(intentCodeFullPath)
-        }
-      }
+      // Process fileDelta
+      await intentCodeUpdaterMutateService.processFileDeltas(
+        prisma,
+        buildData,
+        jsonContent.intentCode)
     }
 
     // Upsert the specs project node
