@@ -89,6 +89,79 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
       jsonContent.intentCode)
   }
 
+  async reviewSuggestion(suggestion: any) {
+
+    // Print the suggestion
+    console.log(``)
+    console.log(`# This is a p${suggestion.priority} suggestion`)
+    console.log(``)
+    console.log(`Change: ${suggestion.text}`)
+
+    console.log(``)
+    console.log(`Files expected to be affected:`)
+
+    for (const fileDelta of suggestion.fileDeltas) {
+
+      console.log(`.. ${fileDelta.fileDelta} ${fileDelta.relativePath}: ` +
+        `${fileDelta.change}`)
+    }
+
+    // REPL loop
+    while (true) {
+
+      console.log(``)
+      console.log(`[a] Add to approved list`)
+      console.log(`[p] Proceed with approved list`)
+      console.log(`[i] Ignore this suggestion`)
+      console.log(`[r] Ignore all, including approved list`)
+
+      // Prompt for user selection
+      const selection = await
+              consoleService.askQuestion('> ')
+
+      // Handle the user selection
+      switch (selection.trim()) {
+
+        case 'a': {
+          return {
+            addToApprovedList: true,
+            stopReview: false,
+            ignoreAll: false
+          }
+        }
+
+        case 'i': {
+          return {
+            addToApprovedList: false,
+            stopReview: false,
+            ignoreAll: false
+          }
+        }
+
+        case 'p': {
+          return {
+            addToApprovedList: false,
+            stopReview: true,
+            ignoreAll: false
+          }
+        }
+
+        case 'r': {
+          return {
+            addToApprovedList: false,
+            stopReview: true,
+            ignoreAll: true
+          }
+        }
+
+        default: {
+          console.log(``)
+          console.log(`Invalid selection`)
+        }
+      }
+    }
+  }
+
   async reviewSuggestionsByOverview(suggestions: any[]) {
 
     // Iterate the suggestions
@@ -108,28 +181,53 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
     }
   }
 
-  async reviewSuggestionsOneByOne(suggestions: any[]) {
+  async reviewSuggestionsOneByOne(
+    prisma: PrismaClient,
+    buildData: BuildData,
+    buildFromFiles: BuildFromFile[],
+    suggestions: any[]) {
+
+    // Debug
+    const fnName = `${this.clName}.reviewSuggestionsOneByOne()`
+
+    // Vars
+    var approvedList: any[] = []
 
     // Iterate the suggestions
     for (const suggestion of suggestions) {
 
-      // Print the suggestion
-      ;
+      // Review suggestion
+      const { addToApprovedList, stopReview, ignoreAll } = await
+        this.reviewSuggestion(suggestion)
 
-      // Print user options
-      ;
+      // Add to list?
+      if (addToApprovedList === true) {
+        approvedList.push(suggestion)
+      }
 
-      // Get user selection
-      ;
+      // Done?
+      if (ignoreAll === true) {
+        return
+      }
 
-      // Approve/next handling based on selection
-      ;
+      if (stopReview === true) {
+        break
+      }
     }
-  }
 
-  async reviewSuggestion(suggestion: any) {
+    // No changes to make?
+    if (approvedList.length === 0) {
+      return
+    }
 
-    ;
+    // Make changes
+    console.log(`${fnName}: making ${approvedList.length} changes..`)
+
+    await this.approveSuggestions(
+      prisma,
+      buildData,
+      buildFromFiles,
+      approvedList)
   }
 
   async userMenu(
@@ -145,7 +243,7 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
       console.log(``)
       console.log(`Options:`)
       console.log(`[r] Review suggestions one-by-one`)
-      console.log(`[o] Review suggestions by overview`)
+      // console.log(`[o] Review suggestions by overview`)
       console.log(`[a] Approve all suggestions`)
       console.log(`[i] Ignore all suggestions`)
 
@@ -158,15 +256,20 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
 
         case 'r': {
 
-          await this.reviewSuggestionsOneByOne(suggestions)
+          await this.reviewSuggestionsOneByOne(
+            prisma,
+            buildData,
+            buildFromFiles,
+            suggestions)
+
           return
         }
 
-        case 'o': {
+        /* case 'o': {
 
           await this.reviewSuggestionsByOverview(suggestions)
           return
-        }
+        } */
 
         case 'a': {
 
