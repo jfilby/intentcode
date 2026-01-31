@@ -8,7 +8,7 @@ import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
 import { BuildData, BuildFromFile } from '@/types/build-types'
-import { LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
+import { LlmEnvNames, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
 import { SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
@@ -98,7 +98,7 @@ export class IndexerMutateService {
     const fnName = `${this.clName}.indexFileWithLlm()`
 
     // Verbose output
-    if (ServerOnlyTypes.verbosity === true) {
+    if (ServerOnlyTypes.verbosity >= VerbosityLevels.min) {
 
       console.log(`indexing: ${buildFromFile.filename}..`)
     }

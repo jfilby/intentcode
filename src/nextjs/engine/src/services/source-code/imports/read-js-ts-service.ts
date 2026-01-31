@@ -56,7 +56,7 @@ export class ReadJsTsSourceImportsService {
     // Debug
     const fnName = `${this.clName}.processSrcFile()`
 
-    if (ServerOnlyTypes.verbosity === VerbosityLevels.max) {
+    if (ServerOnlyTypes.verbosity >= VerbosityLevels.max) {
       console.log(`${fnName}: starting with srcFilePath: ${srcFilePath}`)
     }
 
@@ -65,7 +65,7 @@ export class ReadJsTsSourceImportsService {
             parseJsTsImportsService.parseImports(srcFilePath)
 
     // Debug
-    if (ServerOnlyTypes.verbosity === VerbosityLevels.max) {
+    if (ServerOnlyTypes.verbosity >= VerbosityLevels.max) {
       console.log(`${fnName}: importsResults: ` + JSON.stringify(importsResults))
     }
 

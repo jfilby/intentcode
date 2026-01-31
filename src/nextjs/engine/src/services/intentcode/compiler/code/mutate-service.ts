@@ -6,7 +6,7 @@ import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { TextParsingService } from '@/serene-ai-server/services/content/text-parsing-service'
 import { BuildData, BuildFromFile } from '@/types/build-types'
-import { LlmEnvNames, ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types'
+import { LlmEnvNames, ProjectDetails, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { SourceNodeNames, SourceNodeGenerationData, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
@@ -240,7 +240,7 @@ export class CompilerMutateService {
     // console.log(`${fnName}: starting..`)
 
     // Verbose output
-    if (ServerOnlyTypes.verbosity === true) {
+    if (ServerOnlyTypes.verbosity >= VerbosityLevels.min) {
       console.log(`compiling: ${buildFromFile.filename}..`)
     }
 

@@ -1,9 +1,9 @@
 import { Instance, SourceNode } from '@prisma/client'
 
 export enum VerbosityLevels {
-  off = 'off',
-  min = 'min',
-  max = 'max'
+  off = 0,
+  min = 1,
+  max = 2
 }
 
 export class ServerOnlyTypes {
@@ -85,6 +85,13 @@ export interface DepDelta {
   delta: string
   name: string
   minVersion: string
+}
+
+export interface FileDelta {
+  projectNo: number
+  relativePath: string
+  fileDelta: FileDeltas
+  content?: string
 }
 
 export interface ProjectDetails {
