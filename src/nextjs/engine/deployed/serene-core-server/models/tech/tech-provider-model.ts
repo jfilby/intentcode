@@ -44,15 +44,12 @@ export class TechProviderModel {
     // console.log(`${fnName}: starting..`)
 
     // Query
-    var techProvider: any = null
+    var techProviders: any[] = []
 
     try {
-      techProvider = await prisma.techProvider.findMany({
+      techProviders = await prisma.techProvider.findMany({
         where: {
-          status: status,
-          provides: provides ? {
-            hasEvery: provides
-          } : undefined
+          status: status
         },
         orderBy: [
           {
@@ -67,8 +64,13 @@ export class TechProviderModel {
       }
     }
 
+    // Filter manually (for SQLite provides is a JSON field)
+    techProviders =
+      techProviders.filter(techProvider => 
+        !provides || provides.every(provide => techProvider.provides?.includes(provide)))
+
     // Return
-    return techProvider
+    return techProviders
   }
 
   async getById(prisma: PrismaClient,
