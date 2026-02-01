@@ -1,5 +1,5 @@
 {
-  "name": "server",
+  "name": "intentcode-engine",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "ts-script": "ts-node ./src/cli.ts"
+    "ic": "ts-node --transpile-only ./src/cli.ts",
+    "ic-dev": "ts-node ./src/cli.ts"
   },
   "prisma": {
     "schema": "prisma/schema"
