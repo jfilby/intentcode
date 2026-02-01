@@ -8,7 +8,7 @@ process.env.NEXT_PUBLIC_SERVER_PRODUCTION_HOST_NAME ||= 'https://s.intentcode.de
 
 
 // Paths
-process.env.LOCAL_TESTS_PATH ||= process.cwd() + '/./../tests'
+process.env.LOCAL_TESTS_PATH ||= process.cwd() + '/../../../tests'
 
 
 // Crypto secrets (for basic hashing and at-rest encryption)
