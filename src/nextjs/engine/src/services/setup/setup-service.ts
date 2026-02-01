@@ -1,5 +1,3 @@
-const fs = require('fs').promises
-const path = require('path')
 import { PrismaClient, UserProfile } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { ChatSettingsModel } from '@/serene-core-server/models/chat/chat-settings-model'
