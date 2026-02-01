@@ -14,7 +14,9 @@
   },
   "dependencies": {
     "@google/genai": "^1.35.0",
+    "@libsql/client": "^0.17.0",
     "@noble/hashes": "^1.8.0",
+    "@prisma/adapter-libsql": "^7.3.0",
     "@prisma/client": "^6.19.1",
     "@types/lodash": "^4",
     "@types/node": "^20",

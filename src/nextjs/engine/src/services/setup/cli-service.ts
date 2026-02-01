@@ -3,15 +3,17 @@ import { ConsoleService } from '@/serene-core-server/services/console/service'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { AiModelCliReplService } from '@/serene-ai-server/services/setup/ai-cli-repl-service'
 import { ServerTestTypes } from '@/types/server-test-types'
-import { ProjectSetupService } from '../projects/setup-project'
+import { InfoService } from './info-service'
 import { LoadExternalExtensionsService } from '../extensions/extension/load-external-service'
 import { ManageExtensionsCliService } from '../extensions/extension/cli-service'
+import { ProjectSetupService } from '../projects/setup-project'
 import { SetupService } from './setup-service'
 import { TestsService } from '../tests/tests-service'
 
 // Services
 const aiModelCliReplService = new AiModelCliReplService()
 const consoleService = new ConsoleService()
+const infoService = new InfoService()
 const loadExternalExtensionsService = new LoadExternalExtensionsService()
 const manageExtensionsCliService = new ManageExtensionsCliService()
 const projectSetupService = new ProjectSetupService()
@@ -32,6 +34,7 @@ export class CliService {
   // loadTechProviderApiKeysCommand = 'load-tech-provider-api-keys'
   setupCommand = 'setup'
   testsCommand = 'tests'
+  infoCommand = 'info'
 
   commands = [
     this.initProjectCommand,
@@ -40,7 +43,8 @@ export class CliService {
     this.manageExtensionsCommand,
     // this.loadTechProviderApiKeysCommand,
     this.setupCommand,
-    this.testsCommand
+    this.testsCommand,
+    this.infoCommand
   ]
 
   commandsBySelection: Record<string, string> = {
@@ -49,7 +53,8 @@ export class CliService {
     'm': this.manageExtensionsCommand,
     'k': this.manageAiKeysCommand,
     's': this.setupCommand,
-    't': this.testsCommand
+    't': this.testsCommand,
+    'n': this.infoCommand
   }
 
   // Code
@@ -62,12 +67,16 @@ export class CliService {
     while (true) {
 
       // Show menu
+      console.log(``)
+      console.log(`# Main menu`)
+      console.log(``)
       console.log(`[i] Init project`)
       console.log(`[l] Load extensions`)
       console.log(`[m] Manage extensions`)
       console.log(`[k] Manage AI keys`)
       console.log(`[s] Setup`)
       console.log(`[t] Tests`)
+      console.log(`[n] Info`)
       console.log(`[x] Exit`)
 
       // Get menu no
@@ -118,6 +127,13 @@ export class CliService {
 
     // Handle command to run
     switch (command) {
+
+      case this.infoCommand: {
+
+        await infoService.info()
+
+        break
+      }
 
       case this.initProjectCommand: {
 

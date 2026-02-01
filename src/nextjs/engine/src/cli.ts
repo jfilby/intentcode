@@ -1,5 +1,13 @@
+import path from 'path'
+
 // Load the env file
-require('dotenv').config({ path: `./.env.${process.env.NODE_ENV}` })
+const envFile =
+  process.env.NODE_ENV === 'production'
+    ? '.env.production'
+    : '.env'
+
+require('dotenv').config({ path: path.resolve(process.cwd(), envFile) })
+require('./services/setup/env-setup-service.ts')
 
 // Requires/imports
 import { prisma } from './db'
@@ -13,6 +21,9 @@ import { CliService } from './services/setup/cli-service'
 
   // Services
   const cliService = new CliService()
+
+  // Run setup if needed
+  ;
 
   // Run a command or show the menu
   if (process.argv.length >= 2 &&

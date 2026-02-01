@@ -92,6 +92,11 @@ export class SetupService {
             adminUserProfile)
   }
 
+  async setupIfRequired(prisma: PrismaClient) {
+
+    ;
+  }
+
   async setupBaseData(
           prisma: PrismaClient,
           adminUserProfile: UserProfile) {

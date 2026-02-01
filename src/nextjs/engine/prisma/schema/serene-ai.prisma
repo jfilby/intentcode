@@ -15,5 +15,4 @@ model LlmCache {
 
   @@unique([key, techId])
   @@map("llm_cache")
-  @@schema("public")
 }

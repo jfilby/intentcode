@@ -9,9 +9,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-  schemas  = ["public", "core"]
+  provider = "sqlite"
+  // url      = env("DATABASE_URL")
+  url      = "file:./data.db"
 }
 
 // Project specific
@@ -25,7 +25,7 @@ model BatchJob {
   userProfileId              String?          @map("user_profile_id")
   userProfile                UserProfile?     @relation(fields: [userProfileId], references: [id])
   runInATransaction          Boolean          @map("run_in_a_transaction")
-  status                     String           @db.Char(1)
+  status                     String
   progressPct                Int?             @map("progress_pct")
   message                    String?
   jobType                    String           @map("job_type")
@@ -37,7 +37,6 @@ model BatchJob {
 
   @@index([refId])
   @@map("batch_job")
-  @@schema("public")
 }
 
 // Wait-list
@@ -46,7 +45,6 @@ model Waitlist {
   email                        String               @id
 
   @@map("waitlist")
-  @@schema("public")
 }
 
 // IntentCode: Engine
@@ -57,7 +55,6 @@ model Version {
   version                    String
 
   @@map("version")
-  @@schema("public")
 }
 
 // IntentCode: Source graph
@@ -68,12 +65,11 @@ model SourceEdge {
   from                       SourceNode        @relation("from", fields: [fromId], references: [id])
   toId                       String            @map("to_id")
   to                         SourceNode        @relation("to", fields: [toId], references: [id])
-  status                     String            @db.Char(1)
+  status                     String
   name                       String
 
   @@unique([fromId, toId, name])
   @@map("source_edge")
-  @@schema("public")
 }
 
 model SourceNode {
@@ -82,12 +78,12 @@ model SourceNode {
   parent                     SourceNode?       @relation("parent", fields: [parentId], references: [id])
   instanceId                 String            @map("instance_id")
   instance                   Instance          @relation(fields: [instanceId], references: [id])
-  status                     String            @db.Char(1)
+  status                     String
   type                       String
   name                       String
   content                    String?
   contentHash                String?           @map("content_hash")
-  jsonContent                Json?             @map("json_content") @db.JsonB
+  jsonContent                Json?             @map("json_content")
   jsonContentHash            String?           @map("json_content_hash")
   contentUpdated             DateTime?         @map("content_updated")  // content or jsonContent
   created                    DateTime          @default(now())
@@ -101,7 +97,6 @@ model SourceNode {
   @@unique([parentId, instanceId, type, name])
   @@index([contentHash])
   @@map("source_node")
-  @@schema("public")
 }
 
 model SourceNodeGeneration {
@@ -116,12 +111,11 @@ model SourceNodeGeneration {
   promptHash                 String            @map("prompt_hash")
   content                    String?
   contentHash                String?           @map("content_hash")
-  jsonContent                Json?             @map("json_content") @db.JsonB
+  jsonContent                Json?             @map("json_content")
   jsonContentHash            String?           @map("json_content_hash")
   created                    DateTime          @default(now())
   updated                    DateTime          @updatedAt
 
   @@unique([sourceNodeId, techId, promptHash])
   @@map("source_node_generation")
-  @@schema("public")
 }

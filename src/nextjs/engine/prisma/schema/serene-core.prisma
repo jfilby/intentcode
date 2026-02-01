@@ -11,7 +11,6 @@ model ExternalUserIntegration {
   @@index([userProfileId])
   @@unique([externalIntegrationUserId, externalIntegration])
   @@map("external_user_integration")
-  @@schema("public")
 }
 
 model UserGroup {
@@ -26,7 +25,6 @@ model UserGroup {
 
   @@unique([ownerUserProfileId, name], name: "user_group_uq")
   @@map("user_group")
-  @@schema("public")
 }
 
 model UserGroupMember {
@@ -40,7 +38,6 @@ model UserGroupMember {
 
   @@unique([userProfileId, userGroupId], name: "user_group_member_uq")
   @@map("user_group_member")
-  @@schema("public")
 }
 
 model UserPreference {
@@ -50,12 +47,11 @@ model UserPreference {
   category                  String
   key                       String
   value                     String?
-  values                    String[]
+  values                    Json?           // String[]
   created                   DateTime        @default(now())
 
   @@unique([userProfileId, key], name: "user_preference_uq")
   @@map("user_preference")
-  @@schema("public")
 }
 
 model UserProfile {
@@ -64,7 +60,7 @@ model UserProfile {
   user                      User?         @relation(fields: [userId], references: [id])
   isAdmin                   Boolean       @map("is_admin")
   ownerType                 String?       @map("owner_type")
-  roles                     String[]
+  roles                     Json?         // String[]
   created                   DateTime      @default(now())
   updated                   DateTime      @updatedAt
   deletePending             DateTime?     @map("delete_pending")  // Start date/time of delete pending
@@ -91,7 +87,6 @@ model UserProfile {
   ofBatchJobs                   BatchJob[]
 
   @@map("user_profile")
-  @@schema("public")
 }
 
 // Chat
@@ -109,7 +104,6 @@ model AgentUser {
   ofChatSettings       ChatSettings[]
 
   @@map("agent_user")
-  @@schema("public")
 }
 
 model ChatMessage {
@@ -132,7 +126,6 @@ model ChatMessage {
   @@index([created])
   @@unique([chatSessionId, externalId])
   @@map("chat_message")
-  @@schema("public")
 }
 
 model ChatMessageCreated {
@@ -154,7 +147,6 @@ model ChatMessageCreated {
 
   @@unique([userProfileId, created])
   @@map("chat_message_created")
-  @@schema("public")
 }
 
 model ChatParticipant {
@@ -170,7 +162,6 @@ model ChatParticipant {
 
   @@index([chatSessionId])
   @@map("chat_participant")
-  @@schema("public")
 }
 
 model ChatSession {
@@ -179,7 +170,7 @@ model ChatSession {
   chatSettings                 ChatSettings         @relation(fields: [chatSettingsId], references: [id])
   instanceId                   String?              @map("instance_id")
   instance                     Instance?            @relation(fields: [instanceId], references: [id])
-  status                       String               @db.Char(1)
+  status                       String
   isEncryptedAtRest            Boolean              @map("is_encrypted_at_rest")
   token                        String
   name                         String?
@@ -195,14 +186,13 @@ model ChatSession {
 
   @@index([externalId])
   @@map("chat_session")
-  @@schema("public")
 }
 
 model ChatSettings {
   id                           String               @id @default(cuid())
   baseChatSettingsId           String?              @map("base_chat_settings_id")
   baseChatSettings             ChatSettings?        @relation("base", fields: [baseChatSettingsId], references: [id])
-  status                       String               @db.Char(1)
+  status                       String
   isEncryptedAtRest            Boolean              @map("is_encrypted_at_rest")
   isJsonMode                   Boolean              @map("is_json_mode")
   isPinned                     Boolean              @map("is_pinned")
@@ -221,7 +211,6 @@ model ChatSettings {
   ofChatSessions               ChatSession[]
 
   @@map("chat_settings")
-  @@schema("public")
 }
 
 // Feature flags
@@ -236,7 +225,6 @@ model FeatureFlag {
   enabled                      Boolean
 
   @@map("feature_flag")
-  @@schema("public")
 }
 
 // Instances
@@ -248,16 +236,16 @@ model Instance {
   parent                       Instance?            @relation("parent", fields: [parentId], references: [id])
   userProfileId                String               @map("user_profile_id")
   userProfile                  UserProfile          @relation(fields: [userProfileId], references: [id])
-  status                       String               @db.Char(1)
+  status                       String
   name                         String
   created                      DateTime             @default(now())
   updated                      DateTime             @updatedAt
   // Additional fields (should be moved to InstanceSetting)
-  instanceType                 String               @map("instance_type") @db.Char(1)  // P (project), E (environment)
+  instanceType                 String               @map("instance_type")              // P (project), E (environment)
   projectType                  String?              @map("project_type")               // Char 1: B (back-end), A (app), W (web-app), char 2: L (library)?
   isDefault                    Boolean              @map("is_default")
   isDemo                       Boolean              @map("is_demo")
-  publicAccess                 String?              @map("public_access") @db.Char(1)  // E.g. R/W
+  publicAccess                 String?              @map("public_access")              // E.g. R/W
   // basePathDocNodeId            String?              @map("base_path_doc_node_id")
   // basePathDocNode              DocNode?             @relation("base_path", fields: [basePathDocNodeId], references: [id])
   // envVersionBranchId           String?              @map("env_version_branch_id")
@@ -277,7 +265,6 @@ model Instance {
 
   @@unique([userProfileId, parentId, name])
   @@map("instance")
-  @@schema("public")
 }
 
 model InstanceSetting {
@@ -291,7 +278,6 @@ model InstanceSetting {
 
   @@unique([instanceId, name], name: "instance_setting_uq")
   @@map("instance_setting")
-  @@schema("public")
 }
 
 // Generic tech
@@ -304,7 +290,6 @@ model RateLimitedApi {
   ofRateLimitedApiEvents       RateLimitedApiEvent[]
 
   @@map("rate_limited_api")
-  @@schema("public")
 }
 
 model RateLimitedApiEvent {
@@ -320,7 +305,6 @@ model RateLimitedApiEvent {
 
   @@index([created])
   @@map("rate_limited_api_event")
-  @@schema("public")
 }
 
 model ResourceQuotaTotal {
@@ -330,13 +314,12 @@ model ResourceQuotaTotal {
   userProfileId              String         @map("user_profile_id")
   userProfile                UserProfile    @relation(fields: [userProfileId], references: [id])
   resource                   String         // E.g. LLMs
-  fromDay                    DateTime       @map("from_day") @db.Date
-  toDay                      DateTime       @map("to_day") @db.Date
+  fromDay                    DateTime       @map("from_day")
+  toDay                      DateTime       @map("to_day")
   quota                      Float          // In cents
 
   @@unique([userProfileId, resource, fromDay, toDay])
   @@map("resource_quota_total")
-  @@schema("public")
 }
 
 model ResourceQuotaUsage {
@@ -344,21 +327,20 @@ model ResourceQuotaUsage {
   userProfileId              String         @map("user_profile_id")
   userProfile                UserProfile    @relation(fields: [userProfileId], references: [id])
   resource                   String         // E.g. LLMs
-  day                        DateTime       @db.Date
+  day                        DateTime
   usage                      Float          // In cents
   created                    DateTime       @default(now())
   updated                    DateTime       @updatedAt
 
   @@unique([userProfileId, resource, day])
   @@map("resource_quota_usage")
-  @@schema("public")
 }
 
 model Tech {
   id                           String               @id @default(cuid())
   techProviderId               String               @map("tech_provider_id")
   techProvider                 TechProvider         @relation(fields: [techProviderId], references: [id])
-  status                       String               @db.Char(1)
+  status                       String
   variantName                  String               @map("variant_name") @unique
   resource                     String
   model                        String?
@@ -375,28 +357,26 @@ model Tech {
   ofSourceNodeTechs            SourceNodeGeneration[]
 
   @@map("tech")
-  @@schema("public")
 }
 
 model TechProvider {
   id                           String               @id @default(cuid())
-  status                       String               @db.Char(1)
+  status                       String
   name                         String               @unique
   baseUrl                      String?              @map("base_url")
-  provides                     String[]
+  provides                     Json?                // String[]
 
   ofTechs                      Tech[]
   ofTechProviderApiKeys        TechProviderApiKey[]
 
   @@map("tech_provider")
-  @@schema("public")
 }
 
 model TechProviderApiKey {
   id                           String               @id @default(cuid())
   techProviderId               String               @map("tech_provider_id")
   techProvider                 TechProvider         @relation(fields: [techProviderId], references: [id])
-  status                       String               @db.Char(1)
+  status                       String
   name                         String
   accountEmail                 String?              @map("account_email")
   apiKey                       String               @map("api_key")
@@ -405,7 +385,6 @@ model TechProviderApiKey {
   @@unique([techProviderId, name])
   @@unique([techProviderId, apiKey])
   @@map("tech_provider_api_key")
-  @@schema("public")
 }
 
 // Mailing lists
@@ -419,7 +398,6 @@ model MailingList {
   ofMailingListSubscribers  MailingListSubscriber[]
 
   @@map("mailing_list")
-  @@schema("public")
 }
 
 model MailingListSubscriber {
@@ -435,7 +413,6 @@ model MailingListSubscriber {
 
   @@unique([mailingListId, email])
   @@map("mailing_list_subscriber")
-  @@schema("public")
 }
 
 // Tips
@@ -443,13 +420,12 @@ model MailingListSubscriber {
 model Tip {
   id                           String               @id @default(cuid())
   name                         String               @unique
-  tags                         String[]
+  tags                         Json?                // String[]
 
   ofTipGotIts                  TipGotIt[]
 
   @@index([tags])
   @@map("tip")
-  @@schema("public")
 }
 
 model TipGotIt {
@@ -462,7 +438,6 @@ model TipGotIt {
   @@unique([tipId, userProfileId], name: "tip_got_it_uq")
   @@index([userProfileId])
   @@map("tip_got_it")
-  @@schema("public")
 }
 
 // User-specific
@@ -484,7 +459,6 @@ model UserError {
   updated                      DateTime             @updatedAt
 
   @@map("user_error")
-  @@schema("public")
 }
 
 model UserErrorSummary {
@@ -501,5 +475,4 @@ model UserErrorSummary {
 
   @@unique([userProfileId, instanceId, origin, message])
   @@map("user_error_summary")
-  @@schema("public")
 }
