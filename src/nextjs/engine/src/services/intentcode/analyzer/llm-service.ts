@@ -222,7 +222,7 @@ export class IntentCodeAnalyzerLlmService {
 
       // Validate fileOp
       if (fileDelta.fileOp == null ||
-          ![FileOps.set, FileOps.del].includes(fileDelta.fileDelta)) {
+          ![FileOps.set, FileOps.del].includes(fileDelta.fileOp)) {
 
         console.log(`${fnName}: invalid fileOp: ${fileDelta.fileOp}`)
         return false
