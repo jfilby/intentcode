@@ -1,16 +1,20 @@
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
-import { BuildFromFile } from '@/types/build-types'
+import { BuildData, BuildFromFile } from '@/types/build-types'
 import { ExtensionsData } from '@/types/source-graph-types'
 import { IntentCodeCommonTypes } from '../../common/types'
-import { ServerOnlyTypes } from '@/types/server-only-types'
+import { CompilerMetaDataApproachs, ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types'
 import { CompilerQueryService } from './query-service'
 import { DependenciesPromptService } from '@/services/graphs/dependencies/prompt-service'
+import { IntentCodeGraphQueryService } from '@/services/graphs/intentcode/graph-query-service'
+import { IntentCodePromptingService } from '../../build/prompting-service'
 import { SourceAssistIntentCodeService } from '../../source/source-prompt'
 
 // Services
 const compilerQueryService = new CompilerQueryService()
 const dependenciesPromptService = new DependenciesPromptService()
+const intentCodeGraphQueryService = new IntentCodeGraphQueryService()
+const intentCodePromptingService = new IntentCodePromptingService()
 const sourceAssistIntentCodeService = new SourceAssistIntentCodeService()
 
 // Class
@@ -21,11 +25,12 @@ export class CompilerPromptService {
 
   // Code
   async getPrompt(
-          prisma: PrismaClient,
-          projectNode: SourceNode,
-          buildFromFile: BuildFromFile,
-          extensionsData: ExtensionsData,
-          indexedDataSourceNodes: SourceNode[]) {
+    prisma: PrismaClient,
+    buildData: BuildData,
+    buildFromFile: BuildFromFile,
+    projectNode: SourceNode,
+    projectDetails: ProjectDetails,
+    extensionsData: ExtensionsData) {
 
     // Debug
     const fnName = `${this.clName}.getPrompt()`
@@ -147,7 +152,87 @@ export class CompilerPromptService {
       buildFromFile.content +
       `\n` +
       '```\n' +
-      `\n` +
+      `\n`
+
+    // Indexer data?
+    if (ServerOnlyTypes.compilerMetaDataApproach === CompilerMetaDataApproachs.indexer) {
+
+      prompt += await
+        this.addIndexerPrompting(
+          prisma,
+          projectDetails)
+
+    } else if (ServerOnlyTypes.compilerMetaDataApproach === CompilerMetaDataApproachs.analyzer) {
+
+      // Add existing IntentCode files
+      const intentCodePrompting = await
+              intentCodePromptingService.getAllPrompting(buildData)
+
+      if (intentCodePrompting != null) {
+        prompt += intentCodePrompting
+      }
+
+    } else {
+      throw new CustomError(`${fnName}: invalid compilerMetaDataApproach`)
+    }
+
+    // Get prompt without source
+    const promptWithoutSource = prompt
+
+    // Get the existing source
+    const sourcePrompting = await
+      this.addExistingSource(
+        projectDetails.projectSourceNode,
+        buildFromFile)
+
+    prompt += sourcePrompting
+
+    // Return
+    return { promptWithoutSource, prompt }
+  }
+
+  async addExistingSource(
+    projectSourceNode: SourceNode,
+    buildFromFile: BuildFromFile) {
+
+    // Existing source code
+    var prompting = ''
+
+    if (ServerOnlyTypes.includeExistingSourceMode === true) {
+
+      const existingSourcePrompting = await
+              sourceAssistIntentCodeService.getExistingSourcePrompting(
+                projectSourceNode,
+                buildFromFile)
+
+      if (existingSourcePrompting != null) {
+        prompting += existingSourcePrompting
+      }
+    }
+
+    // Return
+    return prompting
+  }
+
+  async addIndexerPrompting(
+    prisma: PrismaClient,
+    projectDetails: ProjectDetails) {
+
+    // Debug
+    const fnName = `${this.clName}.addIndexerPrompting()`
+
+    // Get all related indexed data, including for this file
+    const indexedDataSourceNodes = await
+      intentCodeGraphQueryService.getAllIndexedData(
+        prisma,
+        projectDetails.projectIntentCodeNode)
+
+    if (indexedDataSourceNodes.length === 0) {
+      throw new CustomError(`${fnName}: indexedDataSourceNodes.length === 0`)
+    }
+
+    // Initial prompting
+    var prompting =
       `## Index data\n` +
       `\n` +
       `Indexed data has been generated for each target file, based on ` +
@@ -171,38 +256,16 @@ export class CompilerPromptService {
         const astTree =
           JSON.stringify((indexedDataSourceNode.jsonContent as any).astTree)
 
-        prompt +=
+        prompting +=
           `### File: ${relativePath}\n` +
           `\n` +
           `${astTree}\n\n`
       }
     } else {
-      prompt += `None available.`
+      prompting += `None available.`
     }
 
     // Return
-    return prompt
-  }
-
-  async addExistingSource(
-          projectSourceNode: SourceNode,
-          buildFromFile: BuildFromFile,
-          prompt: string) {
-
-    // Existing source code
-    if (ServerOnlyTypes.includeExistingSourceMode === true) {
-
-      const existingSourcePrompting = await
-              sourceAssistIntentCodeService.getExistingSourcePrompting(
-                projectSourceNode,
-                buildFromFile)
-
-      if (existingSourcePrompting != null) {
-        prompt += existingSourcePrompting
-      }
-    }
-
-    // Return
-    return prompt
+    return prompting
   }
 }

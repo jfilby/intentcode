@@ -1,7 +1,7 @@
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { BuildData, BuildStage, BuildStageType, IntentFileBuild } from '@/types/build-types'
-import { ProjectDetails } from '@/types/server-only-types'
+import { CompilerMetaDataApproachs, ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types'
 import { SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { DeleteBuildService } from './delete-service'
@@ -77,7 +77,8 @@ export class BuildMutateService {
 
   getBuildStageTypes() {
 
-    return [
+    // Initial build stages
+    var buildStages = [
       // Verify (pre-checks)
       BuildStageType.verifyInternals,
       // Specs to IntentCode
@@ -85,13 +86,23 @@ export class BuildMutateService {
       BuildStageType.specsToIntentCode,
       // IntentCode to source
       BuildStageType.updateDeps,
-      BuildStageType.intentCodeDiscovery,
-      BuildStageType.index,
+      BuildStageType.intentCodeDiscovery
+    ]
+
+    // Is the indexer approach enabled?
+    if (ServerOnlyTypes.compilerMetaDataApproach === CompilerMetaDataApproachs.indexer) {
+      buildStages.push(BuildStageType.index)
+    }
+
+    // Add final build stages
+    buildStages = buildStages.concat([
       BuildStageType.compile,
       BuildStageType.updateDeps,
       // Verify (post-checks)
       BuildStageType.verifyInternals
-    ]
+    ])
+
+    return buildStages
   }
 
   async initBuildData(

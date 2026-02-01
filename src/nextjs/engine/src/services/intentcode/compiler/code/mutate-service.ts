@@ -244,16 +244,6 @@ export class CompilerMutateService {
       console.log(`compiling: ${buildFromFile.filename}..`)
     }
 
-    // Get all related indexed data, including for this file
-    const indexedDataSourceNodes = await
-            intentCodeGraphQueryService.getAllIndexedData(
-              prisma,
-              projectDetails.projectIntentCodeNode)
-
-    if (indexedDataSourceNodes.length === 0) {
-      throw new CustomError(`${fnName}: indexedDataSourceNodes.length === 0`)
-    }
-
     // Get the admin UserProfile
     const adminUserProfile = await
             usersService.getUserProfileByEmail(
@@ -277,20 +267,14 @@ export class CompilerMutateService {
         buildFromFile.fileNode)
 
     // Get prompt
-    const prompt = await
+    const { prompt, promptWithoutSource } = await
       compilerPromptService.getPrompt(
         prisma,
-        projectNode,
+        buildData,
         buildFromFile,
-        buildData.extensionsData,
-        indexedDataSourceNodes)
-
-    // Get the final prompt (with existing target source)
-    const finalPrompt = await
-            compilerPromptService.addExistingSource(
-              projectDetails.projectSourceNode,
-              buildFromFile,
-              prompt)
+        projectNode,
+        projectDetails,
+        buildData.extensionsData)
 
     // Already generated?
     var { content, jsonContent } = await
@@ -298,13 +282,13 @@ export class CompilerMutateService {
             prisma,
             buildFromFile.fileNode,
             tech,
-            prompt)
+            promptWithoutSource)
 
     // Check if the file should be recompiled
     if (await this.requiresRecompileByPrompt(
                 prisma,
                 projectDetails.projectSourceNode,
-                prompt,
+                promptWithoutSource,
                 buildFromFile) === false) {
 
       return
@@ -322,14 +306,14 @@ export class CompilerMutateService {
           prisma,
           adminUserProfile.id,
           tech,
-          finalPrompt))  // Use the final prompt (with latest target source)
+          prompt))  // Use the final prompt (with latest target source)
     }
 
     // Define SourceNodeGeneration
     // Save the initial prompt (without latest target source)
     const sourceNodeGenerationData: SourceNodeGenerationData = {
       techId: tech.id,
-      prompt: prompt
+      prompt: promptWithoutSource
     }
 
     // Process results

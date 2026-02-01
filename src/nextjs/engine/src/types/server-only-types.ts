@@ -1,5 +1,10 @@
 import { Instance, SourceNode } from '@prisma/client'
 
+export enum CompilerMetaDataApproachs {
+  analyzer = 'analyzer',
+  indexer = 'indexer'
+}
+
 export enum VerbosityLevels {
   off = 0,
   min = 1,
@@ -20,11 +25,11 @@ export class ServerOnlyTypes {
   // Instance types
   static projectInstanceType = 'P'
 
-  // Important file extensions (with .)
-  static dotMdFileExt = '.md'
-
   // Verbosity
   static verbosity = VerbosityLevels.max
+
+  // Compiler meta-data approach
+  static compilerMetaDataApproach = CompilerMetaDataApproachs.analyzer
 
   // Builds
   static oldBuildsToKeep = 3
@@ -38,6 +43,9 @@ export class ServerOnlyTypes {
   // Libraries related
   static indexerAutoAddLibraries = true
   static compilerAutoAddLibraries = true
+
+  // Important file extensions (with .)
+  static dotMdFileExt = '.md'
 
   // Valid depsNode keys
   static depsNodeKeys = ['extensions', 'runtimes', 'tool']
