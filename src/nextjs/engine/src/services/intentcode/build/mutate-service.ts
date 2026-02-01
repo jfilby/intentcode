@@ -86,7 +86,7 @@ export class BuildMutateService {
       BuildStageType.specsToIntentCode,
       // IntentCode to source
       BuildStageType.updateDeps,
-      BuildStageType.intentCodeDiscovery
+      BuildStageType.intentCodeAnalyzer
     ]
 
     // Is the indexer approach enabled?
@@ -225,7 +225,7 @@ export class BuildMutateService {
         break
       }
 
-      case BuildStageType.intentCodeDiscovery: {
+      case BuildStageType.intentCodeAnalyzer: {
 
         await intentCodeAnalyzerMutateService.run(
           prisma,

@@ -7,7 +7,7 @@ export enum BuildStageType {
   defineTechStack = 'define-tech-stack',
   specsToIntentCode = 'specs-to-intentcode',
   // IntentCode to Source
-  intentCodeDiscovery = 'intent-code-discovery',
+  intentCodeAnalyzer = 'intent-code-analyzer',
   index = 'index',
   compile = 'compile',
   updateDeps = 'update-deps',
