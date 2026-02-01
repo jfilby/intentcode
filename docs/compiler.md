@@ -29,9 +29,13 @@ graph in the database.
 
 Where the Analyzer needs changes to IntentCode to prevent errors, the indexer
 doesn't need those changes, and will make assumptions that will enable the
-correct compilation of IntentCode to source. The problem is, if the source is
-removed and the IntentCode recompiled, the assumptions made in the next build
-could be very different.
+correct compilation of IntentCode to source.
+
+Problems with the indexer approach:
+- If the source is removed and the IntentCode recompiled, the assumptions made
+  in the next build could be very different.
+- Every IntentCode file has to be indexed by an LLM process, before compiling.
+- Any change in the IntentCode or skills would mean re-indexing all IntentCode.
 
 
 ### Changing the approach
