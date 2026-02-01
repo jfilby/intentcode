@@ -1,3 +1,4 @@
+import chalk from 'chalk'
 import { Instance, PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { ConsoleService } from '@/serene-core-server/services/console/service'
@@ -86,7 +87,8 @@ export class ManageExtensionsCliService {
 
       // Print options
       console.log(``)
-      console.log(`Extension management options:`)
+      console.log(chalk.bold(`─── Extension management options ───`))
+      console.log(``)
       console.log(`[s] All available extensions in the system`)
 
       if (instance != null) {
@@ -136,7 +138,9 @@ export class ManageExtensionsCliService {
     const fnName = `${this.clName}.run()`
 
     // Ask for project load method
-    console.log(`Do you want to specify a project?`)
+    console.log(``)
+    console.log(chalk.bold(`─── Do you want to specify a project? ───`))
+    console.log(``)
     console.log(`[c] Yes, by current directory`)
     console.log(`[l] Yes, by list`)
     console.log(`[s] No (system only)`)
@@ -217,8 +221,8 @@ export class ManageExtensionsCliService {
 
     // Start
     console.log(``)
-    console.log(`Project: ${systemProject.name}`)
-    console.log(`---`)
+    console.log(chalk.bold(`─── Project: ${systemProject.name} ───`))
+    console.log(``)
     console.log(`[b] Back`)
 
     // List project extensions
@@ -275,8 +279,8 @@ export class ManageExtensionsCliService {
 
     // Start
     console.log(``)
-    console.log(`Project: ${instance.name}`)
-    console.log(`---`)
+    console.log(chalk.bold(`─── Project: ${instance.name} ───`))
+    console.log(``)
     console.log(`[b] Back`)
 
     // List project extensions
@@ -320,8 +324,8 @@ export class ManageExtensionsCliService {
 
     // Start
     console.log(``)
-    console.log(`Project: ${instance.name}`)
-    console.log(`Extension: ${extensionNode.name}`)
+    console.log(chalk.bold(`─── Project: ${instance.name} ───`))
+    console.log(chalk.bold(`─── Extension: ${extensionNode.name} ───`))
     console.log(``)
 
     // Print details

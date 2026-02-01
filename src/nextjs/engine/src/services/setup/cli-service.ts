@@ -1,3 +1,4 @@
+import chalk from 'chalk'
 import { PrismaClient } from '@prisma/client'
 import { ConsoleService } from '@/serene-core-server/services/console/service'
 import { UsersService } from '@/serene-core-server/services/users/service'
@@ -68,7 +69,7 @@ export class CliService {
 
       // Show menu
       console.log(``)
-      console.log(`# Main menu`)
+      console.log(chalk.bold(`─── Main menu ───`))
       console.log(``)
       console.log(`[i] Init project`)
       console.log(`[l] Load extensions`)

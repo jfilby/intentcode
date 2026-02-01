@@ -1,5 +1,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
+import chalk from 'chalk'
 import { PrismaClient } from '@prisma/client'
 import { CustomError } from '../../types/errors'
 import { TechProviderApiKeyModel } from '../../models/tech/tech-provider-api-key-model'
@@ -110,6 +111,9 @@ export class TechProviderMutateService {
     const fnName = `${this.clName}.cliLoadJsonStr()`
 
     // Read in the JSON string
+    console.log(``)
+    console.log(chalk.bold(`─── Load API keys ───`))
+    console.log(``)
     console.log(`${fnName}: Enter the path containing the .json files ` +
                 `with the tech provider API keys to load`)
 

@@ -65,7 +65,7 @@ export class ProjectSetupService {
 
       // Prompt
       console.log(`The project name ${projectName} isn't unique`)
-      
+
       if (parentInstance != null) {
         console.log(`.. under the parent project: ${parentInstance.name}`)
       }

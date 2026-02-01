@@ -1,3 +1,4 @@
+import chalk from 'chalk'
 import { PrismaClient, UserProfile } from '@prisma/client'
 import { ConsoleService } from '@/serene-core-server/services/console/service'
 import { CalcTestsService } from './calc-tests-service'
@@ -20,8 +21,9 @@ export class TestsService {
               adminUserProfile: UserProfile) {
 
     // Tests menu
-    console.log(`Tests`)
-    console.log(`-----`)
+    console.log(``)
+    console.log(chalk.bold(`─── Tests ───`))
+    console.log(``)
     console.log(`1. Calc project`)
     console.log(`2. Calc v2 project`)
 

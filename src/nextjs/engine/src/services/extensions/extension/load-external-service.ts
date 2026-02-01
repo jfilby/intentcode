@@ -1,4 +1,5 @@
 const fs = require('fs')
+import chalk from 'chalk'
 import path from 'path'
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
@@ -189,6 +190,9 @@ export class LoadExternalExtensionsService {
   async promptForAndLoadPath(prisma: PrismaClient) {
 
     // Prompt for a path
+    console.log(``)
+    console.log(chalk.bold(`─── Load extensions ───`))
+    console.log(``)
     console.log(`Enter the path to load extensions from`)
 
     const loadPath = await
@@ -215,7 +219,10 @@ export class LoadExternalExtensionsService {
         loadPath)
 
     // Prompt whether to load into user projects
-    console.log(`Copy new versions to existing user projects? Y/N`)
+    console.log(``)
+    console.log(chalk.bold(`─── Load into existing user projects ───`))
+    console.log(``)
+    console.log(`Copy new versions to existing user projects? y/n`)
 
     const loadToUserProjects = await
             consoleService.askQuestion('> ')

@@ -1,3 +1,4 @@
+import chalk from 'chalk'
 import { PrismaClient } from '@prisma/client'
 import { ConsoleService } from '@/serene-core-server/services/console/service'
 import { CustomError } from '@/serene-core-server/types/errors'
@@ -95,7 +96,8 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
 
     // Print the suggestion
     console.log(``)
-    console.log(`# This is a p${suggestion.priority} suggestion`)
+    console.log(
+      chalk.bold(`─── This is a p${suggestion.priority} suggestion ───`))
     console.log(``)
     console.log(`Change: ${suggestion.text}`)
 
@@ -243,7 +245,8 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
 
       // Output
       console.log(``)
-      console.log(`Options:`)
+      console.log(chalk.bold(`─── Options ───`))
+      console.log(``)
       console.log(`[r] Review suggestions one-by-one`)
       // console.log(`[o] Review suggestions by overview`)
       console.log(`[a] Approve all suggestions`)

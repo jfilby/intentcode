@@ -1,3 +1,4 @@
+import chalk from 'chalk'
 import { PrismaClient, TechProvider, TechProviderApiKey } from '@prisma/client'
 import { TechProviderApiKeyModel } from '@/serene-core-server/models/tech/tech-provider-api-key-model'
 import { TechProviderModel } from '@/serene-core-server/models/tech/tech-provider-model'
@@ -24,7 +25,8 @@ export class AiModelCliReplService {
 
     // Banner
     console.log(``)
-    console.log(`Add an API key`)
+    console.log(chalk.bold(`─── Add an API key ───`))
+    console.log(``)
 
     // Create a map of tech providers
     const techProvidersMap = await
@@ -181,7 +183,8 @@ export class AiModelCliReplService {
 
     // Banner and options
     console.log(``)
-    console.log(`Available keys`)
+    console.log(chalk.bold(`─── Available keys ───`))
+    console.log(``)
     console.log(`[b] Back`)
 
     for (const [selection, apiKey] of apiKeysMap) {
@@ -208,7 +211,8 @@ export class AiModelCliReplService {
 
       // Banner and options
       console.log(``)
-      console.log(`AI models maintenance`)
+      console.log(chalk.bold(`─── AI models maintenance ───`))
+      console.log(``)
       console.log(`[b] Back`)
       console.log(`[a] Add an API key`)
       console.log(`[l] List existing API keys`)
@@ -246,6 +250,9 @@ export class AiModelCliReplService {
     apiKey: TechProviderApiKey) {
 
     // Banner
+    console.log(``)
+    console.log(chalk.bold(`─── View API key ───`))
+    console.log(``)
     console.log(`Delete this key?`)
     console.log(`[y] or [n]`)
 
