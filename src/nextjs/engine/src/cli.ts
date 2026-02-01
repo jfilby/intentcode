@@ -3,15 +3,7 @@ require('dotenv').config({ path: `./.env.${process.env.NODE_ENV}` })
 
 // Requires/imports
 import { prisma } from './db'
-import { TechProviderMutateService } from '@/serene-core-server/services/tech/tech-provider-mutate-service'
-import { UsersService } from '../deployed/serene-core-server/services/users/service'
-import { ServerTestTypes } from './types/server-test-types'
-import { AiModelCliReplService } from '@/serene-ai-server/services/setup/ai-cli-repl-service'
-import { LoadExternalExtensionsService } from './services/extensions/extension/load-external-service'
-import { ManageExtensionsCliService } from './services/extensions/extension/cli-service'
-import { ProjectSetupService } from './services/projects/setup-project'
-import { SetupService } from './services/setup/setup'
-import { TestsService } from './services/tests/tests-service'
+import { CliService } from './services/setup/cli-service'
 
 // Main
 (async () => {
@@ -19,120 +11,20 @@ import { TestsService } from './services/tests/tests-service'
   // Debug
   const fnName = 'cli.ts'
 
-  // Consts
-  const initProjectCommand = 'init-project'
-  const loadExtensionsCommand = 'load-extensions'
-  const manageAiKeysCommand = 'manage-ai-keys'
-  const manageExtensionsCommand = 'manage-extensions'
-  // const loadTechProviderApiKeysCommand = 'load-tech-provider-api-keys'
-  const setupCommand = 'setup'
-  const testsCommand = 'tests'
-
-  const commands = [
-          initProjectCommand,
-          loadExtensionsCommand,
-          manageAiKeysCommand,
-          manageExtensionsCommand,
-          // loadTechProviderApiKeysCommand,
-          setupCommand,
-          testsCommand
-        ]
-
-  // Test to run
-  const command = process.argv[2]
-
-  console.log(`${fnName}: comand to run: ${command}`)
-
   // Services
-  const aiModelCliReplService = new AiModelCliReplService()
-  const loadExternalExtensionsService = new LoadExternalExtensionsService()
-  const manageExtensionsCliService = new ManageExtensionsCliService()
-  const projectSetupService = new ProjectSetupService()
-  const usersService = new UsersService()
-  const setupService = new SetupService()
-  const techProviderMutateService = new TechProviderMutateService()
-  const testsService = new TestsService()
+  const cliService = new CliService()
 
-  // Get/create an admin user
-  const adminUserProfile = await
-          usersService.getOrCreateUserByEmail(
-            prisma,
-            ServerTestTypes.adminUserEmail,
-            undefined)  // defaultUserPreferences
+  // Run a command or show the menu
+  if (process.argv.length >= 2 &&
+      process.argv[2] != null) {
 
-  // Get/create a regular (non-admin) user
-  const regularTestUserProfile = await
-          usersService.getOrCreateUserByEmail(
-            prisma,
-            ServerTestTypes.regularTestUserEmail,
-            undefined)  // defaultUserPreferences
+    // Run the chosen command
+    await cliService.runCommand(
+      prisma,
+      process.argv[2])  // command
 
-  // Run the chosen command
-  switch (command) {
-
-    case initProjectCommand: {
-
-      await projectSetupService.initProjectFromCli(
-              prisma,
-              adminUserProfile)
-
-      break
-    }
-
-    case loadExtensionsCommand: {
-
-      await loadExternalExtensionsService.promptForAndLoadPath(prisma)
-
-      break
-    }
-
-    case manageAiKeysCommand: {
-
-      await aiModelCliReplService.main(prisma)
-      break
-    }
-
-    case manageExtensionsCommand: {
-
-      await manageExtensionsCliService.run(prisma)
-
-      break
-    }
-
-    /* case loadTechProviderApiKeysCommand: {
-
-      await techProviderMutateService.cliLoadJsonStr(prisma)
-
-      break
-    } */
-
-    case setupCommand: {
-
-      await setupService.setup(
-              prisma,
-              adminUserProfile)
-
-      break
-    }
-
-    case testsCommand: {
-
-      await testsService.tests(
-              prisma,
-              regularTestUserProfile,
-              adminUserProfile)
-
-      break
-    }
-
-    default: {
-
-      console.log(`${fnName}: invalid command, selection is: ` +
-                  JSON.stringify(commands))
-
-      await prisma.$disconnect()
-      process.exit(1)
-    }
+  } else {
+    await cliService.menu(prisma)
   }
 
   // Done
