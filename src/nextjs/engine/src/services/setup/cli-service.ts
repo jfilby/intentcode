@@ -173,9 +173,7 @@ export class CliService {
 
       case this.setupCommand: {
 
-        await setupService.setup(
-          prisma,
-          adminUserProfile)
+        await setupService.setup(prisma)
 
         break
       }

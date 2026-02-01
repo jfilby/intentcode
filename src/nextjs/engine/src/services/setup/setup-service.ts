@@ -3,13 +3,16 @@ const path = require('path')
 import { PrismaClient, UserProfile } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { ChatSettingsModel } from '@/serene-core-server/models/chat/chat-settings-model'
+import { UsersService } from '@/serene-core-server/services/users/service'
 import { AgentUserModel } from '@/serene-ai-server/models/agents/agent-user-model'
 import { SereneAiSetup } from '@/serene-ai-server/services/setup/setup-service'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
 import { ServerOnlyTypes, VersionNames } from '@/types/server-only-types'
+import { ServerTestTypes } from '@/types/server-test-types'
 import { VersionModel } from '@/models/engine/version-model'
 import { AgentUserService } from '@/services/agents/agent-user-service'
 import { ProjectsMutateService } from '../projects/mutate-service'
+import { ProjectsQueryService } from '../projects/query-service'
 
 // Models
 const agentUserModel = new AgentUserModel()
@@ -19,7 +22,9 @@ const versionModel = new VersionModel()
 // Services
 const agentUserService = new AgentUserService()
 const projectsMutateService = new ProjectsMutateService()
+const projectsQueryService = new ProjectsQueryService()
 const sereneAiSetup = new SereneAiSetup()
+const usersService = new UsersService()
 
 // Class
 export class SetupService {
@@ -73,8 +78,14 @@ export class SetupService {
     }
   }
 
-  async setup(prisma: PrismaClient,
-              adminUserProfile: UserProfile) {
+  async setup(prisma: PrismaClient) {
+
+    // Get/create an admin user
+    const adminUserProfile = await
+            usersService.getOrCreateUserByEmail(
+              prisma,
+              ServerTestTypes.adminUserEmail,
+              undefined)  // defaultUserPreferences
 
     // Chat settings setup
     await this.chatSettingsSetup(
@@ -94,7 +105,18 @@ export class SetupService {
 
   async setupIfRequired(prisma: PrismaClient) {
 
-    ;
+    // Try to get the System project
+    const systemProject = await
+      projectsQueryService.getProject(
+        prisma,
+        null,  // parentId
+        ServerOnlyTypes.systemProjectName)
+
+    // Run setup if not found
+    if (systemProject == null) {
+
+      await this.setup(prisma)
+    }
   }
 
   async setupBaseData(

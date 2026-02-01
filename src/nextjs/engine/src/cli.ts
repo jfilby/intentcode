@@ -12,6 +12,7 @@ require('./services/setup/env-setup-service.ts')
 // Requires/imports
 import { prisma } from './db'
 import { CliService } from './services/setup/cli-service'
+import { SetupService } from './services/setup/setup-service'
 
 // Main
 (async () => {
@@ -21,9 +22,10 @@ import { CliService } from './services/setup/cli-service'
 
   // Services
   const cliService = new CliService()
+  const setupService = new SetupService()
 
   // Run setup if needed
-  ;
+  await setupService.setupIfRequired(prisma)
 
   // Run a command or show the menu
   if (process.argv.length >= 2 &&
