@@ -2,7 +2,7 @@ import chalk from 'chalk'
 import { PrismaClient } from '@prisma/client'
 import { ConsoleService } from '@/serene-core-server/services/console/service'
 import { UsersService } from '@/serene-core-server/services/users/service'
-import { AiModelCliReplService } from '@/serene-ai-server/services/setup/ai-cli-repl-service'
+import { AiKeysCliReplService } from '@/serene-ai-server/services/setup/ai-keys-cli-repl-service'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { InfoService } from './info-service'
 import { LoadExternalExtensionsService } from '../extensions/extension/load-external-service'
@@ -12,7 +12,7 @@ import { SetupService } from './setup-service'
 import { TestsService } from '../tests/tests-service'
 
 // Services
-const aiModelCliReplService = new AiModelCliReplService()
+const aiKeysCliReplService = new AiKeysCliReplService()
 const consoleService = new ConsoleService()
 const infoService = new InfoService()
 const loadExternalExtensionsService = new LoadExternalExtensionsService()
@@ -74,6 +74,7 @@ export class CliService {
       console.log(`[i] Init project`)
       console.log(`[l] Load extensions`)
       console.log(`[m] Manage extensions`)
+      console.log(`[a] Manage AI models`)
       console.log(`[k] Manage AI keys`)
       console.log(`[s] Setup`)
       console.log(`[t] Tests`)
@@ -154,7 +155,7 @@ export class CliService {
 
       case this.manageAiKeysCommand: {
 
-        await aiModelCliReplService.main(prisma)
+        await aiKeysCliReplService.main(prisma)
         break
       }
 

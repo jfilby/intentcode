@@ -15,10 +15,10 @@ const techProviderModel = new TechProviderModel()
 const consoleService = new ConsoleService()
 
 // Class
-export class AiModelCliReplService {
+export class AiKeysCliReplService {
 
   // Consts
-  clName = 'AiModelCliReplService'
+  clName = 'AiKeysCliReplService'
 
   // Code
   async addApiKey(prisma: PrismaClient) {
@@ -211,7 +211,7 @@ export class AiModelCliReplService {
 
       // Banner and options
       console.log(``)
-      console.log(chalk.bold(`─── AI models maintenance ───`))
+      console.log(chalk.bold(`─── AI keys maintenance ───`))
       console.log(``)
       console.log(`[b] Back`)
       console.log(`[a] Add an API key`)
