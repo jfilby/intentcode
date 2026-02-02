@@ -23,15 +23,10 @@ process.env.CHECK_USER_QUOTAS ||= 'false'
 // Gen AI
 process.env.IMAGE_VARIANT_NAME ||= 'Google Gemini v2.5 Flash Image (free tier)'
 
-// process.env.STANDARD_LLM_VARIANT_NAME ||= 'Google Gemini v3 Flash (free tier)'
-// process.env.COMPILER_LLM_VARIANT_NAME ||= 'Google Gemini v3 Flash (free tier)'
-// process.env.INDEXER_LLM_VARIANT_NAME ||= 'Google Gemini v2.5 Flash (free tier)'
-// process.env.SPECS_TRANSLATOR_LLM_VARIANT_NAME ||= 'Google Gemini v3 Flash (free tier)'
-
-process.env.STANDARD_LLM_VARIANT_NAME ||= 'GPT-5.2'
-process.env.COMPILER_LLM_VARIANT_NAME ||= 'GPT-5.2'
-process.env.INDEXER_LLM_VARIANT_NAME ||= 'GPT-5-mini'
-process.env.SPECS_TRANSLATOR_LLM_VARIANT_NAME ||= 'GPT-5.2'
+process.env.STANDARD_LLM_VARIANT_NAME ||= 'Google Gemini v3 Flash (free tier)'
+process.env.COMPILER_LLM_VARIANT_NAME ||= 'Google Gemini v3 Flash (free tier)'
+process.env.INDEXER_LLM_VARIANT_NAME ||= 'Google Gemini v2.5 Flash (free tier)'
+process.env.SPECS_TRANSLATOR_LLM_VARIANT_NAME ||= 'Google Gemini v3 Flash (free tier)'
 
 process.env.CHAT_LLM_VARIANT_NAME ||= 'Google Gemini v2.5 Flash-Lite (free tier)'
 process.env.STANDARD_EMBEDDINGS_VARIANT_NAME ||= 'OpenAI text-embedding-3-small'
