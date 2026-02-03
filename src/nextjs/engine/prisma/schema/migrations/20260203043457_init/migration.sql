@@ -120,6 +120,29 @@ CREATE TABLE "source_node_generation" (
 );
 
 -- CreateTable
+CREATE TABLE "ai_task" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "status" TEXT NOT NULL,
+    "namespace" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "created" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated" DATETIME NOT NULL
+);
+
+-- CreateTable
+CREATE TABLE "ai_task_tech" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "ai_task_id" TEXT NOT NULL,
+    "tech_id" TEXT NOT NULL,
+    "user_profile_id" TEXT,
+    "created" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated" DATETIME NOT NULL,
+    CONSTRAINT "ai_task_tech_ai_task_id_fkey" FOREIGN KEY ("ai_task_id") REFERENCES "ai_task" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT "ai_task_tech_tech_id_fkey" FOREIGN KEY ("tech_id") REFERENCES "tech" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT "ai_task_tech_user_profile_id_fkey" FOREIGN KEY ("user_profile_id") REFERENCES "user_profile" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+-- CreateTable
 CREATE TABLE "llm_cache" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "tech_id" TEXT NOT NULL,
@@ -498,6 +521,12 @@ CREATE UNIQUE INDEX "source_node_parent_id_instance_id_type_name_key" ON "source
 
 -- CreateIndex
 CREATE UNIQUE INDEX "source_node_generation_source_node_id_tech_id_prompt_hash_key" ON "source_node_generation"("source_node_id", "tech_id", "prompt_hash");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ai_task_namespace_name_key" ON "ai_task"("namespace", "name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ai_task_tech_ai_task_id_user_profile_id_key" ON "ai_task_tech"("ai_task_id", "user_profile_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "llm_cache_key_tech_id_key" ON "llm_cache"("key", "tech_id");

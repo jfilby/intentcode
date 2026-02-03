@@ -1,5 +1,36 @@
 // Serene AI
 
+// AI tasks
+
+model AiTask {
+  id                           String               @id @default(cuid())
+  status                       String
+  namespace                    String
+  name                         String
+  created                      DateTime             @default(now())
+  updated                      DateTime             @updatedAt
+
+  ofAiTaskTechs                AiTaskTech[]
+
+  @@unique([namespace, name])
+  @@map("ai_task")
+}
+
+model AiTaskTech {
+  id                           String               @id @default(cuid())
+  aiTaskId                     String               @map("ai_task_id")
+  aiTask                       AiTask               @relation(fields: [aiTaskId], references: [id])
+  techId                       String               @map("tech_id")
+  tech                         Tech                 @relation(fields: [techId], references: [id])
+  userProfileId                String?              @map("user_profile_id")
+  userProfile                  UserProfile?         @relation(fields: [userProfileId], references: [id])
+  created                      DateTime             @default(now())
+  updated                      DateTime             @updatedAt
+
+  @@unique([aiTaskId, userProfileId])
+  @@map("ai_task_tech")
+}
+
 // Cache and rate-limiting
 
 model LlmCache {

@@ -1,8 +1,20 @@
 import { Instance, SourceNode } from '@prisma/client'
+import { AiTechDefs } from '@/serene-ai-server/types/tech-defs'
 
 export enum CompilerMetaDataApproachs {
   analyzer = 'analyzer',
   indexer = 'indexer'
+}
+
+export enum IntentCodeAiTasks {
+  compiler = 'compiler',
+  indexer = 'indexer'
+}
+
+export enum AiTaskModelPresets {
+  gemini3BasedFree = 'gemini3BasedFree',
+  gemini3BasedPaid = 'gemini3BasedPaid',
+  gpt5pt2Based = 'gpt5pt2Based'
 }
 
 export enum VerbosityLevels {
@@ -24,6 +36,21 @@ export class ServerOnlyTypes {
 
   // Instance types
   static projectInstanceType = 'P'
+
+  // AI tasks
+  static namespace = 'intentcode'
+
+  static compilerModels: Record<string, string> = {
+    [AiTaskModelPresets.gemini3BasedFree]: AiTechDefs.googleGemini_V3FlashFree,
+    [AiTaskModelPresets.gemini3BasedPaid]: AiTechDefs.googleGemini_V3Flash,
+    [AiTaskModelPresets.gpt5pt2Based]: AiTechDefs.openAi_Gpt5pt2
+  }
+
+  static indexerModels: Record<string, string> = {
+    [AiTaskModelPresets.gemini3BasedFree]: AiTechDefs.googleGemini_V2pt5FlashFree,
+    [AiTaskModelPresets.gemini3BasedPaid]: AiTechDefs.googleGemini_V2pt5Flash,
+    [AiTaskModelPresets.gpt5pt2Based]: AiTechDefs.openAi_Gpt5Mini
+  }
 
   // Verbosity
   static verbosity = VerbosityLevels.max

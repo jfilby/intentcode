@@ -3,6 +3,7 @@ import { CustomError } from '@/serene-core-server/types/errors'
 import { ChatSettingsModel } from '@/serene-core-server/models/chat/chat-settings-model'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { AgentUserModel } from '@/serene-ai-server/models/agents/agent-user-model'
+import { AiModelsSelectionService } from './ai-models-selection-service'
 import { SereneAiSetup } from '@/serene-ai-server/services/setup/setup-service'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
 import { ServerOnlyTypes, VersionNames } from '@/types/server-only-types'
@@ -19,6 +20,7 @@ const versionModel = new VersionModel()
 
 // Services
 const agentUserService = new AgentUserService()
+const aiModelsSelectionService = new AiModelsSelectionService()
 const projectsMutateService = new ProjectsMutateService()
 const projectsQueryService = new ProjectsQueryService()
 const sereneAiSetup = new SereneAiSetup()
@@ -147,5 +149,8 @@ export class SetupService {
               undefined,  // id
               VersionNames.engine,
               ServerOnlyTypes.engineVersion)
+
+    // Setup AI tasks with default models
+    await aiModelsSelectionService.setupAiTasksWithDefaults(prisma)
   }
 }

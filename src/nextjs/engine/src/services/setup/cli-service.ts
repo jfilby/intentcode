@@ -4,6 +4,7 @@ import { ConsoleService } from '@/serene-core-server/services/console/service'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { AiKeysCliReplService } from '@/serene-ai-server/services/setup/ai-keys-cli-repl-service'
 import { ServerTestTypes } from '@/types/server-test-types'
+import { AiModelsSelectionService } from './ai-models-selection-service'
 import { InfoService } from './info-service'
 import { LoadExternalExtensionsService } from '../extensions/extension/load-external-service'
 import { ManageExtensionsCliService } from '../extensions/extension/cli-service'
@@ -13,6 +14,7 @@ import { TestsService } from '../tests/tests-service'
 
 // Services
 const aiKeysCliReplService = new AiKeysCliReplService()
+const aiModelsSelectionService = new AiModelsSelectionService()
 const consoleService = new ConsoleService()
 const infoService = new InfoService()
 const loadExternalExtensionsService = new LoadExternalExtensionsService()
@@ -30,6 +32,7 @@ export class CliService {
 
   initProjectCommand = 'init-project'
   loadExtensionsCommand = 'load-extensions'
+  manageAiModelsCommand = 'manage-ai-models'
   manageAiKeysCommand = 'manage-ai-keys'
   manageExtensionsCommand = 'manage-extensions'
   // loadTechProviderApiKeysCommand = 'load-tech-provider-api-keys'
@@ -40,6 +43,7 @@ export class CliService {
   commands = [
     this.initProjectCommand,
     this.loadExtensionsCommand,
+    this.manageAiModelsCommand,
     this.manageAiKeysCommand,
     this.manageExtensionsCommand,
     // this.loadTechProviderApiKeysCommand,
@@ -52,6 +56,7 @@ export class CliService {
     'i': this.initProjectCommand,
     'l': this.loadExtensionsCommand,
     'm': this.manageExtensionsCommand,
+    'a': this.manageAiModelsCommand,
     'k': this.manageAiKeysCommand,
     's': this.setupCommand,
     't': this.testsCommand,
@@ -150,6 +155,12 @@ export class CliService {
 
         await loadExternalExtensionsService.promptForAndLoadPath(prisma)
 
+        break
+      }
+
+      case this.manageAiModelsCommand: {
+
+        await aiModelsSelectionService.main(prisma)
         break
       }
 

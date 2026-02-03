@@ -84,6 +84,8 @@ model UserProfile {
   ofEndUserErrors               UserError[]                @relation("end_user_profile")
   ofUserErrorSummaries          UserErrorSummary[]
 
+  ofAiTaskTechs                 AiTaskTech[]
+
   ofBatchJobs                   BatchJob[]
 
   @@map("user_profile")
@@ -352,6 +354,7 @@ model Tech {
   ofChatMessagesCreated        ChatMessageCreated[]
   ofRateLimitedApis            RateLimitedApi[]
 
+  ofAiTaskTechs                AiTaskTech[]
   ofLlmCaches                  LlmCache[]
 
   ofSourceNodeTechs            SourceNodeGeneration[]
