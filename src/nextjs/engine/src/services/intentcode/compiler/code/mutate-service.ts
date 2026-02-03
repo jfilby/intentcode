@@ -2,11 +2,11 @@ import fs from 'fs'
 import { blake3 } from '@noble/hashes/blake3'
 import { PrismaClient, SourceNode, Tech } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
-import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-service'
 import { UsersService } from '@/serene-core-server/services/users/service'
+import { AiTasksService } from '@/serene-ai-server/services/ai-tasks/ai-tasks-service'
 import { TextParsingService } from '@/serene-ai-server/services/content/text-parsing-service'
 import { BuildData, BuildFromFile } from '@/types/build-types'
-import { LlmEnvNames, ProjectDetails, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
+import { IntentCodeAiTasks, ProjectDetails, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { SourceNodeNames, SourceNodeGenerationData, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
@@ -27,6 +27,7 @@ const sourceNodeGenerationModel = new SourceNodeGenerationModel()
 const sourceNodeModel = new SourceNodeModel()
 
 // Services
+const aiTasksService = new AiTasksService()
 const compilerLlmService = new CompilerLlmService()
 const compilerPromptService = new CompilerPromptService()
 const dependenciesMutateService = new DependenciesMutateService()
@@ -37,7 +38,6 @@ const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
 const sourceAssistIntentCodeService = new SourceAssistIntentCodeService()
 const sourceCodePathGraphMutateService = new SourceCodePathGraphMutateService()
 const sourceCodePathGraphQueryService = new SourceCodePathGraphQueryService()
-const techQueryService = new TechQueryService()
 const textParsingService = new TextParsingService()
 const usersService = new UsersService()
 
@@ -254,9 +254,17 @@ export class CompilerMutateService {
 
     // Get tech
     const tech = await
-            techQueryService.getTechByEnvKey(
-              prisma,
-              LlmEnvNames.compilerEnvName)
+      aiTasksService.getTech(
+        prisma,
+        ServerOnlyTypes.name,
+        IntentCodeAiTasks.compiler,
+        null,  // userProfileId
+        true)  // exceptionOnNotFound
+
+    // Validate
+    if (tech == null) {
+      throw new CustomError(`${fnName}: tech == null`)
+    }
 
     // Get source code's full path
     buildFromFile.targetFullPath =

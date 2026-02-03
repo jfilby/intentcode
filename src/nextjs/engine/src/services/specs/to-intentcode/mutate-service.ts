@@ -3,11 +3,11 @@ import path from 'path'
 import { blake3 } from '@noble/hashes/blake3'
 import { PrismaClient, SourceNode, Tech } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
-import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-service'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
+import { AiTasksService } from '@/serene-ai-server/services/ai-tasks/ai-tasks-service'
 import { BuildData, BuildFromFile } from '@/types/build-types'
-import { LlmEnvNames, ServerOnlyTypes } from '@/types/server-only-types'
+import { IntentCodeAiTasks, ServerOnlyTypes } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { SourceNodeGenerationData } from '@/types/source-graph-types'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
@@ -25,6 +25,7 @@ import { SpecsToIntentCodePromptService } from './prompt-service'
 const sourceNodeGenerationModel = new SourceNodeGenerationModel()
 
 // Services
+const aiTasksService = new AiTasksService()
 const fsUtilsService = new FsUtilsService()
 const intentCodeMessagesService = new IntentCodeMessagesService()
 const intentCodeUpdaterMutateService = new IntentCodeUpdaterMutateService()
@@ -34,7 +35,6 @@ const specsGraphQueryService = new SpecsGraphQueryService()
 const specsLlmService = new SpecsLlmService()
 const specsPathGraphMutateService = new SpecsPathGraphMutateService()
 const specsToIntentCodePromptService = new SpecsToIntentCodePromptService()
-const techQueryService = new TechQueryService()
 const usersService = new UsersService()
 const walkDirService = new WalkDirService()
 
@@ -133,9 +133,17 @@ export class SpecsToIntentCodeMutateService {
 
     // Get tech
     const tech = await
-            techQueryService.getTechByEnvKey(
-              prisma,
-              LlmEnvNames.specsTranslatorEnvName)
+      aiTasksService.getTech(
+        prisma,
+        ServerOnlyTypes.name,
+        IntentCodeAiTasks.compiler,
+        null,  // userProfileId
+        true)  // exceptionOnNotFound
+
+    // Validate
+    if (tech == null) {
+      throw new CustomError(`${fnName}: tech == null`)
+    }
 
     // Get prompt
     const prompt = await

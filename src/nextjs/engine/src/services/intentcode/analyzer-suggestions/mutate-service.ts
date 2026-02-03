@@ -2,21 +2,21 @@ import chalk from 'chalk'
 import { PrismaClient } from '@prisma/client'
 import { ConsoleService } from '@/serene-core-server/services/console/service'
 import { CustomError } from '@/serene-core-server/types/errors'
-import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-service'
 import { UsersService } from '@/serene-core-server/services/users/service'
+import { AiTasksService } from '@/serene-ai-server/services/ai-tasks/ai-tasks-service'
 import { BuildData, BuildFromFile } from '@/types/build-types'
-import { LlmEnvNames } from '@/types/server-only-types'
+import { IntentCodeAiTasks, ServerOnlyTypes } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { IntentCodeAnalyzerSuggestionsLlmService } from './llm-service'
 import { IntentCodeAnalyzerSuggestionsPromptService } from './prompt-service'
 import { IntentCodeUpdaterMutateService } from '../updater/mutate-service'
 
 // Services
+const aiTasksService = new AiTasksService()
 const consoleService = new ConsoleService()
 const intentCodeAnalyzerSuggestionsLlmService = new IntentCodeAnalyzerSuggestionsLlmService()
 const intentCodeAnalyzerSuggestionsPromptService = new IntentCodeAnalyzerSuggestionsPromptService()
 const intentCodeUpdaterMutateService = new IntentCodeUpdaterMutateService()
-const techQueryService = new TechQueryService()
 const usersService = new UsersService()
 
 // Class
@@ -47,9 +47,17 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
 
     // Get tech
     const tech = await
-            techQueryService.getTechByEnvKey(
-              prisma,
-              LlmEnvNames.specsTranslatorEnvName)
+      aiTasksService.getTech(
+        prisma,
+        ServerOnlyTypes.name,
+        IntentCodeAiTasks.compiler,
+        null,  // userProfileId
+        true)  // exceptionOnNotFound
+
+    // Validate
+    if (tech == null) {
+      throw new CustomError(`${fnName}: tech == null`)
+    }
 
     // Get the prompt
     const prompt = await

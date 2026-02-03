@@ -4,11 +4,11 @@ import { PrismaClient, SourceNode, Tech } from '@prisma/client'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { IndexerLlmService } from './llm-service'
 import { CustomError } from '@/serene-core-server/types/errors'
-import { TechQueryService } from '@/serene-core-server/services/tech/tech-query-service'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
+import { AiTasksService } from '@/serene-ai-server/services/ai-tasks/ai-tasks-service'
 import { BuildData, BuildFromFile } from '@/types/build-types'
-import { LlmEnvNames, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
+import { IntentCodeAiTasks, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
 import { SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
@@ -25,6 +25,7 @@ const sourceNodeGenerationModel = new SourceNodeGenerationModel()
 const sourceNodeModel = new SourceNodeModel()
 
 // Services
+const aiTasksService = new AiTasksService()
 const dependenciesMutateService = new DependenciesMutateService()
 const fsUtilsService = new FsUtilsService()
 const indexerLlmService = new IndexerLlmService()
@@ -33,7 +34,6 @@ const intentCodeFilenameService = new IntentCodeFilenameService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
 const intentCodeMessagesService = new IntentCodeMessagesService()
 const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
-const techQueryService = new TechQueryService()
 const walkDirService = new WalkDirService()
 const usersService = new UsersService()
 
@@ -115,9 +115,17 @@ export class IndexerMutateService {
 
     // Get tech
     const tech = await
-            techQueryService.getTechByEnvKey(
-              prisma,
-              LlmEnvNames.indexerEnvName)
+      aiTasksService.getTech(
+        prisma,
+        ServerOnlyTypes.name,
+        IntentCodeAiTasks.indexer,
+        null,  // userProfileId
+        true)  // exceptionOnNotFound
+
+    // Validate
+    if (tech == null) {
+      throw new CustomError(`${fnName}: tech == null`)
+    }
 
     // Get prompt
     const prompt = await
