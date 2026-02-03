@@ -117,7 +117,7 @@ export class IndexerMutateService {
     const tech = await
       aiTasksService.getTech(
         prisma,
-        ServerOnlyTypes.name,
+        ServerOnlyTypes.namespace,
         IntentCodeAiTasks.indexer,
         null,  // userProfileId
         true)  // exceptionOnNotFound

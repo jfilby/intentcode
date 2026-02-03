@@ -256,7 +256,7 @@ export class CompilerMutateService {
     const tech = await
       aiTasksService.getTech(
         prisma,
-        ServerOnlyTypes.name,
+        ServerOnlyTypes.namespace,
         IntentCodeAiTasks.compiler,
         null,  // userProfileId
         true)  // exceptionOnNotFound
