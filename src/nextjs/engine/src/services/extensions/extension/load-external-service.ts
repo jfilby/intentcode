@@ -1,7 +1,6 @@
 const fs = require('fs')
 import chalk from 'chalk'
-import path, { dirname } from 'path'
-import { fileURLToPath } from 'node:url'
+import path from 'path'
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { ConsoleService } from '@/serene-core-server/services/console/service'
@@ -11,11 +10,13 @@ import { ExtensionMutateService } from './mutate-service'
 import { GraphsDeleteService } from '@/services/graphs/general/delete-service'
 import { LoadExternalHooksService } from '../hooks/load-external-service'
 import { LoadExternalSkillsService } from '../skills/load-external-service'
+import { PathsService } from '@/services/utils/paths-service'
 import { ProjectsQueryService } from '../../projects/query-service'
 
 // Services
 const consoleService = new ConsoleService()
 const extensionMutateService = new ExtensionMutateService()
+const pathsService = new PathsService()
 const graphsDeleteService = new GraphsDeleteService()
 const loadExternalHooksService = new LoadExternalHooksService()
 const loadExternalSkillsService = new LoadExternalSkillsService()
@@ -86,11 +87,11 @@ export class LoadExternalExtensionsService {
     const fnName = `${this.clName}.loadBundledExtensions()`
 
     // Determine extensions path
-    const engineRoot = path.resolve(__dirname, '..', '..', '..', '..')
-    const extensionsPath = `${engineRoot}/bundled/extensions`
+    const bundledPath = pathsService.getBundledPath()
+    const extensionsPath = `${bundledPath}/extensions`
 
     // Debug
-    console.log(`${fnName}: extensionsPath: ${extensionsPath}`)
+    // console.log(`${fnName}: extensionsPath: ${extensionsPath}`)
 
     // Install bundled extensions
     await this.loadExtensionsInPath(
