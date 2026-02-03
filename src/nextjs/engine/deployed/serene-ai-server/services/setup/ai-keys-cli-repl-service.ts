@@ -26,7 +26,6 @@ export class AiKeysCliReplService {
     // Banner
     console.log(``)
     console.log(chalk.bold(`─── Add an API key ───`))
-    console.log(``)
 
     // Create a map of tech providers
     const techProvidersMap = await
@@ -34,12 +33,12 @@ export class AiKeysCliReplService {
 
     // List options
     console.log(``)
-    console.log(`Select a provider:`)
+    console.log(chalk.bold(`Tech provider:`))
     console.log(`[b] Back`)
 
     for (const [techProviderNo, techProvider] of techProvidersMap.entries()) {
 
-      console.log(`${techProviderNo}. ${techProvider.name}`)
+      console.log(`[${techProviderNo}] ${techProvider.name}`)
     }
 
     // Get menu no
@@ -77,7 +76,7 @@ export class AiKeysCliReplService {
 
     // API key banner
     console.log(``)
-    console.log(`Enter your API key`)
+    console.log(chalk.bold(`Enter your API key`))
 
     // Get api key
     const apiKey = await
@@ -136,7 +135,7 @@ export class AiKeysCliReplService {
 
       // Banner
       console.log(``)
-      console.log(`Is your key free or paid?`)
+      console.log(chalk.bold(`Is your key free or paid?`))
       console.log(`[b] Back`)
       console.log(`[f] Free`)
       console.log(`[p] Paid`)
