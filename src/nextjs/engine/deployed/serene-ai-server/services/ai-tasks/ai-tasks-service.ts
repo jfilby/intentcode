@@ -1,7 +1,7 @@
 import { AiTask, PrismaClient } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
-import { AiTaskModel } from '@/models/ai-tasks/ai-task-model'
-import { AiTaskTechModel } from '@/models/ai-tasks/ai-task-tech-model'
+import { AiTaskModel } from '../../models/ai-tasks/ai-task-model'
+import { AiTaskTechModel } from '../../models/ai-tasks/ai-task-tech-model'
 
 // Types
 export interface AiTaskDetail {
@@ -53,7 +53,7 @@ export class AiTasksService {
         userProfileId)
 
     // Validate
-    if (aiTaskTech == null &&
+    if (aiTaskTech?.tech == null &&
         exceptionOnNotFound === true) {
 
       throw new CustomError(
@@ -62,7 +62,7 @@ export class AiTasksService {
     }
 
     // Return
-    return aiTaskTech
+    return aiTaskTech?.tech
   }
 
   async getNumberedTechMap(
