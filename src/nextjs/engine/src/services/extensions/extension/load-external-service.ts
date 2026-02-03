@@ -1,6 +1,7 @@
 const fs = require('fs')
 import chalk from 'chalk'
-import path from 'path'
+import path, { dirname } from 'path'
+import { fileURLToPath } from 'node:url'
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { ConsoleService } from '@/serene-core-server/services/console/service'
@@ -75,6 +76,27 @@ export class LoadExternalExtensionsService {
 
     // Return
     return extensionNode
+  }
+
+  async loadBundledExtensions(
+    prisma: PrismaClient,
+    instanceId: string) {
+
+    // Debug
+    const fnName = `${this.clName}.loadBundledExtensions()`
+
+    // Determine extensions path
+    const engineRoot = path.resolve(__dirname, '..', '..', '..', '..')
+    const extensionsPath = `${engineRoot}/bundled/extensions`
+
+    // Debug
+    console.log(`${fnName}: extensionsPath: ${extensionsPath}`)
+
+    // Install bundled extensions
+    await this.loadExtensionsInPath(
+      prisma,
+      instanceId,
+      extensionsPath)
   }
 
   async loadExtensionsInPath(

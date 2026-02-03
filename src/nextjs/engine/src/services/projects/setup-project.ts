@@ -239,7 +239,7 @@ export class ProjectSetupService {
 
       console.log(`Loading extensions specified in ${filename}..`)
 
-      await extensionMutateService.loadExtensionsInSystemToUserProjectByMap(
+      await extensionMutateService.loadExtensionNodesInSystemToUserProject(
               prisma,
               projectNode.instanceId,
               depsNode.jsonContent.extensions)

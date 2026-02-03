@@ -92,13 +92,66 @@ export class ExtensionMutateService {
     return extensionNode
   }
 
-  async loadExtensionsInSystemToUserProjectByMap(
+  async loadExtensionsInSystemToUserProject(
+    prisma: PrismaClient,
+    loadToInstanceId: string,
+    extensionNames: string[]) {
+
+    // Debug
+    const fnName = `${this.clName}.loadExtensionsInSystemToUserProject()`
+
+    // Get the System project
+    const systemProject = await
+            projectsQueryService.getProject(
+              prisma,
+              null,  // parentId
+              ServerOnlyTypes.systemProjectName)
+
+    // Validate
+    if (systemProject == null) {
+      console.error(`System project not found (run setup)`)
+      return
+    }
+
+    // Get all extensions in System
+    const extensionNodes = await
+      extensionQueryService.getExtensionNodes(
+        prisma,
+        systemProject.id)
+
+    // Get the toExtensions node
+    const toExtensionsNode = await
+      extensionQueryService.getExtensionsNode(
+        prisma,
+        loadToInstanceId)
+
+    // Load the requested extensions
+    for (const extensionNode of extensionNodes) {
+
+      // Debug
+      // console.log(`${fnName}: extension: ` + JSON.stringify(extension))
+
+      // Add to extensions
+      if (extensionNames.includes(extensionNode.name)) {
+
+      // Load the Extension into the selected instance
+      await graphsMutateService.copyNodesToProject(
+              prisma,
+              systemProject.id,
+              loadToInstanceId,
+              extensionNode.id,
+              toExtensionsNode.id)  // parentToNodeId
+      }
+    }
+  }
+
+  async loadExtensionNodesInSystemToUserProject(
           prisma: PrismaClient,
           loadToInstanceId: string,
           extensions: any) {
 
     // Debug
-    const fnName = `${this.clName}.loadExtensionsInSystemToUserProjectByMap()`
+    const fnName = `${this.clName}.loadExtensionNodesInSystemToUserProject()`
 
     // Get the System project
     const systemProject = await

@@ -10,6 +10,7 @@ import { ServerOnlyTypes, VersionNames } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { VersionModel } from '@/models/engine/version-model'
 import { AgentUserService } from '@/services/agents/agent-user-service'
+import { LoadExternalExtensionsService } from '../extensions/extension/load-external-service'
 import { ProjectsMutateService } from '../projects/mutate-service'
 import { ProjectsQueryService } from '../projects/query-service'
 
@@ -21,6 +22,7 @@ const versionModel = new VersionModel()
 // Services
 const agentUserService = new AgentUserService()
 const aiModelsSelectionService = new AiModelsSelectionService()
+const loadExternalExtensionsService = new LoadExternalExtensionsService()
 const projectsMutateService = new ProjectsMutateService()
 const projectsQueryService = new ProjectsQueryService()
 const sereneAiSetup = new SereneAiSetup()
@@ -152,5 +154,10 @@ export class SetupService {
 
     // Setup AI tasks with default models
     await aiModelsSelectionService.setupAiTasksWithDefaults(prisma)
+
+    // Install bundled extensions
+    await loadExternalExtensionsService.loadBundledExtensions(
+      prisma,
+      systemProject.id)
   }
 }
