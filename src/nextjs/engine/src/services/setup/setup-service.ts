@@ -1,4 +1,4 @@
-import { PrismaClient, UserProfile } from '@prisma/client'
+import { Instance, PrismaClient, UserProfile } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { ChatSettingsModel } from '@/serene-core-server/models/chat/chat-settings-model'
 import { UsersService } from '@/serene-core-server/services/users/service'
@@ -103,15 +103,27 @@ export class SetupService {
 
   async setupIfRequired(prisma: PrismaClient) {
 
+    // Try to get the admin user profile
+    const adminUserProfile = await
+            usersService.getUserProfileByEmail(
+              prisma,
+              ServerTestTypes.adminUserEmail)
+
     // Try to get the System project
-    const systemProject = await
-      projectsQueryService.getProject(
-        prisma,
-        null,  // parentId
-        ServerOnlyTypes.systemProjectName)
+    var systemProject: Instance | undefined = undefined
+
+    if (adminUserProfile != null) {
+
+      systemProject = await
+        projectsQueryService.getProject(
+          prisma,
+          null,  // parentId
+          ServerOnlyTypes.systemProjectName)
+    }
 
     // Run setup if not found
-    if (systemProject == null) {
+    if (adminUserProfile == null ||
+        systemProject == null) {
 
       await this.setup(prisma)
     }
