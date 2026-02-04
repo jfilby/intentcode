@@ -37,7 +37,7 @@ export class SourceCodePathGraphQueryService {
     // Validate
     if (sourceCodeNode == null) {
 
-      console.log(`${fnName}: sourceCodeNode == null`)
+      // console.log(`${fnName}: sourceCodeNode == null`)
       return null
     }
 
