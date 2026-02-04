@@ -247,7 +247,7 @@ export class ProjectsQueryService {
           fullPath: string) {
 
     // Debug
-    const fnName = `${this.clName}.getProject()`
+    const fnName = `${this.clName}.getProjectByPath()`
 
     // Debug
     // console.log(`${fnName}: fullPath: ${fullPath}`)
@@ -327,6 +327,32 @@ export class ProjectsQueryService {
 
     // Return selected project
     return instancesMap.get(loadProjectNo)
+  }
+
+  async getProjectPath(
+          prisma: PrismaClient,
+          instanceId: string) {
+
+    // Debug
+    const fnName = `${this.clName}.getProjectPath()`
+
+    // Get project's path
+    const projectPaths = await
+            instanceSettingModel.filter(
+              prisma,
+              instanceId,
+              InstanceSettingNames.projectPath,
+              undefined)  // value
+
+    // Validate
+    if (projectPaths.length === 0) {
+      return undefined
+    } else if (projectPaths.length > 1) {
+      throw new CustomError(`${fnName}: more than one project path found`)
+    }
+
+    // Return
+    return projectPaths[0].value
   }
 
   async createProjectDetails(

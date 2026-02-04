@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import { PrismaClient } from '@prisma/client'
+import { Instance, PrismaClient } from '@prisma/client'
 import { ConsoleService } from '@/serene-core-server/services/console/service'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { AiKeysCliReplService } from '@/serene-ai-server/services/setup/ai-keys-cli-repl-service'
@@ -8,6 +8,8 @@ import { AiModelsSelectionService } from './ai-models-selection-service'
 import { InfoService } from './info-service'
 import { LoadExternalExtensionsService } from '../extensions/extension/load-external-service'
 import { ManageExtensionsCliService } from '../extensions/extension/cli-service'
+import { ProjectsQueryService } from '../projects/query-service'
+import { ProjectCliService } from '../projects/cli-service'
 import { ProjectSetupService } from '../projects/setup-project'
 import { SetupService } from './setup-service'
 import { TestsService } from '../tests/tests-service'
@@ -19,6 +21,8 @@ const consoleService = new ConsoleService()
 const infoService = new InfoService()
 const loadExternalExtensionsService = new LoadExternalExtensionsService()
 const manageExtensionsCliService = new ManageExtensionsCliService()
+const projectsQueryService = new ProjectsQueryService()
+const projectCliService = new ProjectCliService()
 const projectSetupService = new ProjectSetupService()
 const setupService = new SetupService()
 const testsService = new TestsService()
@@ -31,6 +35,7 @@ export class CliService {
   clName = 'CliService'
 
   initProjectCommand = 'init-project'
+  projectCommand = 'project'
   loadExtensionsCommand = 'load-extensions'
   manageAiModelsCommand = 'manage-ai-models'
   manageAiKeysCommand = 'manage-ai-keys'
@@ -42,6 +47,7 @@ export class CliService {
 
   commands = [
     this.initProjectCommand,
+    this.projectCommand,
     this.loadExtensionsCommand,
     this.manageAiModelsCommand,
     this.manageAiKeysCommand,
@@ -54,6 +60,7 @@ export class CliService {
 
   commandsBySelection: Record<string, string> = {
     'i': this.initProjectCommand,
+    'p': this.projectCommand,
     'l': this.loadExtensionsCommand,
     'm': this.manageExtensionsCommand,
     'a': this.manageAiModelsCommand,
@@ -72,11 +79,23 @@ export class CliService {
     // REPL loop
     while (true) {
 
+      // Try to get a project in the cwd
+      const project = await
+        projectsQueryService.getProjectByPath(
+          prisma,
+          process.cwd())
+
       // Show menu
       console.log(``)
       console.log(chalk.bold(`─── Main menu ───`))
       console.log(``)
-      console.log(`[i] Init project`)
+
+      if (project == null) {
+        console.log(`[i] Init project`)
+      } else {
+        console.log(`[p] Project (${project.name})`)
+      }
+
       console.log(`[l] Load extensions`)
       console.log(`[m] Manage extensions`)
       console.log(`[a] Manage AI models`)
@@ -103,14 +122,16 @@ export class CliService {
 
         await this.runCommand(
           prisma,
-          command)
+          command,
+          project)
       }
     }
   }
 
   async runCommand(
     prisma: PrismaClient,
-    command: string) {
+    command: string,
+    project: Instance | null) {
 
     // Debug
     const fnName = `${this.clName}.runCommand()`
@@ -120,10 +141,10 @@ export class CliService {
 
     // Get/create an admin user
     const adminUserProfile = await
-            usersService.getOrCreateUserByEmail(
-              prisma,
-              ServerTestTypes.adminUserEmail,
-              undefined)  // defaultUserPreferences
+      usersService.getOrCreateUserByEmail(
+        prisma,
+        ServerTestTypes.adminUserEmail,
+        undefined)  // defaultUserPreferences
 
     // Get/create a regular (non-admin) user
     const regularTestUserProfile = await
@@ -147,6 +168,16 @@ export class CliService {
         await projectSetupService.initProjectFromCli(
           prisma,
           adminUserProfile)
+
+        break
+      }
+
+      case this.projectCommand: {
+
+        await projectCliService.project(
+          prisma,
+          adminUserProfile,
+          project!)
 
         break
       }
