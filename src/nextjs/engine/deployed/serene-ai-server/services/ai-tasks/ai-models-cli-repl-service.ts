@@ -2,7 +2,6 @@ import chalk from 'chalk'
 import { PrismaClient } from '@prisma/client'
 import { SereneCoreServerTypes } from '@/serene-core-server/types/user-types'
 import { ConsoleService } from '@/serene-core-server/services/console/service'
-import { AiTechDefs } from '@/types/tech-defs'
 import { AiTaskDetail, AiTasksService } from './ai-tasks-service'
 
 // Services
