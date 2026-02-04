@@ -20,7 +20,7 @@ export class IntentCodeMessagesService {
 
       for (const error of results.errors) {
 
-        console.error(`WARNING: ${error.text}`)
+        console.error(`ERROR: ${error.text}`)
       }
 
       // Quit program if any errors were printed
