@@ -22,7 +22,7 @@ export class IntentCodeCommonTypes {
     '```md\n' +
     `# My parser (class)\n` +
     `\n` +
-    `## test (fn)\n` +
+    `## test (function)\n` +
     `\n` +
     `parameters:\n` +
     `- str (string)\n` +
@@ -33,7 +33,7 @@ export class IntentCodeCommonTypes {
     `- if validate is true call validate(str)\n` +
     `\n` +
     `\n` +
-    `## validate (fn)\n` +
+    `## validate (function)\n` +
     `\n` +
     `parameters:\n` +
     `- str (string)\n` +

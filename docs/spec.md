@@ -30,12 +30,13 @@ compiler.
 
 Markdown headings are used to denote entities, e.g. classes, functions and
 types. After the name of the entity specify its types (and any other
-attributes) in parentheses. E.g.: `# My parser (class)` and `## test (fn)`.
+attributes) in parentheses. E.g.: `# My parser (class)` and
+`## test (function)`.
 
 Parameters can then be specified in a block following the heading, e.g.:
 
 ```md
-## test (fn)
+## test (function)
 
 Parameters:
 - str (string)
