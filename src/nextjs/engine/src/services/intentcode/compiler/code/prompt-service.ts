@@ -66,25 +66,53 @@ export class CompilerPromptService {
           `  field.\n` +
           `- Convert the input IntentCode (if no errors) to ` +
           `  ${buildFromFile.targetFileExt} source code.\n` +
-          `- Use the indexed data for this file as a structural starting ` +
-          `  point. Imports depend on this to be accurate.\n` +
-          `- Write idiomatic code, this is for actual use.\n` +
-          `- Use the available index data to determine the names of classes ` +
-          `  and other named entities in other files.\n` +
-          `\n` +
+          `\n`
+
+    // Indexer?
+    if (ServerOnlyTypes.compilerMetaDataApproach === CompilerMetaDataApproachs.indexer) {
+
+      prompt +=
+        `- Use the indexed data for this file as a structural starting ` +
+        `  point. Imports depend on this to be accurate.\n` +
+        `- Write idiomatic code, this is for actual use.\n` +
+        `- Use the available index data to determine the names of classes ` +
+        `  and other named entities in other files.\n` +
+        `\n` +
+        `## Assumptions\n` +
+        `\n` +
+        `Useful assumptions include:\n` +
+        `- Importing decisions based on more than one option.\n` +
+        `- Implementing functionality using known functions where ` +
+        `  possible, make use of functions available in index data or ` +
+        `  standard libraries.\n` +
+        `\n` +
+        `Do not make these assumptions:\n` +
+        `- Imports not based on index data or known standard libraries.\n` +
+        `\n`
+
+    } else if (ServerOnlyTypes.compilerMetaDataApproach === CompilerMetaDataApproachs.analyzer) {
+
+      prompt +=
+        `\n` +
+        `## Assumptions\n` +
+        `\n` +
+        `Useful assumptions include:\n` +
+        `- Importing decisions based on more than one option.\n` +
+        `- Implementing functionality using known functions where ` +
+        `  possible, make use of functions available in IntentCode or ` +
+        `  standard libraries.\n` +
+        `\n` +
+        `Do not make these assumptions:\n` +
+        `- Imports not based on IntentCode or known standard libraries.\n` +
+        `\n`
+
+    } else {
+      throw new CustomError(`${fnName}: invalid compilerMetaDataApproach`)
+    }
+
+    // Continue the prompt
+    prompt +=
           IntentCodeCommonTypes.intentCodePrompting +
-          `\n` +
-          `## Assumptions\n` +
-          `\n` +
-          `Useful assumptions include:\n` +
-          `- Importing decisions based on more than one option.\n` +
-          `- Implementing functionality using known functions where ` +
-          `  possible, make use of functions available in index data or ` +
-          `  standard libraries.\n` +
-          `\n` +
-          `Do not make these assumptions:\n` +
-          `- Imports not based on index data or known standard libraries.\n` +
-          `\n` +
           `General rules:\n` +
           `- Include a probability from 0..1.\n ` +
           `- Different levels: file or line. The line level requires line, ` +
