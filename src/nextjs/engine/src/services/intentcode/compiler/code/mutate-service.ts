@@ -114,7 +114,20 @@ export class CompilerMutateService {
 
     // Validate
     if (content == null) {
-      throw new CustomError(`${fnName}: content == null`)
+
+      // Handle throw or exit
+      if (jsonContent.errors != null &&
+          jsonContent.errors.length > 0) {
+
+        // Print warnings and errors (must be at the end of results processing)
+        intentCodeMessagesService.handleMessages(jsonContent)
+
+        // Exit (with error)
+        process.exit(1)
+      } else {
+        // Throw an exception (content not specified and no errors)
+        throw new CustomError(`${fnName}: content == null (and no errors)`)
+      }
     }
 
     if (buildFromFile.targetFullPath == null) {
@@ -177,7 +190,8 @@ export class CompilerMutateService {
               sourceNodeGenerationData,
               buildFromFile.fileModifiedTime)
 
-    // Print warnings and errors (must be at the end of results processing)
+    // Print warnings and errors if not yet displayed, ideally at the end of
+    // processing
     intentCodeMessagesService.handleMessages(jsonContent)
   }
 
