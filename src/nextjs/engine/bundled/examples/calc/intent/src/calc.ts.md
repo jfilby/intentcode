@@ -8,13 +8,13 @@ multiple = '*'
 divide = '/'
 
 
-## InputType (type)
+## InputType (interface)
 
 op?: Operation
 value?: number
 
 
-## run (fn)
+## run (function)
 
 parameters:
 - input: string

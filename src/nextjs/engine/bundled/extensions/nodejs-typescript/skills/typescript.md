@@ -16,10 +16,6 @@ context:
 Each file should have a single general purpose.
 Wrap functions and methods in a class where there are many of them in a file.
 
-In markdown heading attributes only use the following abbreviations:
-- fn (function)
-- discr union (discriminated union)
-
 Make use of and adhere to these attributes in the code where relevant:
 async, export, generator, static, instance.
 
