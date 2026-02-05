@@ -2,7 +2,7 @@ import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { BuildData, BuildFromFile } from '@/types/build-types'
 import { IntentCodeCommonTypes } from '../common/types'
-import { FileOps, ServerOnlyTypes } from '@/types/server-only-types'
+import { AnalyzerPromptTypes, FileOps, ServerOnlyTypes } from '@/types/server-only-types'
 import { CompilerQueryService } from '../compiler/code/query-service'
 import { DependenciesPromptService } from '@/services/graphs/dependencies/prompt-service'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
@@ -25,18 +25,29 @@ export class IntentCodeAnalyzerPromptService {
   // Code
   async getPrompt(
           prisma: PrismaClient,
+          promptType: AnalyzerPromptTypes,
           projectNode: SourceNode,
           buildData: BuildData,
           buildFromFiles: BuildFromFile[],
-          primaryInstructions?: string,
           suggestion?: any) {
 
     // Debug
     const fnName = `${this.clName}.getPrompt()`
 
     // Determine top-level instructions if not set
-    if (primaryInstructions == null) {
+    var primaryInstructions = ``
+
+    if (promptType === AnalyzerPromptTypes.createSuggestions) {
+
       primaryInstructions = `You need to run a analysis on the IntentCode.\n`
+
+    } else if (promptType === AnalyzerPromptTypes.chatAboutSuggestion) {
+
+      primaryInstructions =
+        `Chat with the user about the generated suggestion.\n`
+
+    } else {
+      throw new CustomError(`${fnName}: unhandled promptType: ${promptType}`)
     }
 
     /* Get deps prompting
@@ -46,12 +57,6 @@ export class IntentCodeAnalyzerPromptService {
               projectNode,
               buildFromFile.fileNode,
               buildFromFile.targetFullPath) */
-
-    // Get skills used across files
-    const skillsMap =
-      compilerQueryService.getMultiFileSkillPrompting(
-        buildData,
-        buildFromFiles)
 
     // Debug
     // console.log(`${fnName}: targetLangPrompting: ${targetLangPrompting}`)
@@ -80,16 +85,29 @@ export class IntentCodeAnalyzerPromptService {
           `- Suggestion priorities are from 1 (urgent) to 5 (low).\n` +
           `- The fileOp can be: ` + JSON.stringify(FileOps) + `\n` +
           `- The change per fileDelta is a brief description of the change ` +
-          `  and not the new contents to set.\n` +
-          `\n` +
-          // depsPrompting +
-          `\n`
+          `  and not the new contents to set.\n`
+
+    if (promptType === AnalyzerPromptTypes.chatAboutSuggestion) {
+
+      prompt +=
+        `- The messages are were you put your reply to the user.\n` +
+        `- If the generated suggestion is unchanged, then don't set the ` +
+        `  suggestion field in the output.\n`
+    }
+
+    // New-line after fields
+    prompt += `\n`
+
+    /* Continue the prompt
+    prompt +=
+      depsPrompting +
+      `\n` */
 
     // Existing suggestion?
     if (suggestion != null) {
 
       prompt +=
-        `## Suggestion\n` +
+        `## Generated suggestion\n` +
         `\n` +
         `This chat concerns this generated suggestion:\n` +
         `\n` +
@@ -103,24 +121,51 @@ export class IntentCodeAnalyzerPromptService {
       `\n` +
       `This is an example of the output structure only. Don't try to ` +
       `use it as a source of any kind of data.\n` +
-      `\n` +
-      `{\n` +
-      `  "suggestions": [\n` +
-      `    {\n` +
-      `      "priority": <priority>,\n` +
-      `      "text": "<suggestion>",\n` +
-      `      "projectNo": <projectNo>,\n` +
-      `      "fileDeltas": [\n `+
-      `        {\n` +
-      `          "fileOp": "<fileOp>",\n` +
-      `          "relativePath": "<targetFilename>.<srcExt>.md",\n` +
-      `          "change": "<change>"\n` +
-      `        }\n` +
-      `      ]\n` +
-      `    }\n` +
-      `  ]\n` +
-      `}\n` +
       `\n`
+
+    if (promptType === AnalyzerPromptTypes.createSuggestions) {
+
+      prompt +=
+        `{\n` +
+        `  "suggestions": [\n` +
+        `    {\n` +
+        `      "priority": <priority>,\n` +
+        `      "text": "<suggestion>",\n` +
+        `      "projectNo": <projectNo>,\n` +
+        `      "fileDeltas": [\n `+
+        `        {\n` +
+        `          "fileOp": "<fileOp>",\n` +
+        `          "relativePath": "<targetFilename>.<srcExt>.md",\n` +
+        `          "change": "<change>"\n` +
+        `        }\n` +
+        `      ]\n` +
+        `    }\n` +
+        `  ]\n` +
+        `}\n` +
+        `\n`
+
+    } else if (promptType === AnalyzerPromptTypes.chatAboutSuggestion) {
+
+      prompt +=
+        `{\n` +
+        `  "messages": [{\n` +
+        `    "text": "<reply>\n"` +
+        `  }],\n` +
+        `  "suggestion": {\n` +
+        `    "priority": <priority>,\n` +
+        `    "text": "<suggestion>",\n` +
+        `    "projectNo": <projectNo>,\n` +
+        `    "fileDeltas": [\n `+
+        `      {\n` +
+        `        "fileOp": "<fileOp>",\n` +
+        `        "relativePath": "<targetFilename>.<srcExt>.md",\n` +
+        `        "change": "<change>"\n` +
+        `      }\n` +
+        `    ]\n` +
+        `  }\n` +
+        `}\n` +
+        `\n`
+    }
 
     // Add numbered projects
     if (buildData.projects != null) {
@@ -152,6 +197,12 @@ export class IntentCodeAnalyzerPromptService {
     if (intentCodePrompting != null) {
       prompt += intentCodePrompting
     }
+
+    // Get skills used across files
+    const skillsMap =
+      compilerQueryService.getMultiFileSkillPrompting(
+        buildData,
+        buildFromFiles)
 
     // Target lang prompting
     for (const [targetFileExt, targetLangPrompting] of skillsMap.entries()) {

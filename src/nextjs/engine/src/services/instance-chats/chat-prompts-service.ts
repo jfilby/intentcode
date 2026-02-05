@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import { AnalyzerChatParams } from '@/types/chat-types'
+import { AnalyzerPromptTypes } from '@/types/server-only-types'
 import { IntentCodeAnalyzerPromptService } from '../intentcode/analyzer/prompt-service'
 
 // Services
@@ -19,16 +20,16 @@ export class ChatPromptsService {
     // Debug
     const fnName = `${this.clName}.getAnalyzerSuggestionsPrompt()`
 
-    console.log(`${fnName}: params: ` + JSON.stringify(params))
+    // console.log(`${fnName}: params: ` + JSON.stringify(params))
 
     // Get the prompt
     const prompt = await
       intentCodeAnalyzerPromptService.getPrompt(
         prisma,
+        AnalyzerPromptTypes.chatAboutSuggestion,
         params.projectNode,
         params.buildData,
         params.buildFromFiles,
-        `Chat with the user concerning this suggestion.`,
         params.suggestion)
 
     // Return

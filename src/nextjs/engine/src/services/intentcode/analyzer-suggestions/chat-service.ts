@@ -107,6 +107,18 @@ export class IntentCodeAnalyzerSuggestionsChatService {
         buildFromFiles,
         suggestion)
 
+    // Get chatParticipantId
+    // console.log(`${fnName}: chatSession: ` + JSON.stringify(chatSession))
+
+    var chatParticipant: any = undefined
+
+    for (const thisChatParticipant of chatSession.chatParticipants) {
+
+      if (thisChatParticipant.userProfileId === adminUserProfile.id) {
+        chatParticipant = thisChatParticipant
+      }
+    }
+
     // Chat loop
     while (true) {
 
@@ -129,25 +141,40 @@ export class IntentCodeAnalyzerSuggestionsChatService {
         chatSessionTurnService.turn(
           prisma,
           chatSession.id,
-          chatSession.chatParticipantId,
+          chatParticipant.id,
           adminUserProfile.id,
           projectDetails.instance.id,
           'User',  // name
           contents)
 
-      // Display the response
+      // Debug
+      // console.log(`${fnName}: replyData: ` + JSON.stringify(replyData))
 
+      // Display the response
       if (replyData.contents != null) {
 
-        for (const content of replyData.contents) {
+        for (const message of replyData.contents) {
 
           console.log(``)
-          console.log(`AI> ${content.text}`)
+          console.log(`AI> ${message.text}`)
         }
+      }
 
-      } else {
+      if (replyData.rawJson.suggestion != null) {
+
+        const suggestion = replyData.rawJson.suggestion
+
         console.log(``)
-        console.log(`AI> An error was encountered`)
+        console.log(`UPDATED: ${suggestion.text}`)
+
+        if (suggestion.fileDeltas != null) {
+
+          for (const fileDelta of suggestion.fileDeltas) {
+
+            console.log(`.. ${fileDelta.fileOp} ${fileDelta.relativePath}: ` +
+              `${fileDelta.change}`)
+          }
+        }
       }
     }
   }

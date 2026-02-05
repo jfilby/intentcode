@@ -88,6 +88,11 @@ export class ServerOnlyTypes {
     `line, from and to numbers, but they always have a text field.\n`
 }
 
+export enum AnalyzerPromptTypes {
+  createSuggestions = 'createSuggestions',
+  chatAboutSuggestion = 'chatAboutSuggestion'
+}
+
 export enum DepDeltaNames {
   set = 'set',
   del = 'del'
