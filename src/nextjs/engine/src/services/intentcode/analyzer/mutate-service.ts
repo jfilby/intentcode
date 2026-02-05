@@ -209,7 +209,7 @@ export class IntentCodeAnalyzerMutateService {
     const fnName = `${this.clName}.run()`
 
     // Console output
-    console.log(`Running discovery for IntentCode..`)
+    console.log(`Running an analysis on the IntentCode..`)
 
     // Get ProjectDetails
     const projectDetails =
