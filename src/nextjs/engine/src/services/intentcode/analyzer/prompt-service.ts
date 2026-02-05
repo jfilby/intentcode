@@ -62,6 +62,7 @@ export class IntentCodeAnalyzerPromptService {
           `- Any logical errors can you identify?\n` +
           `- Which new files would be helpful? Especially for defining ` +
           `  types that could be imported by multiple files.\n` +
+          `- Any incorrect or missing imports are priority 1.\n` +
           `\n` +
           IntentCodeCommonTypes.intentCodePrompting +
           `\n` +
