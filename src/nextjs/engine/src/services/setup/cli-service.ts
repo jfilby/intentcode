@@ -34,8 +34,7 @@ export class CliService {
   // Consts
   clName = 'CliService'
 
-  initProjectCommand = 'init-project'
-  projectCommand = 'project'
+  projectsCommand = 'projects'
   loadExtensionsCommand = 'load-extensions'
   manageAiModelsCommand = 'manage-ai-models'
   manageAiKeysCommand = 'manage-ai-keys'
@@ -46,8 +45,7 @@ export class CliService {
   infoCommand = 'info'
 
   commands = [
-    this.initProjectCommand,
-    this.projectCommand,
+    this.projectsCommand,
     this.loadExtensionsCommand,
     this.manageAiModelsCommand,
     this.manageAiKeysCommand,
@@ -59,8 +57,7 @@ export class CliService {
   ]
 
   commandsBySelection: Record<string, string> = {
-    'i': this.initProjectCommand,
-    'p': this.projectCommand,
+    'p': this.projectsCommand,
     'l': this.loadExtensionsCommand,
     'm': this.manageExtensionsCommand,
     'a': this.manageAiModelsCommand,
@@ -89,13 +86,7 @@ export class CliService {
       console.log(``)
       console.log(chalk.bold(`─── Main menu ───`))
       console.log(``)
-
-      if (project == null) {
-        console.log(`[i] Init project`)
-      } else {
-        console.log(`[p] Project (${project.name})`)
-      }
-
+      console.log(`[p] Projects`)
       console.log(`[l] Load extensions`)
       console.log(`[m] Manage extensions`)
       console.log(`[a] Manage AI models`)
@@ -163,21 +154,11 @@ export class CliService {
         break
       }
 
-      case this.initProjectCommand: {
+      case this.projectsCommand: {
 
-        await projectSetupService.initProjectFromCli(
+        await projectCliService.projects(
           prisma,
           adminUserProfile)
-
-        break
-      }
-
-      case this.projectCommand: {
-
-        await projectCliService.project(
-          prisma,
-          adminUserProfile,
-          project!)
 
         break
       }

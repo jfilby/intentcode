@@ -24,8 +24,8 @@ export class TestsService {
     console.log(``)
     console.log(chalk.bold(`─── Tests ───`))
     console.log(``)
-    console.log(`1. Calc project`)
-    console.log(`2. Calc v2 project`)
+    console.log(`[1] Calc project`)
+    console.log(`[2] Calc v2 project`)
 
     // Get test to run
     const testNo = await

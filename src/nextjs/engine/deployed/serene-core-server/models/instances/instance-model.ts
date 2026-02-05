@@ -214,6 +214,42 @@ export class InstanceModel {
     return instance
   }
 
+  async getByParentIdAndName(
+          prisma: Prisma.TransactionClient,
+          parentId: string | null,
+          name: string) {
+
+    // Debug
+    const fnName = `${this.clName}.getByParentIdAndName()`
+
+    // console.log(`${fnName}: parentId: ${parentId} name: ${name} ` +
+    //             `userProfileId: ${userProfileId}`)
+
+    // Validate
+    if (name == null) {
+      console.error(`${fnName}: name == null`)
+      throw 'Validation error'
+    }
+
+    // Query
+    var instance: any
+
+    try {
+      instance = await prisma.instance.findFirst({
+        where: {
+          parentId: parentId,
+          name: name
+        }
+      })
+    } catch(error: any) {
+      console.error(`${fnName}: error: ${error}`)
+      throw 'Prisma error'
+    }
+
+    // Return
+    return instance
+  }
+
   async getByParentIdAndNameAndUserProfileId(
           prisma: Prisma.TransactionClient,
           parentId: string | null,

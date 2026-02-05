@@ -1,13 +1,24 @@
+import fs from 'fs'
 import chalk from 'chalk'
 import { Instance, PrismaClient, UserProfile } from '@prisma/client'
+import { CustomError } from '@/serene-core-server/index'
+import { InstanceModel } from '@/serene-core-server/models/instances/instance-model'
 import { ConsoleService } from '@/serene-core-server/services/console/service'
+import { ServerOnlyTypes } from '@/types/server-only-types'
 import { BuildMutateService } from '../intentcode/build/mutate-service'
+import { ProjectsMutateService } from './mutate-service'
 import { ProjectsQueryService } from './query-service'
+import { ProjectSetupService } from './setup-project'
+
+// Models
+const instanceModel = new InstanceModel()
 
 // Services
 const buildMutateService = new BuildMutateService()
 const consoleService = new ConsoleService()
+const projectsMutateService = new ProjectsMutateService()
 const projectsQueryService = new ProjectsQueryService()
+const projectSetupService = new ProjectSetupService()
 
 // Class
 export class ProjectCliService {
@@ -23,7 +34,6 @@ export class ProjectCliService {
     // Banner
     console.log(``)
     console.log(chalk.bold(`─── About project: ${instance.name} ───`))
-    console.log(``)
 
     // Print project path
     const projectPath = await
@@ -32,7 +42,91 @@ export class ProjectCliService {
         instance.id)
 
     // Output
+    console.log(``)
     console.log(`Path: ${projectPath}`)
+  }
+
+  async addProject(
+    prisma: PrismaClient,
+    adminUserProfile: UserProfile) {
+
+    // Debug
+    const fnName = `${this.clName}.project()`
+
+    // Banner
+    console.log(``)
+    console.log(chalk.bold(`─── Add a project ───`))
+
+    // Get project name
+    console.log(``)
+    console.log(`Enter the project name:`)
+
+    var projectName = await
+      consoleService.askQuestion('> ')
+
+    projectName = projectName.trim()
+
+    // Is there already a top-level project with this name?
+    var instance = await
+      instanceModel.getByParentIdAndName(
+        prisma,
+        null,       // parentId
+        projectName)
+
+    if (instance != null) {
+
+      console.log(``)
+      console.log(`Project ${instance.name} already exists`)
+
+      return
+    }
+
+    // Get project path
+    console.log(``)
+    console.log(`Enter the project path:`)
+
+    var projectPath = await
+      consoleService.askQuestion('> ')
+
+    projectPath = projectPath.trim()
+
+    // Is there already a project with this path?
+    instance = await
+      projectsQueryService.getProjectByPath(
+        prisma,
+        projectPath)
+
+    if (instance != null) {
+
+      console.log(``)
+      console.log(`Project ${instance.name} already exists for that path`)
+
+      return
+    }
+
+    // Does the path exist
+    if (fs.existsSync(projectPath) === false) {
+
+      console.log(``)
+      console.log(`The path doesn't exist, please create it first`)
+
+      return
+    }
+
+    // Add the instance
+    instance = await
+      projectsMutateService.getOrCreate(
+        prisma,
+        adminUserProfile.id,
+        projectName)
+
+    // Setup project node
+    const projectNode = await
+      projectSetupService.setupProject(
+        prisma,
+        instance,
+        instance.name,
+        projectPath)
   }
 
   async project(
@@ -54,7 +148,7 @@ export class ProjectCliService {
       console.log(`[r] Run the build`)
       console.log(`[b] Back`)
 
-      // Get menu no
+      // Get selection
       const selection = await
         consoleService.askQuestion('> ')
 
@@ -62,7 +156,7 @@ export class ProjectCliService {
       switch (selection) {
 
         case 'a': {
-          this.aboutProject(
+          await this.aboutProject(
             prisma,
             instance)
 
@@ -86,6 +180,89 @@ export class ProjectCliService {
           console.log(`Invalid command`)
         }
       }
+    }
+  }
+
+  async projects(
+    prisma: PrismaClient,
+    adminUserProfile: UserProfile) {
+
+    // Debug
+    const fnName = `${this.clName}.project()`
+
+    // REPL loop
+    while (true) {
+
+      // Show menu
+      console.log(``)
+      console.log(chalk.bold(`─── Projects ───`))
+      console.log(``)
+      console.log(`[a] Add a project`)
+      console.log(`[b] Back`)
+
+      // Get projects
+      var instances = await
+        instanceModel.filter(prisma)
+
+      // Validate
+      if (instances == null) {
+        throw new CustomError(`${fnName}: instances == null`)
+      }
+
+      // Filter out the System project
+      instances = instances.filter(
+        instance => instance.name !== ServerOnlyTypes.systemProjectName)
+
+      // Sort by name
+      instances.sort((a, b) => a.name.localeCompare(b.name))
+
+      // Create projectsMap
+      var i = 1
+      const projectsMap = new Map<string, Instance>()
+
+      for (const instance of instances) {
+
+        projectsMap.set(
+          `${i}`,
+          instance)
+
+        i += 1
+      }
+
+      // List projects
+      for (const [projectNo, instance] of projectsMap.entries()) {
+
+        console.log(`[${projectNo}] ${instance.name}`)
+      }
+
+      // Get menu no
+      const selection = await
+        consoleService.askQuestion('> ')
+
+      // Handle selection
+      if (selection === 'a') {
+
+        await this.addProject(
+          prisma,
+          adminUserProfile)
+
+        continue
+
+      } else if (selection === 'b') {
+        return
+      }
+
+      // Project
+      if (projectsMap.has(selection)) {
+
+        await this.project(
+          prisma,
+          adminUserProfile,
+          projectsMap.get(selection)!)
+      }
+
+      // Default
+      console.log(`Invalid command`)
     }
   }
 }
