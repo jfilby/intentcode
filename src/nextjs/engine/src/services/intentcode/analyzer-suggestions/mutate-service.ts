@@ -162,8 +162,6 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
             stopReview: false,
             ignoreAll: false
           }
-
-          break
         }
 
         case 'x': {
