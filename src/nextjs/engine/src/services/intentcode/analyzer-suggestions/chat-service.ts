@@ -79,6 +79,9 @@ export class IntentCodeAnalyzerSuggestionsChatService {
     // Debug
     const fnName = `${this.clName}.openChat()`
 
+    // Track the potentially updated suggestion separately
+    var thisSuggestion = suggestion
+
     // Get/create an admin user
     const adminUserProfile = await
       usersService.getOrCreateUserByEmail(
@@ -124,9 +127,32 @@ export class IntentCodeAnalyzerSuggestionsChatService {
 
       // Prompt for input
       console.log(``)
+      console.log(
+        `Chat.. or [a] Add to approved list [i] Ignore this suggestion`)
 
-      const input = await
+      var input = await
         consoleService.askQuestion('> ')
+
+      input = input.trim()
+
+      // Handle menu selections
+      if (input === 'a') {
+
+        // Update the suggestion
+        suggestion = thisSuggestion
+
+        // Return add to approved list
+        return {
+          addToApprovedList: true
+        }
+
+      } else if (input === 'i') {
+
+        // Return with ignore
+        return {
+          addToApprovedList: false
+        }
+      }
 
       // Convert the input to the expected format
       const contents: ChatMessage[] = [
@@ -162,14 +188,14 @@ export class IntentCodeAnalyzerSuggestionsChatService {
 
       if (replyData.rawJson.suggestion != null) {
 
-        const suggestion = replyData.rawJson.suggestion
+        const thisSuggestion = replyData.rawJson.suggestion
 
         console.log(``)
-        console.log(`UPDATED: ${suggestion.text}`)
+        console.log(`UPDATED: ${thisSuggestion.text}`)
 
-        if (suggestion.fileDeltas != null) {
+        if (thisSuggestion.fileDeltas != null) {
 
-          for (const fileDelta of suggestion.fileDeltas) {
+          for (const fileDelta of thisSuggestion.fileDeltas) {
 
             console.log(`.. ${fileDelta.fileOp} ${fileDelta.relativePath}: ` +
               `${fileDelta.change}`)

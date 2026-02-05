@@ -150,11 +150,18 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
         }
 
         case  'c': {
-          await intentCodeAnalyzerSuggestionsChatService.openChat(
-            prisma,
-            buildData,
-            buildFromFiles,
-            suggestion)
+          const results = await
+            intentCodeAnalyzerSuggestionsChatService.openChat(
+              prisma,
+              buildData,
+              buildFromFiles,
+              suggestion)
+
+          return {
+            addToApprovedList: results.addToApprovedList,
+            stopReview: false,
+            ignoreAll: false
+          }
 
           break
         }
