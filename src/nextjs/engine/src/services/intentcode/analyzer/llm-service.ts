@@ -54,7 +54,7 @@ export class IntentCodeAnalyzerLlmService {
       const jsonContent = cacheResults.llmCache?.outputJson
 
       // Found?
-      if (queryResults != null) {
+      if (jsonContent != null) {
         return {
           status: true,
           message: undefined,
