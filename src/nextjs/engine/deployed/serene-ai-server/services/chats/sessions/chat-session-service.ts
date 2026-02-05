@@ -415,7 +415,7 @@ export class ChatSessionService {
 
   async getOrCreateChatSession(
           prisma: PrismaClient,
-          chatSessionId: string,
+          chatSessionId: string | null,
           baseChatSettingsId: string | null,
           userProfileId: string,
           instanceId: string | null,
@@ -435,10 +435,15 @@ export class ChatSessionService {
     var tech
 
     // Try to get the chat session
-    var chatSession = await
-          chatSessionModel.getById(
-            prisma,
-            chatSessionId)
+    var chatSession: any = undefined
+
+    if (chatSessionId != null) {
+
+      chatSession = await
+        chatSessionModel.getById(
+          prisma,
+          chatSessionId)
+    }
 
     // console.log(`${fnName}: chatSession: ${JSON.stringify(chatSession)}`)
 
