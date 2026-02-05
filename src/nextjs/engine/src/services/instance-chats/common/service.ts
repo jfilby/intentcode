@@ -28,8 +28,8 @@ export class InstanceChatsService {
     const fnName = `${this.clName}.getInitialData()`
 
     // Debug
-    console.log(`${fnName}: getting baseChatSettings with chatSettingsName: ` +
-      JSON.stringify(chatSettingsName))
+    // console.log(`${fnName}: getting baseChatSettings with chatSettingsName: ` +
+    //   JSON.stringify(chatSettingsName))
 
     // Get domainId if none specified, but chatSettingsName is specified
     var baseChatSettings: any = null
@@ -37,7 +37,7 @@ export class InstanceChatsService {
     if (chatSettingsName != null) {
 
       // Debug
-      console.log(`${fnName}: getting ChatSettings by name..`)
+      // console.log(`${fnName}: getting ChatSettings by name..`)
 
       // Get ChatSettings
       baseChatSettings = await
@@ -46,8 +46,8 @@ export class InstanceChatsService {
           chatSettingsName)
 
       // Debug
-      console.log(`${fnName}: baseChatSettings: ` +
-        JSON.stringify(baseChatSettings))
+      // console.log(`${fnName}: baseChatSettings: ` +
+      //   JSON.stringify(baseChatSettings))
 
       // Validate
       if (baseChatSettings == null) {
@@ -58,7 +58,7 @@ export class InstanceChatsService {
     }
 
     // Debug
-    console.log(`${fnName}: returning..`)
+    // console.log(`${fnName}: returning..`)
 
     // Return
     return {
@@ -78,10 +78,10 @@ export class InstanceChatsService {
     // Debug
     const fnName = `${this.clName}.getOrCreateChatSession()`
 
-    console.log(`${fnName}: starting with instanceId: ${instanceId} ` +
+    /* console.log(`${fnName}: starting with instanceId: ${instanceId} ` +
       `userProfileId: ${userProfileId} ` +
       `chatSessionId: ${chatSessionId} ` +
-      `chatSettingsName: ` + JSON.stringify(chatSettingsName))
+      `chatSettingsName: ` + JSON.stringify(chatSettingsName)) */
 
     // Use the default ChatSettings name?
     if (chatSettingsName == null) {
@@ -97,7 +97,7 @@ export class InstanceChatsService {
     var baseChatSettings = initialDataResults.baseChatSettings
 
     // Debug
-    console.log(`${fnName}: baseChatSettings: ` + JSON.stringify(baseChatSettings))
+    // console.log(`${fnName}: baseChatSettings: ` + JSON.stringify(baseChatSettings))
 
     // Get InstanceChat and related records
     if (chatSessionId != null) {
@@ -125,10 +125,10 @@ export class InstanceChatsService {
     var chatSettings = baseChatSettings
 
     // Debug
-    console.log(`${fnName}: baseChatSettings: ` +
-      JSON.stringify(baseChatSettings))
+    // console.log(`${fnName}: baseChatSettings: ` +
+    //   JSON.stringify(baseChatSettings))
 
-    console.log(`${fnName}: creating chatSession..`)
+    // console.log(`${fnName}: creating chatSession..`)
 
     // Get the appCustom JSON
     var appCustomJson: any = null
@@ -149,7 +149,7 @@ export class InstanceChatsService {
     var name = ``
 
     // Debug
-    console.log(`${fnName}: creating ChatSession..`)
+    // console.log(`${fnName}: creating ChatSession..`)
 
     // Create ChatSession
     const chatSessionResults = await
@@ -165,8 +165,8 @@ export class InstanceChatsService {
         name)
 
     // Debug
-    console.log(`${fnName}: created chatSession: ` +
-      JSON.stringify(chatSessionResults.chatSession))
+    // console.log(`${fnName}: created chatSession: ` +
+    //   JSON.stringify(chatSessionResults.chatSession))
 
     // Formulate return var
     var chatSession = chatSessionResults.chatSession as any

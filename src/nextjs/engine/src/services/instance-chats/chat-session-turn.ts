@@ -195,8 +195,8 @@ export class ChatSessionTurnService {
     } else {
 
       // Debug
-      console.log(`${fnName}: sessionTurnData: ` +
-                  JSON.stringify(sessionTurnData))
+      // console.log(`${fnName}: sessionTurnData: ` +
+      //             JSON.stringify(sessionTurnData))
 
       // Get the messages (contents) from the JSON
       // Assume this format if JSON mode is true
@@ -228,8 +228,8 @@ export class ChatSessionTurnService {
     }
 
     // Debug
-    console.log(`${fnName}: sessionTurnData.toContents: ` +
-                JSON.stringify(sessionTurnData.toContents))
+    // console.log(`${fnName}: sessionTurnData.toContents: ` +
+    //             JSON.stringify(sessionTurnData.toContents))
 
     // Formulate the replyData
     replyData = {
@@ -245,7 +245,7 @@ export class ChatSessionTurnService {
     }
 
     // Debug
-    console.log(`${fnName}: returning OK..`)
+    // console.log(`${fnName}: returning OK..`)
 
     // Return
     return replyData
