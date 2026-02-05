@@ -22,10 +22,10 @@ export class DeleteBuildService {
   // Code
   async deleteOldBuildGraphs(
     prisma: PrismaClient,
-    projectsMap: Map<number, ProjectDetails>) {
+    projectsMap: Record<number, ProjectDetails>) {
 
     // Iterate projects
-    for (const projectDetails of projectsMap.values()) {
+    for (const projectDetails of Object.values(projectsMap)) {
 
       // Delete old build graphs for the project
       await this.deleteOldBuildGraphsByProject(

@@ -120,13 +120,13 @@ export class BuildMutateService {
     const buildStages: BuildStage[] = []
 
     // Get numbered projects map
-    const projectsMap = new Map<number, ProjectDetails>()
+    const projects: Record<number, ProjectDetails> = {}
 
-    await projectsQueryService.createProjectsMap(
+    await projectsQueryService.createProjectsList(
       prisma,
       instanceId,
       undefined,  // instance
-      projectsMap)
+      projects)
 
     // Load extensions
     const extensionsData = await
@@ -142,7 +142,7 @@ export class BuildMutateService {
     // Delete old build graphs
     await deleteBuildService.deleteOldBuildGraphs(
       prisma,
-      projectsMap)
+      projects)
 
     // Create BuildData
     const buildData: BuildData = {
@@ -150,7 +150,7 @@ export class BuildMutateService {
       buildStages: buildStages,
       buildStageTypes: buildStageTypes,
       extensionsData: extensionsData,
-      projectsMap: projectsMap
+      projects: projects
     }
 
     // Return

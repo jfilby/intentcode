@@ -27,10 +27,17 @@ export class IntentCodeAnalyzerPromptService {
           prisma: PrismaClient,
           projectNode: SourceNode,
           buildData: BuildData,
-          buildFromFiles: BuildFromFile[]) {
+          buildFromFiles: BuildFromFile[],
+          primaryInstructions?: string,
+          suggestion?: any) {
 
     // Debug
     const fnName = `${this.clName}.getPrompt()`
+
+    // Determine top-level instructions if not set
+    if (primaryInstructions == null) {
+      primaryInstructions = `You need to run a analysis on the IntentCode.\n`
+    }
 
     /* Get deps prompting
     const depsPrompting = await
@@ -53,7 +60,7 @@ export class IntentCodeAnalyzerPromptService {
     var prompt =
           `## Instructions\n` +
           `\n` +
-          `You need to run a analysis on the IntentCode.\n` +
+          primaryInstructions +
           `\n` +
           `The main types of improvements or fixes to look for:` +
           `- Any major ambiguities that can't easily be inferred?\n` +
@@ -76,36 +83,50 @@ export class IntentCodeAnalyzerPromptService {
           `  and not the new contents to set.\n` +
           `\n` +
           // depsPrompting +
-          `\n` +
-          `## Example JSON output\n` +
-          `\n` +
-          `This is an example of the output structure only. Don't try to ` +
-          `use it as a source of any kind of data.\n` +
-          `\n` +
-          `{\n` +
-          `  "suggestions": [\n` +
-          `    {\n` +
-          `      "priority": <priority>,\n` +
-          `      "text": "<suggestion>",\n` +
-          `      "projectNo": <projectNo>,\n` +
-          `      "fileDeltas": [\n `+
-          `        {\n` +
-          `          "fileOp": "<fileOp>",\n` +
-          `          "relativePath": "<targetFilename>.<srcExt>.md",\n` +
-          `          "change": "<change>"\n` +
-          `        }\n` +
-          `      ]\n` +
-          `    }\n` +
-          `  ]\n` +
-          `}\n` +
           `\n`
 
-    // Add numbered projects
-    if (buildData.projectsMap != null) {
+    // Existing suggestion?
+    if (suggestion != null) {
 
       prompt +=
-        projectsQueryService.getProjectsPrompting(
-          buildData.projectsMap)
+        `## Suggestion\n` +
+        `\n` +
+        `This chat concerns this generated suggestion:\n` +
+        `\n` +
+        JSON.stringify(suggestion) +
+        `\n`
+    }
+
+    // Continue prompt
+    prompt +=
+      `## Example JSON output\n` +
+      `\n` +
+      `This is an example of the output structure only. Don't try to ` +
+      `use it as a source of any kind of data.\n` +
+      `\n` +
+      `{\n` +
+      `  "suggestions": [\n` +
+      `    {\n` +
+      `      "priority": <priority>,\n` +
+      `      "text": "<suggestion>",\n` +
+      `      "projectNo": <projectNo>,\n` +
+      `      "fileDeltas": [\n `+
+      `        {\n` +
+      `          "fileOp": "<fileOp>",\n` +
+      `          "relativePath": "<targetFilename>.<srcExt>.md",\n` +
+      `          "change": "<change>"\n` +
+      `        }\n` +
+      `      ]\n` +
+      `    }\n` +
+      `  ]\n` +
+      `}\n` +
+      `\n`
+
+    // Add numbered projects
+    if (buildData.projects != null) {
+
+      prompt +=
+        projectsQueryService.getProjectsPrompting(buildData.projects)
     }
 
     /* Add installed extensions

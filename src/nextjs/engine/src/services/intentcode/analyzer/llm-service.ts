@@ -211,7 +211,7 @@ export class IntentCodeAnalyzerLlmService {
     }
 
     if (suggestion.projectNo == null ||
-        !buildData.projectsMap.has(suggestion.projectNo)) {
+        !buildData.projects[suggestion.projectNo]) {
 
       console.log(`${fnName}: invalid projectNo: ${suggestion.projectNo}`)
       return false

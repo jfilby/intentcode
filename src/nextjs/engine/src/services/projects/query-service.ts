@@ -47,13 +47,13 @@ export class ProjectsQueryService {
   // Code
   getProjectDetailsByInstanceId(
     instanceId: string,
-    projectsMap: Map<number, ProjectDetails>) {
+    projects: Record<number, ProjectDetails>) {
 
     // Debug
     const fnName = `${this.clName}.getProjectsPrompting()`
 
     // Find projectDetails
-    for (const projectDetails of projectsMap.values()) {
+    for (const projectDetails of Object.values(projects)) {
 
       if (projectDetails.instance.id === instanceId) {
         return projectDetails
@@ -65,16 +65,16 @@ export class ProjectsQueryService {
       `${fnName}: projectDetails not found for instanceId: ${instanceId}`)
   }
 
-  async createProjectsMap(
+  async createProjectsList(
           prisma: PrismaClient,
           instanceId: string,
           instance: Instance | undefined,
-          projectsMap: Map<number, ProjectDetails>,
+          projects: Record<number, ProjectDetails>,
           maxProjectNo: number = 1,
           indents: number = 0) {
 
     // Debug
-    const fnName = `${this.clName}.createProjectsMap()`
+    const fnName = `${this.clName}.createProjectsList()`
 
     // Get instance (and add it to the map) if not known
     if (instance == null) {
@@ -98,9 +98,7 @@ export class ProjectsQueryService {
               instance)
 
     // Add instance to the map
-    projectsMap.set(
-      maxProjectNo,
-      projectDetails)
+    projects[maxProjectNo] = projectDetails
 
     maxProjectNo += 1
 
@@ -113,23 +111,28 @@ export class ProjectsQueryService {
     // Cascade to child instances
     for (const childInstance of childInstances) {
 
-      await this.createProjectsMap(
+      await this.createProjectsList(
               prisma,
               childInstance.id,
               childInstance,
-              projectsMap,
+              projects,
               maxProjectNo,
               indents + 1)
     }
 
     // Return
-    return projectsMap
+    return projects
   }
 
-  getProjectsPrompting(projectsMap: Map<number, ProjectDetails>) {
+  getProjectsPrompting(projects: Record<number, ProjectDetails>) {
 
     // Debug
     const fnName = `${this.clName}.getProjectsPrompting()`
+
+    // Validate
+    if (projects == null) {
+      throw new CustomError(`${fnName}: projects == null`)
+    }
 
     // Start prompting for projects
     var prompting =
@@ -143,7 +146,7 @@ export class ProjectsQueryService {
 
     // Iter projectsMap
     for (const [projectNo, projectDetails] of
-         projectsMap.entries()) {
+         Object.entries(projects)) {
 
       // Add to prompting
       const indents = ' '.repeat(projectDetails.indents * 2)

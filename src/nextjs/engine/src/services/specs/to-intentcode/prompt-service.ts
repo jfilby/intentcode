@@ -114,11 +114,10 @@ export class SpecsToIntentCodePromptService {
     }
 
     // Add numbered projects
-    if (buildData.projectsMap != null) {
+    if (buildData.projects != null) {
 
       prompt +=
-        projectsQueryService.getProjectsPrompting(
-          buildData.projectsMap)
+        projectsQueryService.getProjectsPrompting(buildData.projects)
     }
 
     // Add installed extensions

@@ -216,7 +216,7 @@ export class ProjectCliService {
       // Sort by name
       instances.sort((a, b) => a.name.localeCompare(b.name))
 
-      // Create projectsMap
+      // Create projects
       var i = 1
       const projectsMap = new Map<string, Instance>()
 

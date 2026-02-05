@@ -73,5 +73,5 @@ export interface BuildData {
   extensionsData: ExtensionsData
 
   // Numbered projects
-  projectsMap: Map<number, ProjectDetails>
+  projects: Record<number, ProjectDetails>
 }

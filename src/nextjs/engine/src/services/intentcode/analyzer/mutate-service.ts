@@ -89,7 +89,7 @@ export class IntentCodeAnalyzerMutateService {
       for (const suggestion of jsonContent.suggestions) {
 
         // Get ProjectDetail
-        const projectDetail = buildData.projectsMap.get(suggestion.projectNo)
+        const projectDetail = buildData.projects[suggestion.projectNo]
 
         // Validate
         if (projectDetail == null) {
@@ -215,7 +215,7 @@ export class IntentCodeAnalyzerMutateService {
     const projectDetails =
             projectsQueryService.getProjectDetailsByInstanceId(
               projectNode.instanceId,
-              buildData.projectsMap)
+              buildData.projects)
 
     // Get project specs node (might not exist)
     const projectSpecsNode = await

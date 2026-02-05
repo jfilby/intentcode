@@ -40,8 +40,7 @@ export class IntentCodeUpdaterMutateService {
     }
 
     // Get projectDetails
-    const projectDetails =
-      buildData.projectsMap.get(fileDelta.projectNo)
+    const projectDetails = buildData.projects[fileDelta.projectNo]
 
     // Validate
     if (projectDetails == null) {

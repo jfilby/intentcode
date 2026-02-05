@@ -59,12 +59,12 @@ export class IntentCodePromptingService {
 
     // Iterate projects
     for (const [projectNo, projectDetails] of
-         buildData.projectsMap) {
+         Object.entries(buildData.projects)) {
 
       // Add each project's files
       const projectPromping = await
               this.addProjectFilesPrompting(
-                projectNo,
+                projectNo as any as number,
                 projectDetails)
 
       if (projectPromping != null) {

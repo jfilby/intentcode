@@ -85,7 +85,7 @@ export class ProjectCompileService {
     const projectDetails =
             projectsQueryService.getProjectDetailsByInstanceId(
               projectNode.instanceId,
-              buildData.projectsMap)
+              buildData.projects)
 
     if (projectDetails == null) {
       throw new CustomError(`${fnName}: projectDetails == null`)
@@ -148,7 +148,7 @@ export class ProjectCompileService {
     const projectDetails =
             projectsQueryService.getProjectDetailsByInstanceId(
               projectNode.instanceId,
-              buildData.projectsMap)
+              buildData.projects)
 
     // Prep for stage
     const buildFileList = await

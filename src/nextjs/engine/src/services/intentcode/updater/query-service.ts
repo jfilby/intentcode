@@ -19,7 +19,7 @@ export class IntentCodeUpdaterQueryService {
     for (const fileDelta of intentCode) {
 
       // Validate projectNo
-      if (!buildData.projectsMap.has(fileDelta.projectNo)) {
+      if (!buildData.projects[fileDelta.projectNo] == null) {
 
         console.log(`${fnName}: invalid projectNo: ${fileDelta.projectNo}`)
         return false

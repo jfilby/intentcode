@@ -7,6 +7,7 @@ import { AiTasksService } from '@/serene-ai-server/services/ai-tasks/ai-tasks-se
 import { BuildData, BuildFromFile } from '@/types/build-types'
 import { IntentCodeAiTasks, ServerOnlyTypes } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
+import { IntentCodeAnalyzerSuggestionsChatService } from './chat-service'
 import { IntentCodeAnalyzerSuggestionsLlmService } from './llm-service'
 import { IntentCodeAnalyzerSuggestionsPromptService } from './prompt-service'
 import { IntentCodeUpdaterMutateService } from '../updater/mutate-service'
@@ -14,6 +15,7 @@ import { IntentCodeUpdaterMutateService } from '../updater/mutate-service'
 // Services
 const aiTasksService = new AiTasksService()
 const consoleService = new ConsoleService()
+const intentCodeAnalyzerSuggestionsChatService = new IntentCodeAnalyzerSuggestionsChatService()
 const intentCodeAnalyzerSuggestionsLlmService = new IntentCodeAnalyzerSuggestionsLlmService()
 const intentCodeAnalyzerSuggestionsPromptService = new IntentCodeAnalyzerSuggestionsPromptService()
 const intentCodeUpdaterMutateService = new IntentCodeUpdaterMutateService()
@@ -100,7 +102,11 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
       jsonContent.intentCode)
   }
 
-  async reviewSuggestion(suggestion: any) {
+  async reviewSuggestion(
+    prisma: PrismaClient,
+    buildData: BuildData,
+    buildFromFiles: BuildFromFile[],
+    suggestion: any) {
 
     // Print the suggestion
     console.log(``)
@@ -123,6 +129,7 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
 
       console.log(``)
       console.log(`[a] Add to approved list`)
+      console.log(`[c] Chat about this suggestion`)
       console.log(`[p] Proceed with approved list`)
       console.log(`[i] Ignore this suggestion`)
       console.log(`[r] Ignore all, including approved list`)
@@ -139,6 +146,25 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
             addToApprovedList: true,
             stopReview: false,
             ignoreAll: false
+          }
+        }
+
+        case  'c': {
+          await intentCodeAnalyzerSuggestionsChatService.openChat(
+            prisma,
+            buildData,
+            buildFromFiles,
+            suggestion)
+
+          break
+        }
+
+        case 'x': {
+          return {
+            addToApprovedList: false,
+            stopReview: false,
+            ignoreAll: false,
+            openChat: true
           }
         }
 
@@ -210,7 +236,11 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
 
       // Review suggestion
       const { addToApprovedList, stopReview, ignoreAll } = await
-        this.reviewSuggestion(suggestion)
+        this.reviewSuggestion(
+          prisma,
+          buildData,
+          buildFromFiles,
+          suggestion)
 
       // Add to list?
       if (addToApprovedList === true) {

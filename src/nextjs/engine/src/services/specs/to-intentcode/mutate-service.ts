@@ -204,7 +204,7 @@ export class SpecsToIntentCodeMutateService {
     const projectDetails =
             projectsQueryService.getProjectDetailsByInstanceId(
               projectNode.instanceId,
-              buildData.projectsMap)
+              buildData.projects)
 
     // Get project specs node
     const projectSpecsNode = await

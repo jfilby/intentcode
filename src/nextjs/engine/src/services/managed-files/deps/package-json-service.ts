@@ -73,7 +73,7 @@ export class PackageJsonManagedFileService {
     const projectDetails =
             projectsQueryService.getProjectDetailsByInstanceId(
               projectNode.instanceId,
-              buildData.projectsMap)
+              buildData.projects)
 
     // Validate
     var depsNodeJson: any = null
