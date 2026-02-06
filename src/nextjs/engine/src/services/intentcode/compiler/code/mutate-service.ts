@@ -93,6 +93,10 @@ export class CompilerMutateService {
       }
     }
 
+    // Debug
+    // console.log(`${fnName}: found cached result in sourceNodeGeneration.id: ` +
+    //   `${sourceNodeGeneration.id}`)
+
     // Return jsonContent
     return {
       content: sourceNodeGeneration.content,
@@ -255,7 +259,7 @@ export class CompilerMutateService {
     if (ServerOnlyTypes.verbosity >= VerbosityLevels.min) {
 
       console.log(``)
-      console.log(`compiling: ${buildFromFile.filename}..`)
+      console.log(`compiling: ${buildFromFile.relativePath}..`)
     }
 
     // Get the admin UserProfile

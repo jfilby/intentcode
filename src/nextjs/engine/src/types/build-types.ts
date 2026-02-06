@@ -17,6 +17,7 @@ export enum BuildStageType {
 
 export interface BuildFromFile {
   filename: string
+  relativePath: string
   fileModifiedTime: Date
   content: string
   fileNode: SourceNode

@@ -31,15 +31,19 @@ export class ProjectCompileService {
     // Debug
     const fnName = `${this.clName}.prepForIntentCodeStage()`
 
+    // Get IntentCode path
+    const intentCodePath =
+      (projectDetails.projectIntentCodeNode.jsonContent as any).path
+
     // Get IntentCode to compile
     var intentCodeList: string[] = []
 
     await walkDirService.walkDir(
-            (projectDetails.projectIntentCodeNode.jsonContent as any).path,
-            intentCodeList,
-            {
-              recursive: true
-            })
+      intentCodePath,
+      intentCodeList,
+      {
+        recursive: true
+      })
 
     // Compile
     var buildFileList: any[] = []
@@ -48,7 +52,7 @@ export class ProjectCompileService {
 
       // Get the target file extension from the IntentCode filename
       const targetFileExt =
-              intentCodeFilenameService.getTargetFileExt(intentCodeFilename)
+        intentCodeFilenameService.getTargetFileExt(intentCodeFilename)
 
       // Validate
       if (targetFileExt == null) {
@@ -60,10 +64,15 @@ export class ProjectCompileService {
         continue
       }
 
+      // Get relativePath
+      const relativePath =
+        intentCodeFilename.substring(intentCodePath.length + 1)
+
       // Add to buildFileList
       buildFileList.push({
         targetFileExt: targetFileExt,
-        intentCodeFilename: intentCodeFilename
+        intentCodeFilename: intentCodeFilename,
+        relativePath: relativePath
       })
     }
 
@@ -118,6 +127,7 @@ export class ProjectCompileService {
       // Define BuildFromFile
       const buildFromFile: BuildFromFile = {
         filename: buildFile.intentCodeFilename,
+        relativePath: buildFile.relativePath,
         fileModifiedTime: fileModifiedTime,
         content: intentCode,
         fileNode: intentFileNode,
@@ -188,6 +198,7 @@ export class ProjectCompileService {
       // Define IndexerFile
       const buildFromFile: BuildFromFile = {
         filename: buildFile.intentCodeFilename,
+        relativePath: buildFile.relativePath,
         fileModifiedTime: fileModifiedTime,
         content: intentCode,
         fileNode: intentFileNode,

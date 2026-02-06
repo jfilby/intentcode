@@ -101,7 +101,7 @@ export class IndexerMutateService {
     if (ServerOnlyTypes.verbosity >= VerbosityLevels.min) {
 
       console.log(``)
-      console.log(`indexing: ${buildFromFile.filename}..`)
+      console.log(`indexing: ${buildFromFile.relativePath}..`)
     }
 
     // Get the admin UserProfile
@@ -185,15 +185,18 @@ export class IndexerMutateService {
     // Debug
     const fnName = `${this.clName}.indexProject()`
 
+    // Get intentCodePath
+    const intentCodePath = (projectIntentCodeNode.jsonContent as any).path
+
     // Walk dir
     var intentCodeList: string[] = []
 
     await walkDirService.walkDir(
-            (projectIntentCodeNode.jsonContent as any).path,
-            intentCodeList,
-            {
-              recursive: true
-            })
+      intentCodePath,
+      intentCodeList,
+      {
+        recursive: true
+      })
 
     // Analyze each file
     var buildFromFiles: BuildFromFile[] = []
@@ -202,11 +205,11 @@ export class IndexerMutateService {
 
       // Get last save time of the file
       const fileModifiedTime = await
-              fsUtilsService.getLastUpdateTime(intentCodeFilename)
+        fsUtilsService.getLastUpdateTime(intentCodeFilename)
 
       // Get targetFileExt
       const targetFileExt =
-              intentCodeFilenameService.getTargetFileExt(intentCodeFilename)
+        intentCodeFilenameService.getTargetFileExt(intentCodeFilename)
 
       if (targetFileExt == null) {
         console.warn(`${fnName}: skipping file: ${intentCodeFilename}`)
@@ -215,9 +218,9 @@ export class IndexerMutateService {
 
       // Read file
       const intentCode = await
-              fs.readFileSync(
-                intentCodeFilename,
-                { encoding: 'utf8', flag: 'r' })
+        fs.readFileSync(
+          intentCodeFilename,
+          { encoding: 'utf8', flag: 'r' })
 
       // Get/create the file's SourceNode
       const intentFileNode = await
@@ -234,9 +237,13 @@ export class IndexerMutateService {
         continue
       }
 
+      // Get relativePath
+      const relativePath = intentCodeFilename.substring(intentCodePath.length + 1)
+
       // Add to indexerFiles
       buildFromFiles.push({
         filename: intentCodeFilename,
+        relativePath: relativePath,
         fileModifiedTime: fileModifiedTime,
         content: intentCode,
         targetFileExt: targetFileExt,
@@ -248,11 +255,11 @@ export class IndexerMutateService {
     for (const buildFromFile of buildFromFiles) {
 
       await this.indexFileWithLlm(
-              prisma,
-              buildData,
-              projectNode,
-              projectIntentCodeNode,
-              buildFromFile)
+        prisma,
+        buildData,
+        projectNode,
+        projectIntentCodeNode,
+        buildFromFile)
     }
   }
 
