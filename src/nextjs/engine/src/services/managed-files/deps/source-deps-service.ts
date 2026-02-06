@@ -2,6 +2,7 @@ import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { DependenciesQueryService } from '@/services/graphs/dependencies/query-service'
 import { BuildData, DepsTools } from '@/types/build-types'
+import { ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
 import { DependenciesMutateService } from '@/services/graphs/dependencies/mutate-service'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
 import { PackageJsonManagedFileService } from './package-json-service'
@@ -109,8 +110,11 @@ export class SourceDepsFileService {
     }
 
     // Debug
-    console.log(`${fnName}: depsNode.jsonContent: ` +
-                JSON.stringify(depsNode.jsonContent))
+    if (ServerOnlyTypes.verbosity >= VerbosityLevels.max) {
+
+      console.log(`${fnName}: depsNode.jsonContent: ` +
+                  JSON.stringify(depsNode.jsonContent))
+    }
 
     // Continue validating
     if (depsNode.jsonContent.source?.packageManager == null) {

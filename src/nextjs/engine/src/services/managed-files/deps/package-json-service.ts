@@ -5,6 +5,7 @@ import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { SourceNodeTypes } from '@/types/source-graph-types'
 import { BuildData } from '@/types/build-types'
+import { ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
 import { ImportsData } from '@/services/source-code/imports/types'
 import { ProjectsQueryService } from '@/services/projects/query-service'
 import { ReadJsTsSourceImportsService } from '@/services/source-code/imports/read-js-ts-service'
@@ -83,7 +84,9 @@ export class PackageJsonManagedFileService {
     }
 
     // Debug
-    console.log(`${fnName}: depsNodeJson: ` + JSON.stringify(depsNodeJson))
+    if (ServerOnlyTypes.verbosity >= VerbosityLevels.max) {
+      console.log(`${fnName}: depsNodeJson: ` + JSON.stringify(depsNodeJson))
+    }
 
     // Get paths
     const projectPath = (projectNode.jsonContent as any).path
@@ -147,8 +150,11 @@ export class PackageJsonManagedFileService {
     // Debug
     const fnName = `${this.clName}.updateAndWriteFile()`
 
-    console.log(`${fnName}: depsNodeJsonsource.source.runtimes: ` +
-                JSON.stringify(depsNodeJson.source.runtimes))
+    if (ServerOnlyTypes.verbosity >= VerbosityLevels.max) {
+
+      console.log(`${fnName}: depsNodeJsonsource.source.runtimes: ` +
+        JSON.stringify(depsNodeJson.source.runtimes))
+    }
 
     // Define filenames
     const packageJsonFilename = `${projectPath}${path.sep}package.json`
@@ -290,7 +296,10 @@ export class PackageJsonManagedFileService {
     }
 
     // Debug
-    console.log(`${fnName}: post processing: ` + JSON.stringify(packageJson))
+    if (ServerOnlyTypes.verbosity >= VerbosityLevels.max) {
+
+      console.log(`${fnName}: post processing: ` + JSON.stringify(packageJson))
+    }
   }
 
   async verifyPackageJsonExists(projectPath: string) {
