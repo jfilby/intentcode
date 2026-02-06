@@ -54,7 +54,7 @@ export class ServerOnlyTypes {
   }
 
   // Verbosity
-  static verbosity = VerbosityLevels.max
+  static verbosity = VerbosityLevels.min
 
   // Compiler meta-data approach
   static compilerMetaDataApproach = CompilerMetaDataApproachs.analyzer
