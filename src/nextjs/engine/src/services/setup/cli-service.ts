@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import { Instance, PrismaClient } from '@prisma/client'
-import { ConsoleService } from '@/serene-core-server/services/console/service'
+import { consoleService } from '@/serene-core-server/services/console/service'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { AiKeysCliReplService } from '@/serene-ai-server/services/setup/ai-keys-cli-repl-service'
 import { ServerTestTypes } from '@/types/server-test-types'
@@ -17,7 +17,6 @@ import { TestsService } from '../tests/tests-service'
 // Services
 const aiKeysCliReplService = new AiKeysCliReplService()
 const aiModelsSelectionService = new AiModelsSelectionService()
-const consoleService = new ConsoleService()
 const infoService = new InfoService()
 const loadExternalExtensionsService = new LoadExternalExtensionsService()
 const manageExtensionsCliService = new ManageExtensionsCliService()

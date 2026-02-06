@@ -1,12 +1,11 @@
 import chalk from 'chalk'
 import { PrismaClient } from '@prisma/client'
 import { SereneCoreServerTypes } from '@/serene-core-server/types/user-types'
-import { ConsoleService } from '@/serene-core-server/services/console/service'
+import { consoleService } from '@/serene-core-server/services/console/service'
 import { AiTaskDetail, AiTasksService } from './ai-tasks-service'
 
 // Services
 const aiTasksService = new AiTasksService()
-const consoleService = new ConsoleService()
 
 // Class
 export class AiModelsCliReplService {

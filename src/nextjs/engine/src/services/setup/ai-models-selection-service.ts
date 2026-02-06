@@ -2,7 +2,7 @@ import chalk from 'chalk'
 import { PrismaClient } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { TechModel } from '@/serene-core-server/models/tech/tech-model'
-import { ConsoleService } from '@/serene-core-server/services/console/service'
+import { consoleService } from '@/serene-core-server/services/console/service'
 import { AiTechDefs } from '@/serene-ai-server/types/tech-defs'
 import { AiTaskModel } from '@/serene-ai-server/models/ai-tasks/ai-task-model'
 import { AiTaskTechModel } from '@/serene-ai-server/models/ai-tasks/ai-task-tech-model'
@@ -13,9 +13,6 @@ import { AiTaskModelPresets, IntentCodeAiTasks, ServerOnlyTypes } from '@/types/
 const aiTaskModel = new AiTaskModel()
 const aiTaskTechModel = new AiTaskTechModel()
 const techModel = new TechModel()
-
-// Services
-const consoleService = new ConsoleService()
 
 // Class
 export class AiModelsSelectionService {

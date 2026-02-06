@@ -2,7 +2,7 @@ import chalk from 'chalk'
 import * as readline from 'node:readline/promises'
 import { stdin as input, stdout } from 'node:process'
 
-export class ConsoleService {
+class ConsoleService {
   private rl = readline.createInterface({ input })
 
   async askQuestion(query: string): Promise<string> {
@@ -17,3 +17,6 @@ export class ConsoleService {
     this.rl.close()
   }
 }
+
+// Export a single instance so that the interface is only created once
+export const consoleService = new ConsoleService()

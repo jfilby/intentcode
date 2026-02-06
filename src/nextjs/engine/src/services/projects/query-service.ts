@@ -3,7 +3,7 @@ import path from 'path'
 import { Instance, PrismaClient } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { InstanceModel } from '@/serene-core-server/models/instances/instance-model'
-import { ConsoleService } from '@/serene-core-server/services/console/service'
+import { consoleService } from '@/serene-core-server/services/console/service'
 import { InstanceSettingModel } from '@/serene-core-server/models/instances/instance-setting-model'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { ServerTestTypes } from '@/types/server-test-types'
@@ -28,7 +28,6 @@ const instanceSettingModel = new InstanceSettingModel()
 
 // Services
 const buildsGraphMutateService = new BuildsGraphMutateService()
-const consoleService = new ConsoleService()
 const dotIntentCodeGraphQueryService = new DotIntentCodeGraphQueryService()
 const fsUtilsService = new FsUtilsService()
 const intentCodeAnalysisGraphMutateService = new IntentCodeAnalysisGraphMutateService()

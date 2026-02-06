@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 import { Instance, PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
-import { ConsoleService } from '@/serene-core-server/services/console/service'
+import { consoleService } from '@/serene-core-server/services/console/service'
 import { ServerOnlyTypes } from '@/types/server-only-types'
 import { ExtensionMutateService } from './mutate-service'
 import { ExtensionQueryService } from './query-service'
@@ -10,7 +10,6 @@ import { GraphsMutateService } from '@/services/graphs/general/mutate-service'
 import { ProjectsQueryService } from '@/services/projects/query-service'
 
 // Services
-const consoleService = new ConsoleService()
 const extensionMutateService = new ExtensionMutateService()
 const extensionQueryService = new ExtensionQueryService()
 const graphsDeleteService = new GraphsDeleteService()

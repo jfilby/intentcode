@@ -3,16 +3,13 @@ import { PrismaClient, TechProvider, TechProviderApiKey } from '@prisma/client'
 import { TechProviderApiKeyModel } from '@/serene-core-server/models/tech/tech-provider-api-key-model'
 import { TechProviderModel } from '@/serene-core-server/models/tech/tech-provider-model'
 import { SereneCoreServerTypes } from '@/serene-core-server/types/user-types'
-import { ConsoleService } from '@/serene-core-server/services/console/service'
+import { consoleService } from '@/serene-core-server/services/console/service'
 import { SereneAiProviderProvides } from '../../types/server-only-types'
 import { AiTechDefs } from '../../types/tech-defs'
 
 // Models
 const techProviderApiKeyModel = new TechProviderApiKeyModel()
 const techProviderModel = new TechProviderModel()
-
-// Services
-const consoleService = new ConsoleService()
 
 // Class
 export class AiKeysCliReplService {

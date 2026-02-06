@@ -1,9 +1,9 @@
 import fs from 'fs'
 import chalk from 'chalk'
 import { Instance, PrismaClient, UserProfile } from '@prisma/client'
-import { CustomError } from '@/serene-core-server/index'
+import { CustomError } from '@/serene-core-server/types/errors'
 import { InstanceModel } from '@/serene-core-server/models/instances/instance-model'
-import { ConsoleService } from '@/serene-core-server/services/console/service'
+import { consoleService } from '@/serene-core-server/services/console/service'
 import { ServerOnlyTypes } from '@/types/server-only-types'
 import { BuildMutateService } from '../intentcode/build/mutate-service'
 import { ProjectsMutateService } from './mutate-service'
@@ -15,7 +15,6 @@ const instanceModel = new InstanceModel()
 
 // Services
 const buildMutateService = new BuildMutateService()
-const consoleService = new ConsoleService()
 const projectsMutateService = new ProjectsMutateService()
 const projectsQueryService = new ProjectsQueryService()
 const projectSetupService = new ProjectSetupService()

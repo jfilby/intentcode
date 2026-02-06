@@ -5,14 +5,11 @@ import { PrismaClient } from '@prisma/client'
 import { CustomError } from '../../types/errors'
 import { TechProviderApiKeyModel } from '../../models/tech/tech-provider-api-key-model'
 import { TechProviderModel } from '../../models/tech/tech-provider-model'
-import { ConsoleService } from '../console/service'
+import { consoleService } from '../console/service'
 
 // Models
 const techProviderApiKeyModel = new TechProviderApiKeyModel()
 const techProviderModel = new TechProviderModel()
-
-// Services
-const consoleService = new ConsoleService()
 
 // Class
 export class TechProviderMutateService {

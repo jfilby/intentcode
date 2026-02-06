@@ -1,11 +1,10 @@
 import chalk from 'chalk'
 import { PrismaClient, UserProfile } from '@prisma/client'
-import { ConsoleService } from '@/serene-core-server/services/console/service'
+import { consoleService } from '@/serene-core-server/services/console/service'
 import { CalcTestsService } from './calc-tests-service'
 import { CalcV2TestsService } from './calc-v2-tests-service'
 
 // Services
-const consoleService = new ConsoleService()
 const calcTestsService = new CalcTestsService()
 const calcV2TestsService = new CalcV2TestsService()
 

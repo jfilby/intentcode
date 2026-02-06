@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
-import { ConsoleService } from '@/serene-core-server/services/console/service'
+import { consoleService } from '@/serene-core-server/services/console/service'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { ChatMessage } from '@/serene-ai-server/types/server-only-types'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
@@ -13,7 +13,6 @@ import { ChatSessionTurnService } from '@/services/instance-chats/chat-session-t
 
 // Services
 const chatSessionTurnService = new ChatSessionTurnService()
-const consoleService = new ConsoleService()
 const instanceChatsService = new InstanceChatsService()
 const usersService = new UsersService()
 

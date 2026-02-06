@@ -3,7 +3,7 @@ import path from 'path'
 import { blake3 } from '@noble/hashes/blake3'
 import { Instance, PrismaClient, SourceNode, UserProfile } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
-import { ConsoleService } from '@/serene-core-server/services/console/service'
+import { consoleService } from '@/serene-core-server/services/console/service'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { DependenciesMutateService } from '../graphs/dependencies/mutate-service'
 import { DepsJsonService } from '../managed-files/deps/deps-json-service'
@@ -22,7 +22,6 @@ import { SpecsGraphMutateService } from '../graphs/specs/graph-mutate-service'
 const sourceNodeModel = new SourceNodeModel()
 
 // Services
-const consoleService = new ConsoleService()
 const dependenciesMutateService = new DependenciesMutateService()
 const depsJsonService = new DepsJsonService()
 const dotIntentCodeGraphMutateService = new DotIntentCodeGraphMutateService()

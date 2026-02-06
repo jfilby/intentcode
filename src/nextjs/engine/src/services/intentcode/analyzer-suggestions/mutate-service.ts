@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import { PrismaClient } from '@prisma/client'
-import { ConsoleService } from '@/serene-core-server/services/console/service'
+import { consoleService } from '@/serene-core-server/services/console/service'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { AiTasksService } from '@/serene-ai-server/services/ai-tasks/ai-tasks-service'
@@ -14,7 +14,6 @@ import { IntentCodeUpdaterMutateService } from '../updater/mutate-service'
 
 // Services
 const aiTasksService = new AiTasksService()
-const consoleService = new ConsoleService()
 const intentCodeAnalyzerSuggestionsChatService = new IntentCodeAnalyzerSuggestionsChatService()
 const intentCodeAnalyzerSuggestionsLlmService = new IntentCodeAnalyzerSuggestionsLlmService()
 const intentCodeAnalyzerSuggestionsPromptService = new IntentCodeAnalyzerSuggestionsPromptService()
