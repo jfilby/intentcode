@@ -49,14 +49,24 @@ export class CompilerLlmService {
 
       cacheKey = cacheResults.cacheKey
       inputMessageStr = cacheResults.inputMessageStr
-      const jsonContent = cacheResults.llmCache?.outputJson
+      const cachedJsonContent = cacheResults.llmCache?.outputJson
+
+      // Debug
+      // console.log(`${fnName}: cacheKey: ${cacheKey}`)
 
       // Found?
-      if (jsonContent != null) {
+      if (cachedJsonContent != null) {
+
+        // Get in same format as returned later (for consistency)
+        const cachedCompilerData = structuredClone(cachedJsonContent)
+        cachedCompilerData.targetSource = undefined
+
+        // Return
         return {
           status: true,
           message: undefined,
-          jsonContent: jsonContent
+          content: cachedJsonContent.targetSource,
+          jsonContent: cachedCompilerData
         }
       }
     }
