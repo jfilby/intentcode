@@ -61,7 +61,9 @@ export class PackageJsonManagedFileService {
     // Debug
     const fnName = `${this.clName}.run()`
 
-    console.log(`${fnName}: starting..`)
+    if (ServerOnlyTypes.verbosity >= VerbosityLevels.max) {
+      console.log(`${fnName}: starting..`)
+    }
 
     // Validate
     if (projectNode.type !== SourceNodeTypes.project) {

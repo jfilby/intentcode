@@ -253,6 +253,8 @@ export class CompilerMutateService {
 
     // Verbose output
     if (ServerOnlyTypes.verbosity >= VerbosityLevels.min) {
+
+      console.log(``)
       console.log(`compiling: ${buildFromFile.filename}..`)
     }
 

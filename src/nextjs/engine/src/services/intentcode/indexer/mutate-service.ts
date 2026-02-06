@@ -100,6 +100,7 @@ export class IndexerMutateService {
     // Verbose output
     if (ServerOnlyTypes.verbosity >= VerbosityLevels.min) {
 
+      console.log(``)
       console.log(`indexing: ${buildFromFile.filename}..`)
     }
 

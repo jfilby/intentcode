@@ -1,6 +1,6 @@
 import { PrismaClient, SourceNode } from '@prisma/client'
+import { DepDeltaNames, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
 import { DependenciesQueryService } from './query-service'
-import { DepDeltaNames } from '@/types/server-only-types'
 
 // Services
 const dependenciesQueryService = new DependenciesQueryService()
@@ -119,8 +119,11 @@ export class DependenciesPromptService {
     // Debug
     const fnName = `${this.clName}.getRuntimePrompting()`
 
-    console.log(`${fnName}: depsJsonContent: ` +
-                JSON.stringify(depsJsonContent))
+    if (ServerOnlyTypes.verbosity >= VerbosityLevels.max) {
+
+      console.log(`${fnName}: depsJsonContent: ` +
+                  JSON.stringify(depsJsonContent))
+    }
 
     // Validate
     if (depsJsonContent?.source?.runtimes == null) {
