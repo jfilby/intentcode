@@ -1,15 +1,16 @@
 const semver = require('semver')
-import { isEqual } from 'lodash'
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { DependenciesMutateService } from '@/services/graphs/dependencies/mutate-service'
 import { DependenciesQueryService } from '@/services/graphs/dependencies/query-service'
 import { DepsJsonService } from './deps-json-service'
+import { JsonUtilsService } from '@/services/utils/json-service'
 
 // Services
 const depsJsonService = new DepsJsonService()
 const dependenciesMutateService = new DependenciesMutateService()
 const dependenciesQueryService = new DependenciesQueryService()
+const jsonUtilsService = new JsonUtilsService()
 
 // Class
 export class DepsVerifyService {
@@ -138,10 +139,11 @@ export class DepsVerifyService {
     }
 
     // Verify that they're the same
-    if (isEqual(
+    if (jsonUtilsService.compareObjects(
           depsNode.jsonContent,
           data) === false) {
 
+      console.log(`${fnName}: depsNode.id: ${depsNode.id}`)
       console.log(`${fnName}: depsNode.jsonContent: ` + typeof depsNode.jsonContent)
       console.log(`${fnName}: depsNode.jsonContent: ` +
         JSON.stringify(depsNode.jsonContent))
