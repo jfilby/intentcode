@@ -58,8 +58,8 @@ export class CliService {
   commandsBySelection: Record<string, string> = {
     'p': this.projectsCommand,
     'l': this.loadExtensionsCommand,
-    'm': this.manageExtensionsCommand,
-    'a': this.manageAiModelsCommand,
+    'e': this.manageExtensionsCommand,
+    'm': this.manageAiModelsCommand,
     'k': this.manageAiKeysCommand,
     's': this.setupCommand,
     't': this.testsCommand,
@@ -87,8 +87,8 @@ export class CliService {
       console.log(``)
       console.log(`[p] Projects`)
       console.log(`[l] Load extensions`)
-      console.log(`[m] Manage extensions`)
-      console.log(`[a] Manage AI models`)
+      console.log(`[e] Manage extensions`)
+      console.log(`[m] Manage AI models`)
       console.log(`[k] Manage AI keys`)
       console.log(`[s] Setup`)
       console.log(`[t] Tests`)
