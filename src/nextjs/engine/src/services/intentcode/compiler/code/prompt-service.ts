@@ -64,8 +64,10 @@ export class CompilerPromptService {
           `  any target source.\n` +
           `- Try to fix and errors and warnings in the fixedIntentCode ` +
           `  field.\n` +
-          `- Convert the input IntentCode (if no errors) to ` +
-          `  ${buildFromFile.targetFileExt} source code.\n` +
+          `- Convert the input IntentCode ${buildFromFile.relativePath} (if ` +
+          `  no errors) to ${buildFromFile.targetFileExt} source code.\n` +
+          `- Only this single IntentCode file must be converted, the others ` +
+          `  are only there for reference.\n` +
           `\n`
 
     // Indexer?
@@ -112,56 +114,56 @@ export class CompilerPromptService {
 
     // Continue the prompt
     prompt +=
-          IntentCodeCommonTypes.intentCodePrompting +
-          `General rules:\n` +
-          `- Include a probability from 0..1.\n ` +
-          `- Different levels: file or line. The line level requires line, ` +
-          `  from and to fields.\n` +
-          `- Don't guess, they need to be based on high probabilities at ` +
-          `  worst.\n` +
-          `- Don't assume without data: if you don't know something ` +
-          `  critical then list it as an error.\n` +
-          `\n` +
-          `## Fields\n` +
-          `\n` +
-          ServerOnlyTypes.messagesPrompting +
-          `\n` +
-          depsPrompting +
-          `\n` +
-          `## Example JSON output\n` +
-          `\n` +
-          `This is an example of the output structure only. Don't try to ` +
-          `use it as a source of any kind of data.\n` +
-          `\n` +
-          `{\n` +
-          `  "assumptions": [\n` +
-          `    {\n` +
-          `      "probability": "0.95",\n` +
-          `      "level": "file",\n` +
-          `      "type": "import",\n` +
-          `      "assumption": ".."\n` +
-          `    }\n` +
-          `  ],\n` +
-          `  "warnings": [],\n` +
-          `  "errors": [\n` +
-          `    {\n` +
-          `      "line": 5,\n` +
-          `      "from": 6,\n` +
-          `      "to": 7,\n` +
-          `      "text": "Variable x is undefined"\n` +
-          `    }\n` +
-          `  ],\n` +
-          `  "fixedIntentCode": "..",\n` +
-          `  "targetSource": ".."\n` +
-          `  "deps": [\n` +
-          `    {\n` +
-          `      "delta": "set",\n` +
-          `      "name": "..",\n` +
-          `      "minVersion": ".."\n` +
-          `    }\n` +
-          `  ]\n` +
-          `}\n` +
-          `\n`
+      IntentCodeCommonTypes.intentCodePrompting +
+      `General rules:\n` +
+      `- Include a probability from 0..1.\n ` +
+      `- Different levels: file or line. The line level requires line, ` +
+      `  from and to fields.\n` +
+      `- Don't guess, they need to be based on high probabilities at ` +
+      `  worst.\n` +
+      `- Don't assume without data: if you don't know something ` +
+      `  critical then list it as an error.\n` +
+      `\n` +
+      `## Fields\n` +
+      `\n` +
+      ServerOnlyTypes.messagesPrompting +
+      `\n` +
+      depsPrompting +
+      `\n` +
+      `## Example JSON output\n` +
+      `\n` +
+      `This is an example of the output structure only. Don't try to ` +
+      `use it as a source of any kind of data.\n` +
+      `\n` +
+      `{\n` +
+      `  "assumptions": [\n` +
+      `    {\n` +
+      `      "probability": "0.95",\n` +
+      `      "level": "file",\n` +
+      `      "type": "import",\n` +
+      `      "assumption": ".."\n` +
+      `    }\n` +
+      `  ],\n` +
+      `  "warnings": [],\n` +
+      `  "errors": [\n` +
+      `    {\n` +
+      `      "line": 5,\n` +
+      `      "from": 6,\n` +
+      `      "to": 7,\n` +
+      `      "text": "Variable x is undefined"\n` +
+      `    }\n` +
+      `  ],\n` +
+      `  "fixedIntentCode": "..",\n` +
+      `  "targetSource": ".."\n` +
+      `  "deps": [\n` +
+      `    {\n` +
+      `      "delta": "set",\n` +
+      `      "name": "..",\n` +
+      `      "minVersion": ".."\n` +
+      `    }\n` +
+      `  ]\n` +
+      `}\n` +
+      `\n`
 
     // Target lang prompting
     if (targetLangPrompting.length > 0) {
