@@ -59,11 +59,11 @@ export class AiModelsSelectionService {
     // Return a selection
     switch (aiTaskTech.tech.variantName) {
 
-      case AiTechDefs.googleGemini_V3FlashFree: {
+      case AiTechDefs.googleGemini_V3ProFree: {
         return '1'
       }
 
-      case AiTechDefs.googleGemini_V3Flash: {
+      case AiTechDefs.googleGemini_V3Pro: {
         return '2'
       }
 
