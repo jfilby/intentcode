@@ -4,7 +4,7 @@
 
 plus = '+'
 minus = '-'
-multiple = '*'
+multiply = '*'
 divide = '/'
 
 
