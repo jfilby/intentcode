@@ -19,7 +19,7 @@ export class AgentUserModel {
     const fnName = `${this.clName}.create()`
 
     // Create UserProfile record
-    console.log(`${fnName}: creating userProfile record..`)
+    // console.log(`${fnName}: creating userProfile record..`)
 
     var userProfile: any = null
 
@@ -36,7 +36,7 @@ export class AgentUserModel {
     }
 
     // Create and return AgentUser record
-    console.log(`${fnName}: creating agentUser record..`)
+    // console.log(`${fnName}: creating agentUser record..`)
 
     try {
       return await prisma.agentUser.create({
@@ -115,7 +115,7 @@ export class AgentUserModel {
     // Debug
     const fnName = `${this.clName}.getByUserProfileId()`
 
-    console.log(`${fnName}: userProfileId: ${userProfileId}`)
+    // console.log(`${fnName}: userProfileId: ${userProfileId}`)
 
     // Query
     try {
@@ -126,7 +126,7 @@ export class AgentUserModel {
       })
     } catch(error: any) {
       if (!(error instanceof error.NotFound)) {
-        console.log(`${fnName}: error: ${error}`)
+        console.error(`${fnName}: error: ${error}`)
       }
     }
   }
@@ -142,7 +142,7 @@ export class AgentUserModel {
     // Debug
     const fnName = `${this.clName}.update()`
 
-    console.log(`${fnName}: updating agentUser record..`)
+    // console.log(`${fnName}: updating agentUser record..`)
 
     try {
       return await prisma.agentUser.update({

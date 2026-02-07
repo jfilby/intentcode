@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client'
-import { Encrypter } from '@/serene-core-server/services/access/encrypt-service'
-import { CustomError } from '@/serene-core-server/types/errors'
+import { Encrypter } from '../../services/access/encrypt-service'
+import { CustomError } from '../../types/errors'
 
 export class ChatMessageModel {
 

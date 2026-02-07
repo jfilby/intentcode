@@ -53,7 +53,7 @@ export class ChatSessionService {
     // Debug
     const fnName = `${this.clName}.createChatSession()`
 
-    console.log(`${fnName}: starting with userProfileId: ${userProfileId}`)
+    // console.log(`${fnName}: starting with userProfileId: ${userProfileId}`)
 
     const chatSettingsResults = await
             llmUtilsService.getOrCreateChatSettings(

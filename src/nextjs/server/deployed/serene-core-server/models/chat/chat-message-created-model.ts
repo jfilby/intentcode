@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client'
-import { CustomError } from '@/serene-core-server/types/errors'
+import { CustomError } from '../../types/errors'
 
 export class ChatMessageCreatedModel {
 

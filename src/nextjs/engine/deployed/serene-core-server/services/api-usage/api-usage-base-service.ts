@@ -63,8 +63,8 @@ export class ApiUsageBaseService {
               prisma,
               1)  // For the last minute
 
-    console.log(`${fnName}: is eventCount: ${eventCount} >= ` +
-                `rateLimitedApi.ratePerMinute: ${rateLimitedApi.ratePerMinute}`)
+    // console.log(`${fnName}: is eventCount: ${eventCount} >= ` +
+    //   `rateLimitedApi.ratePerMinute: ${rateLimitedApi.ratePerMinute}`)
 
     // Is the API currently rate limited?
     var isRateLimited = false

@@ -21,7 +21,7 @@ export class ChatSettingsModel {
     // Debug
     const fnName = `${this.clName}.create()`
 
-    console.log(`${fnName}: starting..`)
+    // console.log(`${fnName}: starting..`)
 
     // Create record
     try {
@@ -234,7 +234,7 @@ export class ChatSettingsModel {
     // Debug
     const fnName = `${this.clName}.upsert()`
 
-    console.log(`${fnName}: starting..`)
+    // console.log(`${fnName}: starting..`)
 
     // Get by name if id not specified
     if (id == null &&
