@@ -113,7 +113,7 @@ export class SourceDepsFileService {
     if (ServerOnlyTypes.verbosity >= VerbosityLevels.max) {
 
       console.log(`${fnName}: depsNode.jsonContent: ` +
-                  JSON.stringify(depsNode.jsonContent))
+        JSON.stringify(depsNode.jsonContent))
     }
 
     // Continue validating

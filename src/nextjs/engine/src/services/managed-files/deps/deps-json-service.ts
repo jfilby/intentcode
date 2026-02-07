@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import * as z from 'zod'
 import { PrismaClient, SourceNode } from '@prisma/client'
+import { ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
 import { DotIntentCodeGraphQueryService } from '@/services/graphs/dot-intentcode/graph-query-service'
 
 // Services
@@ -104,8 +105,11 @@ export class DepsJsonService {
 
     console.log(`${fnName}: writing deps source file..`)
 
-    console.log(`${fnName}: depsNode.jsonContent: ` +
-                JSON.stringify(depsNode.jsonContent))
+    if (ServerOnlyTypes.verbosity >= VerbosityLevels.max) {
+
+      console.log(`${fnName}: depsNode.jsonContent: ` +
+        JSON.stringify(depsNode.jsonContent))
+    }
 
     // Get dotIntentCode node
     const projectDotIntentCodeNode = await
