@@ -177,7 +177,9 @@ export class ProjectSetupService {
           configPath: string) {
 
     // Create the path if it doesn't exist
-    fs.mkdirSync(configPath, { recursive: true })
+    if (!await fs.existsSync(configPath)) {
+      await fs.mkdirSync(configPath, { recursive: true })
+    }
 
     // Load deps config file
     await this.loadDepsConfigFile(

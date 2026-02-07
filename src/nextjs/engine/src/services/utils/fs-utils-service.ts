@@ -1,4 +1,4 @@
-import fs from 'fs/promises'
+import fs from 'fs'
 import path from 'path'
 import { CustomError } from '@/serene-core-server/types/errors'
 
@@ -68,7 +68,7 @@ export class FsUtilsService {
 
   async getLastUpdateTime(path: string) {
 
-    const stats = await fs.stat(path)
+    const stats = await fs.statSync(path)
     return stats.mtime
   }
 
@@ -121,10 +121,13 @@ export class FsUtilsService {
       const dirsPath = this.getDirectoriesPart(fullPath)
 
       // Create dirs path
-      await fs.mkdir(dirsPath, { recursive: true })
+      if (!await fs.existsSync(dirsPath)) {
+
+        await fs.mkdirSync(dirsPath, { recursive: true })
+      }
     }
 
     // Write file
-    await fs.writeFile(fullPath, content, 'utf-8')
+    await fs.writeFileSync(fullPath, content, 'utf-8')
   }
 }
