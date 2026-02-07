@@ -35,7 +35,10 @@ function getUserAppDir() {
 }
 
 const userAppDir = getUserAppDir()
-fs.mkdirSync(userAppDir, { recursive: true })
+
+if (!fs.existsSync(userAppDir)) {
+  fs.mkdirSync(userAppDir, { recursive: true })
+}
 
 // Default database URL
 export const sqlLiteFile = path.join(userAppDir, 'data.db')
