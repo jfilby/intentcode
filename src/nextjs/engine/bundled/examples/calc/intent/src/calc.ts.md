@@ -1,4 +1,4 @@
-# Calc
+# Calc (class)
 
 ## Operation (enum)
 
