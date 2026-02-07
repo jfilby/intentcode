@@ -63,6 +63,25 @@ export class AiTechPricing {
     },
 
     // Gemini: https://ai.google.dev/gemini-api/docs/pricing
+    // Gemini 3.0 Pro / free / text
+    [AiTechDefs.googleGemini_V3Pro + `/${SereneCoreServerTypes.free}/${AiTechPricing.text}`]: {
+      inputTokens: 0.00,
+      outputTokens: 0.00
+    },
+    // Gemini 3.0 Pro / paid / text
+    [AiTechDefs.googleGemini_V3Pro + `/${SereneCoreServerTypes.paid}/${AiTechPricing.text}`]: {
+      inputTokens: 2.00,
+      outputTokens: 12.00
+    },
+    [AiTechDefs.googleGemini_V3Flash + `/${SereneCoreServerTypes.free}/${AiTechPricing.text}`]: {
+      inputTokens: 0.00,
+      outputTokens: 0.00
+    },
+    // Gemini 3.0 Pro / paid / text
+    [AiTechDefs.googleGemini_V3Flash + `/${SereneCoreServerTypes.paid}/${AiTechPricing.text}`]: {
+      inputTokens: 0.50,
+      outputTokens: 3.00
+    },
     // Gemini 2.0 Flash / free / text
     [AiTechDefs.googleGemini_V2Flash + `/${SereneCoreServerTypes.free}/${AiTechPricing.text}`]: {
       inputTokens: 0.00,
