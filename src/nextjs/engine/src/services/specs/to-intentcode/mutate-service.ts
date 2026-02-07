@@ -276,13 +276,13 @@ export class SpecsToIntentCodeMutateService {
         return
       }
 
+      // Determine relative path
+      const relativePath = mdFilename.slice(specsPath.length + 1)
+
       // Determine targetFullPath
       var targetFullPath: string | undefined = undefined
 
       if (isTechStackMd === false) {
-
-        // Determine relative path
-        const relativePath = mdFilename.slice(specsPath.length)
 
         // Determine target full path
         targetFullPath =
@@ -296,6 +296,7 @@ export class SpecsToIntentCodeMutateService {
       // Add to buildFromFiles
       buildFromFiles.push({
         filename: mdFilename,
+        relativePath: relativePath,
         content: content,
         fileModifiedTime: fileModifiedTime,
         fileNode: specFileNode,

@@ -142,10 +142,12 @@ export class DepsVerifyService {
           depsNode.jsonContent,
           data) === false) {
 
+      console.log(`${fnName}: depsNode.jsonContent: ` + typeof depsNode.jsonContent)
       console.log(`${fnName}: depsNode.jsonContent: ` +
-                  JSON.stringify(depsNode.jsonContent))
+        JSON.stringify(depsNode.jsonContent))
 
       console.log(`${fnName}: ${filename}`)
+      console.log(`${fnName}: deps.json file: ` + typeof data)
       console.log(`${fnName}: deps.json file: ` + JSON.stringify(data))
 
       throw new CustomError(`${fnName}: depsNode (jsonContent) !== deps.json`)

@@ -213,11 +213,14 @@ export class SpecsTechStackMutateService {
     // console.log(`${fnName}: path: ` +
     //             JSON.stringify((projectSpecsNode.jsonContent as any).path))
 
+    // Get specsPath
+    const specsPath = (projectSpecsNode.jsonContent as any).path
+
     // Walk dir
     var mdFilesList: string[] = []
 
     await walkDirService.walkDir(
-            (projectSpecsNode.jsonContent as any).path,
+            specsPath,
             mdFilesList,
             {
               recursive: true,
@@ -254,6 +257,9 @@ export class SpecsTechStackMutateService {
     // Get tech-stack.md full path
     const techStackFilename = techStackList[0]
 
+    const techStackRelativePath =
+      techStackFilename.substring(specsPath.length + 1)
+
     // Get last save time of the file
     const fileModifiedTime = await
             fsUtilsService.getLastUpdateTime(techStackFilename)
@@ -282,6 +288,7 @@ export class SpecsTechStackMutateService {
     // Build file
     const buildFromFile: BuildFromFile = {
       filename: techStackFilename,
+      relativePath: techStackRelativePath,
       content: techStack,
       fileModifiedTime: fileModifiedTime,
       fileNode: techStackNode,

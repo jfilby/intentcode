@@ -252,6 +252,7 @@ export class IntentCodeAnalyzerMutateService {
       // Define BuildFromFile
       const buildFromFile: BuildFromFile = {
         filename: buildFile.intentCodeFilename,
+        relativePath: buildFile.relativePath,
         fileModifiedTime: fileModifiedTime,
         content: intentCode,
         fileNode: intentFileNode,
