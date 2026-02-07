@@ -538,8 +538,8 @@ export class ChatService {
     // Debug
     const fnName = `${this.clName}.runSessionTurn()`
 
-    console.log(`${fnName}: starting with chatSessionId: ` +
-                `${chatSessionId} and llmTechId: ${llmTechId}`)
+    // console.log(`${fnName}: starting with chatSessionId: ` +
+    //             `${chatSessionId} and llmTechId: ${llmTechId}`)
 
     // Get ChatSession
     const chatSession = await
