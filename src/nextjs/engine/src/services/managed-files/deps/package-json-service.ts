@@ -53,6 +53,27 @@ export class PackageJsonManagedFileService {
     }
   }
 
+  getCleanVersionNo(versionNo: string) {
+
+    // Debug
+    const fnName = `${this.clName}.getCleanVersionNo()`
+
+    // Validate
+    if (versionNo == null ||
+        versionNo.length === 0) {
+
+      throw new CustomError(`${fnName}: invalid versionNo: ${versionNo}`)
+    }
+
+    // Remove leading caret if present
+    if (versionNo[0] === '^') {
+      return versionNo.substring(1)
+    }
+
+    // Valid as is
+    return versionNo
+  }
+
   async run(prisma: PrismaClient,
             buildData: BuildData,
             projectNode: SourceNode,
@@ -126,21 +147,30 @@ export class PackageJsonManagedFileService {
     minVersionNo: string,
     target: Record<string, string>) {
 
+    // Debug
+    const fnName = `${this.clName}.setIfHigher()`
+
+    // Check for existing dependency
     const existing = target[dependency]
 
     if (!existing) {
-      target[dependency] = `^${minVersionNo}`
+      target[dependency] = minVersionNo
       return
     }
 
-    const existingMin = semver.minVersion(existing)
-    const incomingMin = semver.minVersion(minVersionNo)
+    // Get clean version numbers for comparisons
+    const compExisting = this.getCleanVersionNo(existing)
+    const compMinVersionNo = this.getCleanVersionNo(minVersionNo)
+
+    // Add a new dependency
+    const existingMin = semver.minVersion(compExisting)
+    const incomingMin = semver.minVersion(compMinVersionNo)
 
     if (existingMin &&
         incomingMin &&
         semver.lt(existingMin, incomingMin)) {
 
-      target[dependency] = `^${minVersionNo}`
+      target[dependency] = minVersionNo
     }
   }
 
