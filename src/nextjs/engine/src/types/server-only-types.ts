@@ -42,8 +42,8 @@ export class ServerOnlyTypes {
   static namespace = 'intentcode'
 
   static compilerModels: Record<string, string> = {
-    [AiTaskModelPresets.gemini3BasedFree]: AiTechDefs.googleGemini_V3FlashFree,
-    [AiTaskModelPresets.gemini3BasedPaid]: AiTechDefs.googleGemini_V3Flash,
+    [AiTaskModelPresets.gemini3BasedFree]: AiTechDefs.googleGemini_V3ProFree,
+    [AiTaskModelPresets.gemini3BasedPaid]: AiTechDefs.googleGemini_V3Pro,
     [AiTaskModelPresets.gpt5pt2Based]: AiTechDefs.openAi_Gpt5pt2
   }
 
