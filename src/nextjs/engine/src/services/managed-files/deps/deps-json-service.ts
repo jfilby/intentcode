@@ -122,9 +122,15 @@ export class DepsJsonService {
     // Validate by schema
     const data = this.validate(depsNode.jsonContent)
 
-    // Determine the filename
+    // Determine the path and filename
     const dotIntentFilePath = projectDotIntentCodeNode.jsonContent?.path
     const filename = `${dotIntentFilePath}${path.sep}${this.depsJson}`
+
+    // Create the path if needed
+    if (!fs.existsSync(dotIntentFilePath)) {
+
+      fs.mkdirSync(dotIntentFilePath, { recursive: true })
+    }
 
     // Write the file
     const prettyData =
