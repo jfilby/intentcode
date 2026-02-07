@@ -51,6 +51,10 @@ export class SpecsToIntentCodePromptService {
           `The available extensions should be your guide regarding the \n` +
           `expected tech stack.\n` +
           `\n` +
+          `The filename convention of the IntentCode files should mirror ` +
+          `that of the target source which is usually covered in the ` +
+          `appropriate skill prompting.\n` +
+          `\n` +
           IntentCodeCommonTypes.intentCodePrompting +
           `\n` +
           `## Fields\n` +
