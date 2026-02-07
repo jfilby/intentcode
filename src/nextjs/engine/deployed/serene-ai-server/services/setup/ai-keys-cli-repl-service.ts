@@ -59,12 +59,11 @@ export class AiKeysCliReplService {
     techProvider: TechProvider) {
 
     // Gemini keys need to specify free/paid
-    var pricingTier = SereneCoreServerTypes.paid
+    var pricingTier: string | undefined = SereneCoreServerTypes.paid
 
     if (techProvider.name === AiTechDefs.googleGeminiProvider) {
 
-      const pricingTier = await
-        this.getPricingTier()
+      pricingTier = await this.getPricingTier()
 
       if (pricingTier == null) {
         return
@@ -109,8 +108,8 @@ export class AiKeysCliReplService {
         SereneCoreServerTypes.activeStatus,
         [SereneAiProviderProvides.multiModalAi])
 
-    // Create numbered map, starting at 2 (1 is back)
-    var techProviderNo = 2
+    // Create numbered map
+    var techProviderNo = 1
     const techProvidersMap = new Map<string, TechProvider>()
 
     for (const techProvider of techProviders) {
@@ -165,7 +164,7 @@ export class AiKeysCliReplService {
       techProviderApiKeyModel.filter(prisma)
 
     // Create a selection map from the keys
-    var selection = 2
+    var selection = 1
     const apiKeysMap = new Map<string, TechProviderApiKey>()
 
     for (const apiKey of apiKeys) {
