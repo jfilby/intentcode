@@ -7,7 +7,7 @@ import { AiTechDefs } from '@/serene-ai-server/types/tech-defs'
 import { AiTaskModel } from '@/serene-ai-server/models/ai-tasks/ai-task-model'
 import { AiTaskTechModel } from '@/serene-ai-server/models/ai-tasks/ai-task-tech-model'
 import { BaseDataTypes } from '@/shared/types/base-data-types'
-import { AiTaskModelPresets, IntentCodeAiTasks, ServerOnlyTypes } from '@/types/server-only-types'
+import { AiTaskModelPresets, IntentCodeAiTasks, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
 
 // Models
 const aiTaskModel = new AiTaskModel()
@@ -45,8 +45,11 @@ export class AiModelsSelectionService {
         null)  // userProfileId
 
     // Debug
-    console.log(`${fnName}: aiTaskTech?.tech: ` +
-      JSON.stringify(aiTaskTech?.tech))
+    if (ServerOnlyTypes.verbosity >= VerbosityLevels.max) {
+
+      console.log(`${fnName}: aiTaskTech?.tech: ` +
+        JSON.stringify(aiTaskTech?.tech))
+    }
 
     // Validate
     if (aiTaskTech?.tech == null) {
