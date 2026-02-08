@@ -147,6 +147,7 @@ model ChatMessageCreated {
   costInCents                  Int                  @map("cost_in_cents")
   created                      DateTime             @default(now())
 
+  @@index([created])
   @@unique([userProfileId, created])
   @@map("chat_message_created")
 }
@@ -186,6 +187,7 @@ model ChatSession {
   ofChatMessages               ChatMessage[]
   ofChatParticipants           ChatParticipant[]
 
+  @@index([created])
   @@index([externalId])
   @@map("chat_session")
 }

@@ -94,4 +94,33 @@ export class ChatMessageCreatedModel {
       throw 'Prisma error'
     }
   }
+
+  async deleteByDaysAgo(
+    prisma: PrismaClient,
+    daysAgo: number) {
+
+    // Debug
+    const fnName = `${this.clName}.deleteByDaysAgo()`
+
+    // Days ago
+    const day = 1000 * 60 * 60 * 24
+    const daysAgoTime = day * daysAgo
+    const daysAgoDate = new Date(new Date().getTime() - daysAgoTime)
+
+    // Delete records
+    try {
+      await prisma.chatMessageCreated.deleteMany({
+        where: {
+          created: {
+            lt: daysAgoDate
+          }
+        }
+      })
+    } catch(error: any) {
+      if (!(error instanceof error.NotFound)) {
+        console.error(`${fnName}: error: ${error}`)
+        throw 'Prisma error'
+      }
+    }
+  }
 }

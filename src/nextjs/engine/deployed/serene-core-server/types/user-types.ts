@@ -2,6 +2,7 @@ export class SereneCoreServerTypes {
 
   // Statuses
   static activeStatus = 'A'
+  static newStatus = 'A'
 
   // Names
   static credits = 'Credits'

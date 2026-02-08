@@ -568,10 +568,16 @@ CREATE INDEX "chat_message_created_idx" ON "chat_message"("created");
 CREATE UNIQUE INDEX "chat_message_chat_session_id_external_id_key" ON "chat_message"("chat_session_id", "external_id");
 
 -- CreateIndex
+CREATE INDEX "chat_message_created_created_idx" ON "chat_message_created"("created");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "chat_message_created_user_profile_id_created_key" ON "chat_message_created"("user_profile_id", "created");
 
 -- CreateIndex
 CREATE INDEX "chat_participant_chat_session_id_idx" ON "chat_participant"("chat_session_id");
+
+-- CreateIndex
+CREATE INDEX "chat_session_created_idx" ON "chat_session"("created");
 
 -- CreateIndex
 CREATE INDEX "chat_session_external_id_idx" ON "chat_session"("external_id");

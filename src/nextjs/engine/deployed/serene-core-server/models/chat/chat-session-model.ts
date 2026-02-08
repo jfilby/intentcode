@@ -1,18 +1,16 @@
+const { v4: uuidv4 } = require('uuid')
 import { PrismaClient } from '@prisma/client'
 import { CustomError } from '../../types/errors'
 import { ChatParticipantModel } from './chat-participant-model'
 
-const { v4: uuidv4 } = require('uuid')
+// Models
+const chatParticipantModel = new ChatParticipantModel()
 
+// Class
 export class ChatSessionModel {
 
   // Consts
   clName = 'ChatSessionModel'
-
-  newStatus = 'N'
-
-  // Models
-  chatParticipantModel = new ChatParticipantModel()
 
   // Code
   async create(prisma: PrismaClient,
@@ -95,7 +93,7 @@ export class ChatSessionModel {
     }
 
     // Delete chat participants
-    await this.chatParticipantModel.deleteByChatSessionId(
+    await chatParticipantModel.deleteByChatSessionId(
             prisma,
             id)
 
@@ -171,6 +169,37 @@ export class ChatSessionModel {
     }
   }
 
+  async getByDaysAgo(
+    prisma: PrismaClient,
+    daysAgo: number,
+    status: string | undefined = undefined) {
+
+    // Debug
+    const fnName = `${this.clName}.getByDaysAgo()`
+
+    // Days ago
+    const day = 1000 * 60 * 60 * 24
+    const daysAgoTime = day * daysAgo
+    const daysAgoDate = new Date(new Date().getTime() - daysAgoTime)
+
+    // Query records
+    try {
+      return await prisma.chatSession.findMany({
+        where: {
+          status: status,
+          created: {
+            lt: daysAgoDate
+          }
+        }
+      })
+    } catch(error: any) {
+      if (!(error instanceof error.NotFound)) {
+        console.error(`${fnName}: error: ${error}`)
+        throw 'Prisma error'
+      }
+    }
+  }
+
   async getByExternalIntegrationAndExternalId(
           prisma: PrismaClient,
           externalIntegration: string,
@@ -232,34 +261,6 @@ export class ChatSessionModel {
 
     // Return OK
     return chatSession
-  }
-
-  async getNewStatusOver3DaysOld(prisma: PrismaClient) {
-
-    // Debug
-    const fnName = `${this.clName}.getNewStatusOver3DaysOld()`
-
-    // Days ago
-    const day = 1000 * 60 * 60 * 24
-    const days3 = day * 3
-    const days3AgoDate = new Date(new Date().getTime() - days3)
-
-    // Query records
-    try {
-      return await prisma.chatSession.findMany({
-        where: {
-          status: this.newStatus,
-          created: {
-            lt: days3AgoDate
-          }
-        }
-      })
-    } catch(error: any) {
-      if (!(error instanceof error.NotFound)) {
-        console.error(`${fnName}: error: ${error}`)
-        throw 'Prisma error'
-      }
-    }
   }
 
   async update(prisma: PrismaClient,

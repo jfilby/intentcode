@@ -12,6 +12,7 @@ require('./services/setup/env-setup-service.ts')
 // Requires/imports
 import { prisma } from './db'
 import { CliService } from './services/setup/cli-service'
+import { HousekeepingDeleteService } from './services/housekeeping/delete-service'
 import { ProjectsQueryService } from './services/projects/query-service'
 import { SetupService } from './services/setup/setup-service'
 
@@ -23,8 +24,12 @@ import { SetupService } from './services/setup/setup-service'
 
   // Services
   const cliService = new CliService()
+  const housekeepingDeleteService = new HousekeepingDeleteService()
   const projectsQueryService = new ProjectsQueryService()
   const setupService = new SetupService()
+
+  // Housekeeping
+  await housekeepingDeleteService.deleteOldRecords(prisma)
 
   // Run setup if needed
   await setupService.setupIfRequired(prisma)
