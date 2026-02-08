@@ -8,7 +8,9 @@
     "noEmit": true,
     "esModuleInterop": true,
     "module": "commonjs",
+    // "outDir": "dist",
     "resolveJsonModule": true,
+    // "rootDir": "src",
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
@@ -20,8 +22,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "@/shared/*": ["../shared/src/*"],
-      "@/serene-ai-server/*": ["./deployed/serene-ai-server/*"],
       "@/serene-core-server/*": ["./deployed/serene-core-server/*"],
+      "@/serene-ai-server/*": ["./deployed/serene-ai-server/*"],
     }
   },
   "include": [
@@ -32,7 +34,7 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"],
+  "exclude": ["node_modules","bundled"],
   "ts-node": {
     // Do not forget to `npm i -D tsconfig-paths`
     "require": ["tsconfig-paths/register"],
