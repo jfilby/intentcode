@@ -1,5 +1,5 @@
 .hero {
-  background-image: url('/hero.jpg');
+  background-image: url('/imgs/hero.jpg');
   background-size: cover;
   position: relative;
   padding: 2em;

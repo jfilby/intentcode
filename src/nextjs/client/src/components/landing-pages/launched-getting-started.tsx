@@ -33,12 +33,12 @@ export default function GettingStartedDetails({
       <div style={{ marginBottom: '2em' }}>
         {authSession == null ?
           <>
-            <Button
+            {/* <Button
               onClick={(e: any) => window.location.href = `account/auth/sign-up`}
               variant='outlined'>
               Sign-up
             </Button>
-            {/* <Button
+            <Button
               style={{ marginLeft: '1em' }}
               onClick={(e: any) => window.location.href = `account/auth/sign-in`}
               variant='outlined'>
@@ -51,16 +51,16 @@ export default function GettingStartedDetails({
 
         <Button
           style={{ marginLeft: '1em' }}
-          onClick={(e: any) => window.location.href = `/analyses`}
+          onClick={(e: any) => window.location.href = `/get-started`}
           variant='contained'>
           Get started
         </Button>
 
         <Button
           style={{ marginLeft: '1em' }}
-          onClick={(e: any) => window.location.href = `/slideshows/showcase`}
+          onClick={(e: any) => window.location.href = `/demos`}
           variant='contained'>
-          Showcase
+          Demos
         </Button>
 
         {/* <Button

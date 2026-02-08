@@ -42,6 +42,18 @@ export function HeaderBrowser({ highLevelLink }: Props) {
           &nbsp;
           &nbsp;
           <HeaderBrowserLink
+            name='Get started'
+            linkName='get-started'
+            highLevelLink={highLevelLink} />
+          &nbsp;
+          &nbsp;
+          <HeaderBrowserLink
+            name='Spec'
+            linkName='spec'
+            highLevelLink={highLevelLink} />
+          &nbsp;
+          &nbsp;
+          <HeaderBrowserLink
             name='Demos'
             linkName='demos'
             highLevelLink={highLevelLink} />
@@ -49,12 +61,6 @@ export function HeaderBrowser({ highLevelLink }: Props) {
       </div>
       <div style={{ textAlign: 'right' }}>
         <Typography variant='body1'>
-          <HeaderBrowserLink
-            name='Showcase'
-            linkName='showcase'
-            highLevelLink={highLevelLink} />
-          &nbsp;
-          &nbsp;
           <HeaderBrowserLink
             name='About'
             linkName='about'
@@ -66,7 +72,7 @@ export function HeaderBrowser({ highLevelLink }: Props) {
               linkName='account'
               highLevelLink={highLevelLink} />
             &nbsp;
-            &nbsp; */}
+            &nbsp;
           &nbsp;
           &nbsp;
           {session &&
@@ -92,7 +98,7 @@ export function HeaderBrowser({ highLevelLink }: Props) {
               underline='hover'>
               Sign in
             </Link>
-          }
+          } */}
         </Typography>
       </div>
     </Box>

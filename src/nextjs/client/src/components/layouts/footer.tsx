@@ -1,7 +1,12 @@
+import { Link, Typography } from '@mui/material'
+
 export default function Footer() {
   return (
-    <footer className='footer'>
-      <p>Copyright &copy; Jason Filby</p>
-    </footer>
+    <div style={{ marginTop: '5em', padding: '1em' }}>
+      <Typography variant='body1'>
+        Created by Jason Filby (X:&nbsp;
+        <Link href='https://x.com/jasonfi'>@jasonfi</Link>).
+      </Typography>
+    </div>
   )
 }

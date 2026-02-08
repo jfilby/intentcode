@@ -1,4 +1,4 @@
-# Spec
+# Introduction
 
 IntentCode is both the name of this product, and also a formalized form of
 Markdown used to write pseudo-code. This spec broadly covers the product, with
@@ -8,7 +8,9 @@ a section on the IntentCode format as well.
 ## Layers
 
 Specs: high-level specifications (optional)
+
 IntentCode: pseudo-code (standardized)
+
 Source: code
 
 

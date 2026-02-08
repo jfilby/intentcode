@@ -76,18 +76,22 @@ export function HeaderMobile({ highLevelLink }: Props) {
                 linkName=''
                 highLevelLink={highLevelLink} />
             <HeaderMobileLink
-                name='Demos'
-                linkName='demos'
+                name='Get started'
+                linkName='get-started'
                 highLevelLink={highLevelLink} />
+            <HeaderMobileLink
+                name='Spec'
+                linkName='spec'
+                highLevelLink={highLevelLink} />
+            <HeaderMobileLink
+              name='Demos'
+              linkName='demos'
+              highLevelLink={highLevelLink} />
             <Divider />
             {/* <HeaderMobileLink
               name='Docs'
               linkName='docs'
               highLevelLink={highLevelLink} /> */}
-            <HeaderMobileLink
-              name='Showcase'
-              linkName='showcase'
-              highLevelLink={highLevelLink} />
             <HeaderMobileLink
               name='About'
               linkName='about'

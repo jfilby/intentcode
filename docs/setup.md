@@ -1,22 +1,13 @@
-# Data setup
+# Setup
 
-## Login as admin user
+## Run the IntentCode engine
 
-Login using your preferred method before running setup. This is because the
-first login method is difficult to change.
-
-
-## Run setup
-
-This will apply the currently selected LLMs (their Tech records) to the active
-Analysis records.
-
-npm run ts-script setup
+To run: `npm run ic`
+Or to run with dev checks (slower): `npm run ic-dev`
 
 
-## Setup Serene AI tech provider keys
+## Setup AI
 
-Run this command to load/delete AI keys:
-
-npm run ts-script manage-ai-keys
+In the main menu select k <enter> to setup your AI keys.
+Return to the main menu and select m <enter> to select your model presets.
 
