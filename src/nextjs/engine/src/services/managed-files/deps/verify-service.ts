@@ -1,6 +1,7 @@
 const semver = require('semver')
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
+import { ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
 import { DependenciesMutateService } from '@/services/graphs/dependencies/mutate-service'
 import { DependenciesQueryService } from '@/services/graphs/dependencies/query-service'
 import { DepsJsonService } from './deps-json-service'
@@ -81,9 +82,12 @@ export class DepsVerifyService {
 
       if (!semver.validRange(minVersionNo)) {
 
-        console.log(
-          `DepsNode dependency: ${packageName} has an invalid ` +
-          `minVersionNo: ${minVersionNo} (removing..)`)
+        if (ServerOnlyTypes.verbosity >= VerbosityLevels.max) {
+
+          console.log(
+            `DepsNode dependency: ${packageName} has an invalid ` +
+            `minVersionNo: ${minVersionNo} (removing..)`)
+        }
 
         modified = true
         jsonContent.source.deps[packageName] = undefined
