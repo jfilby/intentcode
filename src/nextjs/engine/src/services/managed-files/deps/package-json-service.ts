@@ -1,4 +1,5 @@
 import fs from 'fs'
+import https from 'node:https'
 import path from 'path'
 const semver = require('semver')
 import { PrismaClient, SourceNode } from '@prisma/client'
@@ -19,6 +20,17 @@ export class PackageJsonManagedFileService {
 
   // Consts
   clName = 'PackageJsonManagedFileService'
+
+  ignoredDependencies = [
+    'nodejs'
+  ]
+
+  ignoredDependencyPrefixes = [
+    'node:',
+    'nodejs:'
+  ]
+
+  latest = 'latest'
 
   tsConfigPaths = 'tsconfig-paths'
   tsConfigPathsMinVersionNo = '^4'
@@ -53,7 +65,7 @@ export class PackageJsonManagedFileService {
     }
   }
 
-  getCleanVersionNo(versionNo: string) {
+  getNumericOnlyVersionNo(versionNo: string) {
 
     // Debug
     const fnName = `${this.clName}.getCleanVersionNo()`
@@ -72,6 +84,79 @@ export class PackageJsonManagedFileService {
 
     // Valid as is
     return versionNo
+  }
+
+  async getLatestVersion(pkgName: string) {
+
+    return new Promise<string>((resolve, reject) => {
+      const url = `https://registry.npmjs.org/${encodeURIComponent(pkgName)}`
+
+      https.get(url, res => {
+        let data = '';
+
+        if (res.statusCode !== 200) {
+          res.resume()  // drain stream
+          return reject(
+            new Error(`npm registry error: ${res.statusCode}`)
+          );
+        }
+
+        res.on('data', chunk => {
+          data += chunk;
+        });
+
+        res.on('end', () => {
+          try {
+            const json = JSON.parse(data);
+            resolve(json['dist-tags'].latest);
+          } catch (err) {
+            reject(err);
+          }
+        });
+      }).on('error', reject)
+    })
+  }
+
+  isIgnoredDependency(dependency: string) {
+
+    // Check list of ignored dependencies
+    if (this.ignoredDependencies.includes(dependency)) {
+      return true
+    }
+
+    // Check ignored prefixes
+    for (const ignoredDependencyPrefix of this.ignoredDependencyPrefixes) {
+
+      if (dependency.startsWith(ignoredDependencyPrefix)) {
+        return true
+      }
+    }
+
+    // OK (not ignored)
+    return false
+  }
+
+  normalizeSemVer(v: string) {
+
+    // Debug
+    const fnName = `${this.clName}.normalizeSemVer()`
+
+    // console.log(`${fnName}: v: ${v}`)
+
+    // Remove non-numeric chars
+    v = this.getNumericOnlyVersionNo(v)
+
+    // Debug
+    // console.log(`${fnName}: v: ${v}`)
+
+    // E.g. 5 -> 5.0.0
+    v = semver.valid(v) ?? semver.valid(semver.coerce(v))
+
+    // Debug
+    // console.log(`${fnName}: v: ${v}`)
+
+    // Return
+    return v
   }
 
   async run(prisma: PrismaClient,
@@ -145,32 +230,41 @@ export class PackageJsonManagedFileService {
   setIfHigher(
     dependency: string,
     minVersionNo: string,
+    latestVersionNo: string,
     target: Record<string, string>) {
 
     // Debug
     const fnName = `${this.clName}.setIfHigher()`
 
     // Check for existing dependency
-    const existing = target[dependency]
+    var existing = target[dependency]
 
     if (!existing) {
       target[dependency] = minVersionNo
       return
+    } else if (existing.endsWith(this.latest)) {
+      existing = latestVersionNo
     }
 
-    // Get clean version numbers for comparisons
-    const compExisting = this.getCleanVersionNo(existing)
-    const compMinVersionNo = this.getCleanVersionNo(minVersionNo)
+    // Get numeric-only version numbers for comparisons
+    const numericExisting = this.normalizeSemVer(existing)
+    const numericMinVersionNo = this.normalizeSemVer(minVersionNo)
+
+    // Debug
+    if (ServerOnlyTypes.verbosity >= VerbosityLevels.max) {
+      console.log(`${fnName}: numericExisting: ${numericExisting}`)
+      console.log(`${fnName}: numericMinVersionNo: ${numericMinVersionNo}`)
+    }
 
     // Add a new dependency
-    const existingMin = semver.minVersion(compExisting)
-    const incomingMin = semver.minVersion(compMinVersionNo)
+    const existingMin = semver.minVersion(numericExisting)
+    const incomingMin = semver.minVersion(numericMinVersionNo)
 
     if (existingMin &&
         incomingMin &&
         semver.lt(existingMin, incomingMin)) {
 
-      target[dependency] = minVersionNo
+      target[dependency] = `^${numericMinVersionNo}`
     }
   }
 
@@ -219,7 +313,7 @@ export class PackageJsonManagedFileService {
     }
 
     // Update the dependencies
-    this.updateDependencies(
+    await this.updateDependencies(
       packageJson,
       importsData)
 
@@ -251,7 +345,7 @@ export class PackageJsonManagedFileService {
     }
   }
 
-  updateDependencies(
+  async updateDependencies(
     packageJson: any,
     importsData: ImportsData) {
 
@@ -259,25 +353,64 @@ export class PackageJsonManagedFileService {
     const fnName = `${this.clName}.updateDependencies()`
 
     // Add dependencies
-    for (const [dependency, minVersionNo] of Object.entries(importsData.dependencies)) {
+    for (var [dependency, minVersionNo] of Object.entries(importsData.dependencies)) {
 
+      // Ignore certain dependencies
+      if (this.isIgnoredDependency(dependency)) {
+        continue
+      }
+
+      // Get clean version numbers for comparisons
+      var numericMinVersionNo = this.getNumericOnlyVersionNo(minVersionNo)
+
+      // Get dependencies / devDependencies
       const deps = packageJson.dependencies ?? {}
       const devDeps = packageJson.devDependencies ?? {}
 
       const inDependencies = deps[dependency] != null
       const inDevDependencies = devDeps[dependency] != null
 
+      // Get latest version?
+      if (minVersionNo.endsWith(this.latest)) {
+
+        // Debug
+        if (ServerOnlyTypes.verbosity >= VerbosityLevels.max) {
+          console.log(`${fnName}: getting latest version of: ${dependency}`)
+        }
+
+        // Get latest version
+        const latestVersionNo = await
+          this.getLatestVersion(dependency)
+
+        // Debug
+        if (ServerOnlyTypes.verbosity >= VerbosityLevels.max) {
+          console.log(`${fnName}: latestVersionNo: ${latestVersionNo}`)
+        }
+
+        // If available, set the latest major version
+        if (latestVersionNo != null) {
+          minVersionNo = semver.major(latestVersionNo)
+          numericMinVersionNo = this.getNumericOnlyVersionNo(minVersionNo)
+        }
+
+        // Debug
+        // console.log(`${fnName}: minVersionNo: ${minVersionNo}`)
+        // console.log(`${fnName}: numericMinVersionNo: ${numericMinVersionNo}`)
+      }
+
       // Helper to safely set or upgrade a version
       if (inDependencies) {
         this.setIfHigher(
           dependency,
           minVersionNo,
+          minVersionNo,  // latest
           deps)
 
       } else if (inDevDependencies) {
         this.setIfHigher(
           dependency,
           minVersionNo,
+          minVersionNo,  // latest
           devDeps)
 
       } else {
@@ -285,7 +418,8 @@ export class PackageJsonManagedFileService {
         if (!packageJson.dependencies) {
           packageJson.dependencies = {}
         }
-        packageJson.dependencies[dependency] = `^${minVersionNo}`
+
+        packageJson.dependencies[dependency] = `^${numericMinVersionNo}`
       }
     }
   }
