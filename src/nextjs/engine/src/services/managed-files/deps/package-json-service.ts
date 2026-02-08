@@ -65,6 +65,41 @@ export class PackageJsonManagedFileService {
     }
   }
 
+  async fixDependencies(packageJson: any) {
+
+    // Iterate dependencies
+    if (packageJson.dependencies != null) {
+      await this.fixDependencyEntries(packageJson.dependencies)
+    }
+
+    if (packageJson.devDependencies != null) {
+      await this.fixDependencyEntries(packageJson.devDependencies)
+    }
+  }
+
+  async fixDependencyEntries(dependencies: any) {
+
+    for (const [dependency, minVersionNo] of Object.entries(dependencies)) {
+
+      // Remove ignored dependencies
+      if (this.isIgnoredDependency(dependency)) {
+        dependencies[dependency] = undefined
+        continue
+      }
+
+      // Get latest dependencies
+      if ((minVersionNo as string).endsWith(this.latest)) {
+
+        // Get latest version
+        const latestVersionNo = await
+          this.getLatestVersion(dependency)
+
+        // Set the dependency
+        dependencies[dependency] = `^${latestVersionNo}`
+      }
+    }
+  }
+
   getNumericOnlyVersionNo(versionNo: string) {
 
     // Debug
@@ -351,6 +386,9 @@ export class PackageJsonManagedFileService {
 
     // Debug
     const fnName = `${this.clName}.updateDependencies()`
+
+    // Fix existing dependencies if needed
+    await this.fixDependencies(packageJson)
 
     // Add dependencies
     for (var [dependency, minVersionNo] of Object.entries(importsData.dependencies)) {
