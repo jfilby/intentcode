@@ -79,7 +79,7 @@ export class PackageJsonManagedFileService {
 
   async fixDependencyEntries(dependencies: any) {
 
-    for (const [dependency, minVersionNo] of Object.entries(dependencies)) {
+    for (var [dependency, minVersionNo] of Object.entries(dependencies)) {
 
       // Remove ignored dependencies
       if (this.isIgnoredDependency(dependency)) {
@@ -87,12 +87,20 @@ export class PackageJsonManagedFileService {
         continue
       }
 
+      // Switch non-numeric entries to latest
+      if (/[^0-9^]/.test(minVersionNo as string)) {
+        minVersionNo = this.latest
+      }
+
       // Get latest dependencies
       if ((minVersionNo as string).endsWith(this.latest)) {
 
         // Get latest version
-        const latestVersionNo = await
+        var latestVersionNo = await
           this.getLatestVersion(dependency)
+
+        // Use the major version only
+        latestVersionNo = semver.major(latestVersionNo)
 
         // Set the dependency
         dependencies[dependency] = `^${latestVersionNo}`
@@ -271,12 +279,25 @@ export class PackageJsonManagedFileService {
     // Debug
     const fnName = `${this.clName}.setIfHigher()`
 
+    if (ServerOnlyTypes.verbosity >= VerbosityLevels.max) {
+      console.log(`${fnName}: minVersionNo: ${minVersionNo}`)
+      console.log(`${fnName}: latestVersionNo: ${latestVersionNo}`)
+    }
+
     // Check for existing dependency
     var existing = target[dependency]
 
+    // Debug
+    if (ServerOnlyTypes.verbosity >= VerbosityLevels.max) {
+      console.log(`${fnName}: existing: ${existing}`)
+    }
+
+    // Set and return if no existing dpendency
     if (!existing) {
+
       target[dependency] = minVersionNo
       return
+
     } else if (existing.endsWith(this.latest)) {
       existing = latestVersionNo
     }

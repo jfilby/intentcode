@@ -77,8 +77,8 @@ export class ReadJsTsSourceImportsService {
         continue
       }
 
-      // Add to imports (with minVersionNo unknown)
-      importsData.dependencies[importResult.specifier] = '?'
+      // Add to imports (with latest version)
+      importsData.dependencies[importResult.specifier] = 'latest'
     }
   }
 
