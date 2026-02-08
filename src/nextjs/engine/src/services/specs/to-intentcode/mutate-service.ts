@@ -7,7 +7,7 @@ import { UsersService } from '@/serene-core-server/services/users/service'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
 import { AiTasksService } from '@/serene-ai-server/services/ai-tasks/ai-tasks-service'
 import { BuildData, BuildFromFile } from '@/types/build-types'
-import { IntentCodeAiTasks, ServerOnlyTypes } from '@/types/server-only-types'
+import { IntentCodeAiTasks, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { SourceNodeGenerationData } from '@/types/source-graph-types'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
@@ -86,7 +86,9 @@ export class SpecsToIntentCodeMutateService {
     const fnName = `${this.clName}.processQueryResults()`
 
     // Debug
-    console.log(`${fnName}: jsonContent: ` + JSON.stringify(jsonContent))
+    if (ServerOnlyTypes.verbosity >= VerbosityLevels.max) {
+      console.log(`${fnName}: jsonContent: ` + JSON.stringify(jsonContent))
+    }
 
     // Write IntentCode files
     if (jsonContent.intentCode != null) {
