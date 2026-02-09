@@ -51,7 +51,7 @@ export default function DemosPage({ userProfile }: Props) {
             <br/>
 
             <Link
-              href='https://github.com/jfilby/intentcode_Gemini3Hackathon'>
+              href='https://github.com/jfilby/intentcode_gemini3_hackathon/'>
               IntentCode (Gemini 3 Hackathon)
             </Link>
           </div>

@@ -2,6 +2,7 @@ import Head from 'next/head'
 import { Typography } from '@mui/material'
 import { loadServerPage } from '@/services/page/load-server-page'
 import Layout, { pageBodyWidth } from '@/components/layouts/layout'
+import VideoPlayer from '@/components/video/youtube-player'
 
 interface Props {
   userProfile: any
@@ -25,8 +26,22 @@ export default function DemosPage({ userProfile }: Props) {
             </Typography>
 
             <Typography
+              style={{ marginBottom: '0.5em' }}
               variant='h4'>
-              Demo video
+              Gemini 3 hackathon demo video
+            </Typography>
+
+            <VideoPlayer videoId='1DocDRPuQHs' />
+
+            <div style={{ marginBottom: '2em' }} />
+
+            <Typography
+              style={{ marginBottom: '0.5em' }}
+              variant='body1'>
+              An overview of IntentCode with a walkthrough of the Calc and
+              Calc-v2 examples.
+              <br/>
+              Also includes a brief look at an extension with a skills file.
             </Typography>
 
             <div>
