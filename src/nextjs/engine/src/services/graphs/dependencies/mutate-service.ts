@@ -1,7 +1,7 @@
 import { blake3 } from '@noble/hashes/blake3'
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
-import { BaseDataTypes } from '@/shared/types/base-data-types'
+import { BaseDataTypes } from '@/types/base-data-types'
 import { DepDelta, DepDeltaNames } from '@/types/server-only-types'
 import { SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceEdgeModel } from '@/models/source-graph/source-edge-model'

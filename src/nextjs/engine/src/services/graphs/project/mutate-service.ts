@@ -1,6 +1,6 @@
 import { blake3 } from '@noble/hashes/blake3'
 import { PrismaClient } from '@prisma/client'
-import { BaseDataTypes } from '@/shared/types/base-data-types'
+import { BaseDataTypes } from '@/types/base-data-types'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { SourceNodeTypes } from '@/types/source-graph-types'
 

@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
-import { BaseDataTypes } from '@/shared/types/base-data-types'
+import { BaseDataTypes } from '@/types/base-data-types'
 import { AgentUserModel } from '@/serene-ai-server/models/agents/agent-user-model'
 
 // Models

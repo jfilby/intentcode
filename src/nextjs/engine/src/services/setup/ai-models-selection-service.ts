@@ -6,7 +6,7 @@ import { consoleService } from '@/serene-core-server/services/console/service'
 import { AiTechDefs } from '@/serene-ai-server/types/tech-defs'
 import { AiTaskModel } from '@/serene-ai-server/models/ai-tasks/ai-task-model'
 import { AiTaskTechModel } from '@/serene-ai-server/models/ai-tasks/ai-task-tech-model'
-import { BaseDataTypes } from '@/shared/types/base-data-types'
+import { BaseDataTypes } from '@/types/base-data-types'
 import { AiTaskModelPresets, IntentCodeAiTasks, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
 
 // Models

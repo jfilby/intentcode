@@ -1,6 +1,6 @@
 const NodeCache = require('node-cache')
 import { PrismaClient } from '@prisma/client'
-import { BaseDataTypes } from '@/shared/types/base-data-types'
+import { BaseDataTypes } from '@/types/base-data-types'
 import { InstanceSettingNames, ServerOnlyTypes } from '@/types/server-only-types'
 import { InstanceModel } from '@/serene-core-server/models/instances/instance-model'
 import { InstanceSettingModel } from '@/serene-core-server/models/instances/instance-setting-model'

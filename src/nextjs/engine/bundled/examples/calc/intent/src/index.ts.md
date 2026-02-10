@@ -1,3 +1,7 @@
+import:
+- readline-sync
+- ./calc.ts.md
+
 # Index (file)
 
 ## main (function)
@@ -6,8 +10,11 @@
   - Welcome to the Calculator demo!
   - Enter 'exit' to quit
 
+- calc = new Calc()
+
 - Loop until input is 'exit':
-  - input = Read input from the console
-  - answer = Calc.run(input)
+  - input = readline-sync.question('> ')
+  - if input is 'exit' break
+  - answer = calc.run(input)
   - Print the answer
 

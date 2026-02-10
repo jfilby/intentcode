@@ -1,18 +1,7 @@
+import:
+- ./types.ts.md
+
 # Calc (class)
-
-## Operation (enum)
-
-plus = '+'
-minus = '-'
-multiply = '*'
-divide = '/'
-
-
-## InputType (interface)
-
-op?: Operation
-value?: number
-
 
 ## run (function)
 
