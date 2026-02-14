@@ -59,16 +59,20 @@ export class AiModelsSelectionService {
     // Return a selection
     switch (aiTaskTech.tech.variantName) {
 
-      case AiTechDefs.googleGemini_V3ProFree: {
+      case AiTechDefs.amazonNova_V2Pro: {
         return '1'
       }
 
-      case AiTechDefs.googleGemini_V3Pro: {
+      case AiTechDefs.googleGemini_V3ProFree: {
         return '2'
       }
 
-      case AiTechDefs.openAi_Gpt5pt2: {
+      case AiTechDefs.googleGemini_V3Pro: {
         return '3'
+      }
+
+      case AiTechDefs.openAi_Gpt5pt2: {
+        return '4'
       }
 
       default: {
@@ -93,21 +97,27 @@ export class AiModelsSelectionService {
       console.log(`[b] Back`)
 
       if (curModelPreset === '1') {
-        console.log(chalk.bold(`[1] Gemini 3-based (free) - selected`))
+        console.log(chalk.bold(`[1] Amazon Nova 2-based (paid) - selected`))
       } else {
-        console.log(`[1] Gemini 3-based (free)`)
+        console.log(`[1] Amazon Nova 2-based (paid)`)
       }
 
       if (curModelPreset === '2') {
-        console.log(chalk.bold(`[2] Gemini 3-based (paid) - selected`))
+        console.log(chalk.bold(`[2] Gemini 3-based (free) - selected`))
       } else {
-        console.log(`[2] Gemini 3-based (paid)`)
+        console.log(`[2] Gemini 3-based (free)`)
       }
 
       if (curModelPreset === '3') {
-        console.log(chalk.bold(`[3] GPT 5-2-based - selected`))
+        console.log(chalk.bold(`[3] Gemini 3-based (paid) - selected`))
       } else {
-        console.log(`[3] GPT 5-2-based`)
+        console.log(`[3] Gemini 3-based (paid)`)
+      }
+
+      if (curModelPreset === '4') {
+        console.log(chalk.bold(`[4] GPT 5-2-based - selected`))
+      } else {
+        console.log(`[4] GPT 5-2-based`)
       }
 
       // Get menu no
@@ -124,7 +134,7 @@ export class AiModelsSelectionService {
         case '1': {
           await this.setModels(
             prisma,
-            AiTaskModelPresets.gemini3BasedFree)
+            AiTaskModelPresets.amazonNova2Based)
 
           break
         }
@@ -132,12 +142,20 @@ export class AiModelsSelectionService {
         case '2': {
           await this.setModels(
             prisma,
-            AiTaskModelPresets.gemini3BasedPaid)
+            AiTaskModelPresets.gemini3BasedFree)
 
           break
         }
 
         case '3': {
+          await this.setModels(
+            prisma,
+            AiTaskModelPresets.gemini3BasedPaid)
+
+          break
+        }
+
+        case '4': {
           await this.setModels(
             prisma,
             AiTaskModelPresets.gpt5pt2Based)
