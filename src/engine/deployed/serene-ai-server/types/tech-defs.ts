@@ -40,8 +40,10 @@ export class AiTechDefs {
 
   static openAiProvider = 'OpenAI'
   static openRouterProvider = 'OpenRouter'
+  static amazonNovaProvider = 'Amazon Nova'
 
   // Tech protocols: AI
+  static amazonBedrockProtocol = 'Amazon Bedrock'
   static mockedAiProtocol = 'Mocked AI'
   static openAiProtocol = 'OpenAI'
   static geminiProtocol = 'Gemini'
@@ -54,9 +56,6 @@ export class AiTechDefs {
   static mockedLlmPaid = 'Mocked LLM'
   static mockedLlmFree = 'Mocked LLM (free tier)'
 
-  // Last updated: 3rd July Feb 2025
-  // Run the Setup in /admin/setup to install new variants and effect any
-  // upgrade paths in service/tech/data/llms.ts.
   // static googleGemini_V1Pro = 'Google Gemini v1 Pro'
   // static googleGemini_V1pt5Pro = 'Google Gemini v1.5 Pro'
   // static googleGemini_V1pt5Flash = 'Google Gemini v1.5 Flash'
@@ -87,6 +86,10 @@ export class AiTechDefs {
 
   static openAi_TextEmedding3Small = 'OpenAI text-embedding-3-small'
 
+  // Amazon Nova
+  static amazonNova_V2Lite = 'Nova 2 Lite'
+  static amazonNova_V2Pro = 'Nova 2 Pro'
+
   // OpenRouter
   static openRouter_DeepSeekv3_0324_Chutes = 'DeepSeek v3 0324'
   static openRouter_MistralSmall3pt2_24b_Chutes = 'Mistral Small 3.2 24B'
@@ -112,6 +115,9 @@ export class AiTechDefs {
 
   static openAi_TextEmedding3Small_ModelName = 'text-embedding-3-small'
 
+  static amazonNova_V2Pro_ModelName = 'amazon.nova-pro-v1:0'  // Updated over Nova v1 Pro modelId
+  static amazonNova_V2Lite_ModelName = 'us.amazon.nova-2-lite-v1:0'
+
   static openRouter_DeepSeekv3_0324_Chutes_ModelName = 'deepseek/deepseek-chat-v3-0324:free'
   static openRouter_MistralSmall3pt2_24b_Chutes_ModelName = 'mistralai/mistral-small-3.2-24b-instruct-2506:free'
 
@@ -121,6 +127,10 @@ export class AiTechDefs {
 
   // LLM tech providers
   static llmTechProviders = [
+    {
+      name: this.amazonNovaProvider,
+      baseUrl: 'https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1'
+    },
     {
       name: this.googleGeminiProvider
     },
@@ -482,7 +492,32 @@ export class AiTechDefs {
       outputTokens: 1000,
       default: false,
       isAdminOnly: false
-    }
+    },
+    // Amazon Nova: LLMs
+    {
+      provider: this.amazonNovaProvider,
+      variantName: this.amazonNova_V2Lite,
+      resource: this.llmsResource,
+      model: this.amazonNova_V2Lite_ModelName,
+      protocol: this.amazonBedrockProtocol,
+      pricingTier: SereneCoreServerTypes.paid,
+      inputTokens: 1048576,
+      outputTokens: 10000,
+      default: false,
+      isAdminOnly: false
+    },
+    {
+      provider: this.amazonNovaProvider,
+      variantName: this.amazonNova_V2Pro,
+      resource: this.llmsResource,
+      model: this.amazonNova_V2Pro_ModelName,
+      protocol: this.amazonBedrockProtocol,
+      pricingTier: SereneCoreServerTypes.paid,
+      inputTokens: 1048576,
+      outputTokens: 10000,
+      default: false,
+      isAdminOnly: false
+    },
   ]
 
   // Variants for which to ignore jsonMode. This is useful for those that keep

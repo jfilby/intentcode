@@ -124,9 +124,19 @@ export class ChatService {
     // Debug
     const fnName = `${this.clName}.llmRequest()`
 
+    // console.log(`${fnName}: starting..`)
+
     // Validate
     if (agentUser == null) {
       throw new CustomError(`${fnName}: agentUser == null`)
+    }
+
+    if (llmTech == null) {
+      throw new CustomError(`${fnName}: llmTech == null`)
+    }
+
+    if (llmTech.techProvider == null) {
+      throw new CustomError(`${fnName}: llmTech.techProvider == null`)
     }
 
     // Loop until not rate-limited
@@ -234,21 +244,21 @@ export class ChatService {
 
   // Note: don't call directly, rather call llmRequest().
   private async prepAndSendLlmRequest(
-                  prisma: PrismaClient,
-                  llmTech: any | undefined,
-                  chatSession: any,
-                  userProfile: any,
-                  agentUser: any,
-                  messagesWithRoles: any[],
-                  systemPrompt: string | undefined = undefined,
-                  jsonMode: boolean = false,
-                  tryGetFromCache: boolean = false) {
+    prisma: PrismaClient,
+    llmTech: any | undefined,
+    chatSession: any,
+    userProfile: any,
+    agentUser: any,
+    messagesWithRoles: any[],
+    systemPrompt: string | undefined = undefined,
+    jsonMode: boolean = false,
+    tryGetFromCache: boolean = false) {
 
     // Debug
     const fnName = `${this.clName}.prepAndSendLlmRequest()`
 
     // console.log(`${fnName}: starting with jsonMode: ${jsonMode} and ` +
-    //             `tryGetFromCache: ${tryGetFromCache}`)
+    //   `tryGetFromCache: ${tryGetFromCache}`)
 
     // Validate
     if (agentUser == null) {
@@ -270,8 +280,8 @@ export class ChatService {
       // Don't allow use of the LLM cache for JSON requests. This should be
       // done in the calling application after any required validation.
       throw new CustomError(
-                  `${fnName}: use of the LLM cache here, for JSON requests ` +
-                  `before validation, is an anti-pattern (can't proceed)`)
+        `${fnName}: use of the LLM cache here, for JSON requests before ` +
+        `validation, is an anti-pattern (can't proceed)`)
     }
 
     // If llmTechId isn't specified, get the default
@@ -296,10 +306,10 @@ export class ChatService {
         cacheKey != null) {
 
       const llmCacheResults = await
-              llmCacheService.tryGet(
-                prisma,
-                llmTech.id,
-                messagesWithRoles)
+        llmCacheService.tryGet(
+          prisma,
+          llmTech.id,
+          messagesWithRoles)
 
       cacheKey = llmCacheResults.cacheKey
       inputMessageStr = llmCacheResults.inputMessageStr
@@ -338,14 +348,17 @@ export class ChatService {
 
     if (userProfile == null) {
       throw new CustomError(
-                  `${fnName}: no userProfileId given and agent not available`)
+        `${fnName}: no userProfileId given and agent not available`)
     }
+
+    // Debug
+    // console.log(`${fnName}: rate-limit checks..`)
 
     // Check to see if rate limited
     const rateLimitedData = await
-            chatApiUsageService.isRateLimited(
-              prisma,
-              llmTech.id)
+      chatApiUsageService.isRateLimited(
+        prisma,
+        llmTech.id)
 
     // If a rate-limited tech
     if (rateLimitedData != null) {
@@ -366,10 +379,10 @@ export class ChatService {
 
       // Create rate-limited API event
       await rateLimitedApiEventModel.create(
-              prisma,
-              undefined,  // id
-              rateLimitedData.rateLimitedApiId,
-              userProfile.id)
+        prisma,
+        undefined,  // id
+        rateLimitedData.rateLimitedApiId,
+        userProfile.id)
     }
 
     // Validate the Tech
@@ -382,23 +395,29 @@ export class ChatService {
       }
     }
 
+    // Debug
+    // console.log(`${fnName}: calling llmUtilsService.prepareChatMessages..`)
+
     // Prepare messages by provider, but don't add the systemPrompt yet or it
     // will be added in a later step.
     const messagesResults = await
-            llmUtilsService.prepareChatMessages(
-              prisma,
-              llmTech,
-              agentUser,
-              undefined,  // systemPrompt
-              messagesWithRoles)
+      llmUtilsService.prepareChatMessages(
+        prisma,
+        llmTech,
+        agentUser,
+        undefined,  // systemPrompt
+        messagesWithRoles)
+
+    // Debug
+    // console.log(`${fnName}: calling chatMessageService.calcCostInCents..`)
 
     // Calc estimated cost
     const estimatedCostInCents =
-            chatMessageService.calcCostInCents(
-              llmTech,
-              'text',
-              messagesResults.estimatedInputTokens,
-              messagesResults.estimatedOutputTokens)
+      chatMessageService.calcCostInCents(
+        llmTech,
+        'text',
+        messagesResults.estimatedInputTokens,
+        messagesResults.estimatedOutputTokens)
 
     /* Debug
     console.log(`${fnName}: estimated costInCents: ${estimatedCostInCents} ` +
@@ -410,11 +429,11 @@ export class ChatService {
     if (process.env.CHECK_USER_QUOTAS !== 'false') {
 
       const isQuotaAvailable = await
-              resourceQuotasService.isQuotaAvailable(
-                prisma,
-                userProfile.id,
-                SereneCoreServerTypes.credits,
-                estimatedCostInCents)
+        resourceQuotasService.isQuotaAvailable(
+          prisma,
+          userProfile.id,
+          SereneCoreServerTypes.credits,
+          estimatedCostInCents)
 
       if (isQuotaAvailable === false) {
 
@@ -428,48 +447,48 @@ export class ChatService {
 
     // Send messages by provider
     const results = await
-            llmUtilsService.sendChatMessages(
-              prisma,
-              llmTech,
-              agentUser,
-              systemPrompt,
-              messagesResults.messages,
-              jsonMode)
+      llmUtilsService.sendChatMessages(
+        prisma,
+        llmTech,
+        agentUser,
+        systemPrompt,
+        messagesResults.messages,
+        jsonMode)
 
     // Post-proc for non-null results
     if (results != null) {
 
       // Calc cost
       const costInCents =
-              chatMessageService.calcCostInCents(
-                llmTech,
-                'text',
-                results.inputTokens,
-                results.outputTokens)
+        chatMessageService.calcCostInCents(
+          llmTech,
+          'text',
+          results.inputTokens,
+          results.outputTokens)
 
-      /* Debug
+      // Debug
       console.log(
         `${fnName}: costInCents: ${estimatedCostInCents} based on input ` +
         `tokens: ${results.inputTokens} and output tokens: ` +
-        `${results.outputTokens}`) */
+        `${results.outputTokens}`)
 
       // Create ChatMessageCreated
       await chatMessageCreatedModel.create(
-              prisma,
-              agentUser.userProfileId,
-              chatSession.instanceId,
-              llmTech.id,
-              true,  // sentByAi
-              results.inputTokens,
-              results.outputTokens,
-              costInCents)
+        prisma,
+        agentUser.userProfileId,
+        chatSession.instanceId,
+        llmTech.id,
+        true,  // sentByAi
+        results.inputTokens,
+        results.outputTokens,
+        costInCents)
 
       // Inc used quota
       await resourceQuotasMutateService.incQuotaUsage(
-              prisma,
-              chatSession.createdById,
-              SereneCoreServerTypes.credits,
-              costInCents)
+        prisma,
+        chatSession.createdById,
+        SereneCoreServerTypes.credits,
+        costInCents)
     }
 
     // Empty json
@@ -496,13 +515,13 @@ export class ChatService {
       if (tryGetFromCache === true) {
 
         await llmCacheService.save(
-                prisma,
-                llmTech.id,
-                cacheKey!,
-                inputMessageStr!,
-                results.message,
-                results.messages,
-                jsonEmpty)
+          prisma,
+          llmTech.id,
+          cacheKey!,
+          inputMessageStr!,
+          results.message,
+          results.messages,
+          jsonEmpty)
         }
     } else {
       throw new CustomError(`${fnName}: results == null`)

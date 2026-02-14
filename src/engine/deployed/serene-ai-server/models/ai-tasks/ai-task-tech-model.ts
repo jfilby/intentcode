@@ -74,7 +74,11 @@ export class AiTaskTechModel {
     try {
       return await prisma.aiTaskTech.findFirst({
         include: {
-          tech: true,
+          tech: {
+            include: {
+              techProvider: true
+            }
+          }
         },
         where: {
           aiTaskId: aiTaskId,

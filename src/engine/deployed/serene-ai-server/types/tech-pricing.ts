@@ -113,5 +113,16 @@ export class AiTechPricing {
       inputTokens: 0.10,
       outputTokens: 0.40
     },
+
+    // Amazon Nova 2: https://ai.google.dev/gemini-api/docs/pricing
+    // Amazon Nova 2 Pro / paid / text
+    [AiTechDefs.amazonNova_V2Pro + `/${SereneCoreServerTypes.paid}/${AiTechPricing.text}`]: {
+      inputTokens: 1.25,
+      outputTokens: 10.00
+    },
+    [AiTechDefs.amazonNova_V2Lite + `/${SereneCoreServerTypes.paid}/${AiTechPricing.text}`]: {
+      inputTokens: 0.3,
+      outputTokens: 2.50
+    },
   }
 }

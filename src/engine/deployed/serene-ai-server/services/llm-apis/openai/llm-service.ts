@@ -2,12 +2,11 @@ import OpenAI from 'openai'
 import { PrismaClient } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { SereneCoreServerTypes } from '@/serene-core-server/types/user-types'
-import { TechModel } from '@/serene-core-server/models/tech/tech-model'
 import { TechProviderApiKeyModel } from '@/serene-core-server/models/tech/tech-provider-api-key-model'
 import { TechProviderModel } from '@/serene-core-server/models/tech/tech-provider-model'
 import { AiTechDefs } from '../../../types/tech-defs'
 import { FeatureFlags } from '../../../types/feature-flags'
-import { OpenAIGenericLlmService } from './llm-generic-service'
+import { OpenAIMessagesService } from './messages-service'
 
 // OpenAI clients
 const openAiClients = new Map<string, OpenAI>()
@@ -15,6 +14,9 @@ const openAiClients = new Map<string, OpenAI>()
 // Models
 const techProviderModel = new TechProviderModel()
 const techProviderApiKeyModel = new TechProviderApiKeyModel()
+
+// Services
+const openAIMessagesService = new OpenAIMessagesService()
 
 // Class
 export class OpenAiLlmService {
@@ -28,12 +30,6 @@ export class OpenAiLlmService {
   gpt3pt5Turbo = 'gpt-3.5-turbo'
   gpt4 = 'gpt-4'
   gpt4Turbo = 'gpt-4-1106-preview'
-
-  // Models
-  techModel = new TechModel()
-
-  // Services
-  openAIGenericLlmService = new OpenAIGenericLlmService()
 
   // Code
   async getOrCreateClient(
@@ -68,11 +64,14 @@ export class OpenAiLlmService {
       throw new CustomError(`${fnName}: no API keys for ${techProvider.name}`)
     }
 
+    // Debug
+    // console.log(`${fnName}: baseURL: ${techProvider.baseUrl}`)
+
     // Create a new client
     const openAi = new OpenAI({
-            apiKey: techProviderApiKeys[0].apiKey,
-            baseURL: techProvider.baseUrl
-          })
+      apiKey: techProviderApiKeys[0].apiKey,
+      baseURL: techProvider.baseURL
+    })
 
     // Save
     openAiClients.set(
@@ -126,9 +125,12 @@ export class OpenAiLlmService {
     }
 
     // Debug
+    // console.log(`${fnName}: typeof messagesWithRoles: ` +
+    //   `${typeof messagesWithRoles}`)
+
     // console.log(`${fnName}: calling this.openAiApi.createChatCompletion ` +
-    //             `with model: ${model} messagesWithRoles: ` +
-    //             `${JSON.stringify(messagesWithRoles)}`)
+    //   `with model: ${tech.model} messagesWithRoles: ` +
+    //   `${JSON.stringify(messagesWithRoles)}`)
 
     // Set Completions options
     var completionsOptions: any = {
@@ -191,13 +193,9 @@ export class OpenAiLlmService {
     }
 
     // Parse the results
-    // TODO: is a special conversion function required? Maybe one that calls
-    // convertOpenAiResults? Need inputTokens and outputTokens.
     const chatCompletionResults =
-            this.openAIGenericLlmService.convertOpenAiChatCompletionResults(
+            openAIMessagesService.convertOpenAiChatCompletionResults(
               completion)
-
-    // Cache the results
 
     // Return results
     return chatCompletionResults

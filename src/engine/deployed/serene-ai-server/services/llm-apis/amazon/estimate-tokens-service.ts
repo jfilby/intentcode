@@ -1,9 +1,9 @@
 import { CustomError } from '@/serene-core-server/types/errors'
 
-export class EstimateOpenAiTokensService {
+export class EstimateAmazonBedrockTokensService {
 
   // Consts
-  clName = 'EstimateOpenAiTokensService'
+  clName = 'EstimateAmazonBedrockTokensService'
 
   estimatedOutputTokens = 50
 
@@ -36,14 +36,10 @@ export class EstimateOpenAiTokensService {
       //   typeof message.content)
 
       // Add messages (if a string)
-      if (message.content != null) {
+      for (const messageContent of message.content) {
 
         // OpenAI format
-        words += message.content.split(' ').length
-
-      } else {
-        throw new CustomError(`${fnName}: content not found, full messages: ` +
-          JSON.stringify(messages))
+        words += messageContent.text.split(' ').length
       }
     }
 

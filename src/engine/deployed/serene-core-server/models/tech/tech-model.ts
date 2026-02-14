@@ -87,8 +87,10 @@ export class TechModel {
     return tech
   }
 
-  async getById(prisma: PrismaClient,
-                id: string) {
+  async getById(
+    prisma: PrismaClient,
+    id: string,
+    includeTechProvider: boolean = true) {
 
     // Debug
     const fnName = `${this.clName}.getById()`
@@ -103,6 +105,9 @@ export class TechModel {
 
     try {
       tech = await prisma.tech.findUnique({
+        include: {
+          techProvider: includeTechProvider
+        },
         where: {
           id: id
         }
@@ -119,8 +124,9 @@ export class TechModel {
   }
 
   async getDefaultProvider(
-          prisma: PrismaClient,
-          resource: string) {
+    prisma: PrismaClient,
+    resource: string,
+    includeTechProvider: boolean = true) {
 
     // Debug
     const fnName = `${this.clName}.getByKey()`
@@ -132,6 +138,9 @@ export class TechModel {
 
     try {
       tech = await prisma.tech.findFirst({
+        include: {
+          techProvider: includeTechProvider
+        },
         where: {
           isDefaultProvider: true,
           resource: resource
@@ -149,8 +158,9 @@ export class TechModel {
   }
 
   async getByVariantName(
-          prisma: PrismaClient,
-          variantName: string) {
+    prisma: PrismaClient,
+    variantName: string,
+    includeTechProvider: boolean = true) {
 
     // Debug
     const fnName = `${this.clName}.getByVariantName()`
@@ -168,6 +178,9 @@ export class TechModel {
 
     try {
       tech = await prisma.tech.findFirst({
+        include: {
+          techProvider: includeTechProvider
+        },
         where: {
           variantName: variantName
         }

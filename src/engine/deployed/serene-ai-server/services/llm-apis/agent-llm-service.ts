@@ -56,44 +56,44 @@ export class AgentLlmService {
 
     // Get or create agent
     const agentUser = await
-            agentsService.getOrCreate(
-              prisma,
-              agentUniqueRefId,
-              agentName,
-              agentRole,
-              null)
+      agentsService.getOrCreate(
+        prisma,
+        agentUniqueRefId,
+        agentName,
+        agentRole,
+        null)
 
     // Get ChatSettings
     const chatSettings = await
-            chatSettingsModel.getByName(
-              prisma,
-              chatSettingsName)
+      chatSettingsModel.getByName(
+        prisma,
+        chatSettingsName)
 
     if (chatSettings == null) {
       throw new CustomError(`${fnName}: chatSettings == null for ` +
-                            chatSettingsName)
+        chatSettingsName)
     }
 
     // Create a ChatSession
     const chatSession = await
-            chatSessionModel.create(
-              prisma,
-              undefined,  // id
-              chatSettings.id,
-              instanceId,
-              SereneAiServerOnlyTypes.activeStatus,
-              false,      // isEncryptedAtRest
-              null,       // name
-              null,       // externalIntegration
-              null,       // externalId
-              userProfileId)  // createdById
+      chatSessionModel.create(
+        prisma,
+        undefined,  // id
+        chatSettings.id,
+        instanceId,
+        SereneAiServerOnlyTypes.activeStatus,
+        false,      // isEncryptedAtRest
+        null,       // name
+        null,       // externalIntegration
+        null,       // externalId
+        userProfileId)  // createdById
 
     // Build the messages
     const inputMessagesWithRoles = await
-            llmUtilsService.buildMessagesWithRolesForSinglePrompt(
-              prisma,
-              tech,
-              prompt)
+      llmUtilsService.buildMessagesWithRolesForSinglePrompt(
+        prisma,
+        tech,
+        prompt)
 
     // Make the LLM request (with retries)
     var chatCompletionResults: any = undefined

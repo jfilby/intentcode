@@ -1,16 +1,15 @@
 import { CustomError } from '@/serene-core-server/types/errors'
-import { SereneAiServerOnlyTypes } from '../../../types/server-only-types'
-import { AiTechDefs } from '../../../types/tech-defs'
+import { ChatMessage, SereneAiServerOnlyTypes } from '../../../types/server-only-types'
 import { EstimateOpenAiTokensService } from './estimate-tokens-service'
 
 // Services
 const estimateOpenAiTokensService = new EstimateOpenAiTokensService()
 
 // Class
-export class OpenAIGenericLlmService {
+export class OpenAIMessagesService {
 
   // Consts
-  clName = 'OpenAIGenericLlmService'
+  clName = 'OpenAIMessagesService'
 
   // OpenAI consts
   stopReason = 'stop'
@@ -19,23 +18,123 @@ export class OpenAIGenericLlmService {
   nullReason = 'null'
 
   // Code
-  convertContent(
-    tech: any,
-    message: string): any[] | string {
+  addSystemRoleAndPrompt(
+    name: string,
+    role: string,
+    anonymize: boolean,
+    systemPrompt: string | undefined,
+    messagesWithRoles: any[]) {
 
-    // Special handling for Amazon Nova 2
-    if (tech.techProvider.name === AiTechDefs.amazonNovaProvider) {
+    // Set the role with a system message
+    if (role != null) {
 
-      return [
-        {
-          // type: 'text',
-          text: message
-        }
-      ]
+      // If the role isn't anonymous, start with a name
+      var roleContent: string
+
+      if (anonymize === false) {
+        roleContent = `You are ${name}, a ${role}.`
+      } else {
+        roleContent = `You are a ${role}.`
+      }
+
+      messagesWithRoles.push({
+        role: SereneAiServerOnlyTypes.chatGptSystemMessageRole,
+        content: roleContent
+      })
     }
 
-    // OpenAI format (remains string)
-    return message
+    // System prompt
+    if (systemPrompt != null) {
+
+      messagesWithRoles.push({
+        role: SereneAiServerOnlyTypes.chatGptSystemMessageRole,
+        content: systemPrompt
+      })
+    }
+  }
+
+  buildMessagesWithRoles(
+    chatMessages: any[],
+    fromContents: ChatMessage[],
+    userChatParticipantIds: string[],
+    agentChatParticipantIds: string[]) {
+
+    // Debug
+    const fnName = `${this.clName}.buildMessagesWithRoles()`
+
+    /* console.log(`${fnName}: chatMessages: ` + JSON.stringify(chatMessages))
+
+    console.log(`${fnName}: userChatParticipantIds: ` +
+                JSON.stringify(userChatParticipantIds))
+
+    console.log(`${fnName}: agentChatParticipantIds: ` +
+                JSON.stringify(agentChatParticipantIds)) */
+
+    // Messages var
+    var messagesWithRoles: any[] = []
+
+    // If this is the first message, then add a system prompt
+    if (chatMessages.length === 0) {
+      messagesWithRoles.push()
+    }
+
+    // Build messages with roles
+    for (const chatMessage of chatMessages) {
+
+      // Determine the role
+      var role: string = ''
+
+      if (chatMessage.sentByAi === false) {
+        role = SereneAiServerOnlyTypes.chatGptUserMessageRole
+      } else if (chatMessage.sentByAi === true) {
+        role = SereneAiServerOnlyTypes.chatGptModelMessageRole
+      } else {
+        throw new CustomError(
+          `${fnName}: unhandled chatMessage.sentByAi: ` +
+          JSON.stringify(chatMessage.sentByAi))
+      }
+
+      // Add chat message
+      messagesWithRoles.push({
+        role: role,
+        parts: JSON.parse(chatMessage.message)
+      })
+    }
+
+    // Add latest message from the user
+    messagesWithRoles.push({
+      role: SereneAiServerOnlyTypes.chatGptUserMessageRole,
+      parts: fromContents
+    })
+
+    // Return
+    return messagesWithRoles
+  }
+
+  buildMessagesWithRolesForSinglePrompt(prompt: string) {
+
+    // Debug
+    const fnName = `${this.clName}.buildMessagesWithRolesForSinglePrompt()`
+
+    // Messages var
+    var messagesWithRoles: any[] = []
+
+    // Add a system prompt
+    messagesWithRoles.push()
+
+    // Determine the role
+    var role: string = ''
+
+    role = SereneAiServerOnlyTypes.chatGptUserMessageRole
+
+    // Add chat message
+    messagesWithRoles.push({
+      role: role,
+      parts: [{ text: prompt }]
+    })
+
+    // Return
+    return messagesWithRoles
   }
 
   convertOpenAiChatCompletionResults(openAiResults: any) {
@@ -85,7 +184,7 @@ export class OpenAIGenericLlmService {
     // Debug
     const fnName = `${this.clName}.convertOpenAiResults()`
 
-    console.log(`${fnName}: results: ` + JSON.stringify(results))
+    // console.log(`${fnName}: results: ` + JSON.stringify(results))
 
     // Validate
     if (openAiResults.choices == null) {
@@ -156,46 +255,16 @@ export class OpenAIGenericLlmService {
 
     // console.log(`${fnName}: starting with tech: ` + JSON.stringify(tech))
 
-    // System role
-    var systemRole = SereneAiServerOnlyTypes.chatGptSystemMessageRole
-
-    if (tech.techProvider.name === AiTechDefs.amazonNovaProvider) {
-      systemRole = SereneAiServerOnlyTypes.chatGptAssistantMessageRole
-    }
-
     // Create messagesWithRoles
     var messagesWithRoles: any[] = []
 
-    // Set the role with a system message
-    if (role != null) {
-
-      // If the role isn't anonymous, start with a name
-      var roleContent: string
-
-      if (anonymize === false) {
-        roleContent = `You are ${name}, a ${role}.`
-      } else {
-        roleContent = `You are a ${role}.`
-      }
-
-      messagesWithRoles.push({
-        role: systemRole,
-        content: this.convertContent(
-          tech,
-          roleContent)
-      })
-    }
-
-    // System prompt
-    if (systemPrompt != null) {
-
-      messagesWithRoles.push({
-        role: systemRole,
-        content: this.convertContent(
-          tech,
-          systemPrompt)
-      })
-    }
+    // Set the system role and prompt
+    this.addSystemRoleAndPrompt(
+      name,
+      role,
+      anonymize,
+      systemPrompt,
+      messagesWithRoles)
   
     // Inform messages set the context
     for (const message of messages) {
@@ -203,19 +272,7 @@ export class OpenAIGenericLlmService {
       // Get message content
       var content = ''
 
-      if (Array.isArray(message.content)) {
-
-        // Amazon Nova format
-        for (const messageContent of message.content) {
-
-          if (content.length > 0) {
-            content += '\n'
-          }
-
-          content += messageContent.text
-        }
-
-      } else if (message.content) {
+      if (message.content) {
 
         // If in OpenAI format
         content = message.content
@@ -251,17 +308,14 @@ export class OpenAIGenericLlmService {
 
         default: {
           throw new CustomError(`${fnName}: unhandled message role ` +
-                                JSON.stringify(message.role)
-          )
+            JSON.stringify(message.role))
         }
       }
 
       // Add to messages
       messagesWithRoles.push({
         role: role,
-        content: this.convertContent(
-          tech,
-          content)
+        content: content
       })
     }
 

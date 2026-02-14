@@ -31,13 +31,6 @@ export class GoogleGeminiLlmService {
   // Consts
   clName = 'GoogleGeminiLlmService'
 
-  okMsg = 'ok'
-
-  /* apiVersionByModelName = {
-    [AiTechDefs.googleGeminiV1ProModelName]: 'v1',
-    [AiTechDefs.googleGeminiV1pt5ProModelName]: 'v1beta'
-  } */
-
   // Code
   convertGeminiChatCompletionResults(
     completion: ChatCompletion,
@@ -179,8 +172,9 @@ export class GoogleGeminiLlmService {
       console.error(`${fnName}: e: ` + JSON.stringify(e))
 
       if (response != null) {
+
         console.error(`${fnName}: statusCode: ` +
-                      JSON.stringify(response.statusCode))
+          JSON.stringify(response.statusCode))
       }
     }
 
@@ -277,102 +271,6 @@ export class GoogleGeminiLlmService {
 
     // Return
     return geminiAiClient
-  }
-
-  prepareMessages(
-    llmTech: any,
-    name: string,
-    role: string,
-    systemPrompt: string | undefined,
-    messages: any[],
-    anonymize: boolean) {
-
-    // Debug
-    const fnName = `${this.clName}.prepareMessages()`
-
-    // console.log(`${fnName}: messages: ${JSON.stringify(messages)}`)
-
-    // Create messagesWithRoles
-    var messagesWithRoles: any[] = []
-
-    // Set the role with a system message
-    if (role != null) {
-
-      // If the role isn't anonymous, start with a name
-      var systemAndRolePrompt: string
-
-      if (anonymize === false) {
-        systemAndRolePrompt = `You are ${name}, a ${role}.`
-      } else {
-        systemAndRolePrompt = `You are a ${role}.`
-      }
-
-      if (systemPrompt != null) {
-        systemAndRolePrompt += '\n' + systemPrompt
-      }
-
-      // Add messages
-      // Gemini doesn't have the system role
-      messagesWithRoles.push({
-        role: SereneAiServerOnlyTypes.geminiUserMessageRole,
-        parts: [{type: '', text: systemAndRolePrompt}]
-      })
-
-      messagesWithRoles.push({
-        role: SereneAiServerOnlyTypes.geminiModelMessageRole,
-        parts: [{type: '', text: this.okMsg}]
-      })
-    }
-
-    // Inform messages set the context
-    var previousRole = ''
-
-    for (const message of messages) {
-
-      // Test
-      // console.log(`${fnName}: message: ${JSON.stringify(message)}`)
-
-      // Fill in a model response if none found
-      if (previousRole === SereneAiServerOnlyTypes.geminiUserMessageRole &&
-          message.role === SereneAiServerOnlyTypes.geminiUserMessageRole) {
-
-        messagesWithRoles.push({
-          role: SereneAiServerOnlyTypes.geminiModelMessageRole,
-          parts: [{type: '', text: this.okMsg}]
-        })
-      }
-
-      // Add message
-      messagesWithRoles.push({
-        role: message.role,
-        parts: message.parts
-      })
-
-      // Set previousRole
-      previousRole = message.role
-    }
-
-    // console.log(`${fnName}: messagesWithRoles: ` +
-    //             JSON.stringify(messagesWithRoles))
-
-    // Estimate the input and output tokens
-    const estimatedInputTokens =
-            estimateGeminiTokensService.estimateInputTokens(messagesWithRoles)
-
-    const estimatedOutputTokens =
-            estimateGeminiTokensService.estimatedOutputTokens
-
-    // Variant name: may have to determine this based on input tokens and the
-    // estimated output tokens.
-    const variantName = llmTech.variantName
-
-    // Return
-    return {
-      messages: messagesWithRoles,
-      variantName: variantName,
-      estimatedInputTokens: estimatedInputTokens,
-      estimatedOutputTokens: estimatedOutputTokens
-    }
   }
 
   async sendChatMessages(

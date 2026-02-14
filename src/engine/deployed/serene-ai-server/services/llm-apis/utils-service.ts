@@ -4,29 +4,30 @@ import { AiTechDefs } from '../../types/tech-defs'
 import { ChatSettingsModel } from '@/serene-core-server/models/chat/chat-settings-model'
 import { TechModel } from '@/serene-core-server/models/tech/tech-model'
 import { ChatMessage, SereneAiServerOnlyTypes } from '../../types/server-only-types'
-import { AgentsService } from '../agents/agents-service'
+import { AmazonBedrockMessagesService } from './amazon/messages-service'
+import { AmazonBedrockLlmService } from './amazon/llm-service'
 import { GoogleGeminiLlmService } from './google-gemini/llm-api'
-import { GoogleGeminiLlmUtilsService } from './google-gemini/utils'
-import { OpenAIGenericLlmService } from './openai/llm-generic-service'
+import { GoogleGeminiMessagesService } from './google-gemini/messages-service'
+import { OpenAIMessagesService } from './openai/messages-service'
 import { OpenAiLlmService } from './openai/llm-service'
-import { OpenAiLlmUtilsService } from './openai/utils'
 
+// Models
+const chatSettingsModel = new ChatSettingsModel()
+const techModel = new TechModel()
+
+// Services
+const amazonBedrockMessagesService = new AmazonBedrockMessagesService()
+const amazonBedrockLlmService = new AmazonBedrockLlmService()
+const googleGeminiLlmService = new GoogleGeminiLlmService()
+const googleGeminiMessagesService = new GoogleGeminiMessagesService()
+const openAIMessagesService = new OpenAIMessagesService()
+const openAiLlmService = new OpenAiLlmService()
+
+// Class
 export class LlmUtilsService {
 
   // Consts
   clName = 'LlmUtilsService'
-
-  // Models
-  chatSettingsModel = new ChatSettingsModel()
-  techModel = new TechModel()
-
-  // Services
-  agentsService = new AgentsService()
-  googleGeminiLlmService = new GoogleGeminiLlmService()
-  googleGeminiLlmUtilsService = new GoogleGeminiLlmUtilsService()
-  openAIGenericLlmService = new OpenAIGenericLlmService()
-  openAiLlmService = new OpenAiLlmService()
-  openAiLlmUtilsService = new OpenAiLlmUtilsService()
 
   // Code
   buildMessagesWithRoles(
@@ -42,26 +43,34 @@ export class LlmUtilsService {
     // Route to appropriate LLM utils
     switch (tech.protocol) {
 
+      case AiTechDefs.amazonBedrockProtocol: {
+        return amazonBedrockMessagesService.buildMessagesWithRoles(
+          chatMessages,
+          fromContents,
+          userChatParticipantIds,
+          agentChatParticipantIds)
+      }
+
       case AiTechDefs.openAiProtocol: {
-        return this.openAiLlmUtilsService.buildMessagesWithRoles(
-                 chatMessages,
-                 fromContents,
-                 userChatParticipantIds,
-                 agentChatParticipantIds)
+        return openAIMessagesService.buildMessagesWithRoles(
+          chatMessages,
+          fromContents,
+          userChatParticipantIds,
+          agentChatParticipantIds)
       }
 
       case AiTechDefs.geminiProtocol: {
-        return this.googleGeminiLlmUtilsService.buildMessagesWithRoles(
-                 chatMessages,
-                 fromContents,
-                 userChatParticipantIds,
-                 agentChatParticipantIds)
+        return googleGeminiMessagesService.buildMessagesWithRoles(
+          chatMessages,
+          fromContents,
+          userChatParticipantIds,
+          agentChatParticipantIds)
       }
 
       default: {
         throw new CustomError(
-                    `${fnName}: unhandled protocol: ${tech.protocol} ` +
-                    `for tech.id: ${tech.id}`)
+          `${fnName}: unhandled protocol: ${tech.protocol} ` +
+          `for tech.id: ${tech.id}`)
       }
     }
   }
@@ -78,7 +87,7 @@ export class LlmUtilsService {
     if (tech == null) {
 
       tech = await
-        this.techModel.getByVariantName(
+        techModel.getByVariantName(
           prisma,
           process.env.DEFAULT_LLM_VARIANT as string)
     }
@@ -86,32 +95,37 @@ export class LlmUtilsService {
     // Route to appropriate LLM utils
     switch (tech.protocol) {
 
+      case AiTechDefs.amazonBedrockProtocol: {
+        return amazonBedrockMessagesService.buildMessagesWithRolesForSinglePrompt(
+          prompt)
+      }
+
       case AiTechDefs.openAiProtocol: {
-        return this.openAiLlmUtilsService.buildMessagesWithRolesForSinglePrompt(
-                 prompt)
+        return openAIMessagesService.buildMessagesWithRolesForSinglePrompt(
+          prompt)
       }
 
       case AiTechDefs.geminiProtocol: {
-        return this.googleGeminiLlmUtilsService.buildMessagesWithRolesForSinglePrompt(
-                 prompt)
+        return googleGeminiMessagesService.buildMessagesWithRolesForSinglePrompt(
+          prompt)
       }
 
       default: {
         throw new CustomError(
-                    `${fnName}: unhandled protocol: ${tech.protocol} ` +
-                    `for tech.id: ${tech.id}`)
+          `${fnName}: unhandled protocol: ${tech.protocol} ` +
+          `for tech.id: ${tech.id}`)
       }
     }
   }
 
   async getOrCreateChatSettings(
-          prisma: PrismaClient,
-          baseChatSettingsId: string | null,
-          userProfileId: string,
-          isEncryptedAtRest: boolean | null,
-          isJsonMode: boolean | null,
-          prompt: string | null,
-          appCustom: any | null) {
+    prisma: PrismaClient,
+    baseChatSettingsId: string | null,
+    userProfileId: string,
+    isEncryptedAtRest: boolean | null,
+    isJsonMode: boolean | null,
+    prompt: string | null,
+    appCustom: any | null) {
 
     // Debug
     const fnName = `${this.clName}.getOrCreateChatSettings()`
@@ -124,7 +138,7 @@ export class LlmUtilsService {
     if (baseChatSettingsId == null) {
 
       const baseChatSettingsMany = await
-              this.chatSettingsModel.getByBaseChatSettingsId(
+              chatSettingsModel.getByBaseChatSettingsId(
                 prisma,
                 null)
 
@@ -146,7 +160,7 @@ export class LlmUtilsService {
           baseChatSettingsId !== defaultBaseChatSettingsId) {
 
         baseChatSettings = await
-          this.chatSettingsModel.getById(
+          chatSettingsModel.getById(
             prisma,
             baseChatSettingsId)
       }
@@ -197,7 +211,7 @@ export class LlmUtilsService {
 
       // Create ChatSettings record
       chatSettings = await
-        this.chatSettingsModel.create(
+        chatSettingsModel.create(
           prisma,
           baseChatSettingsId,
           SereneAiServerOnlyTypes.activeStatus,
@@ -218,11 +232,11 @@ export class LlmUtilsService {
   }
 
   async prepareChatMessages(
-          prisma: PrismaClient,
-          tech: any,
-          agentUser: any,
-          systemPrompt: string | undefined,
-          messagesWithRoles: any[]) {
+    prisma: PrismaClient,
+    tech: any,
+    agentUser: any,
+    systemPrompt: string | undefined,
+    messagesWithRoles: any[]) {
 
     // Debug
     const fnName = `${this.clName}.prepareChatMessages()`
@@ -235,28 +249,40 @@ export class LlmUtilsService {
     // Route to appropriate LLM utils
     switch (tech.protocol) {
 
+      case AiTechDefs.amazonBedrockProtocol: {
+
+        // Prepare messages
+        return amazonBedrockMessagesService.prepareMessages(
+          tech,
+          agentUser.name,
+          agentUser.role,
+          systemPrompt,
+          messagesWithRoles,
+          false)  // anonymize
+      }
+
       case AiTechDefs.openAiProtocol: {
 
         // Prepare messages
-        return this.openAIGenericLlmService.prepareMessages(
-                tech,
-                agentUser.name,
-                agentUser.role,
-                systemPrompt,
-                messagesWithRoles,
-                false)  // anonymize
+        return openAIMessagesService.prepareMessages(
+          tech,
+          agentUser.name,
+          agentUser.role,
+          systemPrompt,
+          messagesWithRoles,
+          false)  // anonymize
       }
 
       case AiTechDefs.geminiProtocol: {
 
         // Prepare messages
-        return await this.googleGeminiLlmService.prepareMessages(
-                       tech,
-                       agentUser.name,
-                       agentUser.role,
-                       systemPrompt,
-                       messagesWithRoles,
-                       false)  // anonymize
+        return await googleGeminiMessagesService.prepareMessages(
+          tech,
+          agentUser.name,
+          agentUser.role,
+          systemPrompt,
+          messagesWithRoles,
+          false)  // anonymize
       }
 
       case AiTechDefs.mockedAiProtocol: {
@@ -278,70 +304,92 @@ export class LlmUtilsService {
   }
 
   async sendChatMessages(
-          prisma: PrismaClient,
-          tech: any,
-          agentUser: any,
-          systemPrompt: string | undefined,
-          messages: any[],
-          jsonMode: boolean) {
+    prisma: PrismaClient,
+    tech: any,
+    agentUser: any,
+    systemPrompt: string | undefined,
+    messages: any[],
+    jsonMode: boolean) {
 
     // Debug
     const fnName = `${this.clName}.sendChatMessages()`
 
+    // console.log(`${fnName}: starting..`)
+
     // Route to appropriate LLM utils
     switch (tech.protocol) {
+
+      case AiTechDefs.amazonBedrockProtocol: {
+
+        // Prepare messages
+        const prepareMessagesResults =
+          amazonBedrockMessagesService.prepareMessages(
+            tech,
+            agentUser.name,
+            agentUser.role,
+            systemPrompt,
+            messages,
+            false)  // anonymize
+
+        // Amazon Bedrock LLM request
+        return await amazonBedrockLlmService.sendChatMessages(
+          prisma,
+          tech,
+          prepareMessagesResults.messages,
+          jsonMode)
+      }
 
       case AiTechDefs.openAiProtocol: {
 
         // Prepare messages
         const prepareMessagesResults =
-                this.openAIGenericLlmService.prepareMessages(
-                  tech,
-                  agentUser.name,
-                  agentUser.role,
-                  systemPrompt,
-                  messages,
-                  false)  // anonymize
+          openAIMessagesService.prepareMessages(
+            tech,
+            agentUser.name,
+            agentUser.role,
+            systemPrompt,
+            messages,
+            false)  // anonymize
 
         // Gemini LLM request
-        return await this.openAiLlmService.sendChatMessages(
-                       prisma,
-                       tech,
-                       prepareMessagesResults.messages,
-                       jsonMode)
+        return await openAiLlmService.sendChatMessages(
+          prisma,
+          tech,
+          prepareMessagesResults.messages,
+          jsonMode)
       }
 
       case AiTechDefs.geminiProtocol: {
 
         // Prepare messages
         const prepareMessagesResults =
-                this.googleGeminiLlmService.prepareMessages(
-                  tech,
-                  agentUser.name,
-                  agentUser.role,
-                  systemPrompt,
-                  messages,
-                  false)  // anonymize
+          googleGeminiMessagesService.prepareMessages(
+            tech,
+            agentUser.name,
+            agentUser.role,
+            systemPrompt,
+            messages,
+            false)  // anonymize
 
         // Gemini LLM request
-        return await this.googleGeminiLlmService.sendChatMessages(
-                       prisma,
-                       tech,
-                       prepareMessagesResults.messages,
-                       jsonMode)
+        return await googleGeminiLlmService.sendChatMessages(
+          prisma,
+          tech,
+          prepareMessagesResults.messages,
+          jsonMode)
       }
 
       case AiTechDefs.mockedAiProtocol: {
 
         // Prepare messages
         const prepareMessagesResults =
-                this.openAIGenericLlmService.prepareMessages(
-                  tech,
-                  agentUser.name,
-                  agentUser.role,
-                  systemPrompt,
-                  messages,
-                  false)  // anonymize
+          openAIMessagesService.prepareMessages(
+            tech,
+            agentUser.name,
+            agentUser.role,
+            systemPrompt,
+            messages,
+            false)  // anonymize
 
         // Return without sending to any LLM API
         return {
@@ -359,8 +407,8 @@ export class LlmUtilsService {
 
       default: {
         throw new CustomError(
-                    `${fnName}: unhandled protocol: ${tech.protocol} ` +
-                    `for tech.id: ${tech.id}`)
+          `${fnName}: unhandled protocol: ${tech.protocol} ` +
+          `for tech.id: ${tech.id}`)
       }
     }
   }
