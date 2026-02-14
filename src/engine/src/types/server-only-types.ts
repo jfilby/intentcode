@@ -13,6 +13,7 @@ export enum IntentCodeAiTasks {
 }
 
 export enum AiTaskModelPresets {
+  amazonNova2Based = 'amazonNova2Based',
   gemini3BasedFree = 'gemini3BasedFree',
   gemini3BasedPaid = 'gemini3BasedPaid',
   gpt5pt2Based = 'gpt5pt2Based'
@@ -42,12 +43,14 @@ export class ServerOnlyTypes {
   static namespace = 'intentcode'
 
   static compilerModels: Record<string, string> = {
+    [AiTaskModelPresets.amazonNova2Based]: AiTechDefs.amazonNova_V2Pro,
     [AiTaskModelPresets.gemini3BasedFree]: AiTechDefs.googleGemini_V3ProFree,
     [AiTaskModelPresets.gemini3BasedPaid]: AiTechDefs.googleGemini_V3Pro,
     [AiTaskModelPresets.gpt5pt2Based]: AiTechDefs.openAi_Gpt5pt2
   }
 
   static indexerModels: Record<string, string> = {
+    [AiTaskModelPresets.amazonNova2Based]: AiTechDefs.amazonNova_V2Pro,
     [AiTaskModelPresets.gemini3BasedFree]: AiTechDefs.googleGemini_V2pt5FlashFree,
     [AiTaskModelPresets.gemini3BasedPaid]: AiTechDefs.googleGemini_V2pt5Flash,
     [AiTaskModelPresets.gpt5pt2Based]: AiTechDefs.openAi_Gpt5Mini
