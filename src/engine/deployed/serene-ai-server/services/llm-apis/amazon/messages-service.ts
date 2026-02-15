@@ -227,17 +227,12 @@ export class AmazonBedrockMessagesService {
     // Debug
     const fnName = `${this.clName}.prepareMessages()`
 
-    // console.log(`${fnName}: starting with tech: ` + JSON.stringify(tech))
+    // console.log(`${fnName}: starting with systemPrompt: ${systemPrompt}`)
 
     // Create messagesWithRoles
     var addedSystemRoleAndPrompt = false
     var firstUserMessage = false
     var messagesWithRoles: any[] = []
-
-    // System prompt already added?
-    if (messages.length > 0) {
-      addedSystemRoleAndPrompt = true
-    }
 
     // Debug
     // console.log(`${fnName}: messages: ` + JSON.stringify(messages))
@@ -255,6 +250,8 @@ export class AmazonBedrockMessagesService {
           anonymize,
           systemPrompt,
           messagesWithRoles)
+
+        addedSystemRoleAndPrompt = true
       }
 
       // Get message content

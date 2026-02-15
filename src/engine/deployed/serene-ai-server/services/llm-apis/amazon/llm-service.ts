@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime'
 import { CustomError } from '@/serene-core-server/types/errors'
+import { SereneAiServerOnlyTypes } from '../../../types/server-only-types'
 import { AmazonBedrockMessagesService } from './messages-service'
 
 // Note: the invoke style doesn't use an API key but relies on the AWS cli to
@@ -49,6 +50,17 @@ export class AmazonBedrockLlmService {
       throw new CustomError(`${fnName}: tech == null`)
     }
 
+    // Messaging for jsonMode
+    if (jsonMode === true) {
+
+      messagesWithRoles.push({
+        role: SereneAiServerOnlyTypes.chatGptAssistantMessageRole,
+        content: [{
+          text: '```json'
+        }]
+      })
+    }
+
     // Init client
     await this.initClient()
 
@@ -69,7 +81,8 @@ export class AmazonBedrockLlmService {
     const response = await this.client.send(command)
     const text = new TextDecoder().decode(response.body)
 
-    // console.log(text)
+    // Debug
+    // console.log(`${fnName}: text: ${text}`)
 
     // Validate
     if (text == null) {

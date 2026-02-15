@@ -421,9 +421,9 @@ export class ChatService {
 
     /* Debug
     console.log(`${fnName}: estimated costInCents: ${estimatedCostInCents} ` +
-                `based on input tokens: ` +
-                `${messagesResults.estimatedInputTokens} and output tokens: ` +
-                `${messagesResults.estimatedOutputTokens}`) */
+      `based on input tokens: ` +
+      `${messagesResults.estimatedInputTokens} and output tokens: ` +
+      `${messagesResults.estimatedOutputTokens}`) */
 
     // Is there quota available for this user?
     if (process.env.CHECK_USER_QUOTAS !== 'false') {
@@ -466,11 +466,11 @@ export class ChatService {
           results.inputTokens,
           results.outputTokens)
 
-      // Debug
+      /* Debug
       console.log(
         `${fnName}: costInCents: ${estimatedCostInCents} based on input ` +
         `tokens: ${results.inputTokens} and output tokens: ` +
-        `${results.outputTokens}`)
+        `${results.outputTokens}`) */
 
       // Create ChatMessageCreated
       await chatMessageCreatedModel.create(
@@ -546,13 +546,13 @@ export class ChatService {
   }
 
   async runSessionTurn(
-          prisma: PrismaClient,
-          llmTechId: string | undefined,
-          chatSessionId: string,
-          fromChatParticipantId: string,
-          fromUserProfile: any,
-          fromName: string,
-          fromContents: ChatMessage[]) {
+    prisma: PrismaClient,
+    llmTechId: string | undefined,
+    chatSessionId: string,
+    fromChatParticipantId: string,
+    fromUserProfile: any,
+    fromName: string,
+    fromContents: ChatMessage[]) {
 
     // Debug
     const fnName = `${this.clName}.runSessionTurn()`
@@ -583,8 +583,8 @@ export class ChatService {
 
     if (agentInfo.agentUser.maxPrevMessages == null) {
 
-      throw new CustomError(`${fnName}: agentInfo.agentUser.maxPrevMessages ` +
-                            `== null`)
+      throw new CustomError(
+        `${fnName}: agentInfo.agentUser.maxPrevMessages == null`)
     }
 
     if (agentInfo.toChatParticipant == null) {
@@ -597,10 +597,10 @@ export class ChatService {
 
     // Get chat messages
     const chatMessages = await
-            chatMessageModel.getByChatSessionId(
-              prisma,
-              chatSession,
-              agentInfo.agentUser.maxPrevMessages)
+      chatMessageModel.getByChatSessionId(
+        prisma,
+        chatSession,
+        agentInfo.agentUser.maxPrevMessages)
 
     // Get Tech
     var llmTech: any = undefined
@@ -623,33 +623,37 @@ export class ChatService {
     // Validate
     if (llmTech == null) {
       throw new CustomError(`${fnName}: llmTech == null with llmTechId: ` +
-                            `llmTechId: ${llmTechId}`)
+        `llmTechId: ${llmTechId}`)
     }
 
     // Build messagesWithRoles
     const messagesWithRoles =
-            llmUtilsService.buildMessagesWithRoles(
-              llmTech,
-              chatMessages,
-              fromContents,
-              [fromChatParticipantId],
-              [agentInfo.toChatParticipant.id])
+      llmUtilsService.buildMessagesWithRoles(
+        llmTech,
+        chatMessages,
+        fromContents,
+        [fromChatParticipantId],
+        [agentInfo.toChatParticipant.id])
+
+    // Debug
+    // console.log(`${fnName}: messagesWithRoles: ` +
+    //   JSON.stringify(messagesWithRoles))
 
     // Call the LLM
     const chatCompletionResults = await
-            this.llmRequest(
-              prisma,
-              llmTech,
-              chatSession,
-              fromUserProfile,
-              agentInfo.agentUser,
-              messagesWithRoles,
-              chatSession.chatSettings.prompt,
-              chatSession.chatSettings.isJsonMode)
+      this.llmRequest(
+        prisma,
+        llmTech,
+        chatSession,
+        fromUserProfile,
+        agentInfo.agentUser,
+        messagesWithRoles,
+        chatSession.chatSettings.prompt,
+        chatSession.chatSettings.isJsonMode)
 
     // Debug
     // console.log(`${fnName}: chatCompletionResults: ` +
-    //             JSON.stringify(chatCompletionResults))
+    //   JSON.stringify(chatCompletionResults))
 
     // Handle errors
     if (chatCompletionResults.status === false) {
