@@ -23,21 +23,21 @@ export class ChatSessionTurnService {
 
   // Code
   async turn(prisma: any,
-             chatSessionId: string,
-             chatParticipantId: string,
-             userProfileId: string,
-             instanceId: string,
-             name: string,
-             contents: ChatMessage[]) {
+    chatSessionId: string,
+    chatParticipantId: string,
+    userProfileId: string,
+    instanceId: string,
+    name: string,
+    contents: ChatMessage[]) {
 
     // Debug
     const fnName = `${this.clName}.turn()`
 
     // Get UserProfile
     const userProfile = await
-            userProfileModel.getById(
-              prisma,
-              userProfileId)
+      userProfileModel.getById(
+        prisma,
+        userProfileId)
 
     // Validate
     if (userProfile == null) {
@@ -108,9 +108,9 @@ export class ChatSessionTurnService {
 
     // Failed (with retries)
     const sessionTurnData = await
-            chatSessionService.getAgentInfo(
-              prisma,
-              chatSessionId)
+      chatSessionService.getAgentInfo(
+        prisma,
+        chatSessionId)
 
     // Debug
     // console.log(`${fnName}: sessionTurnData: ` +
@@ -141,14 +141,14 @@ export class ChatSessionTurnService {
   }
 
   async tryTurn(
-          prisma: any,
-          llmTechId: string | undefined,
-          chatSessionId: string,
-          chatParticipantId: string,
-          userProfile: UserProfile,
-          instanceId: string,
-          name: string,
-          contents: ChatMessage[]) {
+    prisma: any,
+    llmTechId: string | undefined,
+    chatSessionId: string,
+    chatParticipantId: string,
+    userProfile: UserProfile,
+    instanceId: string,
+    name: string,
+    contents: ChatMessage[]) {
 
     // Debug
     const fnName = `${this.clName}.tryTurn()`
@@ -157,14 +157,14 @@ export class ChatSessionTurnService {
 
     // Chat session turn
     const sessionTurnData = await
-            chatService.runSessionTurn(
-              prisma,
-              llmTechId,
-              chatSessionId,
-              chatParticipantId,
-              userProfile,
-              name,
-              contents)
+      chatService.runSessionTurn(
+        prisma,
+        llmTechId,
+        chatSessionId,
+        chatParticipantId,
+        userProfile,
+        name,
+        contents)
 
     // Non-recoverable error message?
     if (sessionTurnData.status === false) {
@@ -229,7 +229,7 @@ export class ChatSessionTurnService {
 
     // Debug
     // console.log(`${fnName}: sessionTurnData.toContents: ` +
-    //             JSON.stringify(sessionTurnData.toContents))
+    //   JSON.stringify(sessionTurnData.toContents))
 
     // Formulate the replyData
     replyData = {
