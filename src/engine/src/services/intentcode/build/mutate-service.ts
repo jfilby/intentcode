@@ -83,7 +83,6 @@ export class BuildMutateService {
       BuildStageType.verifyInternals,
       // Specs to IntentCode
       BuildStageType.defineTechStack,
-      BuildStageType.specsToIntentCode,
       // IntentCode to source
       BuildStageType.updateDeps,
       BuildStageType.intentCodeAnalyzer
@@ -228,16 +227,6 @@ export class BuildMutateService {
       case BuildStageType.intentCodeAnalyzer: {
 
         await intentCodeAnalyzerMutateService.run(
-          prisma,
-          buildData,
-          projectNode)
-
-        break
-      }
-
-      case BuildStageType.specsToIntentCode: {
-
-        await specsToIntentCodeMutateService.run(
           prisma,
           buildData,
           projectNode)

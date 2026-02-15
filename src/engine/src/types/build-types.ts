@@ -5,7 +5,6 @@ import { ProjectDetails } from './server-only-types'
 export enum BuildStageType {
   // Specs to IntentCode
   defineTechStack = 'define-tech-stack',
-  specsToIntentCode = 'specs-to-intentcode',
   // IntentCode to Source
   intentCodeAnalyzer = 'intent-code-analyzer',
   index = 'index',
