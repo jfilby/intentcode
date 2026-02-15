@@ -74,7 +74,7 @@ export class ProjectCompileService {
   async getBuildFileList(projectDetails: ProjectDetails) {
 
     // Debug
-    const fnName = `${this.clName}.prepForIntentCodeStage()`
+    const fnName = `${this.clName}.getBuildFileList()`
 
     // Get IntentCode path
     const intentCodePath =

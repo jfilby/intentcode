@@ -1,5 +1,4 @@
-import fs from 'fs'
-import { PrismaClient, SourceNode, Tech } from '@prisma/client'
+import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { AiTasksService } from '@/serene-ai-server/services/ai-tasks/ai-tasks-service'
@@ -7,24 +6,20 @@ import { BuildData, BuildFromFile } from '@/types/build-types'
 import { AnalyzerPromptTypes, IntentCodeAiTasks, ServerOnlyTypes } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { SourceNodeGenerationData } from '@/types/source-graph-types'
-import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { IntentCodeAnalysisGraphMutateService } from '@/services/graphs/intentcode-analysis/mutate-service'
 import { IntentCodeAnalyzerLlmService } from './llm-service'
 import { IntentCodeAnalyzerPromptService } from './prompt-service'
 import { IntentCodeAnalyzerSuggestionsMutateService } from '../analyzer-suggestions/mutate-service'
-import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
 import { ProjectCompileService } from '@/services/projects/compile-service'
 import { ProjectsQueryService } from '@/services/projects/query-service'
 import { SpecsGraphQueryService } from '@/services/graphs/specs/graph-query-service'
 
 // Services
 const aiTasksService = new AiTasksService()
-const fsUtilsService = new FsUtilsService()
 const intentCodeAnalysisGraphMutateService = new IntentCodeAnalysisGraphMutateService()
 const intentCodeAnalyzerLlmService = new IntentCodeAnalyzerLlmService()
 const intentCodeAnalyzerPromptService = new IntentCodeAnalyzerPromptService()
 const intentCodeAnalyzerSuggestionsMutateService = new IntentCodeAnalyzerSuggestionsMutateService()
-const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
 const projectCompileService = new ProjectCompileService()
 const projectsQueryService = new ProjectsQueryService()
 const specsGraphQueryService = new SpecsGraphQueryService()
