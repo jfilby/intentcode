@@ -6,6 +6,7 @@ import { InstanceModel } from '@/serene-core-server/models/instances/instance-mo
 import { consoleService } from '@/serene-core-server/services/console/service'
 import { ServerOnlyTypes } from '@/types/server-only-types'
 import { BuildMutateService } from '../intentcode/build/mutate-service'
+import { IntentCodeAnalyzerChatService } from '../intentcode/analyzer/chat-service'
 import { ProjectsMutateService } from './mutate-service'
 import { ProjectsQueryService } from './query-service'
 import { ProjectSetupService } from './setup-project'
@@ -15,6 +16,7 @@ const instanceModel = new InstanceModel()
 
 // Services
 const buildMutateService = new BuildMutateService()
+const intentCodeAnalyzerChatService = new IntentCodeAnalyzerChatService()
 const projectsMutateService = new ProjectsMutateService()
 const projectsQueryService = new ProjectsQueryService()
 const projectSetupService = new ProjectSetupService()
@@ -144,6 +146,7 @@ export class ProjectCliService {
       console.log(chalk.bold(`─── Project: ${instance.name} ───`))
       console.log(``)
       console.log(`[a] About this project`)
+      console.log(`[c] Open a chat`)
       console.log(`[r] Run the build`)
       console.log(`[b] Back`)
 
@@ -156,6 +159,14 @@ export class ProjectCliService {
 
         case 'a': {
           await this.aboutProject(
+            prisma,
+            instance)
+
+          break
+        }
+
+        case 'c': {
+          await intentCodeAnalyzerChatService.openChat(
             prisma,
             instance)
 

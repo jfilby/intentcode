@@ -122,14 +122,14 @@ export class IntentCodeAnalyzerMutateService {
     }
   }
 
-  async processDiscoveryWithLlm(
+  async processWithLlm(
           prisma: PrismaClient,
           buildData: BuildData,
           buildFromFiles: BuildFromFile[],
           projectSpecsNode: SourceNode) {
 
     // Debug
-    const fnName = `${this.clName}.processDiscoveryWithLlm()`
+    const fnName = `${this.clName}.processWithLlm()`
 
     // Get the admin UserProfile
     const adminUserProfile = await
@@ -225,46 +225,11 @@ export class IntentCodeAnalyzerMutateService {
               projectNode)
 
     // Get build file list
-    const buildFileList = await
-      projectCompileService.getBuildFileList(projectDetails)
-
-    // Get IntentCode files as BuildFromFile[]
-    var buildFromFiles: BuildFromFile[] = []
-    for (const buildFile of buildFileList) {
-
-      // Get last save time of the file
-      const fileModifiedTime = await
-              fsUtilsService.getLastUpdateTime(buildFile.intentCodeFilename)
-
-      // Read file
-      const intentCode = await
-              fs.readFileSync(
-                buildFile.intentCodeFilename,
-                { encoding: 'utf8', flag: 'r' })
-
-      // Get/create the file's SourceNode
-      const intentFileNode = await
-        intentCodePathGraphMutateService.upsertIntentCodePathAsGraph(
-          prisma,
-          projectDetails.projectIntentCodeNode,
-          buildFile.intentCodeFilename)
-
-      // Define BuildFromFile
-      const buildFromFile: BuildFromFile = {
-        filename: buildFile.intentCodeFilename,
-        relativePath: buildFile.relativePath,
-        fileModifiedTime: fileModifiedTime,
-        content: intentCode,
-        fileNode: intentFileNode,
-        targetFileExt: buildFile.targetFileExt
-      }
-
-      // Add to buildFromFiles
-      buildFromFiles.push(buildFromFile)
-    }
+    const buildFromFiles = await
+      projectCompileService.getBuildFromFiles(projectDetails)
 
     // Process spec files
-    await this.processDiscoveryWithLlm(
+    await this.processWithLlm(
             prisma,
             buildData,
             buildFromFiles,
