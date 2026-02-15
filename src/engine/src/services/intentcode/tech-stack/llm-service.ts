@@ -1,6 +1,4 @@
 import { PrismaClient, Tech } from '@prisma/client'
-import { CustomError } from '@/serene-core-server/types/errors'
-import { FeatureFlags } from '@/serene-ai-server/types/feature-flags'
 import { LlmCacheService } from '@/serene-ai-server/services/cache/service'
 import { AgentLlmService } from '@/serene-ai-server/services/llm-apis/agent-llm-service'
 import { LlmUtilsService } from '@/serene-ai-server/services/llm-apis/utils-service'
@@ -12,10 +10,10 @@ const agentLlmService = new AgentLlmService()
 const llmCacheService = new LlmCacheService()
 const llmUtilsService = new LlmUtilsService()
 
-export class SpecsTechStackLlmService {
+export class TechStackLlmService {
 
   // Consts
-  clName = 'SpecsTechStackLlmService'
+  clName = 'TechStackLlmService'
 
   // Code
   async llmRequest(

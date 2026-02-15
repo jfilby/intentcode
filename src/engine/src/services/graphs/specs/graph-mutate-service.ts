@@ -2,17 +2,11 @@ import { blake3 } from '@noble/hashes/blake3'
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { BaseDataTypes } from '@/types/base-data-types'
-import { SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
-import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
+import { SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
-import { SourceNodeGenerationService } from '../general/source-node-generation-service'
 
 // Models
-const sourceNodeGenerationModel = new SourceNodeGenerationModel()
 const sourceNodeModel = new SourceNodeModel()
-
-// Services
-const sourceNodeGenerationService = new SourceNodeGenerationService()
 
 // Class
 export class SpecsGraphMutateService {
@@ -184,80 +178,5 @@ export class SpecsGraphMutateService {
 
     // Return
     return specsProjectNode
-  }
-
-  async upsertTechStackJson(
-          prisma: PrismaClient,
-          instanceId: string | undefined,
-          parentNode: SourceNode | undefined,
-          jsonContent: any,
-          sourceNodeGenerationData: SourceNodeGenerationData,
-          fileModifiedTime: Date) {
-
-    // Debug
-    const fnName = `${this.clName}.upsertTechStackJson()`
-
-    // Validate
-    if (parentNode == null) {
-      throw new CustomError(`${fnName}: parentNode == null`)
-    }
-
-    if (parentNode.type !== SourceNodeTypes.projectSpecs) {
-
-      throw new CustomError(`${fnName}: parentNode.type !== ` +
-                            `SourceNodeTypes.projectSpecs`)
-    }
-
-    // Get jsonContentHash
-    var jsonContentHash: string | null = null
-
-    if (jsonContent != null) {
-
-      // Blake3 hash
-      jsonContentHash = blake3(JSON.stringify(jsonContent)).toString()
-    }
-
-    // Create the node
-    const techStackJsonSourceNode = await
-            sourceNodeModel.upsert(
-              prisma,
-              undefined,         // id
-              parentNode.id,     // parentId
-              instanceId,
-              BaseDataTypes.activeStatus,
-              SourceNodeTypes.techStackJsonFile,
-              SourceNodeNames.techStackJsonFile,
-              null,              // content
-              null,              // contentHash
-              jsonContent,
-              jsonContentHash,
-              fileModifiedTime)  // contentUpdated
-
-    // Get promptHash
-    const promptHash =
-            blake3(JSON.stringify(sourceNodeGenerationData.prompt)).toString()
-
-    // Upsert SourceNodeGeneration
-    const sourceNodeGeneration = await
-            sourceNodeGenerationModel.upsert(
-              prisma,
-              undefined,                  // id
-              techStackJsonSourceNode.id,  // sourceNodeId
-              sourceNodeGenerationData.techId,
-              sourceNodeGenerationData.temperature ?? null,
-              sourceNodeGenerationData.prompt,
-              promptHash,
-              null,  // content
-              null,  // contentHash
-              jsonContent,
-              jsonContentHash)
-
-    // Delete old SourceNodeGenerations
-    await sourceNodeGenerationService.deleteOld(
-            prisma,
-            techStackJsonSourceNode.id)  // sourceNodeId
-
-    // Return
-    return techStackJsonSourceNode
   }
 }

@@ -10,13 +10,9 @@ import { DepsJsonService } from '../managed-files/deps/deps-json-service'
 import { DotIntentCodeGraphMutateService } from '../graphs/dot-intentcode/graph-mutate-service'
 import { ExtensionMutateService } from '../extensions/extension/mutate-service'
 import { FsUtilsService } from '../utils/fs-utils-service'
-import { IntentCodeGraphMutateService } from '../graphs/intentcode/graph-mutate-service'
 import { ProjectsMutateService } from './mutate-service'
 import { ProjectsQueryService } from './query-service'
 import { ProjectGraphMutateService } from '../graphs/project/mutate-service'
-import { ProjectGraphQueryService } from '../graphs/project/query-service'
-import { SourceCodeGraphMutateService } from '../graphs/source-code/graph-mutate-service'
-import { SpecsGraphMutateService } from '../graphs/specs/graph-mutate-service'
 
 // Models
 const sourceNodeModel = new SourceNodeModel()
@@ -27,13 +23,9 @@ const depsJsonService = new DepsJsonService()
 const dotIntentCodeGraphMutateService = new DotIntentCodeGraphMutateService()
 const extensionMutateService = new ExtensionMutateService()
 const fsUtilsService = new FsUtilsService()
-const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
 const projectsMutateService = new ProjectsMutateService()
 const projectsQueryService = new ProjectsQueryService()
 const projectGraphMutateService = new ProjectGraphMutateService()
-const projectGraphQueryService = new ProjectGraphQueryService()
-const sourceCodeGraphMutateService = new SourceCodeGraphMutateService()
-const specsGraphMutateService = new SpecsGraphMutateService()
 
 // Class
 export class ProjectSetupService {
@@ -269,17 +261,6 @@ export class ProjectSetupService {
 
     // Infer other paths
     const dotIntentCodePath = `${projectPath}${path.sep}.intentcode`
-    const specsPath = `${projectPath}${path.sep}specs`
-
-    // Get/create specs project node
-    if (await fs.existsSync(specsPath)) {
-
-      const projectSpecsNode = await
-              specsGraphMutateService.getOrCreateSpecsProject(
-                prisma,
-                projectNode,
-                specsPath)
-    }
 
     // Get/create dotIntentCode node
     const projectDotIntentCodeNode = await

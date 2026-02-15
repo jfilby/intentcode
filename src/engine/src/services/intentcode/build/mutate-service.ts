@@ -11,8 +11,7 @@ import { IntentCodeAnalyzerMutateService } from '../analyzer/mutate-service'
 import { ProjectsQueryService } from '@/services/projects/query-service'
 import { ProjectCompileService } from '@/services/projects/compile-service'
 import { ProjectVerifyService } from '@/services/projects/verify-service'
-import { SpecsTechStackMutateService } from '@/services/specs/tech-stack/mutate-service'
-import { SpecsToIntentCodeMutateService } from '@/services/specs/to-intentcode/mutate-service'
+import { TechStackMutateService } from '@/services/intentcode/tech-stack/mutate-service'
 
 // Models
 const sourceNodeModel = new SourceNodeModel()
@@ -25,8 +24,7 @@ const intentCodeAnalyzerMutateService = new IntentCodeAnalyzerMutateService()
 const projectCompileService = new ProjectCompileService()
 const projectsQueryService = new ProjectsQueryService()
 const projectVerifyService = new ProjectVerifyService()
-const specsTechStackMutateService = new SpecsTechStackMutateService()
-const specsToIntentCodeMutateService = new SpecsToIntentCodeMutateService()
+const techStackMutateService = new TechStackMutateService()
 
 // Class
 export class BuildMutateService {
@@ -216,7 +214,7 @@ export class BuildMutateService {
 
       case BuildStageType.defineTechStack: {
 
-        await specsTechStackMutateService.processTechStack(
+        await techStackMutateService.processTechStack(
           prisma,
           buildData,
           projectNode)

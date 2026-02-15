@@ -3,7 +3,6 @@ import path from 'path'
 import { blake3 } from '@noble/hashes/blake3'
 import { PrismaClient, SourceNode, Tech } from '@prisma/client'
 import { ServerTestTypes } from '@/types/server-test-types'
-import { SpecsTechStackLlmService } from './llm-service'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
@@ -16,11 +15,12 @@ import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { DependenciesMutateService } from '@/services/graphs/dependencies/mutate-service'
 import { DotIntentCodeGraphQueryService } from '@/services/graphs/dot-intentcode/graph-query-service'
 import { FsUtilsService } from '@/services/utils/fs-utils-service'
+import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service'
 import { IntentCodeMessagesService } from '@/services/intentcode/common/messages-service'
-import { SpecsGraphMutateService } from '@/services/graphs/specs/graph-mutate-service'
-import { SpecsGraphQueryService } from '@/services/graphs/specs/graph-query-service'
-import { SpecsPathGraphMutateService } from '@/services/graphs/specs/path-graph-mutate-service'
-import { SpecsTechStackPromptService } from './prompt-service'
+import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
+import { ProjectsQueryService } from '@/services/projects/query-service'
+import { TechStackLlmService } from './llm-service'
+import { TechStackPromptService } from './prompt-service'
 
 // Models
 const sourceNodeGenerationModel = new SourceNodeGenerationModel()
@@ -31,20 +31,20 @@ const aiTasksService = new AiTasksService()
 const dependenciesMutateService = new DependenciesMutateService()
 const dotIntentCodeGraphQueryService = new DotIntentCodeGraphQueryService()
 const fsUtilsService = new FsUtilsService()
+const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
+const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
 const intentCodeMessagesService = new IntentCodeMessagesService()
-const specsGraphMutateService = new SpecsGraphMutateService()
-const specsGraphQueryService = new SpecsGraphQueryService()
-const specsPathGraphMutateService = new SpecsPathGraphMutateService()
-const specsTechStackLlmService = new SpecsTechStackLlmService()
-const specsTechStackPromptService = new SpecsTechStackPromptService()
+const projectsQueryService = new ProjectsQueryService()
+const techStackLlmService = new TechStackLlmService()
+const techStackPromptService = new TechStackPromptService()
 const walkDirService = new WalkDirService()
 const usersService = new UsersService()
 
 // Class
-export class SpecsTechStackMutateService {
+export class TechStackMutateService {
 
   // Consts
-  clName = 'SpecsTechStackMutateService'
+  clName = 'TechStackMutateService'
 
   // Code
   async getExistingJsonContent(
@@ -94,7 +94,7 @@ export class SpecsTechStackMutateService {
           prisma: PrismaClient,
           buildData: BuildData,
           projectNode: SourceNode,
-          projectSpecsNode: SourceNode,
+          projectIntentCodeNode: SourceNode,
           projectDotIntentCodeNode: SourceNode,
           buildFromFile: BuildFromFile) {
 
@@ -130,7 +130,7 @@ export class SpecsTechStackMutateService {
 
     // Get prompt
     const prompt = await
-      specsTechStackPromptService.getPrompt(
+      techStackPromptService.getPrompt(
         prisma,
         projectNode,
         buildData.extensionsData,
@@ -152,7 +152,7 @@ export class SpecsTechStackMutateService {
 
       // LLM request
       const llmResults = await
-              specsTechStackLlmService.llmRequest(
+              techStackLlmService.llmRequest(
                 prisma,
                 adminUserProfile.id,
                 tech,
@@ -171,7 +171,7 @@ export class SpecsTechStackMutateService {
     await this.processQueryResults(
             prisma,
             projectNode,
-            projectSpecsNode,
+            projectIntentCodeNode,
             projectDotIntentCodeNode,
             buildFromFile,
             sourceNodeGenerationData,
@@ -186,16 +186,11 @@ export class SpecsTechStackMutateService {
     // Debug
     const fnName = `${this.clName}.processTechStack()`
 
-    // Get project specs node
-    const projectSpecsNode = await
-            specsGraphQueryService.getSpecsProjectNode(
-              prisma,
-              projectNode)
-
-    // Validate
-    if (projectSpecsNode == null) {
-      return
-    }
+    // Get ProjectDetails
+    const projectDetails =
+            projectsQueryService.getProjectDetailsByInstanceId(
+              projectNode.instanceId,
+              buildData.projects)
 
     // Get dotIntentCode node
     const projectDotIntentCodeNode = await
@@ -209,23 +204,20 @@ export class SpecsTechStackMutateService {
       process.exit(1)
     }
 
-    // Debug
-    // console.log(`${fnName}: path: ` +
-    //             JSON.stringify((projectSpecsNode.jsonContent as any).path))
-
-    // Get specsPath
-    const specsPath = (projectSpecsNode.jsonContent as any).path
+    // Get intentCodePath
+    const intentCodePath =
+      (projectDetails.projectIntentCodeNode.jsonContent as any).path
 
     // Walk dir
     var mdFilesList: string[] = []
 
     await walkDirService.walkDir(
-            specsPath,
-            mdFilesList,
-            {
-              recursive: true,
-              fileExts: ['.md']
-            })
+      intentCodePath,
+      mdFilesList,
+      {
+        recursive: true,
+        fileExts: ['.md']
+      })
 
     // Debug
     // console.log(`${fnName}: mdFilesList: ` + JSON.stringify(mdFilesList))
@@ -258,7 +250,7 @@ export class SpecsTechStackMutateService {
     const techStackFilename = techStackList[0]
 
     const techStackRelativePath =
-      techStackFilename.substring(specsPath.length + 1)
+      techStackFilename.substring(intentCodePath.length + 1)
 
     // Get last save time of the file
     const fileModifiedTime = await
@@ -270,12 +262,12 @@ export class SpecsTechStackMutateService {
               techStackFilename,
               { encoding: 'utf8', flag: 'r' })
 
-    // Get/create the file's SourceNode
-    const techStackNode = await
-      specsPathGraphMutateService.getOrCreateSpecsPathAsGraph(
-        prisma,
-        projectSpecsNode,
-        techStackFilename)
+      // Get/create the file's SourceNode
+      const techStackNode = await
+        intentCodePathGraphMutateService.upsertIntentCodePathAsGraph(
+          prisma,
+          projectDetails.projectIntentCodeNode,
+          techStackFilename)
 
     // Check if the file has been updated since last indexed
     if (techStackNode?.contentUpdated != null &&
@@ -300,7 +292,7 @@ export class SpecsTechStackMutateService {
             prisma,
             buildData,
             projectNode,
-            projectSpecsNode,
+            projectDetails.projectIntentCodeNode,
             projectDotIntentCodeNode,
             buildFromFile)
   }
@@ -308,7 +300,7 @@ export class SpecsTechStackMutateService {
   async processQueryResults(
           prisma: PrismaClient,
           projectNode: SourceNode,
-          projectSpecsNode: SourceNode,
+          projectIntentCodeNode: SourceNode,
           projectDotIntentCodeNode: SourceNode,
           buildFromFile: BuildFromFile,
           sourceNodeGenerationData: SourceNodeGenerationData,
@@ -318,8 +310,8 @@ export class SpecsTechStackMutateService {
     const fnName = `${this.clName}.processQueryResults()`
 
     // Validate
-    if (projectSpecsNode == null) {
-      throw new CustomError(`${fnName}: projectSpecsNode == null`)
+    if (projectIntentCodeNode == null) {
+      throw new CustomError(`${fnName}: projectIntentCodeNode == null`)
     }
 
     if (buildFromFile.fileNode.jsonContent == null) {
@@ -370,21 +362,21 @@ export class SpecsTechStackMutateService {
 
       // Update depsNode
       await dependenciesMutateService.updateDepsNode(
-              prisma,
-              projectNode,
-              depsNode,
-              true)  // writeToDepsJson
+        prisma,
+        projectNode,
+        depsNode,
+        true)  // writeToDepsJson
     }
 
     // Upsert the tech-stack.json node
     const techStackJsonSourceNode = await
-            specsGraphMutateService.upsertTechStackJson(
-              prisma,
-              projectSpecsNode.instanceId,
-              projectSpecsNode,  // parentNode
-              jsonContent,
-              sourceNodeGenerationData,
-              buildFromFile.fileModifiedTime)
+      intentCodeGraphMutateService.upsertTechStackJson(
+        prisma,
+        projectIntentCodeNode.instanceId,
+        projectIntentCodeNode,  // parentNode
+        jsonContent,
+        sourceNodeGenerationData,
+        buildFromFile.fileModifiedTime)
 
     // Print warnings and errors
     intentCodeMessagesService.handleMessages(jsonContent)

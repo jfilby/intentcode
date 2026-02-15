@@ -10,10 +10,10 @@ const extensionQueryService = new ExtensionQueryService()
 const projectsQueryService = new ProjectsQueryService()
 
 // Class
-export class SpecsTechStackPromptService {
+export class TechStackPromptService {
 
   // Consts
-  clName = 'SpecsTechStackPromptService'
+  clName = 'TechStackPromptService'
 
   // Code
   async getPrompt(
