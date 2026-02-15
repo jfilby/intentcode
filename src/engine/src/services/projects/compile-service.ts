@@ -26,6 +26,51 @@ export class ProjectCompileService {
   clName = 'ProjectCompileService'
 
   // Code
+  async getBuildFromFiles(projectDetails: ProjectDetails) {
+
+    // Get buildFileList
+    const buildFileList = await this.getBuildFileList(projectDetails)
+
+    // Iterate
+    var buildFromFiles: any[] = []
+
+    for (const buildFile of buildFileList) {
+
+      // Get last save time of the file
+      const fileModifiedTime = await
+              fsUtilsService.getLastUpdateTime(buildFile.intentCodeFilename)
+
+      // Read file
+      const intentCode = await
+              fs.readFileSync(
+                buildFile.intentCodeFilename,
+                { encoding: 'utf8', flag: 'r' })
+
+      // Get/create the file's IntentCode node
+      const intentFileNode = await
+        intentCodePathGraphMutateService.upsertIntentCodePathAsGraph(
+          prisma,
+          projectDetails.projectIntentCodeNode,
+          buildFile.intentCodeFilename)
+
+      // Define BuildFromFile
+      const buildFromFile: BuildFromFile = {
+        filename: buildFile.intentCodeFilename,
+        relativePath: buildFile.relativePath,
+        fileModifiedTime: fileModifiedTime,
+        content: intentCode,
+        fileNode: intentFileNode,
+        targetFileExt: buildFile.targetFileExt
+      }
+
+      // Add to buildFromFiles
+      buildFromFiles.push(buildFromFile)
+    }
+
+    // Return
+    return buildFromFiles
+  }
+
   async getBuildFileList(projectDetails: ProjectDetails) {
 
     // Debug
@@ -100,39 +145,12 @@ export class ProjectCompileService {
       throw new CustomError(`${fnName}: projectDetails == null`)
     }
 
-    // Get build file list
-    const buildFileList = await
-      this.getBuildFileList(projectDetails)
+    // Get buildFromFiles
+    const buildFromFiles = await
+      this.getBuildFromFiles(projectDetails)
 
     // Compile IntentCode to source
-    for (const buildFile of buildFileList) {
-
-      // Get last save time of the file
-      const fileModifiedTime = await
-              fsUtilsService.getLastUpdateTime(buildFile.intentCodeFilename)
-
-      // Read file
-      const intentCode = await
-              fs.readFileSync(
-                buildFile.intentCodeFilename,
-                { encoding: 'utf8', flag: 'r' })
-
-      // Get/create the file's SourceNode
-      const intentFileNode = await
-        intentCodePathGraphMutateService.upsertIntentCodePathAsGraph(
-          prisma,
-          projectDetails.projectIntentCodeNode,
-          buildFile.intentCodeFilename)
-
-      // Define BuildFromFile
-      const buildFromFile: BuildFromFile = {
-        filename: buildFile.intentCodeFilename,
-        relativePath: buildFile.relativePath,
-        fileModifiedTime: fileModifiedTime,
-        content: intentCode,
-        fileNode: intentFileNode,
-        targetFileExt: buildFile.targetFileExt
-      }
+    for (const buildFromFile of buildFromFiles) {
 
       // Compile
       await compilerMutateService.run(
@@ -160,49 +178,19 @@ export class ProjectCompileService {
               projectNode.instanceId,
               buildData.projects)
 
-    // Prep for stage
-    const buildFileList = await
-      this.getBuildFileList(projectDetails)
+    // Get buildFromFiles
+    const buildFromFiles = await
+      this.getBuildFromFiles(projectDetails)
 
-    // Index IntentCode
-    for (const buildFile of buildFileList) {
-
-      // Debug
-      // console.log(`${fnName}: buildFile: ` + JSON.stringify(buildFile))
-
-      // Get last save time of the file
-      const fileModifiedTime = await
-              fsUtilsService.getLastUpdateTime(buildFile.intentCodeFilename)
-
-      // Read file
-      const intentCode = await
-              fs.readFileSync(
-                buildFile.intentCodeFilename,
-                { encoding: 'utf8', flag: 'r' })
-
-      // Get/create the file's SourceNode
-      const intentFileNode = await
-        intentCodePathGraphMutateService.upsertIntentCodePathAsGraph(
-          prisma,
-          projectDetails.projectIntentCodeNode,
-          buildFile.intentCodeFilename)
+    // Compile IntentCode to source
+    for (const buildFromFile of buildFromFiles) {
 
       // Check if the file has been updated since last indexed
-      if (intentFileNode?.contentUpdated != null &&
-          intentFileNode.contentUpdated <= fileModifiedTime) {
+      if (buildFromFile?.contentUpdated != null &&
+          buildFromFile.contentUpdated <= buildFromFile.fileModifiedTime) {
 
         // console.log(`${fnName}: file: ${intentCodeFilename} already indexed`)
         continue
-      }
-
-      // Define IndexerFile
-      const buildFromFile: BuildFromFile = {
-        filename: buildFile.intentCodeFilename,
-        relativePath: buildFile.relativePath,
-        fileModifiedTime: fileModifiedTime,
-        content: intentCode,
-        fileNode: intentFileNode,
-        targetFileExt: buildFile.targetFileExt
       }
 
       // Index the file
