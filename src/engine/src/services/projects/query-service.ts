@@ -151,7 +151,7 @@ export class ProjectsQueryService {
       const indents = ' '.repeat(projectDetails.indents * 2)
 
       prompting +=
-        `${indents}- ${projectNo}: ${projectDetails.instance.name}`
+        `${indents}- ${projectNo}: ${projectDetails.instance.name}\n`
     }
 
     // Final new-line

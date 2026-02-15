@@ -67,7 +67,7 @@ export class IntentCodeAnalyzerPromptService {
           `\n` +
           primaryInstructions +
           `\n` +
-          `The main types of improvements or fixes to look for:` +
+          `The main types of improvements or fixes to look for:\n` +
           `- Any major ambiguities that can't easily be inferred?\n` +
           `- Any extensions that are needed or recommended?\n` +
           `- Any external libraries that are needed or recommended?\n` +
