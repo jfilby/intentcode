@@ -14,7 +14,6 @@ import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-gen
 import { FsUtilsService } from '@/services/utils/fs-utils-service'
 import { IntentCodeMessagesService } from '@/services/intentcode/common/messages-service'
 import { IntentCodeUpdaterMutateService } from '@/services/intentcode/updater/mutate-service'
-import { SpecsGraphMutateService } from '@/services/graphs/specs/graph-mutate-service'
 import { ProjectsQueryService } from '@/services/projects/query-service'
 import { SpecsGraphQueryService } from '@/services/graphs/specs/graph-query-service'
 import { SpecsLlmService } from './llm-service'
@@ -30,7 +29,6 @@ const fsUtilsService = new FsUtilsService()
 const intentCodeMessagesService = new IntentCodeMessagesService()
 const intentCodeUpdaterMutateService = new IntentCodeUpdaterMutateService()
 const projectsQueryService = new ProjectsQueryService()
-const specsGraphMutateService = new SpecsGraphMutateService()
 const specsGraphQueryService = new SpecsGraphQueryService()
 const specsLlmService = new SpecsLlmService()
 const specsPathGraphMutateService = new SpecsPathGraphMutateService()
@@ -99,16 +97,6 @@ export class SpecsToIntentCodeMutateService {
         buildData,
         jsonContent.intentCode)
     }
-
-    // Upsert the specs project node
-    projectSpecsNode = await
-      specsGraphMutateService.upsertTechStackJson(
-        prisma,
-        projectSpecsNode.instanceId,
-        projectSpecsNode,  // parentNode
-        jsonContent,
-        sourceNodeGenerationData,
-        new Date())        // fileModifiedTime
 
     // Print warnings and errors
     intentCodeMessagesService.handleMessages(jsonContent)
