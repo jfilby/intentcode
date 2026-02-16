@@ -254,10 +254,10 @@ export class IntentCodeGraphMutateService {
       throw new CustomError(`${fnName}: parentNode == null`)
     }
 
-    if (parentNode.type !== SourceNodeTypes.projectSpecs) {
+    if (parentNode.type !== SourceNodeTypes.projectIntentCode) {
 
       throw new CustomError(`${fnName}: parentNode.type !== ` +
-                            `SourceNodeTypes.projectSpecs`)
+        `SourceNodeTypes.projectSpecs`)
     }
 
     // Get jsonContentHash

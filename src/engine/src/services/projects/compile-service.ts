@@ -9,7 +9,7 @@ import { IndexerMutateService } from '../intentcode/indexer/mutate-service'
 import { IntentCodeFilenameService } from '../utils/filename-service'
 import { IntentCodePathGraphMutateService } from '../graphs/intentcode/path-graph-mutate-service'
 import { ProjectsQueryService } from './query-service'
-import { ProjectDetails } from '@/types/server-only-types'
+import { ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types'
 
 // Services
 const compilerMutateService = new CompilerMutateService()
@@ -99,12 +99,12 @@ export class ProjectCompileService {
       const targetFileExt =
         intentCodeFilenameService.getTargetFileExt(intentCodeFilename)
 
-      // Validate
+      // Safely skip files that don't have target exts
       if (targetFileExt == null) {
 
-        console.warn(
+        /* console.log(
           `${fnName}: can't get target file extension from intentCode ` +
-          `filename: ${intentCodeFilename}`)
+          `filename: ${intentCodeFilename}`) */
 
         continue
       }

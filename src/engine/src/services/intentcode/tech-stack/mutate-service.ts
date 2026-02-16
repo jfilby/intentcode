@@ -1,11 +1,9 @@
 import fs from 'fs'
-import path from 'path'
 import { blake3 } from '@noble/hashes/blake3'
 import { PrismaClient, SourceNode, Tech } from '@prisma/client'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { UsersService } from '@/serene-core-server/services/users/service'
-import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
 import { AiTasksService } from '@/serene-ai-server/services/ai-tasks/ai-tasks-service'
 import { BuildData, BuildFromFile } from '@/types/build-types'
 import { IntentCodeAiTasks, ServerOnlyTypes } from '@/types/server-only-types'
@@ -21,6 +19,7 @@ import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/p
 import { ProjectsQueryService } from '@/services/projects/query-service'
 import { TechStackLlmService } from './llm-service'
 import { TechStackPromptService } from './prompt-service'
+import { TechStackQueryService } from './query-service'
 
 // Models
 const sourceNodeGenerationModel = new SourceNodeGenerationModel()
@@ -37,7 +36,7 @@ const intentCodeMessagesService = new IntentCodeMessagesService()
 const projectsQueryService = new ProjectsQueryService()
 const techStackLlmService = new TechStackLlmService()
 const techStackPromptService = new TechStackPromptService()
-const walkDirService = new WalkDirService()
+const techStackQueryService = new TechStackQueryService()
 const usersService = new UsersService()
 
 // Class
@@ -204,51 +203,18 @@ export class TechStackMutateService {
       process.exit(1)
     }
 
-    // Get intentCodePath
-    const intentCodePath =
-      (projectDetails.projectIntentCodeNode.jsonContent as any).path
+    // Get tech-stack.md
+    const { intentCodePath, techStackFilename } = await
+      techStackQueryService.getFilename(projectDetails)
 
-    // Walk dir
-    var mdFilesList: string[] = []
+    // Skip if not found
+    if (techStackFilename == null) {
 
-    await walkDirService.walkDir(
-      intentCodePath,
-      mdFilesList,
-      {
-        recursive: true,
-        fileExts: ['.md']
-      })
-
-    // Debug
-    // console.log(`${fnName}: mdFilesList: ` + JSON.stringify(mdFilesList))
-
-    // Find the tech-stack.md file
-    var techStackList: string[] = []
-
-    for (const mdFilename of mdFilesList) {
-
-      // Verify that this is tech-stack.md
-      if (path.basename(mdFilename) === ServerOnlyTypes.techStackFilename) {
-        techStackList.push(mdFilename)
-      }
-    }
-
-    // Debug
-    // console.log(`${fnName}: techStackList: ` + JSON.stringify(techStackList))
-
-    // Verify exactly one instance of the tech-stack.md file
-    if (techStackList.length === 0) {
-      console.log(`No tech-stack.md file`)
-      return
-
-    } else if (techStackList.length > 1) {
-      console.log(`More than one tech-stack.md file found`)
+      console.error(`The tech-stack.md file was expected but not found`)
       process.exit(1)
     }
 
-    // Get tech-stack.md full path
-    const techStackFilename = techStackList[0]
-
+    // Get relative path
     const techStackRelativePath =
       techStackFilename.substring(intentCodePath.length + 1)
 

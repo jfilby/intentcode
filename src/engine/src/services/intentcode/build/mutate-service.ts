@@ -266,6 +266,7 @@ export class BuildMutateService {
 
         await projectVerifyService.run(
           prisma,
+          buildData,
           projectNode)
 
         break
