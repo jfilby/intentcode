@@ -10,10 +10,12 @@ import { ProjectDetails } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { InstanceChatsService } from '@/services/instance-chats/common/service'
 import { ChatSessionTurnService } from '@/services/instance-chats/chat-session-turn'
+import { TuiService } from '@/services/utils/tui-service'
 
 // Services
 const chatSessionTurnService = new ChatSessionTurnService()
 const instanceChatsService = new InstanceChatsService()
+const tuiService = new TuiService()
 const usersService = new UsersService()
 
 // Class
@@ -181,7 +183,10 @@ export class IntentCodeAnalyzerSuggestionsChatService {
         for (const message of replyData.contents) {
 
           console.log(``)
-          console.log(`AI> ${message.text}`)
+
+          tuiService.renderMessageWithTitle(
+            'Analyzer',
+            message.text)
         }
       }
 
