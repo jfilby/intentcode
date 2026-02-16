@@ -160,6 +160,9 @@ export class ProjectCompileService {
               projectDetails,
               buildFromFile)
     }
+
+    // Done
+    console.log(``)
   }
 
   async runIndexBuildStage(
