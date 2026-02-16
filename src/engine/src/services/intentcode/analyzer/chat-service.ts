@@ -8,18 +8,16 @@ import { BuildData, BuildFromFile } from '@/types/build-types'
 import { AnalyzerChatParams, ChatSessionOptions, ChatTypes } from '@/types/chat-types'
 import { ProjectDetails } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
-import { BuildMutateService } from '../build/mutate-service'
 import { ChatSessionTurnService } from '@/services/instance-chats/chat-session-turn'
 import { InstanceChatsService } from '@/services/instance-chats/common/service'
-import { ProjectsQueryService } from '@/services/projects/query-service'
-import { ProjectCompileService } from '@/services/projects/compile-service'
+import { IntentCodeAnalyzerQueryService } from './query-service'
+import { IntentCodeAnalyzerSuggestionsMutateService } from '../analyzer-suggestions/mutate-service'
 
 // Services
-const buildMutateService = new BuildMutateService()
 const chatSessionTurnService = new ChatSessionTurnService()
 const instanceChatsService = new InstanceChatsService()
-const projectsQueryService = new ProjectsQueryService()
-const projectCompileService = new ProjectCompileService()
+const intentCodeAnalyzerQueryService = new IntentCodeAnalyzerQueryService()
+const intentCodeAnalyzerSuggestionsMutateService = new IntentCodeAnalyzerSuggestionsMutateService()
 const usersService = new UsersService()
 
 // Class
@@ -88,29 +86,11 @@ export class IntentCodeAnalyzerChatService {
         ServerTestTypes.adminUserEmail,
         undefined)  // defaultUserPreferences
 
-    // Init BuildData
-    const buildData = await
-      buildMutateService.initBuildData(
+    // Get build info
+    var { buildData, buildFromFiles, projectDetails } = await
+      intentCodeAnalyzerQueryService.getBuildInfo(
         prisma,
-        instance.id)
-
-    // Get ProjectDetails
-    const projectDetails =
-      projectsQueryService.getProjectDetailsByInstanceId(
-        instance.id,
-        buildData.projects)
-
-    // Debug
-    // console.log(`${fnName}: projectDetails: ` + JSON.stringify(projectDetails))
-
-    // Validate
-    if (projectDetails == null) {
-      throw new CustomError(`${fnName}: projectDetails == null`)
-    }
-
-    // Get buildFromFiles
-    const buildFromFiles = await
-      projectCompileService.getBuildFromFiles(projectDetails)
+        instance)
 
     // Create chat session
     const chatSession = await
@@ -182,6 +162,7 @@ export class IntentCodeAnalyzerChatService {
         }
       }
 
+      // If a suggestion is listed
       if (replyData.rawJson.suggestion != null) {
 
         const thisSuggestion = replyData.rawJson.suggestion
@@ -196,6 +177,32 @@ export class IntentCodeAnalyzerChatService {
             console.log(`.. ${fileDelta.fileOp} ${fileDelta.relativePath}: ` +
               `${fileDelta.change}`)
           }
+        }
+
+        // Prompt to apply or ignore the suggestion
+        console.log(``)
+        console.log(`[a] Approve the suggestion [i] Ignore`)
+
+        input = await
+          consoleService.askQuestion('> ')
+
+        input = input.trim()
+
+        // Apply?
+        if (input === 'a') {
+
+          // Action the suggestion
+          await intentCodeAnalyzerSuggestionsMutateService.approveSuggestions(
+            prisma,
+            buildData,
+            buildFromFiles,
+            [replyData.rawJson.suggestion]);
+
+          // Get build info
+          ({ buildData, buildFromFiles, projectDetails } = await
+            intentCodeAnalyzerQueryService.getBuildInfo(
+              prisma,
+              instance))
         }
       }
     }
