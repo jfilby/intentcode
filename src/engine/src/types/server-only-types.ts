@@ -1,6 +1,5 @@
 import { Instance, SourceNode } from '@prisma/client'
 import { AiTechDefs } from '@/serene-ai-server/types/tech-defs'
-import { BuildData, BuildFromFile } from './build-types'
 
 export enum CompilerMetaDataApproachs {
   analyzer = 'analyzer',
@@ -113,6 +112,11 @@ export enum InstanceSettingNames {
 export enum MessageTypes {
   errors = 'errors',
   warnings = 'warnings'
+}
+
+export enum Emoticons {
+  tick = '✓',
+  cross = '✗'
 }
 
 export enum VersionNames {

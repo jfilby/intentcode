@@ -1,3 +1,4 @@
+import chalk from 'chalk'
 import fs from 'fs'
 import { blake3 } from '@noble/hashes/blake3'
 import { PrismaClient, SourceNode, Tech } from '@prisma/client'
@@ -6,7 +7,7 @@ import { UsersService } from '@/serene-core-server/services/users/service'
 import { AiTasksService } from '@/serene-ai-server/services/ai-tasks/ai-tasks-service'
 import { TextParsingService } from '@/serene-ai-server/services/content/text-parsing-service'
 import { BuildData, BuildFromFile } from '@/types/build-types'
-import { IntentCodeAiTasks, ProjectDetails, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
+import { Emoticons, IntentCodeAiTasks, ProjectDetails, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { SourceNodeNames, SourceNodeGenerationData, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
@@ -125,6 +126,9 @@ export class CompilerMutateService {
 
         // Print warnings and errors (must be at the end of results processing)
         intentCodeMessagesService.handleMessages(jsonContent)
+
+        // Output
+        console.log(`${chalk.bold.red(Emoticons.cross)} failed to compile`)
 
         // Exit (with error)
         process.exit(1)
@@ -317,6 +321,10 @@ export class CompilerMutateService {
                 promptWithoutSource,
                 buildFromFile) === false) {
 
+      // Output
+      console.log(`${chalk.bold.green(Emoticons.tick)} compiled from cache`)
+
+      // Return
       return
     }
 
@@ -351,5 +359,8 @@ export class CompilerMutateService {
             sourceNodeGenerationData,
             content,
             jsonContent)
+
+    // Output
+    console.log(`${chalk.bold.green(Emoticons.tick)} compiled OK`)
   }
 }
