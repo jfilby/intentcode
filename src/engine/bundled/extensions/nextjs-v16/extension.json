@@ -1,0 +1,8 @@
+{
+  "id": "intentcode/bundled-nextjs-v16",
+  "name": "Bundled Next.js v16 (TypeScript)",
+  "version": "0.0.1",
+  "dependencies": {
+    "intentcode/nodejs-typescript": "^0"
+  }
+}
