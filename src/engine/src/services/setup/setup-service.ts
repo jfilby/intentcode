@@ -44,7 +44,7 @@ export class SetupService {
 
     // Debug
     console.log(`${fnName}: upserting ChatSettings record with ` +
-                `userProfileId: ${userProfileId}`)
+      `userProfileId: ${userProfileId}`)
 
     // Upsert AgentUser records
     await agentUserService.setup(prisma)
@@ -54,9 +54,9 @@ export class SetupService {
 
       // Get the tech and agent for the chat settings
       const agentUser = await
-              agentUserModel.getByUniqueRefId(
-                prisma,
-                chatSetting.agentUniqueRef)
+        agentUserModel.getByUniqueRefId(
+          prisma,
+          chatSetting.agentUniqueRef)
 
       // Validate
       if (agentUser == null) {
@@ -65,18 +65,18 @@ export class SetupService {
 
       // Upsert ChatSettings
       await chatSettingsModel.upsert(
-              prisma,
-              undefined,  // id
-              null,       // baseChatSettingsId
-              BaseDataTypes.activeStatus,
-              true,       // isEncryptedAtRest
-              chatSetting.isJsonMode,
-              true,       // isPinned
-              chatSetting.name,
-              agentUser.id,
-              null,       // prompt
-              null,       // appCustom
-              userProfileId)
+        prisma,
+        undefined,  // id
+        null,       // baseChatSettingsId
+        BaseDataTypes.activeStatus,
+        true,       // isEncryptedAtRest
+        chatSetting.isJsonMode,
+        true,       // isPinned
+        chatSetting.name,
+        agentUser.id,
+        null,       // prompt
+        null,       // appCustom
+        userProfileId)
     }
   }
 
@@ -84,34 +84,34 @@ export class SetupService {
 
     // Get/create an admin user
     const adminUserProfile = await
-            usersService.getOrCreateUserByEmail(
-              prisma,
-              ServerTestTypes.adminUserEmail,
-              undefined)  // defaultUserPreferences
+      usersService.getOrCreateUserByEmail(
+        prisma,
+        ServerTestTypes.adminUserEmail,
+        undefined)  // defaultUserPreferences
 
     // Chat settings setup
     await this.chatSettingsSetup(
-            prisma,
-            adminUserProfile.id)
+      prisma,
+      adminUserProfile.id)
 
     // Serene AI setup
     await sereneAiSetup.setup(
-            prisma,
-            adminUserProfile.id)
+      prisma,
+      adminUserProfile.id)
 
     // Setup base data
     await this.setupBaseData(
-            prisma,
-            adminUserProfile)
+      prisma,
+      adminUserProfile)
   }
 
   async setupIfRequired(prisma: PrismaClient) {
 
     // Try to get the admin user profile
     const adminUserProfile = await
-            usersService.getUserProfileByEmail(
-              prisma,
-              ServerTestTypes.adminUserEmail)
+      usersService.getUserProfileByEmail(
+        prisma,
+        ServerTestTypes.adminUserEmail)
 
     // Try to get the System project
     var systemProject: Instance | undefined = undefined
@@ -139,18 +139,18 @@ export class SetupService {
 
     // Setup project
     const systemProject = await
-            projectsMutateService.getOrCreate(
-              prisma,
-              adminUserProfile.id,
-              ServerOnlyTypes.systemProjectName)
+      projectsMutateService.getOrCreate(
+        prisma,
+        adminUserProfile.id,
+        ServerOnlyTypes.systemProjectName)
 
     // Setup engine version
     const engineVersion = await
-            versionModel.upsert(
-              prisma,
-              undefined,  // id
-              VersionNames.engine,
-              ServerOnlyTypes.engineVersion)
+      versionModel.upsert(
+        prisma,
+        undefined,  // id
+        VersionNames.engine,
+        ServerOnlyTypes.engineVersion)
 
     // Setup AI tasks with default models
     await aiModelsSelectionService.setupAiTasksWithDefaults(prisma)
