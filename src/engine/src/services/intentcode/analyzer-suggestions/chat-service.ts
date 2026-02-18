@@ -1,6 +1,6 @@
+import { input } from '@inquirer/prompts'
 import { PrismaClient } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
-import { consoleService } from '@/serene-core-server/services/console/service'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { ChatMessage } from '@/serene-ai-server/types/server-only-types'
 import { BaseDataTypes } from '@/types/base-data-types'
@@ -23,6 +23,9 @@ export class IntentCodeAnalyzerSuggestionsChatService {
 
   // Consts
   clName = 'IntentCodeAnalyzerSuggestionsChatService'
+
+  escAddCommand = '/a'
+  escIgnoreCommand = '/i'
 
   // Code
   async createChatSession(
@@ -128,16 +131,17 @@ export class IntentCodeAnalyzerSuggestionsChatService {
 
       // Prompt for input
       console.log(``)
-      console.log(
-        `Chat.. or [a] Add to approved list [i] Ignore this suggestion`)
 
-      var input = await
-        consoleService.askQuestion('> ')
+      var userInput = await
+        input({
+          message:
+            `Chat.. or /a (add to approved list) /i (ignore this suggestion)`
+        })
 
-      input = input.trim()
+      userInput = userInput.trim()
 
       // Handle menu selections
-      if (input === 'a') {
+      if (userInput === this.escAddCommand) {
 
         // Update the suggestion
         suggestion = thisSuggestion
@@ -147,7 +151,7 @@ export class IntentCodeAnalyzerSuggestionsChatService {
           addToApprovedList: true
         }
 
-      } else if (input === 'i') {
+      } else if (userInput === this.escIgnoreCommand) {
 
         // Return with ignore
         return {
@@ -159,7 +163,7 @@ export class IntentCodeAnalyzerSuggestionsChatService {
       const contents: ChatMessage[] = [
         {
           type: 'md',
-          text: input
+          text: userInput
         }
       ]
 

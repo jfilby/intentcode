@@ -1,6 +1,6 @@
+import { input, select } from '@inquirer/prompts'
 import { Instance, PrismaClient } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
-import { consoleService } from '@/serene-core-server/services/console/service'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { ChatMessage } from '@/serene-ai-server/types/server-only-types'
 import { BaseDataTypes } from '@/types/base-data-types'
@@ -27,6 +27,11 @@ export class IntentCodeAnalyzerChatService {
 
   // Consts
   clName = 'IntentCodeAnalyzerChatService'
+
+  approveCommand = 'approve'
+  ignoreCommand = 'ignore'
+
+  escBackCommand = '/b'
 
   // Code
   async createChatSession(
@@ -120,15 +125,16 @@ export class IntentCodeAnalyzerChatService {
 
       // Prompt for input
       console.log(``)
-      console.log(`Chat.. or [b] Back`)
 
-      var input = await
-        consoleService.askQuestion('> ')
+      var userInput = await
+        input({
+          message: `Chat.. or /b (Back)`
+        })
 
-      input = input.trim()
+      userInput = userInput.trim()
 
       // Handle menu selections
-      if (input === 'b') {
+      if (userInput === this.escBackCommand) {
         return
       }
 
@@ -136,7 +142,7 @@ export class IntentCodeAnalyzerChatService {
       const contents: ChatMessage[] = [
         {
           type: 'md',
-          text: input
+          text: userInput
         }
       ]
 
@@ -186,15 +192,26 @@ export class IntentCodeAnalyzerChatService {
 
         // Prompt to apply or ignore the suggestion
         console.log(``)
-        console.log(`[a] Approve the suggestion [i] Ignore`)
 
-        input = await
-          consoleService.askQuestion('> ')
-
-        input = input.trim()
+        // Prompt
+        const command = await select({
+          message: `Select an option`,
+          loop: false,
+          pageSize: 10,
+          choices: [
+            {
+              name: `Approve the suggestion`,
+              value: this.approveCommand
+            },
+            {
+              name: `Ignore`,
+              value: this.ignoreCommand
+            }
+          ]
+        })
 
         // Apply?
-        if (input === 'a') {
+        if (command === this.approveCommand) {
 
           // Action the suggestion
           await intentCodeAnalyzerSuggestionsMutateService.approveSuggestions(

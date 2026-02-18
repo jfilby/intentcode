@@ -16,6 +16,7 @@
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.989.0",
     "@google/genai": "^1.35.0",
+    "@inquirer/prompts": "^8.2.1",
     "@libsql/client": "^0.17.0",
     "@noble/hashes": "^1.8.0",
     "@paralleldrive/cuid2": "^3.3.0",

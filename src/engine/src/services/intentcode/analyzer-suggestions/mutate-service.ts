@@ -1,6 +1,6 @@
 import chalk from 'chalk'
+import { select } from '@inquirer/prompts'
 import { PrismaClient } from '@prisma/client'
-import { consoleService } from '@/serene-core-server/services/console/service'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { AiTasksService } from '@/serene-ai-server/services/ai-tasks/ai-tasks-service'
@@ -25,6 +25,15 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
 
   // Consts
   clName = 'IntentCodeAnalyzerSuggestionsMutateService'
+
+  addCommand = 'add'
+  chatCommand = 'chat'
+  proceedCommand = 'proceed'
+  ignoreCommand = 'ignore'
+  ignoreAllCommand = 'ignore-all'
+
+  reviewCommand = 'review'
+  approveAllCommand = 'approve-all'
 
   // Code
   async approveSuggestions(
@@ -126,21 +135,42 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
     // REPL loop
     while (true) {
 
+      // Blank line
       console.log(``)
-      console.log(`[a] Add to approved list`)
-      console.log(`[c] Chat about this suggestion`)
-      console.log(`[p] Proceed with approved list`)
-      console.log(`[i] Ignore this suggestion`)
-      console.log(`[r] Ignore all, including approved list`)
 
-      // Prompt for user selection
-      const selection = await
-              consoleService.askQuestion('> ')
+      // Prompt
+      const command = await select({
+        message: `Select an option`,
+        loop: false,
+        pageSize: 10,
+        choices: [
+          {
+            name: `Add to approved list`,
+            value: this.addCommand
+          },
+          {
+            name: `Chat about this suggestion`,
+            value: this.chatCommand
+          },
+          {
+            name: `Proceed with approved list`,
+            value: this.proceedCommand
+          },
+          {
+            name: `Ignore this suggestion`,
+            value: this.ignoreCommand
+          },
+          {
+            name: `Ignore all, including approved list`,
+            value: this.ignoreAllCommand
+          }
+        ]
+      })
 
       // Handle the user selection
-      switch (selection.trim()) {
+      switch (command) {
 
-        case 'a': {
+        case this.addCommand: {
           return {
             addToApprovedList: true,
             stopReview: false,
@@ -148,7 +178,7 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
           }
         }
 
-        case  'c': {
+        case this.chatCommand: {
           const results = await
             intentCodeAnalyzerSuggestionsChatService.openChat(
               prisma,
@@ -163,16 +193,7 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
           }
         }
 
-        case 'x': {
-          return {
-            addToApprovedList: false,
-            stopReview: false,
-            ignoreAll: false,
-            openChat: true
-          }
-        }
-
-        case 'i': {
+        case this.ignoreCommand: {
           return {
             addToApprovedList: false,
             stopReview: false,
@@ -180,19 +201,19 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
           }
         }
 
-        case 'p': {
-          return {
-            addToApprovedList: false,
-            stopReview: true,
-            ignoreAll: false
-          }
-        }
-
-        case 'r': {
+        case this.ignoreAllCommand: {
           return {
             addToApprovedList: false,
             stopReview: true,
             ignoreAll: true
+          }
+        }
+
+        case this.proceedCommand: {
+          return {
+            addToApprovedList: false,
+            stopReview: true,
+            ignoreAll: false
           }
         }
 
@@ -289,19 +310,32 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
       console.log(``)
       console.log(chalk.bold(`─── Options ───`))
       console.log(``)
-      console.log(`[r] Review suggestions one-by-one`)
-      // console.log(`[o] Review suggestions by overview`)
-      console.log(`[a] Approve all suggestions`)
-      console.log(`[i] Ignore all suggestions`)
 
-      // Get selection
-      const selection = await
-        consoleService.askQuestion('> ')
+      // Prompt for command
+      const command = await select({
+        message: `Select an option`,
+        loop: false,
+        pageSize: 10,
+        choices: [
+          {
+            name: `Review suggestions one-by-one`,
+            value: this.reviewCommand
+          },
+          {
+            name: `Approve all suggestions`,
+            value: this.approveAllCommand
+          },
+          {
+            name: `Ignore all suggestions`,
+            value: this.ignoreAllCommand
+          }
+        ]
+      })
 
       // Handle the selection
-      switch (selection) {
+      switch (command) {
 
-        case 'r': {
+        case this.reviewCommand: {
 
           await this.reviewSuggestionsOneByOne(
             prisma,
@@ -318,7 +352,7 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
           return
         } */
 
-        case 'a': {
+        case this.approveAllCommand: {
 
           await this.approveSuggestions(
             prisma,
@@ -329,7 +363,7 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
           return
         }
 
-        case 'i': {
+        case this.ignoreAllCommand: {
 
           // Ignore (for now)
           return

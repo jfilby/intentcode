@@ -1,8 +1,8 @@
 import chalk from 'chalk'
+import { select } from '@inquirer/prompts'
 import { Instance, PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
-import { consoleService } from '@/serene-core-server/services/console/service'
-import { ServerOnlyTypes } from '@/types/server-only-types'
+import { CommonCommands, ServerOnlyTypes } from '@/types/server-only-types'
 import { ExtensionMutateService } from './mutate-service'
 import { ExtensionQueryService } from './query-service'
 import { GraphsDeleteService } from '@/services/graphs/general/delete-service'
@@ -22,6 +22,16 @@ export class ManageExtensionsCliService {
   // Consts
   clName = 'ManageExtensionsCliService'
 
+  currentDirCommand = 'current-dir'
+  listDirCommand = 'list-dir'
+  systemOnlyCommand = 'system-only'
+
+  projectExtensionsCommand = 'project'
+  systemExtensionsCommand = 'system'
+
+  loadExtensionIntoProjectCommand = 'load'
+  deleteExtensionCommand = '`delete'
+
   // Code
   async loadExtensionIntoProject(
           prisma: PrismaClient,
@@ -40,10 +50,8 @@ export class ManageExtensionsCliService {
     const loadToInstance = await
             projectsQueryService.getProjectByList(prisma)
 
-    // Validate
+    // Non-project (back)
     if (loadToInstance == null) {
-
-      console.log(`Invalid to project`)
       return
     }
 
@@ -75,8 +83,8 @@ export class ManageExtensionsCliService {
   }
 
   async repl(
-          prisma: PrismaClient,
-          instance?: Instance) {
+    prisma: PrismaClient,
+    instance?: Instance) {
 
     // Debug
     const fnName = `${this.clName}.repl()`
@@ -88,40 +96,52 @@ export class ManageExtensionsCliService {
       console.log(``)
       console.log(chalk.bold(`─── Extension management options ───`))
       console.log(``)
-      console.log(`[s] All available extensions in the system`)
+
+      // Choices
+      var choices = [
+        {
+          name: `Back`,
+          value: CommonCommands.back
+        },
+        {
+          name: `All available extensions in the system`,
+          value: this.systemExtensionsCommand
+        }
+      ]
 
       if (instance != null) {
-        console.log(`[p] Enabled extensions for this project`)
+        choices.push({
+          name: `Enabled extensions for this project`,
+          value: this.projectExtensionsCommand
+        })
       }
 
-      console.log(`[x] Exit`)
-
-      // Prompt for project load method
-      const selection = await
-              consoleService.askQuestion('> ')
+      // Prompt
+      const command = await select({
+        message: `Select an option`,
+        loop: false,
+        pageSize: 10,
+        choices: choices
+      })
 
       // Handle the user selection
-      switch (selection.trim()) {
+      switch (command) {
 
-        case '': {
-          break
+        case CommonCommands.back: {
+          return
         }
 
-        case 's': {
+        case this.systemExtensionsCommand: {
           await this.systemProjectExtensions(prisma)
           break
         }
 
-        case 'p': {
+        case this.projectExtensionsCommand: {
           await this.userProjectExtensions(
                   prisma,
                   instance!)
 
           break
-        }
-
-        case 'x': {
-          process.exit(0)
         }
 
         default: {
@@ -140,21 +160,38 @@ export class ManageExtensionsCliService {
     console.log(``)
     console.log(chalk.bold(`─── Do you want to specify a project? ───`))
     console.log(``)
-    console.log(`[c] Yes, by current directory`)
-    console.log(`[l] Yes, by list`)
-    console.log(`[s] No (system only)`)
-    console.log(`[b] Back`)
 
-    // Prompt for project load method
-    const loadProjectMethod = await
-            consoleService.askQuestion('> ')
+    // Prompt
+    const command = await select({
+      message: `Select an option`,
+      loop: false,
+      pageSize: 10,
+      choices: [
+        {
+          name: `Back`,
+          value: CommonCommands.back
+        },
+        {
+          name: `Yes, by current directory`,
+          value: this.currentDirCommand
+        },
+        {
+          name: `Yes, by list`,
+          value: this.listDirCommand
+        },
+        {
+          name: `No (system only)`,
+          value: this.systemOnlyCommand
+        }
+      ]
+    })
 
     // Get project by method
     var instance: Instance | undefined = undefined
 
-    switch (loadProjectMethod) {
+    switch (command) {
 
-      case 'c': {
+      case this.currentDirCommand: {
         instance = await
           projectsQueryService.getProjectByPath(
             prisma,
@@ -163,18 +200,18 @@ export class ManageExtensionsCliService {
         break
       }
 
-      case 'l': {
+      case this.listDirCommand: {
         instance = await
           projectsQueryService.getProjectByList(prisma)
 
         break
       }
 
-      case 's': {
+      case this.systemOnlyCommand: {
         break
       }
 
-      case 'b': {
+      case CommonCommands.back: {
         return
       }
 
@@ -222,7 +259,14 @@ export class ManageExtensionsCliService {
     console.log(``)
     console.log(chalk.bold(`─── Project: ${systemProject.name} ───`))
     console.log(``)
-    console.log(`[b] Back`)
+
+    // Choices
+    var choices = [
+      {
+        name: `Back`,
+        value: CommonCommands.back as string
+      }
+    ]
 
     // List project extensions
     var i = 1
@@ -230,7 +274,10 @@ export class ManageExtensionsCliService {
 
     for (const extension of extensionsData.extensionNodes) {
 
-      console.log(`${i}: ${extension.name}`)
+      choices.push({
+        name: extension.name,
+        value: `${i}`
+      })
 
       extensionsMap.set(
         `${i}`,
@@ -239,22 +286,26 @@ export class ManageExtensionsCliService {
       i += 1
     }
 
-    // Prompt for selection
-    const selection = await
-            consoleService.askQuestion('> ')
+    // Prompt for command
+    const command = await select({
+      message: `Select an option`,
+      loop: false,
+      pageSize: 10,
+      choices: choices
+    })
 
     // Handle selection
-    if (selection === 'b') {
+    if (command === CommonCommands.back) {
       return
     }
 
     // Handle extension selection
-    if (extensionsMap.has(selection)) {
+    if (extensionsMap.has(command)) {
 
       await this.viewExtension(
               prisma,
               systemProject,
-              extensionsMap.get(selection)!)
+              extensionsMap.get(command)!)
     }
   }
 
@@ -280,7 +331,14 @@ export class ManageExtensionsCliService {
     console.log(``)
     console.log(chalk.bold(`─── Project: ${instance.name} ───`))
     console.log(``)
-    console.log(`[b] Back`)
+
+    // Choices
+    var choices = [
+      {
+        name: `Back`,
+        value: CommonCommands.back as string
+      }
+    ]
 
     // List project extensions
     var i = 1
@@ -288,7 +346,10 @@ export class ManageExtensionsCliService {
 
     for (const extension of extensionsData.extensionNodes) {
 
-      console.log(`[${i}] ${extension.name}`)
+      choices.push({
+        name: extension.name,
+        value: `${i}`
+      })
 
       extensionsMap.set(
         `${i}`,
@@ -297,22 +358,26 @@ export class ManageExtensionsCliService {
       i += 1
     }
 
-    // Prompt for selection
-    const selection = await
-            consoleService.askQuestion('> ')
+    // Prompt for command
+    const command = await select({
+      message: `Select an option`,
+      loop: false,
+      pageSize: 10,
+      choices: choices
+    })
 
     // Handle selection
-    if (selection === 'b') {
+    if (command === CommonCommands.back) {
       return
     }
 
     // Handle extension selection
-    if (extensionsMap.has(selection)) {
+    if (extensionsMap.has(command)) {
 
       await this.viewExtension(
               prisma,
               instance,
-              extensionsMap.get(selection)!)
+              extensionsMap.get(command)!)
     }
   }
 
@@ -327,30 +392,43 @@ export class ManageExtensionsCliService {
     console.log(chalk.bold(`─── Extension: ${extensionNode.name} ───`))
     console.log(``)
 
-    // Print details
-    console.log(`Options:`)
-    console.log(`---`)
-    console.log(`[b] Back`)
+    // Choices
+    var choices = [
+      {
+        name: `Back`,
+        value: CommonCommands.back as string
+      }
+    ]
 
     if (instance.name === ServerOnlyTypes.systemProjectName) {
 
-      console.log(`[l] Load extension into a project`)
+      choices.push({
+        name: `Load extension into a project`,
+        value: this.loadExtensionIntoProjectCommand
+      })
     }
 
-    console.log(`[d] Delete this extension`)
+    choices.push({
+      name: `Delete this extension`,
+      value: this.deleteExtensionCommand
+    })
 
-    // Prompt for selection
-    const selection = await
-            consoleService.askQuestion('> ')
+    // Prompt for command
+    const command = await select({
+      message: `Select an option`,
+      loop: false,
+      pageSize: 10,
+      choices: choices
+    })
 
     // Handle selection
-    switch (selection) {
+    switch (command) {
 
-      case 'b': {
+      case CommonCommands.back: {
         break
       }
 
-      case 'l': {
+      case this.loadExtensionIntoProjectCommand: {
         await this.loadExtensionIntoProject(
                 prisma,
                 instance,
@@ -359,7 +437,7 @@ export class ManageExtensionsCliService {
         break
       }
 
-      case 'd': {
+      case this.deleteExtensionCommand: {
         await graphsDeleteService.deleteSourceNodeCascade(
                 prisma,
                 extensionNode.id,

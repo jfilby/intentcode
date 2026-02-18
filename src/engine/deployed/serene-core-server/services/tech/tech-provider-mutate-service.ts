@@ -1,11 +1,11 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import chalk from 'chalk'
+import { input } from '@inquirer/prompts'
 import { PrismaClient } from '@prisma/client'
 import { CustomError } from '../../types/errors'
 import { TechProviderApiKeyModel } from '../../models/tech/tech-provider-api-key-model'
 import { TechProviderModel } from '../../models/tech/tech-provider-model'
-import { consoleService } from '../console/service'
 
 // Models
 const techProviderApiKeyModel = new TechProviderApiKeyModel()
@@ -111,11 +111,11 @@ export class TechProviderMutateService {
     console.log(``)
     console.log(chalk.bold(`─── Load API keys ───`))
     console.log(``)
-    console.log(`${fnName}: Enter the path containing the .json files ` +
-                `with the tech provider API keys to load`)
+    console.log(`Enter the path containing the .json files ` +
+      `with the tech provider API keys to load`)
 
     const jsonPath = await
-            consoleService.askQuestion('> ')
+        input({ message: '> ' })
 
     // Walk the path and get all json files
     const files = await this.getJsonFiles(jsonPath)

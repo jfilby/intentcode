@@ -1,9 +1,9 @@
 import fs from 'fs'
 import path from 'path'
+import { input } from '@inquirer/prompts'
 import { blake3 } from '@noble/hashes/blake3'
 import { Instance, PrismaClient, SourceNode, UserProfile } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
-import { consoleService } from '@/serene-core-server/services/console/service'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { DependenciesMutateService } from '../graphs/dependencies/mutate-service'
 import { DepsJsonService } from '../managed-files/deps/deps-json-service'
@@ -62,7 +62,7 @@ export class ProjectSetupService {
       }
 
       projectName = await
-        consoleService.askQuestion('project name> ')
+        input({ message: `project name> `})
 
       // Check for another instance that already exists for the parent
       instance = await
@@ -147,7 +147,7 @@ export class ProjectSetupService {
 
     // Prompt for project path
     const inputProjectPath = await
-            consoleService.askQuestion('project path> ')
+      input({ message: `>` })
 
     // Determine project path
     var projectPath = inputProjectPath

@@ -1,8 +1,9 @@
 import chalk from 'chalk'
+import { select } from '@inquirer/prompts'
 import { Instance, PrismaClient } from '@prisma/client'
-import { consoleService } from '@/serene-core-server/services/console/service'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { AiKeysCliReplService } from '@/serene-ai-server/services/setup/ai-keys-cli-repl-service'
+import { CommonCommands } from '@/types/server-only-types'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { AiModelsSelectionService } from './ai-models-selection-service'
 import { InfoService } from './info-service'
@@ -10,7 +11,6 @@ import { LoadExternalExtensionsService } from '../extensions/extension/load-exte
 import { ManageExtensionsCliService } from '../extensions/extension/cli-service'
 import { ProjectsQueryService } from '../projects/query-service'
 import { ProjectCliService } from '../projects/cli-service'
-import { ProjectSetupService } from '../projects/setup-project'
 import { SetupService } from './setup-service'
 import { TestsService } from '../tests/tests-service'
 
@@ -22,7 +22,6 @@ const loadExternalExtensionsService = new LoadExternalExtensionsService()
 const manageExtensionsCliService = new ManageExtensionsCliService()
 const projectsQueryService = new ProjectsQueryService()
 const projectCliService = new ProjectCliService()
-const projectSetupService = new ProjectSetupService()
 const setupService = new SetupService()
 const testsService = new TestsService()
 const usersService = new UsersService()
@@ -52,19 +51,9 @@ export class CliService {
     // this.loadTechProviderApiKeysCommand,
     this.setupCommand,
     this.testsCommand,
-    this.infoCommand
+    this.infoCommand,
+    CommonCommands.exit
   ]
-
-  commandsBySelection: Record<string, string> = {
-    'p': this.projectsCommand,
-    'l': this.loadExtensionsCommand,
-    'e': this.manageExtensionsCommand,
-    'm': this.manageAiModelsCommand,
-    'k': this.manageAiKeysCommand,
-    's': this.setupCommand,
-    't': this.testsCommand,
-    'n': this.infoCommand
-  }
 
   // Code
   async menu(prisma: PrismaClient) {
@@ -85,27 +74,55 @@ export class CliService {
       console.log(``)
       console.log(chalk.bold(`─── Main menu ───`))
       console.log(``)
-      console.log(`[p] Projects`)
-      console.log(`[l] Load extensions`)
-      console.log(`[e] Manage extensions`)
-      console.log(`[m] Manage AI models`)
-      console.log(`[k] Manage AI keys`)
-      console.log(`[s] Setup`)
-      console.log(`[t] Tests`)
-      console.log(`[n] Info`)
-      console.log(`[x] Exit`)
 
-      // Get menu no
-      const menuNo = await
-        consoleService.askQuestion('> ')
+      const command = await select({
+        message: `Select an option`,
+        loop: false,
+        pageSize: 10,
+        choices: [
+          {
+            name: `Projects`,
+            value: this.projectsCommand
+          },
+          {
+            name: `Load extensions`,
+            value: this.loadExtensionsCommand
+          },
+          {
+            name: `Manage extensions`,
+            value: this.manageExtensionsCommand
+          },
+          {
+            name: `Manage AI models`,
+            value: this.manageAiModelsCommand
+          },
+          {
+            name: `Manage AI keys`,
+            value: this.manageAiKeysCommand
+          },
+          {
+            name: `Setup`,
+            value: this.setupCommand
+          },
+          {
+            name: `Tests`,
+            value: this.testsCommand
+          },
+          {
+            name: `Info`,
+            value: this.infoCommand
+          },
+          {
+            name: `Exit`,
+            value: CommonCommands.exit
+          }
+        ]
+      })
 
       // Exit?
-      if (menuNo === 'x') {
+      if (command === CommonCommands.exit) {
         return
       }
-
-      // Get command by menu no
-      const command = this.commandsBySelection[menuNo]
 
       // Run command
       if (command != null) {

@@ -1,6 +1,7 @@
 import chalk from 'chalk'
+import { select } from '@inquirer/prompts'
 import { PrismaClient, UserProfile } from '@prisma/client'
-import { consoleService } from '@/serene-core-server/services/console/service'
+import { CommonCommands } from '@/types/server-only-types'
 import { CalcTestsService } from './calc-tests-service'
 import { CalcV2TestsService } from './calc-v2-tests-service'
 
@@ -14,6 +15,9 @@ export class TestsService {
   // Consts
   clName = 'TestsService'
 
+  calcTests = `calc-tests`
+  calcV2Tests = `calc-v2-tests`
+
   // Code
   async tests(prisma: PrismaClient,
               regularTestUserProfile: UserProfile,
@@ -23,17 +27,35 @@ export class TestsService {
     console.log(``)
     console.log(chalk.bold(`─── Tests ───`))
     console.log(``)
-    console.log(`[1] Calc project`)
-    console.log(`[2] Calc v2 project`)
 
-    // Get test to run
-    const testNo = await
-            consoleService.askQuestion('> ')
+    // Choices
+    var choices = [
+      {
+        name: `Back`,
+        value: CommonCommands.back as string
+      },
+      {
+        name: `Calc project`,
+        value: this.calcTests
+      },
+      {
+        name: `Calc v2 project`,
+        value: this.calcV2Tests
+      }
+    ]
+
+    // Prompt for command
+    const command = await select({
+      message: `Select an option`,
+      loop: false,
+      pageSize: 10,
+      choices: choices
+    })
 
     // Run the selected test
-    switch (testNo) {
+    switch (command) {
 
-      case '1': {
+      case this.calcTests: {
         await calcTestsService.tests(
                 prisma,
                 regularTestUserProfile,
@@ -41,7 +63,7 @@ export class TestsService {
         return
       }
 
-      case '2': {
+      case this.calcV2Tests: {
         await calcV2TestsService.tests(
                 prisma,
                 regularTestUserProfile,

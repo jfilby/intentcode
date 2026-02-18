@@ -1,10 +1,10 @@
 import fs from 'fs'
 import chalk from 'chalk'
+import { input, select } from '@inquirer/prompts'
 import { Instance, PrismaClient, UserProfile } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { InstanceModel } from '@/serene-core-server/models/instances/instance-model'
-import { consoleService } from '@/serene-core-server/services/console/service'
-import { ServerOnlyTypes } from '@/types/server-only-types'
+import { CommonCommands, ServerOnlyTypes } from '@/types/server-only-types'
 import { BuildMutateService } from '../intentcode/build/mutate-service'
 import { IntentCodeAnalyzerChatService } from '../intentcode/analyzer/chat-service'
 import { ProjectsMutateService } from './mutate-service'
@@ -26,6 +26,12 @@ export class ProjectCliService {
 
   // Consts
   clName = 'ProjectCliService'
+
+  aboutCommand = `about`
+  chatCommand = `chat`
+  runBuildCommand = `run-build`
+
+  addProjectCommand = `add-project`
 
   // Code
   async aboutProject(
@@ -57,13 +63,11 @@ export class ProjectCliService {
     // Banner
     console.log(``)
     console.log(chalk.bold(`─── Add a project ───`))
+    console.log(``)
 
     // Get project name
-    console.log(``)
-    console.log(`Enter the project name:`)
-
     var projectName = await
-      consoleService.askQuestion('> ')
+      input({ message: `Enter the project name` })
 
     projectName = projectName.trim()
 
@@ -83,11 +87,8 @@ export class ProjectCliService {
     }
 
     // Get project path
-    console.log(``)
-    console.log(`Enter the project path:`)
-
     var projectPath = await
-      consoleService.askQuestion('> ')
+      input({ message: `Enter the project path` })
 
     projectPath = projectPath.trim()
 
@@ -145,19 +146,40 @@ export class ProjectCliService {
       console.log(``)
       console.log(chalk.bold(`─── Project: ${instance.name} ───`))
       console.log(``)
-      console.log(`[a] About this project`)
-      console.log(`[c] Open a chat`)
-      console.log(`[r] Run the build`)
-      console.log(`[b] Back`)
 
-      // Get selection
-      const selection = await
-        consoleService.askQuestion('> ')
+
+      const command = await select({
+        message: `Select an option`,
+        loop: false,
+        pageSize: 10,
+        choices: [
+          {
+            name: `Back`,
+            value: CommonCommands.back
+          },
+          {
+            name: `About this project`,
+            value: this.aboutCommand
+          },
+          {
+            name: `Open a chat`,
+            value: this.chatCommand
+          },
+          {
+            name: `Run the build`,
+            value: this.runBuildCommand
+          }
+        ]
+      })
 
       // Handle selection
-      switch (selection) {
+      switch (command) {
 
-        case 'a': {
+        case CommonCommands.back: {
+          return
+        }
+
+        case this.aboutCommand: {
           await this.aboutProject(
             prisma,
             instance)
@@ -165,7 +187,7 @@ export class ProjectCliService {
           break
         }
 
-        case 'c': {
+        case this.chatCommand: {
           await intentCodeAnalyzerChatService.openChat(
             prisma,
             instance)
@@ -173,17 +195,13 @@ export class ProjectCliService {
           break
         }
 
-        case 'r': {
+        case this.runBuildCommand: {
           await buildMutateService.runBuild(
             prisma,
             instance.id,
             instance.name)
 
           break
-        }
-
-        case 'b': {
-          return
         }
 
         default: {
@@ -207,8 +225,18 @@ export class ProjectCliService {
       console.log(``)
       console.log(chalk.bold(`─── Projects ───`))
       console.log(``)
-      console.log(`[a] Add a project`)
-      console.log(`[b] Back`)
+
+      // Choices
+      var choices = [
+        {
+          name: `Back`,
+          value: CommonCommands.back
+        },
+        {
+          name: `Add a project`,
+          value: this.addProjectCommand
+        }
+      ]
 
       // Get projects
       var instances = await
@@ -242,15 +270,22 @@ export class ProjectCliService {
       // List projects
       for (const [projectNo, instance] of projectsMap.entries()) {
 
-        console.log(`[${projectNo}] ${instance.name}`)
+        choices.push({
+          name: instance.name,
+          value: projectNo
+        })
       }
 
-      // Get menu no
-      const selection = await
-        consoleService.askQuestion('> ')
+      // Select
+      const command = await select({
+        message: `Select an option`,
+        loop: false,
+        pageSize: 10,
+        choices: choices
+      })
 
-      // Handle selection
-      if (selection === 'a') {
+      // Handle command
+      if (command === this.addProjectCommand) {
 
         await this.addProject(
           prisma,
@@ -258,17 +293,17 @@ export class ProjectCliService {
 
         continue
 
-      } else if (selection === 'b') {
+      } else if (command === CommonCommands.back) {
         return
       }
 
       // Project
-      if (projectsMap.has(selection)) {
+      if (projectsMap.has(command)) {
 
         await this.project(
           prisma,
           adminUserProfile,
-          projectsMap.get(selection)!)
+          projectsMap.get(command)!)
       }
 
       // Default

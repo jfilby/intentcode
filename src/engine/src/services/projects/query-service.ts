@@ -1,13 +1,13 @@
 const NodeCache = require('node-cache')
 import path from 'path'
+import { select } from '@inquirer/prompts'
 import { Instance, PrismaClient } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { InstanceModel } from '@/serene-core-server/models/instances/instance-model'
-import { consoleService } from '@/serene-core-server/services/console/service'
 import { InstanceSettingModel } from '@/serene-core-server/models/instances/instance-setting-model'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { ServerTestTypes } from '@/types/server-test-types'
-import { InstanceSettingNames, ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types'
+import { CommonCommands, InstanceSettingNames, ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types'
 import { BuildsGraphMutateService } from '../graphs/builds/mutate-service'
 import { DotIntentCodeGraphQueryService } from '../graphs/dot-intentcode/graph-query-service'
 import { FsUtilsService } from '../utils/fs-utils-service'
@@ -287,6 +287,14 @@ export class ProjectsQueryService {
 
   async getProjectByList(prisma: PrismaClient) {
 
+    // Choices
+    var choices = [
+      {
+        name: `Back`,
+        value: CommonCommands.back as string
+      }
+    ]
+
     // Get projects
     const instances = await
             instanceModel.filter(
@@ -309,26 +317,31 @@ export class ProjectsQueryService {
         `${i}`,
         instance)
 
-      // Print entry
-      console.log(`${i}: ${instance.name}`)
+      // Add to choices
+      choices.push({
+        name: instance.name,
+        value: `${i}`
+      })
 
       // Inc i
       i += 1
     }
 
     // Prompt for project by number
-    const loadProjectNo = await
-            consoleService.askQuestion('> ')
+    const command = await select({
+      message: `Select an option`,
+      loop: false,
+      pageSize: 10,
+      choices: choices
+    })
 
-    // Invalid selection?
-    if (!instancesMap.has(loadProjectNo)) {
-
-      console.log(`Invalid selection`)
-      process.exit(1)
+    // Non-project selection
+    if (!instancesMap.has(command)) {
+      return undefined
     }
 
     // Return selected project
-    return instancesMap.get(loadProjectNo)
+    return instancesMap.get(command)
   }
 
   async getProjectPath(

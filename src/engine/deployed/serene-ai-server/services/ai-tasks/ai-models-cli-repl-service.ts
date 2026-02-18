@@ -1,7 +1,7 @@
 import chalk from 'chalk'
+import { select } from '@inquirer/prompts'
 import { PrismaClient } from '@prisma/client'
 import { SereneCoreServerTypes } from '@/serene-core-server/types/user-types'
-import { consoleService } from '@/serene-core-server/services/console/service'
 import { AiTaskDetail, AiTasksService } from './ai-tasks-service'
 
 // Services
@@ -12,6 +12,9 @@ export class AiModelsCliReplService {
 
   // Consts
   clName = 'AiModelsCliReplService'
+
+  backCommand = 'back'
+  resetCommand = 'reset'
 
   // Code
   async changeModel(
@@ -29,11 +32,19 @@ export class AiModelsCliReplService {
       console.log(``)
       console.log(chalk.bold(`─── AI model for ${aiTaskDetail.description} ───`))
       console.log(``)
-      console.log(`[b] Back`)
 
-      // Get menu no
-      const menuNo = await
-        consoleService.askQuestion('> ')
+      // Prompt
+      const command = await select({
+        message: `Select an option`,
+        loop: false,
+        pageSize: 10,
+        choices: [
+          {
+            name: `Back`,
+            value: this.backCommand
+          }
+        ]
+      })
     }
   }
 
@@ -68,23 +79,45 @@ export class AiModelsCliReplService {
       console.log(``)
       console.log(chalk.bold(`─── AI models maintenance ───`))
       console.log(``)
-      console.log(`[b] Back`)
-      console.log(`[r] Reset to defaults`)
+
+      // Choices
+      const choices = [
+        {
+          name: `Back`,
+          value: this.backCommand as string
+        },
+        {
+          name: `Reset`,
+          value: this.resetCommand
+        }
+      ]
 
       for (const [menuNo, desc] of aiTaskMap.entries()) {
 
-        console.log(`[${menuNo}] ${desc}`)
+        choices.push({
+          name: desc as any as string,
+          value: `${menuNo}`
+        })
       }
 
-      // Get menu no
-      const menuNo = await
-        consoleService.askQuestion('> ')
+      // Prompt
+      const command = await select({
+        message: `Select an option`,
+        loop: false,
+        pageSize: 10,
+        choices: [
+          {
+            name: `Back`,
+            value: this.backCommand
+          }
+        ]
+      })
 
       // Handle back selection
-      if (menuNo === 'b') {
+      if (command === this.backCommand) {
         return
 
-      } else if (menuNo === 'r') {
+      } else if (command === this.resetCommand) {
 
         /* await this.resetToDefaults(
           prisma,
@@ -93,11 +126,11 @@ export class AiModelsCliReplService {
       }
 
       // Handle a selected AiTask
-      if (aiTaskMap.has(menuNo)) {
+      if (aiTaskMap.has(command)) {
 
         await this.changeModel(
           prisma,
-          aiTaskMap.get(menuNo)!)
+          aiTaskMap.get(command)!)
 
         continue
       }

@@ -1,9 +1,9 @@
 import chalk from 'chalk'
+import { confirm, input, select } from '@inquirer/prompts'
 import { PrismaClient, TechProvider, TechProviderApiKey } from '@prisma/client'
 import { TechProviderApiKeyModel } from '@/serene-core-server/models/tech/tech-provider-api-key-model'
 import { TechProviderModel } from '@/serene-core-server/models/tech/tech-provider-model'
 import { SereneCoreServerTypes } from '@/serene-core-server/types/user-types'
-import { consoleService } from '@/serene-core-server/services/console/service'
 import { SereneAiProviderProvides } from '../../types/server-only-types'
 import { AiTechDefs } from '../../types/tech-defs'
 
@@ -17,39 +17,60 @@ export class AiKeysCliReplService {
   // Consts
   clName = 'AiKeysCliReplService'
 
+  backCommand = 'back'
+
+  freeCommand = 'free'
+  paidCommand = 'paid'
+
+  addCommand = 'add'
+  listCommand = 'list'
+
   // Code
   async addApiKey(prisma: PrismaClient) {
 
     // Banner
     console.log(``)
     console.log(chalk.bold(`─── Add an API key ───`))
+    console.log(``)
+    console.log(chalk.bold(`Tech provider:`))
+    console.log(``)
 
     // Create a map of tech providers
     const techProvidersMap = await
       this.createTechProvidersMap(prisma)
 
-    // List options
-    console.log(``)
-    console.log(chalk.bold(`Tech provider:`))
-    console.log(`[b] Back`)
+    // Choices
+    const choices = [
+      {
+        name: `Back`,
+        value: this.backCommand
+      }
+    ]
 
     for (const [techProviderNo, techProvider] of techProvidersMap.entries()) {
 
-      console.log(`[${techProviderNo}] ${techProvider.name}`)
+      choices.push({
+        name: techProvider.name,
+        value: techProviderNo
+      })
     }
 
-    // Get menu no
-    const menuNo = await
-      consoleService.askQuestion('> ')
+    // Prompt
+    const command = await select({
+      message: `Select an option`,
+      loop: false,
+      pageSize: 10,
+      choices: choices
+    })
 
     // Read the selection
-    if (techProvidersMap.has(menuNo)) {
+    if (techProvidersMap.has(command)) {
 
       await this.addApiKeyWithTechProvider(
         prisma,
-        techProvidersMap.get(menuNo)!)
+        techProvidersMap.get(command)!)
 
-    } else if (menuNo === 'b') {
+    } else if (command === this.backCommand) {
       return
     }
   }
@@ -70,13 +91,12 @@ export class AiKeysCliReplService {
       }
     }
 
-    // API key banner
+    // Spacing
     console.log(``)
-    console.log(chalk.bold(`Enter your API key`))
 
-    // Get api key
+    // Prompt for api key
     const apiKey = await
-      consoleService.askQuestion('> ')
+      input({ message: `Enter your API key` })
 
     // Define key name
     var keyName = techProvider.name
@@ -131,26 +151,40 @@ export class AiKeysCliReplService {
 
       // Banner
       console.log(``)
-      console.log(chalk.bold(`Is your key free or paid?`))
-      console.log(`[b] Back`)
-      console.log(`[f] Free`)
-      console.log(`[p] Paid`)
 
-      // Get input
-      const input = await
-        consoleService.askQuestion('> ')
+      // Prompt
+      const command = await select({
+        message: `Is your key free or paid?`,
+        loop: false,
+        pageSize: 10,
+        choices: [
+          {
+            name: `Back`,
+            value: this.backCommand
+          },
+          {
+            name: `Free`,
+            value: this.freeCommand
+          },
+          {
+            name: `Paid`,
+            value: this.paidCommand
+          }
+        ]
+      })
 
-      switch (input) {
+      // Handle command
+      switch (command) {
 
-        case 'b': {
+        case this.backCommand: {
           return undefined
         }
 
-        case 'f': {
+        case this.freeCommand: {
           return SereneCoreServerTypes.free
         }
 
-        case 'p': {
+        case this.paidCommand: {
           return SereneCoreServerTypes.paid
         }
       }
@@ -180,23 +214,37 @@ export class AiKeysCliReplService {
     console.log(``)
     console.log(chalk.bold(`─── Available keys ───`))
     console.log(``)
-    console.log(`[b] Back`)
+
+    // Choices
+    const choices = [
+      {
+        name: `Back`,
+        value: this.backCommand
+      }
+    ]
 
     for (const [selection, apiKey] of apiKeysMap) {
 
-      console.log(`${selection}. ${apiKey.name}`)
+      choices.push({
+        name: apiKey.name,
+        value: selection
+      })
     }
 
-    // Get menu no
-    const menuNo = await
-      consoleService.askQuestion('> ')
+    // Prompt
+    const command = await select({
+      message: `Select an option`,
+      loop: false,
+      pageSize: 10,
+      choices: choices
+    })
 
     // Handle selection
-    if (apiKeysMap.has(menuNo)) {
+    if (apiKeysMap.has(command)) {
 
       await this.viewApiKey(
         prisma,
-        apiKeysMap.get(menuNo)!)
+        apiKeysMap.get(command)!)
     }
   }
 
@@ -208,27 +256,41 @@ export class AiKeysCliReplService {
       console.log(``)
       console.log(chalk.bold(`─── AI keys maintenance ───`))
       console.log(``)
-      console.log(`[b] Back`)
-      console.log(`[a] Add an API key`)
-      console.log(`[l] List existing API keys`)
 
-      // Get menu no
-      const menuNo = await
-        consoleService.askQuestion('> ')
+      // Prompt
+      const command = await select({
+        message: `Is your key free or paid?`,
+        loop: false,
+        pageSize: 10,
+        choices: [
+          {
+            name: `Back`,
+            value: this.backCommand
+          },
+          {
+            name: `Add an API key`,
+            value: this.addCommand
+          },
+          {
+            name: `List existing API keys`,
+            value: this.listCommand
+          }
+        ]
+      })
 
       // Handle menu no
-      switch (menuNo) {
+      switch (command) {
 
-        case 'b': {
+        case this.backCommand: {
           return
         }
 
-        case 'a': {
+        case this.addCommand: {
           await this.addApiKey(prisma)
           break
         }
 
-        case 'l': {
+        case this.listCommand: {
           await this.listApiKeys(prisma)
           break
         }
@@ -248,15 +310,16 @@ export class AiKeysCliReplService {
     console.log(``)
     console.log(chalk.bold(`─── View API key ───`))
     console.log(``)
-    console.log(`Delete this key?`)
-    console.log(`[y] or [n]`)
 
-    // Get menu no
-    const input = await
-      consoleService.askQuestion('> ')
+    // Prompt for confirmation
+    const deleteThisKey = await
+      confirm({
+        default: false,
+        message: `Delete this key?`
+      })
 
     // Delete?
-    if (!['Y', 'y'].includes(input.trim())) {
+    if (deleteThisKey === false) {
       return
     }
 

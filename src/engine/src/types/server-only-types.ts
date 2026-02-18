@@ -95,6 +95,12 @@ export enum AnalyzerPromptTypes {
   chatAboutSuggestion = 'chatAboutSuggestion'
 }
 
+export enum CommonCommands {
+  add = `add`,
+  back = `back`,
+  exit = `exit`
+}
+
 export enum DepDeltaNames {
   set = 'set',
   del = 'del'

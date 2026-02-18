@@ -1,9 +1,9 @@
 const fs = require('fs')
 import chalk from 'chalk'
 import path from 'path'
+import { confirm, input } from '@inquirer/prompts'
 import { PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
-import { consoleService } from '@/serene-core-server/services/console/service'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
 import { ServerOnlyTypes } from '@/types/server-only-types'
 import { ExtensionMutateService } from './mutate-service'
@@ -215,10 +215,9 @@ export class LoadExternalExtensionsService {
     console.log(``)
     console.log(chalk.bold(`─── Load extensions ───`))
     console.log(``)
-    console.log(`Enter the path to load extensions from`)
 
-    const loadPath = await
-            consoleService.askQuestion('> ')
+    var loadPath = await
+      input({ message: `Enter the path to load extensions from` })
 
     // Get the System project
     const systemInstance = await
@@ -241,15 +240,14 @@ export class LoadExternalExtensionsService {
         loadPath)
 
     // Prompt whether to load into user projects
-    console.log(``)
-    console.log(chalk.bold(`─── Load into existing user projects ───`))
-    console.log(``)
-    console.log(`Copy new versions to existing user projects? y/n`)
-
     const loadToUserProjects = await
-            consoleService.askQuestion('> ')
+      confirm({
+        default: false,
+        message: `Copy new versions to existing user projects?`
+      })
 
-    if (loadToUserProjects.toLowerCase() !== 'y') {
+    // No?
+    if (loadToUserProjects === false) {
       return
     }
 

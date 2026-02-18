@@ -2,6 +2,8 @@ import chalk from 'chalk'
 import * as readline from 'node:readline/promises'
 import { stdin as input, stdout } from 'node:process'
 
+// Note: this class's console services can clash with other CLI libraries.
+
 class ConsoleService {
   private rl = readline.createInterface({ input })
 

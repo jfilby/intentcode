@@ -1,13 +1,13 @@
 import chalk from 'chalk'
+import { select } from '@inquirer/prompts'
 import { PrismaClient } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { TechModel } from '@/serene-core-server/models/tech/tech-model'
-import { consoleService } from '@/serene-core-server/services/console/service'
 import { AiTechDefs } from '@/serene-ai-server/types/tech-defs'
 import { AiTaskModel } from '@/serene-ai-server/models/ai-tasks/ai-task-model'
 import { AiTaskTechModel } from '@/serene-ai-server/models/ai-tasks/ai-task-tech-model'
 import { BaseDataTypes } from '@/types/base-data-types'
-import { AiTaskModelPresets, IntentCodeAiTasks, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
+import { AiTaskModelPresets, CommonCommands, IntentCodeAiTasks, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
 
 // Models
 const aiTaskModel = new AiTaskModel()
@@ -56,32 +56,14 @@ export class AiModelsSelectionService {
       return ``
     }
 
-    // Return a selection
-    switch (aiTaskTech.tech.variantName) {
-
-      case AiTechDefs.amazonNova_V2Pro: {
-        return '1'
-      }
-
-      case AiTechDefs.googleGemini_V3ProFree: {
-        return '2'
-      }
-
-      case AiTechDefs.googleGemini_V3Pro: {
-        return '3'
-      }
-
-      case AiTechDefs.openAi_Gpt5pt2: {
-        return '4'
-      }
-
-      default: {
-        return ``
-      }
-    }
+    // Return variantName
+    return aiTaskTech.tech.variantName
   }
 
   async main(prisma: PrismaClient) {
+
+    // Debug
+    const fnName = `${this.clName}.main()`
 
     // REPL loop
     while (true) {
@@ -94,73 +76,87 @@ export class AiModelsSelectionService {
       console.log(``)
       console.log(chalk.bold(`─── AI models selection ───`))
       console.log(``)
-      console.log(`[b] Back`)
 
-      if (curModelPreset === '1') {
-        console.log(chalk.bold(`[1] Amazon Nova 2-based (paid) - selected`))
-      } else {
-        console.log(`[1] Amazon Nova 2-based (paid)`)
+      // Debug
+      // console.log(`${fnName}: curModelPreset: ${curModelPreset}`)
+
+      // Determine choices
+      var choices = [
+        {
+            name: `Back`,
+            value: CommonCommands.back
+        },
+        {
+          name: `Amazon Nova 2-based (paid)`,
+          value: AiTechDefs.amazonNova_V2Pro
+        },
+        {
+          name: `Gemini 3-based (free)`,
+          value: AiTechDefs.googleGemini_V3ProFree
+        },
+        {
+          name: `Gemini 3-based (paid)`,
+          value: AiTechDefs.googleGemini_V3Pro
+        },
+        {
+          name: `GPT 5-2 (paid)`,
+          value: AiTechDefs.openAi_Gpt5pt2
+        }
+      ]
+
+      // Bold the current choice
+      for (const choice of choices) {
+
+        if (choice.value === curModelPreset) {
+          choice.name = chalk.bold(choice.name)
+        }
       }
 
-      if (curModelPreset === '2') {
-        console.log(chalk.bold(`[2] Gemini 3-based (free) - selected`))
-      } else {
-        console.log(`[2] Gemini 3-based (free)`)
-      }
+      // Prompt for command
+      const command = await select({
+        message: `Select an option`,
+        loop: false,
+        pageSize: 10,
+        choices: choices
+      })
 
-      if (curModelPreset === '3') {
-        console.log(chalk.bold(`[3] Gemini 3-based (paid) - selected`))
-      } else {
-        console.log(`[3] Gemini 3-based (paid)`)
-      }
+      // Handle selection
+      switch (command) {
 
-      if (curModelPreset === '4') {
-        console.log(chalk.bold(`[4] GPT 5-2-based - selected`))
-      } else {
-        console.log(`[4] GPT 5-2-based`)
-      }
-
-      // Get menu no
-      const menuNo = await
-        consoleService.askQuestion('> ')
-
-      // Handle back selection
-      switch (menuNo) {
-
-        case 'b': {
+        case CommonCommands.back: {
           return
         }
 
-        case '1': {
+        case AiTechDefs.amazonNova_V2Pro: {
           await this.setModels(
             prisma,
             AiTaskModelPresets.amazonNova2Based)
 
-          break
+          return
         }
 
-        case '2': {
+        case AiTechDefs.googleGemini_V3ProFree: {
           await this.setModels(
             prisma,
             AiTaskModelPresets.gemini3BasedFree)
 
-          break
+          return
         }
 
-        case '3': {
+        case AiTechDefs.googleGemini_V3Pro: {
           await this.setModels(
             prisma,
             AiTaskModelPresets.gemini3BasedPaid)
 
-          break
+          return
         }
 
-        case '4': {
+        case AiTechDefs.openAi_Gpt5pt2: {
           await this.setModels(
             prisma,
             AiTaskModelPresets.gpt5pt2Based)
 
-          break
+          return
         }
 
         default: {
