@@ -4,6 +4,7 @@ export class IntentCodeCommonTypes {
 
   static intentCodePrompting =
     `IntentCode:\n` +
+    // Approach
     `- Is pseudo-code, don't interpret it as literal code.\n` +
     `- Has a focus on intent and doesn't include programming details.\n` +
     `- Uses Markdown format to reflect high-level code structure.\n` +
@@ -13,14 +14,21 @@ export class IntentCodeCommonTypes {
     `  could infer.\n` +
     `- Prefer referencing algorithms and approaches only, unless there's a ` +
     `  good reason to describe the details.\n` +
+    `\n` +
+    // Imports
     `- Imports are only for when entities are needed from another file and ` +
     `  referenced in the imported IntentCode file.\n` +
     `- Avoid circular imports, that would be an error.\n` +
+    `- Imports are of other IntentCode files (without more detail).` +
     `\n` +
+    // Example
     `Example IntentCode, for style ref only (wrapped in a Markdown block):\n` +
     `\n` +
     '```md\n' +
     `# My parser (class)\n` +
+    `\n` +
+    `Imports:\n` +
+    `- ./utils/parsing\n` +
     `\n` +
     `## test (function)\n` +
     `\n` +
