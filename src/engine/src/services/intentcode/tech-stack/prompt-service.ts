@@ -32,8 +32,9 @@ export class TechStackPromptService {
           `Convert the Tech stack spec (natural language) into json guided ` +
           `by the example output.\n` +
           `\n` +
-          `You need to identify the best matching extensions in the System ` +
-          `project, as well as any dependencies as required by the spec.\n` +
+          `You need to identify the best matching IntentCode extensions in ` +
+          `the System project, as well as any dependencies for the source ` +
+          `package manager, as required by the spec.\n` +
           `\n` +
           `If an extension is already listed as installed for the User ` +
           `project then there needs to be a good reason not to list it.\n` +
