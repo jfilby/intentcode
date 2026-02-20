@@ -13,8 +13,8 @@ export enum IntentCodeAiTasks {
 
 export enum AiTaskModelPresets {
   amazonNova2Based = 'amazonNova2Based',
-  gemini3BasedFree = 'gemini3BasedFree',
-  gemini3BasedPaid = 'gemini3BasedPaid',
+  gemini3pt1BasedFree = 'gemini3pt1BasedFree',
+  gemini3pt1BasedPaid = 'gemini3pt1BasedPaid',
   gpt5pt2Based = 'gpt5pt2Based'
 }
 
@@ -43,15 +43,15 @@ export class ServerOnlyTypes {
 
   static compilerModels: Record<string, string> = {
     [AiTaskModelPresets.amazonNova2Based]: AiTechDefs.amazonNova_V2Pro,
-    [AiTaskModelPresets.gemini3BasedFree]: AiTechDefs.googleGemini_V3ProFree,
-    [AiTaskModelPresets.gemini3BasedPaid]: AiTechDefs.googleGemini_V3Pro,
+    [AiTaskModelPresets.gemini3pt1BasedFree]: AiTechDefs.googleGemini_V3pt1ProFree,
+    [AiTaskModelPresets.gemini3pt1BasedPaid]: AiTechDefs.googleGemini_V3pt1Pro,
     [AiTaskModelPresets.gpt5pt2Based]: AiTechDefs.openAi_Gpt5pt2
   }
 
   static indexerModels: Record<string, string> = {
     [AiTaskModelPresets.amazonNova2Based]: AiTechDefs.amazonNova_V2Pro,
-    [AiTaskModelPresets.gemini3BasedFree]: AiTechDefs.googleGemini_V2pt5FlashFree,
-    [AiTaskModelPresets.gemini3BasedPaid]: AiTechDefs.googleGemini_V2pt5Flash,
+    [AiTaskModelPresets.gemini3pt1BasedFree]: AiTechDefs.googleGemini_V2pt5FlashFree,
+    [AiTaskModelPresets.gemini3pt1BasedPaid]: AiTechDefs.googleGemini_V2pt5Flash,
     [AiTaskModelPresets.gpt5pt2Based]: AiTechDefs.openAi_Gpt5Mini
   }
 

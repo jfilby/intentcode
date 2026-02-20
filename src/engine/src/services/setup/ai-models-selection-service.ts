@@ -138,7 +138,7 @@ export class AiModelsSelectionService {
         case AiTechDefs.googleGemini_V3ProFree: {
           await this.setModels(
             prisma,
-            AiTaskModelPresets.gemini3BasedFree)
+            AiTaskModelPresets.gemini3pt1BasedFree)
 
           return
         }
@@ -146,7 +146,7 @@ export class AiModelsSelectionService {
         case AiTechDefs.googleGemini_V3Pro: {
           await this.setModels(
             prisma,
-            AiTaskModelPresets.gemini3BasedPaid)
+            AiTaskModelPresets.gemini3pt1BasedPaid)
 
           return
         }
@@ -186,7 +186,7 @@ export class AiModelsSelectionService {
     // Defaults
     await this.setModels(
       prisma,
-      AiTaskModelPresets.gemini3BasedFree)
+      AiTaskModelPresets.gemini3pt1BasedFree)
   }
 
   async setModels(
