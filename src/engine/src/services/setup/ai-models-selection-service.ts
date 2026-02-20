@@ -91,12 +91,12 @@ export class AiModelsSelectionService {
           value: AiTechDefs.amazonNova_V2Pro
         },
         {
-          name: `Gemini 3-based (free)`,
-          value: AiTechDefs.googleGemini_V3ProFree
+          name: `Gemini 3.1-based (free)`,
+          value: AiTechDefs.googleGemini_V3pt1ProFree
         },
         {
-          name: `Gemini 3-based (paid)`,
-          value: AiTechDefs.googleGemini_V3Pro
+          name: `Gemini 3.1-based (paid)`,
+          value: AiTechDefs.googleGemini_V3pt1Pro
         },
         {
           name: `GPT 5-2 (paid)`,
@@ -135,7 +135,7 @@ export class AiModelsSelectionService {
           return
         }
 
-        case AiTechDefs.googleGemini_V3ProFree: {
+        case AiTechDefs.googleGemini_V3pt1ProFree: {
           await this.setModels(
             prisma,
             AiTaskModelPresets.gemini3pt1BasedFree)
@@ -143,7 +143,7 @@ export class AiModelsSelectionService {
           return
         }
 
-        case AiTechDefs.googleGemini_V3Pro: {
+        case AiTechDefs.googleGemini_V3pt1Pro: {
           await this.setModels(
             prisma,
             AiTaskModelPresets.gemini3pt1BasedPaid)
