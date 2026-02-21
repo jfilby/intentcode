@@ -5,14 +5,12 @@ import { CustomError } from '@/serene-core-server/types/errors'
 import { CommonCommands, ServerOnlyTypes } from '@/types/server-only-types'
 import { ExtensionMutateService } from './mutate-service'
 import { ExtensionQueryService } from './query-service'
-import { GraphsDeleteService } from '@/services/graphs/general/delete-service'
 import { GraphsMutateService } from '@/services/graphs/general/mutate-service'
 import { ProjectsQueryService } from '@/services/projects/query-service'
 
 // Services
 const extensionMutateService = new ExtensionMutateService()
 const extensionQueryService = new ExtensionQueryService()
-const graphsDeleteService = new GraphsDeleteService()
 const graphsMutateService = new GraphsMutateService()
 const projectsQueryService = new ProjectsQueryService()
 
@@ -438,10 +436,9 @@ export class ManageExtensionsCliService {
       }
 
       case this.deleteExtensionCommand: {
-        await graphsDeleteService.deleteSourceNodeCascade(
+        await extensionMutateService.deleteExtension(
                 prisma,
-                extensionNode.id,
-                true)  // deleteThisNode
+                extensionNode.id)
 
         break
       }

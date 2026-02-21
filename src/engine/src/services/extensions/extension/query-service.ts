@@ -299,7 +299,7 @@ export class ExtensionQueryService {
               instanceId)
 
     if (extensionsNode == null) {
-      return
+      return undefined
     }
 
     // Get extensions

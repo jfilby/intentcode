@@ -237,6 +237,9 @@ export class ProjectSetupService {
               projectNode.instanceId,
               depsNode.jsonContent.extensions)
     }
+
+    // Return
+    return depsNode
   }
 
   async setupProject(

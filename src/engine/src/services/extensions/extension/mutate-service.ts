@@ -7,6 +7,7 @@ import { InstanceModel } from '@/serene-core-server/models/instances/instance-mo
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { BaseDataTypes } from '@/types/base-data-types'
 import { ExtensionQueryService } from './query-service'
+import { GraphsDeleteService } from '@/services/graphs/general/delete-service'
 import { GraphsMutateService } from '@/services/graphs/general/mutate-service'
 import { ProjectsQueryService } from '@/services/projects/query-service'
 
@@ -16,6 +17,7 @@ const sourceNodeModel = new SourceNodeModel()
 
 // Services
 const extensionQueryService = new ExtensionQueryService()
+const graphsDeleteService = new GraphsDeleteService()
 const graphsMutateService = new GraphsMutateService()
 const projectsQueryService = new ProjectsQueryService()
 
@@ -26,6 +28,16 @@ export class ExtensionMutateService {
   clName = 'ExtensionMutateService'
 
   // Code
+  async deleteExtension(
+    prisma: PrismaClient,
+    extensionNodeId: string) {
+
+    await graphsDeleteService.deleteSourceNodeCascade(
+      prisma,
+      extensionNodeId,
+      true)  // deleteThisNode
+  }
+
   async getOrCreateExtensionsNode(
           prisma: PrismaClient,
           instanceId: string) {
