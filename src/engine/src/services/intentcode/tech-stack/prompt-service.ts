@@ -36,6 +36,8 @@ export class TechStackPromptService {
           `the System project, as well as any dependencies for the source ` +
           `package manager, as required by the spec.\n` +
           `\n` +
+          `Use the least complex extension(s) for the requirements.\n` +
+          `\n` +
           `If an extension is already listed as installed for the User ` +
           `project then there needs to be a good reason not to list it.\n` +
           `\n` +
