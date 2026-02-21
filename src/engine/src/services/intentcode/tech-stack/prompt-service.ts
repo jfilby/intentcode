@@ -42,6 +42,9 @@ export class TechStackPromptService {
           `Any element in the tech stack that isn't supported by an ` +
           `extension or dependency needs to be included in the errors.\n` +
           `\n` +
+          `Don't raise errors based on unspecified dependencies that aren't ` +
+          `required.\n` +
+          `\n` +
           `## Fields\n` +
           `\n` +
           ServerOnlyTypes.messagesPrompting +
