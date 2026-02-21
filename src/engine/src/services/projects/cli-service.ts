@@ -147,7 +147,6 @@ export class ProjectCliService {
       console.log(chalk.bold(`─── Project: ${instance.name} ───`))
       console.log(``)
 
-
       const command = await select({
         message: `Select an option`,
         loop: false,
