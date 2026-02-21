@@ -46,7 +46,6 @@ export class DepsSyncService {
 
   async deleteExtensionsNotInDepsNode(
     prisma: PrismaClient,
-    projectNode: SourceNode,
     extensionsData: ExtensionsData,
     depsNodeExtensions: any) {
 
@@ -144,7 +143,7 @@ export class DepsSyncService {
       projectNode)
 
     // Update extensions by deps file
-    await this.updateExtensions(
+    await this.syncExtensions(
       prisma,
       projectNode,
       depsNode)
@@ -156,13 +155,13 @@ export class DepsSyncService {
       projectNode)
   }
 
-  async updateExtensions(
+  async syncExtensions(
     prisma: PrismaClient,
     projectNode: SourceNode,
     depsNode: SourceNode) {
 
     // Debug
-    const fnName = `${this.clName}.updateExtensions()`
+    const fnName = `${this.clName}.syncExtensions()`
 
     // Get extensions in the project
     const projectExtensionsData = await
@@ -202,7 +201,6 @@ export class DepsSyncService {
     // Try to delete any extensions not in the new depsNode
     await this.deleteExtensionsNotInDepsNode(
       prisma,
-      projectNode,
       projectExtensionsData,
       depsNodeExtensions)
   }
