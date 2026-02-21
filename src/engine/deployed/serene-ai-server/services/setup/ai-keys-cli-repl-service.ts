@@ -259,7 +259,7 @@ export class AiKeysCliReplService {
 
       // Prompt
       const command = await select({
-        message: `Is your key free or paid?`,
+        message: `Select an option`,
         loop: false,
         pageSize: 10,
         choices: [
