@@ -2,7 +2,7 @@ import chalk from 'chalk'
 import { select } from '@inquirer/prompts'
 import { Instance, PrismaClient, SourceNode } from '@prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
-import { CommonCommands, ServerOnlyTypes } from '@/types/server-only-types'
+import { CommonCommands, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
 import { ExtensionMutateService } from './mutate-service'
 import { ExtensionQueryService } from './query-service'
 import { GraphsMutateService } from '@/services/graphs/general/mutate-service'
@@ -324,6 +324,13 @@ export class ManageExtensionsCliService {
     if (extensionsData == null) {
       throw new CustomError(`${fnName}: extensionsData == null`)
     }
+
+    /* Debug
+    if (ServerOnlyTypes.verbosity >= VerbosityLevels.max) {
+
+      console.log(`${fnName}: found ${extensionsData.extensionNodes.length} ` +
+        `extensions for instanceId: ${instance.id}`)
+    } */
 
     // Start
     console.log(``)
