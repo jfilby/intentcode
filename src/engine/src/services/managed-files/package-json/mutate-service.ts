@@ -16,10 +16,10 @@ const projectsQueryService = new ProjectsQueryService()
 const readJsTsSourceImportsService = new ReadJsTsSourceImportsService()
 
 // Class
-export class PackageJsonManagedFileService {
+export class PackageJsonFileMutateService {
 
   // Consts
-  clName = 'PackageJsonManagedFileService'
+  clName = 'PackageJsonFileMutateService'
 
   ignoredDependencies = [
     'nodejs'

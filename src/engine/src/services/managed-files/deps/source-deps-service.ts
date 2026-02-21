@@ -5,13 +5,13 @@ import { BuildData, DepsTools } from '@/types/build-types'
 import { ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
 import { DependenciesMutateService } from '@/services/graphs/dependencies/mutate-service'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
-import { PackageJsonManagedFileService } from './package-json-service'
+import { PackageJsonFileMutateService } from '../package-json/mutate-service'
 
 // Services
 const dependenciesMutateService = new DependenciesMutateService()
 const dependenciesQueryService = new DependenciesQueryService()
 const extensionQueryService = new ExtensionQueryService()
-const packageJsonManagedFileService = new PackageJsonManagedFileService()
+const packageJsonFileMutateService = new PackageJsonFileMutateService()
 
 // Class
 export class SourceDepsFileService {
@@ -141,7 +141,7 @@ export class SourceDepsFileService {
     switch (depsNode.jsonContent.source.packageManager) {
 
       case DepsTools.npm: {
-        await packageJsonManagedFileService.run(
+        await packageJsonFileMutateService.run(
                 prisma,
                 buildData,
                 projectNode,
