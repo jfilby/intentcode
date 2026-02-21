@@ -5,7 +5,7 @@ import { CompilerMetaDataApproachs, ProjectDetails, ServerOnlyTypes } from '@/ty
 import { SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { DeleteBuildService } from './delete-service'
-import { DepsUpdateService } from '@/services/managed-files/deps/update-service'
+import { DepsSyncService } from '@/services/managed-files/deps/sync-service'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
 import { IntentCodeAnalyzerMutateService } from '../analyzer/mutate-service'
 import { ProjectsQueryService } from '@/services/projects/query-service'
@@ -18,7 +18,7 @@ const sourceNodeModel = new SourceNodeModel()
 
 // Services
 const deleteBuildService = new DeleteBuildService()
-const depsUpdateService = new DepsUpdateService()
+const depsSyncService = new DepsSyncService()
 const extensionQueryService = new ExtensionQueryService()
 const intentCodeAnalyzerMutateService = new IntentCodeAnalyzerMutateService()
 const projectCompileService = new ProjectCompileService()
@@ -234,7 +234,7 @@ export class BuildMutateService {
 
       case BuildStageType.updateDeps: {
 
-        await depsUpdateService.update(
+        await depsSyncService.update(
           prisma,
           buildData,
           projectNode)

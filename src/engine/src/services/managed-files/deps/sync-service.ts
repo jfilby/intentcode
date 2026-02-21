@@ -15,10 +15,10 @@ const projectSetupService = new ProjectSetupService()
 const sourceDepsFileService = new SourceDepsFileService()
 
 // Class
-export class DepsUpdateService {
+export class DepsSyncService {
 
   // Consts
-  clName = 'DepsUpdateService'
+  clName = 'DepsSyncService'
 
   // Code
   checkExtensionInExtensionsData(
