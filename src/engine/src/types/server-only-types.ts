@@ -86,7 +86,7 @@ export class ServerOnlyTypes {
   // Prompting
   static messagesPrompting =
     `Warnings and errors are messages have the same structure: an array ` +
-    `containing theline, from, to and text fields. They might not have a ` +
+    `containing the line, from, to and text fields. They might not have a ` +
     `line, from and to numbers, but they always have a text field.\n`
 }
 
