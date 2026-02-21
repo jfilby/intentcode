@@ -22,8 +22,9 @@ async, export, generator, static, instance.
 
 ## Opinionated coding
 
-Use kebab-case for TypeScript/JavaScript filenames, e.g. my-test.ts. This also
-goes for IntentCode markdown filenames for TypeScript/JavaScript filenames.
+Use kebab-case for TypeScript/JavaScript filenames, e.g. index.ts or
+my-test.ts. This also goes for IntentCode markdown filenames for TypeScript/
+JavaScript filenames.
 
 Types used by more than one class should be put into their own file.
 

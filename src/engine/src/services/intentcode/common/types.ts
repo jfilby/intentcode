@@ -5,22 +5,33 @@ export class IntentCodeCommonTypes {
   static intentCodePrompting =
     `IntentCode:\n` +
     // Approach
-    `- Is pseudo-code, don't interpret it as literal code.\n` +
-    `- Has a focus on intent and doesn't include programming details.\n` +
-    `- Uses Markdown format to reflect high-level code structure.\n` +
-    `- Markdown headings should specify a type, and optionally other ` +
-    `  attributes such as async, in parentheses after the name.\n` +
-    `- Isn't overcomplicated or overly detailed with anything that an LLM ` +
-    `  could infer.\n` +
-    `- Prefer referencing algorithms and approaches only, unless there's a ` +
-    `  good reason to describe the details.\n` +
+    `Is pseudo-code, don't interpret it as literal code.\n` +
+    `Has a focus on intent and doesn't include programming details.\n` +
+    `Uses Markdown format to reflect high-level code structure.\n` +
+    `Markdown headings should specify a type, and optionally other ` +
+    `attributes such as async, in parentheses after the name.\n` +
+    `Isn't overcomplicated or overly detailed with anything that an LLM ` +
+    `could infer.\n` +
+    `Prefer referencing algorithms and approaches only, unless there's a ` +
+    `good reason to describe the details.\n` +
     `\n` +
+    // Filenames
+    `Filename case refers to the chars before the extension(s). Don't be ` +
+    `overly pedantic about it.\n` +
     // Imports
-    `- Imports are only for when entities are needed from another file and ` +
-    `  referenced in the imported IntentCode file.\n` +
+    `Imports in IntentCode are not based on the target source language ` +
+    `standards. Their structure is described here:` +
+    `- Imports are of other IntentCode files without specifying their file ` +
+    `  extension(s).\n` +
+    `- Identifiers can be safely referenced from other IntentCode files ` +
+    `  without being exported from them.\n` +
     `- Avoid circular imports, that would be an error.\n` +
-    `- Imports are of other IntentCode files (without more detail).` +
     `\n` +
+    // Naming
+    `Naming (e.g. functions and variables) should correspond to (in order ` +
+    `of priority):\n` +
+    `- Skills file standards\n` +
+    `- Target language standards\n` +
     // Example
     `Example IntentCode, for style ref only (wrapped in a Markdown block):\n` +
     `\n` +
