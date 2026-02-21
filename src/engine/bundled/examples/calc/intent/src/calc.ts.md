@@ -1,5 +1,5 @@
 import:
-- ./types.ts.md
+- ./types
 
 # Calc (class)
 

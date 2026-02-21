@@ -1,6 +1,6 @@
 import:
 - readline-sync
-- ./calc.ts.md
+- ./calc
 
 # Index (file)
 
