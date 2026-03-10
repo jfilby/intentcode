@@ -246,7 +246,7 @@ model Instance {
   updated                      DateTime             @updatedAt
   // Additional fields (should be moved to InstanceSetting)
   instanceType                 String               @map("instance_type")              // P (project), E (environment)
-  projectType                  String?              @map("project_type")               // Char 1: B (back-end), A (app), W (web-app), char 2: L (library)?
+  projectType                  String?              @map("project_type")
   isDefault                    Boolean              @map("is_default")
   isDemo                       Boolean              @map("is_demo")
   publicAccess                 String?              @map("public_access")              // E.g. R/W
