@@ -21,9 +21,7 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
-      "@/prisma/*": ["./prisma/generated/prisma/*"],
-      "@/serene-core-server/*": ["./deployed/serene-core-server/*"],
-      "@/serene-ai-server/*": ["./deployed/serene-ai-server/*"],
+      "@/prisma/*": ["./prisma/generated/prisma/*"]
     }
   },
   "include": [

@@ -1,8 +1,8 @@
-import { PrismaClient, SourceNode } from "@prisma/client"
-import { CustomError } from "@/serene-core-server/types/errors"
-import { DepDeltaNames } from "@/types/server-only-types"
-import { SourceNodeNames, SourceNodeTypes } from "@/types/source-graph-types"
-import { SourceNodeModel } from "@/models/source-graph/source-node-model"
+import { CustomError } from 'serene-core-server'
+import { PrismaClient, SourceNode } from '@/prisma/client'
+import { DepDeltaNames } from '@/types/server-only-types'
+import { SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
+import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 
 // Models
 const sourceNodeModel = new SourceNodeModel()

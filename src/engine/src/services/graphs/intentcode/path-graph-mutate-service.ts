@@ -1,5 +1,5 @@
+import { CustomError } from 'serene-core-server'
 import { PrismaClient, SourceNode } from '@/prisma/client'
-import { CustomError } from '@/serene-core-server/types/errors'
 import { FsUtilsService } from '../../utils/fs-utils-service'
 import { IntentCodeGraphMutateService } from './graph-mutate-service'
 import { IntentCodeGraphQueryService } from './graph-query-service'

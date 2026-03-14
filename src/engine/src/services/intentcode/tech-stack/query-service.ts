@@ -1,5 +1,5 @@
 import path from 'path'
-import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
+import { WalkDirService } from 'serene-core-server'
 import { ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types'
 
 // Services

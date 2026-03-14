@@ -1,5 +1,5 @@
+import { SereneAiCleanUpService } from 'serene-ai-server'
 import { PrismaClient } from '@/prisma/client'
-import { SereneAiCleanUpService } from '@/serene-ai-server/services/clean-up/service'
 
 // Services
 const sereneAiCleanUpService = new SereneAiCleanUpService()

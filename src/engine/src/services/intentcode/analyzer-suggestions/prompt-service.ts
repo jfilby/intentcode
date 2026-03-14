@@ -1,5 +1,5 @@
+import { CustomError } from 'serene-core-server'
 import { PrismaClient, SourceNode } from '@/prisma/client'
-import { CustomError } from '@/serene-core-server/types/errors'
 import { BuildData, BuildFromFile } from '@/types/build-types'
 import { IntentCodeCommonTypes } from '../common/types'
 import { FileOps, ServerOnlyTypes } from '@/types/server-only-types'

@@ -1,11 +1,8 @@
 import chalk from 'chalk'
+import { AiTaskModel, AiTaskTechModel, AiTechDefs } from 'serene-ai-server'
+import { CustomError, TechModel } from 'serene-core-server'
 import { select } from '@inquirer/prompts'
 import { PrismaClient } from '@/prisma/client'
-import { CustomError } from '@/serene-core-server/types/errors'
-import { TechModel } from '@/serene-core-server/models/tech/tech-model'
-import { AiTechDefs } from '@/serene-ai-server/types/tech-defs'
-import { AiTaskModel } from '@/serene-ai-server/models/ai-tasks/ai-task-model'
-import { AiTaskTechModel } from '@/serene-ai-server/models/ai-tasks/ai-task-tech-model'
 import { BaseDataTypes } from '@/types/base-data-types'
 import { AiTaskModelPresets, CommonCommands, IntentCodeAiTasks, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
 

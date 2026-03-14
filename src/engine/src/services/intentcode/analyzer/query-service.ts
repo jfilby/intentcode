@@ -1,5 +1,5 @@
+import { CustomError } from 'serene-core-server'
 import { Instance, PrismaClient } from '@/prisma/client'
-import { CustomError } from '@/serene-core-server/types/errors'
 import { BuildMutateService } from '../build/mutate-service'
 import { ProjectCompileService } from '@/services/projects/compile-service'
 import { ProjectsQueryService } from '@/services/projects/query-service'

@@ -1,5 +1,5 @@
+import { CustomError } from 'serene-core-server'
 import { PrismaClient, SourceNode } from '@/prisma/client'
-import { CustomError } from '@/serene-core-server/types/errors'
 import { BuildData } from '@/types/build-types'
 import { ExtensionsData } from '@/types/source-graph-types'
 import { ExtensionMutateService } from '@/services/extensions/extension/mutate-service'

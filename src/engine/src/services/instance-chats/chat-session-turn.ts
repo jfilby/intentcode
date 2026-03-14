@@ -1,10 +1,6 @@
+import { AiTasksService, ChatMessage, ChatService, ChatSessionService } from 'serene-ai-server'
 import { UserProfile } from '@/prisma/client'
-import { CustomError } from '@/serene-core-server/types/errors'
-import { UserProfileModel } from '@/serene-core-server/models/users/user-profile-model'
-import { ChatMessage } from '@/serene-ai-server/types/server-only-types'
-import { AiTasksService } from '@/serene-ai-server/services/ai-tasks/ai-tasks-service'
-import { ChatSessionService } from '@/serene-ai-server/services/chats/sessions/chat-session-service'
-import { ChatService } from '@/serene-ai-server/services/llm-apis/chat-service'
+import { CustomError, UserProfileModel } from 'serene-core-server'
 import { IntentCodeAiTasks, ServerOnlyTypes } from '@/types/server-only-types'
 
 // Models

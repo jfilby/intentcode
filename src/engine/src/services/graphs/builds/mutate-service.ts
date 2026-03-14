@@ -1,5 +1,5 @@
+import { CustomError } from 'serene-core-server'
 import { PrismaClient, SourceNode } from '@/prisma/client'
-import { CustomError } from '@/serene-core-server/types/errors'
 import { BaseDataTypes } from '@/types/base-data-types'
 import { SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'

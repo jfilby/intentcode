@@ -35,6 +35,8 @@
     "prisma": "^7.5.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "serene-ai-server": "^0.1.5",
+    "serene-core-server": "^0.1.3",
     "tsx": "^4.21.0",
     "uuid": "^11.1.0",
     "yaml": "^2.8.2",

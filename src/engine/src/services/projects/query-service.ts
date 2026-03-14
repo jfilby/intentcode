@@ -1,11 +1,8 @@
 const NodeCache = require('node-cache')
 import path from 'path'
+import { CustomError, InstanceModel, InstanceSettingModel, UsersService } from 'serene-core-server'
 import { select } from '@inquirer/prompts'
 import { Instance, PrismaClient } from '@/prisma/client'
-import { CustomError } from '@/serene-core-server/types/errors'
-import { InstanceModel } from '@/serene-core-server/models/instances/instance-model'
-import { InstanceSettingModel } from '@/serene-core-server/models/instances/instance-setting-model'
-import { UsersService } from '@/serene-core-server/services/users/service'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { CommonCommands, InstanceSettingNames, ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types'
 import { BuildsGraphMutateService } from '../graphs/builds/mutate-service'

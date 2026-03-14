@@ -1,5 +1,5 @@
+import { AiTechDefs } from 'serene-ai-server'
 import { Instance, SourceNode } from '@/prisma/client'
-import { AiTechDefs } from '@/serene-ai-server/types/tech-defs'
 
 export enum CompilerMetaDataApproachs {
   analyzer = 'analyzer',

@@ -1,7 +1,5 @@
+import { AgentLlmService, LlmCacheService, LlmUtilsService } from 'serene-ai-server'
 import { PrismaClient, Tech } from '@/prisma/client'
-import { LlmCacheService } from '@/serene-ai-server/services/cache/service'
-import { AgentLlmService } from '@/serene-ai-server/services/llm-apis/agent-llm-service'
-import { LlmUtilsService } from '@/serene-ai-server/services/llm-apis/utils-service'
 import { BaseDataTypes } from '@/types/base-data-types'
 import { MessageTypes, ServerOnlyTypes } from '@/types/server-only-types'
 import { DependenciesQueryService } from '@/services/graphs/dependencies/query-service'

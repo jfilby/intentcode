@@ -1,9 +1,8 @@
 const NodeCache = require('node-cache')
+import { InstanceModel, InstanceSettingModel } from 'serene-core-server'
 import { PrismaClient } from '@/prisma/client'
 import { BaseDataTypes } from '@/types/base-data-types'
 import { InstanceSettingNames, ServerOnlyTypes } from '@/types/server-only-types'
-import { InstanceModel } from '@/serene-core-server/models/instances/instance-model'
-import { InstanceSettingModel } from '@/serene-core-server/models/instances/instance-setting-model'
 
 // Cache objects must be global, to access all data (e.g. ability to delete
 // an item from an object if InstanceService).

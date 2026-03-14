@@ -1,7 +1,7 @@
-import { PrismaClient } from "@prisma/client"
-import { SourceEdgeModel } from "@/models/source-graph/source-edge-model"
-import { SourceNodeGenerationModel } from "@/models/source-graph/source-node-generation-model"
-import { SourceNodeModel } from "@/models/source-graph/source-node-model"
+import { PrismaClient } from '@/prisma/client'
+import { SourceEdgeModel } from '@/models/source-graph/source-edge-model'
+import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
+import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 
 // Models
 const sourceEdgeModel = new SourceEdgeModel()

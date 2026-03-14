@@ -1,6 +1,6 @@
 const fs = require('fs')
+import { CustomError } from 'serene-core-server'
 import { SourceNode } from '@/prisma/client'
-import { CustomError } from '@/serene-core-server/types/errors'
 import { BuildFromFile } from '@/types/build-types'
 import { ServerOnlyTypes } from '@/types/server-only-types'
 

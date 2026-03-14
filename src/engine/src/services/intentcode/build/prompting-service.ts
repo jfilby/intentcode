@@ -1,6 +1,6 @@
 import fs from 'fs'
+import { WalkDirService } from 'serene-core-server'
 import { SourceNode } from '@/prisma/client'
-import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
 import { BuildData } from '@/types/build-types'
 import { ProjectDetails } from '@/types/server-only-types'
 
