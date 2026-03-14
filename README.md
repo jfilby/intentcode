@@ -34,7 +34,7 @@ Next.js/TypeScript and Node.js/TypeScript. Once you've created a project you
 can install relevant extensions into it for the compiler to utilize them.
 
 
-## Projects
+## Projects and their structure
 
 Every project you build with IntentCode must be registered first. In the cli go
 to Projects and add the project. The project root will be referred to as
@@ -51,4 +51,17 @@ example the target PRJ_ROOT/index.ts should be PRJ_ROOT/intent/index.ts.md.
 
 In the cli, under projects, select compile. Your Intent files will be compiled
 to source.
+
+
+## Compiler validation & suggestion
+
+The compiler a feature that both validates your Intent files and suggests
+improvements and fixes. This runs as part of the compiler (before compiling
+each individual Intent file).
+
+
+## Project chat
+
+You can chat with the compiler about your projects. This chat makes use of the
+compiler validation & suggestion feature.
 
