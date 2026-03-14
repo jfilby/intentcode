@@ -12,16 +12,26 @@ For the moment you have to clone the IntentCode repo. An installable NPM is
 coming soon.
 
 
+## Running
+
+To run cli, for setup and running the compiler, type `npm run cli`.
+
+
+## Setup
+
+The core setup should be run automatically on start, but you can rerun it
+anytime by selecting `Setup` from the main menu. This defaults to using the
+Gemini 3.1 Pro model (free tier).
+
+To select another model choose `Manage AI models` from the main menu. To enter
+a key for your AI API select `Manage AI keys` from the menu.
+
+
 ## Extensions
 
 IntentCode currently ships with only two bundled extensions, for
 Next.js/TypeScript and Node.js/TypeScript. Once you've created a project you
 can install relevant extensions into it for the compiler to utilize them.
-
-
-## Running
-
-To run the compiler type `npm run cli`.
 
 
 ## Projects
