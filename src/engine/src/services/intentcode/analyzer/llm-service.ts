@@ -1,4 +1,4 @@
-import { PrismaClient, Tech } from '@prisma/client'
+import { PrismaClient, Tech } from '@/prisma/client'
 import { LlmCacheService } from '@/serene-ai-server/services/cache/service'
 import { AgentLlmService } from '@/serene-ai-server/services/llm-apis/agent-llm-service'
 import { LlmUtilsService } from '@/serene-ai-server/services/llm-apis/utils-service'

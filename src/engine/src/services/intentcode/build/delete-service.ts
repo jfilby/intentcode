@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@/prisma/client'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model'
 import { ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types'
 import { SourceNodeTypes } from '@/types/source-graph-types'

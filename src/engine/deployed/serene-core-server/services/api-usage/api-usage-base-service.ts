@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@/prisma/client'
 import { CustomError } from '../../types/errors'
 import { TechModel } from '../../models/tech/tech-model'
 import { RateLimitedApiModel } from '../../models/tech/rate-limited-api-model'

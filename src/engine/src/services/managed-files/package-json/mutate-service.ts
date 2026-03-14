@@ -2,7 +2,7 @@ import fs from 'fs'
 import https from 'node:https'
 import path from 'path'
 const semver = require('semver')
-import { PrismaClient, SourceNode } from '@prisma/client'
+import { PrismaClient, SourceNode } from '@/prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { SourceNodeTypes } from '@/types/source-graph-types'
 import { BuildData } from '@/types/build-types'

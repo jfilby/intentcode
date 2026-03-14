@@ -1,5 +1,5 @@
 import { blake3 } from '@noble/hashes/blake3'
-import { PrismaClient, SourceNode } from '@prisma/client'
+import { PrismaClient, SourceNode } from '@/prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { BaseDataTypes } from '@/types/base-data-types'
 import { DepDelta, DepDeltaNames } from '@/types/server-only-types'

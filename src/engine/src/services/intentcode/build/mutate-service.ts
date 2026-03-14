@@ -1,4 +1,4 @@
-import { PrismaClient, SourceNode } from '@prisma/client'
+import { PrismaClient, SourceNode } from '@/prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { BuildData, BuildStage, BuildStageType, IntentFileBuild } from '@/types/build-types'
 import { CompilerMetaDataApproachs, ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types'

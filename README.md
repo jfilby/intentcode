@@ -21,7 +21,7 @@ can install relevant extensions into it for the compiler to utilize them.
 
 ## Running
 
-To run the compiler type `npm run ic`.
+To run the compiler type `npm run cli`.
 
 
 ## Projects

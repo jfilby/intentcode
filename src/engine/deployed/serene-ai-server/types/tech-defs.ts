@@ -74,7 +74,7 @@ export class AiTechDefs {
   static googleGemini_V3pt1ProFree = 'Google Gemini v3.1 Pro (free tier)'
 
   // OpenAI
-  static openAi_Gpt5pt2 = 'GPT-5.2'
+  static openAi_Gpt5pt4 = 'GPT-5.4'
   static openAi_Gpt5pt2Codex = 'GPT-5.2-Codex'
   static openAi_Gpt5 = 'GPT-5'
   static openAi_Gpt5Mini = 'GPT-5-mini'
@@ -103,7 +103,7 @@ export class AiTechDefs {
   static googleGemini_V3Flash_ModelName = 'gemini-3-flash-preview'
   static googleGemini_V3Pt1Pro_ModelName = 'gemini-3.1-pro-preview'
 
-  static openAi_Gpt5pt2_ModelName = 'gpt-5.2'
+  static openAi_Gpt5pt4_ModelName = 'gpt-5.4'
   static openAi_Gpt5pt2Codex_ModelName = 'gpt-5.2-codex'
   static openAi_Gpt5_ModelName = 'gpt-5'
   static openAi_Gpt5Mini_ModelName = 'gpt-5-mini'
@@ -324,9 +324,9 @@ export class AiTechDefs {
     // OpenAI: LLMs
     {
       provider: this.openAiProvider,
-      variantName: this.openAi_Gpt5pt2,
+      variantName: this.openAi_Gpt5pt4,
       resource: this.llmsResource,
-      model: this.openAi_Gpt5pt2_ModelName,
+      model: this.openAi_Gpt5pt4_ModelName,
       protocol: this.openAiProtocol,
       pricingTier: SereneCoreServerTypes.paid,
       inputTokens: 400000,

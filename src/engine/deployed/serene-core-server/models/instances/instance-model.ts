@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client'
+import { Prisma } from '@/prisma/client'
 
 export class InstanceModel {
 
@@ -7,16 +7,17 @@ export class InstanceModel {
 
   // Code
   async create(
-          prisma: Prisma.TransactionClient,
-          parentId: string | null,
-          userProfileId: string,
-          instanceType: string,
-          projectType: string | null,
-          isDemo: boolean,
-          isDefault: boolean,
-          status: string,
-          publicAccess: string | null,
-          name: string) {
+    prisma: Prisma.TransactionClient,
+    parentId: string | null,
+    userProfileId: string,
+    instanceType: string,
+    projectType: string | null,
+    isDemo: boolean,
+    isDefault: boolean,
+    status: string,
+    publicAccess: string | null,
+    key: string,
+    name: string) {
 
     // Debug
     const fnName = `${this.clName}.create()`
@@ -41,18 +42,19 @@ export class InstanceModel {
           isDefault: isDefault,
           status: status,
           publicAccess: publicAccess,
+          key: key,
           name: name
         }
       })
-    } catch(error) {
+    } catch (error) {
       console.error(`${fnName}: error: ${error}`)
       throw 'Prisma error'
     }
   }
 
   async deleteById(
-          prisma: Prisma.TransactionClient,
-          id: string) {
+    prisma: Prisma.TransactionClient,
+    id: string) {
 
     // Debug
     const fnName = `${this.clName}.deleteById()`
@@ -64,7 +66,7 @@ export class InstanceModel {
           id: id
         }
       })
-    } catch(error: any) {
+    } catch (error: any) {
       if (!(error instanceof error.NotFound)) {
         console.error(`${fnName}: error: ${error}`)
         throw 'Prisma error'
@@ -73,17 +75,17 @@ export class InstanceModel {
   }
 
   async filter(
-          prisma: Prisma.TransactionClient,
-          parentId: string | null | undefined = undefined,
-          userProfileId: string | undefined = undefined,
-          instanceType: string | undefined = undefined,
-          projectType: string | null | undefined = undefined,
-          isDemo: boolean | undefined = undefined,
-          isDefault: boolean | undefined = undefined,
-          status: string | undefined = undefined,
-          publicAccess: string | null | undefined = undefined,
-          includeUserProfile: boolean = false,
-          includeUser: boolean = false) {
+    prisma: Prisma.TransactionClient,
+    parentId: string | null | undefined = undefined,
+    userProfileId: string | undefined = undefined,
+    instanceType: string | undefined = undefined,
+    projectType: string | null | undefined = undefined,
+    isDemo: boolean | undefined = undefined,
+    isDefault: boolean | undefined = undefined,
+    status: string | undefined = undefined,
+    publicAccess: string | null | undefined = undefined,
+    includeUserProfile: boolean = false,
+    includeUser: boolean = false) {
 
     // Debug
     const fnName = `${this.clName}.filter()`
@@ -114,18 +116,18 @@ export class InstanceModel {
           publicAccess: publicAccess
         }
       })
-    } catch(error: any) {
+    } catch (error: any) {
       console.error(`${fnName}: error: ${error}`)
       throw 'Prisma error'
     }
   }
 
   async getById(
-          prisma: Prisma.TransactionClient,
-          id: string,
-          includeParent: boolean = false,
-          includeUserProfile: boolean = false,
-          includeUser: boolean = false) {
+    prisma: Prisma.TransactionClient,
+    id: string,
+    includeParent: boolean = false,
+    includeUserProfile: boolean = false,
+    includeUser: boolean = false) {
 
     // Debug
     const fnName = `${this.clName}.getById()`
@@ -147,7 +149,7 @@ export class InstanceModel {
           id: id
         }
       })
-    } catch(error: any) {
+    } catch (error: any) {
       if (!(error instanceof error.NotFound)) {
         console.error(`${fnName}: error: ${error}`)
         throw 'Prisma error'
@@ -159,8 +161,8 @@ export class InstanceModel {
   }
 
   async getByNameAndIsAdminUserProfile(
-          prisma: Prisma.TransactionClient,
-          name: string) {
+    prisma: Prisma.TransactionClient,
+    name: string) {
 
     // Debug
     const fnName = `${this.clName}.getByName()`
@@ -177,7 +179,7 @@ export class InstanceModel {
           name: name
         }
       })
-    } catch(error: any) {
+    } catch (error: any) {
       console.error(`${fnName}: error: ${error}`)
       throw 'Prisma error'
     }
@@ -187,9 +189,9 @@ export class InstanceModel {
   }
 
   async getByParentIdAndUserProfileIdAndIsDefault(
-          prisma: Prisma.TransactionClient,
-          parentId: string | null,
-          userProfileId: string) {
+    prisma: Prisma.TransactionClient,
+    parentId: string | null,
+    userProfileId: string) {
 
     // Debug
     const fnName = `${this.clName}.getByParentIdAndUserProfileIdAndIsDefault()`
@@ -205,7 +207,43 @@ export class InstanceModel {
           isDefault: true
         }
       })
-    } catch(error: any) {
+    } catch (error: any) {
+      console.error(`${fnName}: error: ${error}`)
+      throw 'Prisma error'
+    }
+
+    // Return
+    return instance
+  }
+
+  async getByParentIdAndKey(
+    prisma: Prisma.TransactionClient,
+    parentId: string | null,
+    key: string) {
+
+    // Debug
+    const fnName = `${this.clName}.getByParentIdAndKey()`
+
+    // console.log(`${fnName}: parentId: ${parentId} key: ${key} ` +
+    //             `userProfileId: ${userProfileId}`)
+
+    // Validate
+    if (key == null) {
+      console.error(`${fnName}: key == null`)
+      throw 'Validation error'
+    }
+
+    // Query
+    var instance: any
+
+    try {
+      instance = await prisma.instance.findFirst({
+        where: {
+          parentId: parentId,
+          key: key
+        }
+      })
+    } catch (error: any) {
       console.error(`${fnName}: error: ${error}`)
       throw 'Prisma error'
     }
@@ -215,9 +253,9 @@ export class InstanceModel {
   }
 
   async getByParentIdAndName(
-          prisma: Prisma.TransactionClient,
-          parentId: string | null,
-          name: string) {
+    prisma: Prisma.TransactionClient,
+    parentId: string | null,
+    name: string) {
 
     // Debug
     const fnName = `${this.clName}.getByParentIdAndName()`
@@ -241,7 +279,50 @@ export class InstanceModel {
           name: name
         }
       })
-    } catch(error: any) {
+    } catch (error: any) {
+      console.error(`${fnName}: error: ${error}`)
+      throw 'Prisma error'
+    }
+
+    // Return
+    return instance
+  }
+
+  async getByParentIdAndKeyAndUserProfileId(
+    prisma: Prisma.TransactionClient,
+    parentId: string | null,
+    key: string,
+    userProfileId: string) {
+
+    // Debug
+    const fnName = `${this.clName}.getByParentIdAndKeyAndUserProfileId()`
+
+    // console.log(`${fnName}: parentId: ${parentId} key: ${key} ` +
+    //             `userProfileId: ${userProfileId}`)
+
+    // Validate
+    if (key == null) {
+      console.error(`${fnName}: key == null`)
+      throw 'Validation error'
+    }
+
+    if (userProfileId == null) {
+      console.error(`${fnName}: userProfileId == null`)
+      throw 'Validation error'
+    }
+
+    // Query
+    var instance: any
+
+    try {
+      instance = await prisma.instance.findFirst({
+        where: {
+          parentId: parentId,
+          key: key,
+          userProfileId: userProfileId
+        }
+      })
+    } catch (error: any) {
       console.error(`${fnName}: error: ${error}`)
       throw 'Prisma error'
     }
@@ -251,10 +332,10 @@ export class InstanceModel {
   }
 
   async getByParentIdAndNameAndUserProfileId(
-          prisma: Prisma.TransactionClient,
-          parentId: string | null,
-          name: string,
-          userProfileId: string) {
+    prisma: Prisma.TransactionClient,
+    parentId: string | null,
+    name: string,
+    userProfileId: string) {
 
     // Debug
     const fnName = `${this.clName}.getByParentIdAndNameAndUserProfileId()`
@@ -284,7 +365,7 @@ export class InstanceModel {
           userProfileId: userProfileId
         }
       })
-    } catch(error: any) {
+    } catch (error: any) {
       console.error(`${fnName}: error: ${error}`)
       throw 'Prisma error'
     }
@@ -294,9 +375,9 @@ export class InstanceModel {
   }
 
   async getByUserProfileIdAndName(
-          prisma: Prisma.TransactionClient,
-          userProfileId: string,
-          name: string) {
+    prisma: Prisma.TransactionClient,
+    userProfileId: string,
+    name: string) {
 
     // Debug
     const fnName = `${this.clName}.getByUserProfileIdAndName()`
@@ -311,7 +392,7 @@ export class InstanceModel {
           name: name
         }
       })
-    } catch(error: any) {
+    } catch (error: any) {
       console.error(`${fnName}: error: ${error}`)
       throw 'Prisma error'
     }
@@ -321,10 +402,10 @@ export class InstanceModel {
   }
 
   async getByUserProfileIdAndParentNameAndName(
-          prisma: Prisma.TransactionClient,
-          userProfileId: string,
-          parentName: string,
-          name: string) {
+    prisma: Prisma.TransactionClient,
+    userProfileId: string,
+    parentName: string,
+    name: string) {
 
     // Debug
     const fnName = `${this.clName}.getByUserProfileIdAndParentNameAndName()`
@@ -357,10 +438,10 @@ export class InstanceModel {
             name: parentName
           },
           userProfileId: userProfileId,
-          name: name          
+          name: name
         }
       })
-    } catch(error: any) {
+    } catch (error: any) {
       console.error(`${fnName}: error: ${error}`)
       throw 'Prisma error'
     }
@@ -370,17 +451,18 @@ export class InstanceModel {
   }
 
   async update(
-          prisma: Prisma.TransactionClient,
-          id: string,
-          parentId: string | null | undefined,
-          userProfileId: string | undefined,
-          instanceType: string | undefined,
-          projectType: string | null | undefined,
-          isDemo: boolean | undefined,
-          isDefault: boolean | undefined,
-          status: string | undefined,
-          publicAccess: string | null | undefined,
-          name: string | undefined) {
+    prisma: Prisma.TransactionClient,
+    id: string,
+    parentId: string | null | undefined,
+    userProfileId: string | undefined,
+    instanceType: string | undefined,
+    projectType: string | null | undefined,
+    isDemo: boolean | undefined,
+    isDefault: boolean | undefined,
+    status: string | undefined,
+    publicAccess: string | null | undefined,
+    key: string | undefined,
+    name: string | undefined) {
 
     // Debug
     const fnName = `${this.clName}.update()`
@@ -397,29 +479,31 @@ export class InstanceModel {
           isDefault: isDefault,
           status: status,
           publicAccess: publicAccess,
+          key: key,
           name: name
         },
         where: {
           id: id
         }
       })
-    } catch(error) {
+    } catch (error) {
       console.error(`${fnName}: error: ${error}`)
       throw 'Prisma error'
     }
   }
 
   async updateByParentId(
-          prisma: Prisma.TransactionClient,
-          parentId: string | null | undefined,
-          userProfileId: string | undefined,
-          instanceType: string | undefined,
-          projectType: string | null | undefined,
-          isDemo: boolean | undefined,
-          isDefault: boolean | undefined,
-          status: string | undefined,
-          publicAccess: string | null | undefined,
-          name: string | undefined) {
+    prisma: Prisma.TransactionClient,
+    parentId: string | null | undefined,
+    userProfileId: string | undefined,
+    instanceType: string | undefined,
+    projectType: string | null | undefined,
+    isDemo: boolean | undefined,
+    isDefault: boolean | undefined,
+    status: string | undefined,
+    publicAccess: string | null | undefined,
+    key: string | undefined,
+    name: string | undefined) {
 
     // Debug
     const fnName = `${this.clName}.updateByParentId()`
@@ -435,45 +519,64 @@ export class InstanceModel {
           isDefault: isDefault,
           status: status,
           publicAccess: publicAccess,
+          key: key,
           name: name
         },
         where: {
           parentId: parentId
         }
       })
-    } catch(error) {
+    } catch (error) {
       console.error(`${fnName}: error: ${error}`)
       throw 'Prisma error'
     }
   }
 
   async upsert(prisma: Prisma.TransactionClient,
-               id: string | undefined,
-               parentId: string | null | undefined,
-               userProfileId: string | undefined,
-               instanceType: string | undefined,
-               projectType: string | null | undefined,
-               isDemo: boolean | undefined,
-               isDefault: boolean | undefined,
-               status: string | undefined,
-               publicAccess: string | null | undefined,
-               name: string | undefined) {
+    id: string | undefined,
+    parentId: string | null | undefined,
+    userProfileId: string | undefined,
+    instanceType: string | undefined,
+    projectType: string | null | undefined,
+    isDemo: boolean | undefined,
+    isDefault: boolean | undefined,
+    status: string | undefined,
+    publicAccess: string | null | undefined,
+    key: string | undefined,
+    name: string | undefined) {
 
     // Debug
     const fnName = `${this.clName}.upsert()`
 
-    // If id isn't specified, try to get by the unique key
+    // If id isn't specified, try to get by a unique key
     if (id == null &&
-        parentId !== undefined &&
-        name != null &&
-        userProfileId != null) {
+      parentId !== undefined &&
+      key != null &&
+      userProfileId != null) {
 
       const instance = await
-              this.getByParentIdAndNameAndUserProfileId(
-                prisma,
-                parentId,
-                name,
-                userProfileId)
+        this.getByParentIdAndKeyAndUserProfileId(
+          prisma,
+          parentId,
+          key,
+          userProfileId)
+
+      if (instance != null) {
+        id = instance.id
+      }
+    }
+
+    if (id == null &&
+      parentId !== undefined &&
+      name != null &&
+      userProfileId != null) {
+
+      const instance = await
+        this.getByParentIdAndNameAndUserProfileId(
+          prisma,
+          parentId,
+          name,
+          userProfileId)
 
       if (instance != null) {
         id = instance.id
@@ -524,6 +627,11 @@ export class InstanceModel {
         throw 'Prisma error'
       }
 
+      if (key == null) {
+        console.error(`${fnName}: id is null and key is null`)
+        throw 'Prisma error'
+      }
+
       if (name == null) {
         console.error(`${fnName}: id is null and name is null`)
         throw 'Prisma error'
@@ -531,33 +639,35 @@ export class InstanceModel {
 
       // Create
       return await
-               this.create(
-                 prisma,
-                 parentId,
-                 userProfileId,
-                 instanceType,
-                 projectType,
-                 isDemo,
-                 isDefault,
-                 status,
-                 publicAccess,
-                 name)
+        this.create(
+          prisma,
+          parentId,
+          userProfileId,
+          instanceType,
+          projectType,
+          isDemo,
+          isDefault,
+          status,
+          publicAccess,
+          key,
+          name)
     } else {
 
       // Update
       return await
-               this.update(
-                 prisma,
-                 id,
-                 parentId,
-                 userProfileId,
-                 instanceType,
-                 projectType,
-                 isDemo,
-                 isDefault,
-                 status,
-                 publicAccess,
-                 name)
+        this.update(
+          prisma,
+          id,
+          parentId,
+          userProfileId,
+          instanceType,
+          projectType,
+          isDemo,
+          isDefault,
+          status,
+          publicAccess,
+          key,
+          name)
     }
   }
 }

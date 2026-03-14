@@ -1,5 +1,5 @@
 import { input, select } from '@inquirer/prompts'
-import { Instance, PrismaClient } from '@prisma/client'
+import { Instance, PrismaClient } from '@/prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { ChatMessage } from '@/serene-ai-server/types/server-only-types'

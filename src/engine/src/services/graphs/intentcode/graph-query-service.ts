@@ -1,4 +1,4 @@
-import { PrismaClient, SourceNode } from '@prisma/client'
+import { PrismaClient, SourceNode } from '@/prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { ProjectDetails } from '@/types/server-only-types'
 import { SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'

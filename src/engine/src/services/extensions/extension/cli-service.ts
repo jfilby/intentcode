@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import { select } from '@inquirer/prompts'
-import { Instance, PrismaClient, SourceNode } from '@prisma/client'
+import { Instance, PrismaClient, SourceNode } from '@/prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { CommonCommands, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
 import { ExtensionMutateService } from './mutate-service'

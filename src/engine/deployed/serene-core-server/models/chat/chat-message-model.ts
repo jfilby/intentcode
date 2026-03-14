@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@/prisma/client'
 import { Encrypter } from '../../services/access/encrypt-service'
 import { CustomError } from '../../types/errors'
 

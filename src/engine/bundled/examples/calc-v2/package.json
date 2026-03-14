@@ -9,6 +9,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "typescript": "^5.9.3"
+    "typescript": "^5",
+    "eslint": "^8",
+    "blessed": "^0.1.81",
+    "nextjs": "^15"
   }
 }

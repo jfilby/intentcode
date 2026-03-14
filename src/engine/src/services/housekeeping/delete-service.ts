@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@/prisma/client'
 import { SereneAiCleanUpService } from '@/serene-ai-server/services/clean-up/service'
 
 // Services

@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import { select } from '@inquirer/prompts'
-import { Instance, PrismaClient } from '@prisma/client'
+import { Instance, PrismaClient } from '@/prisma/client'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { AiKeysCliReplService } from '@/serene-ai-server/services/setup/ai-keys-cli-repl-service'
 import { CommonCommands } from '@/types/server-only-types'

@@ -1,5 +1,5 @@
 import { blake3 } from '@noble/hashes/blake3'
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@/prisma/client'
 import { LlmCacheModel } from '../../models/cache/llm-cache-model'
 
 // Types

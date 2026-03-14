@@ -1,10 +1,15 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@/prisma/client'
+import { CustomError } from '../../types/errors'
 import { ResourceQuotaTotalModel } from '../../models/quotas/resource-quota-total-model'
 import { ResourceQuotaUsageModel } from '../../models/quotas/resource-quota-usage-model'
+import { UsersService } from '../users/service'
 
 // Model
 const resourceQuotaTotalModel = new ResourceQuotaTotalModel()
 const resourceQuotaUsageModel = new ResourceQuotaUsageModel()
+
+// Services
+const usersService = new UsersService()
 
 // Class
 export class ResourceQuotasQueryService {
@@ -14,11 +19,11 @@ export class ResourceQuotasQueryService {
 
   // Functions
   async getQuotaAndUsage(
-          prisma: PrismaClient,
-          userProfileId: string,
-          resource: string,
-          day: Date,
-          inCents: boolean = true) {
+    prisma: PrismaClient,
+    userProfileId: string,
+    resource: string,
+    day: Date,
+    inCents: boolean = true) {
 
     // Debug
     const fnName = `${this.clName}.getQuotaAndUsage()`
@@ -27,11 +32,11 @@ export class ResourceQuotasQueryService {
 
     // Get active quotas
     const activeQuotas = await
-            resourceQuotaTotalModel.filter(
-              prisma,
-              userProfileId,
-              resource,
-              day)
+      resourceQuotaTotalModel.filter(
+        prisma,
+        userProfileId,
+        resource,
+        day)
 
     // If no quotas, then assume usage of zero. If quotas are zero then no
     // usage should be permitted
@@ -52,23 +57,23 @@ export class ResourceQuotasQueryService {
 
     // Get total quota
     var totalQuota = activeQuotas.reduce(
-          (sum: number, q: any) => sum + (q.quota ?? 0), 0)
+      (sum: number, q: any) => sum + (q.quota ?? 0), 0)
 
     // Get where ranges start and end
     const rangeStart = new Date(
-            Math.min(...activeRanges.map((r: any) => r.from.getTime())))
+      Math.min(...activeRanges.map((r: any) => r.from.getTime())))
 
     const rangeEnd = new Date(
-            Math.max(...activeRanges.map((r: any) => r.to.getTime())))
+      Math.max(...activeRanges.map((r: any) => r.to.getTime())))
 
     // Get usage records
     const usages = await
-            resourceQuotaUsageModel.filter(
-              prisma,
-              userProfileId,
-              resource,
-              rangeStart,     // fromDay
-              rangeEnd)       // toDay
+      resourceQuotaUsageModel.filter(
+        prisma,
+        userProfileId,
+        resource,
+        rangeStart,     // fromDay
+        rangeEnd)       // toDay
 
     // Filter usages
     var totalUsage = usages.reduce((sum: number, usage: any) => {
@@ -95,11 +100,68 @@ export class ResourceQuotasQueryService {
     }
   }
 
+  async getQuotaAndUsageForUi(
+    prisma: PrismaClient,
+    userProfileId: string,
+    resource: string,
+    day: string | null) {
+
+    // Debug
+    const fnName = `${this.clName}.getQuotaAndUsageForUi()`
+
+    // Get userProfile
+    const userProfile = await
+      usersService.getById(
+        prisma,
+        userProfileId)
+
+    // Validate
+    if (userProfile == null) {
+      throw new CustomError(`${fnName}: userProfile == null`)
+    }
+
+    // The user must be an admin
+    if (userProfile.isAdmin === false) {
+
+      return {
+        status: false,
+        message: `You aren't an admin user.`
+      }
+    }
+
+    // Day (default to today)
+    var dayDate: Date
+
+    if (day != null) {
+      dayDate = new Date(day)
+    } else {
+      dayDate = new Date()
+    }
+
+    // Get quota and usage
+    const results = await
+      this.getQuotaAndUsage(
+        prisma,
+        userProfileId,
+        resource,
+        dayDate,
+        false)  // inCents
+
+    // Return
+    return {
+      userProfileId: userProfileId,
+      resource: resource,
+      day: dayDate.toISOString(),
+      quota: results.quota,
+      usage: results.usage
+    }
+  }
+
   async isQuotaAvailable(
-          prisma: PrismaClient,
-          userProfileId: string,
-          resource: string,
-          amountInCents: number) {
+    prisma: PrismaClient,
+    userProfileId: string,
+    resource: string,
+    amountInCents: number) {
 
     // Debug
     const fnName = `${this.clName}.isQuotaAvailable()`
@@ -111,12 +173,12 @@ export class ResourceQuotasQueryService {
 
     // Get total quota
     const results = await
-            this.getQuotaAndUsage(
-              prisma,
-              userProfileId,
-              resource,
-              today,
-              true)  // inCents
+      this.getQuotaAndUsage(
+        prisma,
+        userProfileId,
+        resource,
+        today,
+        true)  // inCents
 
     /* Debug
     console.log(`${fnName}: results: ` + JSON.stringify(results))

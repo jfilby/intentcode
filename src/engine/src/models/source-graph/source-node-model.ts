@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@/prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 
 export class SourceNodeModel {

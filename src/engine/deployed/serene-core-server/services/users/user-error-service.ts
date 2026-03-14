@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@/prisma/client'
 import { UserErrorModel } from '../../models/users/user-error-model'
 import { UserErrorSummaryModel } from '../../models/users/user-error-summary-model'
 

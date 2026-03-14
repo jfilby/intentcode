@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@/prisma/client'
 import { MailingListModel } from '../../models/mailing-lists/mailing-list-model'
 import { MailingListSubscriberModel } from '../../models/mailing-lists/mailing-list-subscriber-model'
 

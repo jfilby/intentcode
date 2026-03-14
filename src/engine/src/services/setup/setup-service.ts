@@ -1,4 +1,4 @@
-import { Instance, PrismaClient, UserProfile } from '@prisma/client'
+import { Instance, PrismaClient, UserProfile } from '@/prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { ChatSettingsModel } from '@/serene-core-server/models/chat/chat-settings-model'
 import { UsersService } from '@/serene-core-server/services/users/service'

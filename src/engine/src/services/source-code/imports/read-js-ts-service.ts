@@ -1,4 +1,4 @@
-import { PrismaClient, SourceNode } from '@prisma/client'
+import { PrismaClient, SourceNode } from '@/prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
 import { ImportsData, JsTsSrcTypes } from './types'

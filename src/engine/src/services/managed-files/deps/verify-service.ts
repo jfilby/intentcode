@@ -1,5 +1,5 @@
 const semver = require('semver')
-import { PrismaClient, SourceNode } from '@prisma/client'
+import { PrismaClient, SourceNode } from '@/prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
 import { DependenciesMutateService } from '@/services/graphs/dependencies/mutate-service'

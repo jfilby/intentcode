@@ -1,4 +1,4 @@
-import { PrismaClient, SourceNode } from '@prisma/client'
+import { PrismaClient, SourceNode } from '@/prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { FsUtilsService } from '../../utils/fs-utils-service'
 import { SourceCodeGraphMutateService } from './graph-mutate-service'

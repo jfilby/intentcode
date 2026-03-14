@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@/prisma/client'
 import { createId } from '@paralleldrive/cuid2'
 import { CustomError } from '@/serene-core-server/types/errors'
 
@@ -24,12 +24,18 @@ export class CachedEmbeddingModel {
     // Debug
     const fnName = `${this.clName}.create()`
 
+    // Get vector for use in raw query
+    const vectorLiteral = `'[${embedding.join(',')}]'`
+
     // Get a CUID
     const id = createId()
 
     // Create record
     const results = await
-      prisma.$executeRaw`INSERT INTO cached_embedding (id, text, embedding) VALUES (${id}, ${text}, ${embedding});`
+      prisma.$executeRawUnsafe(
+        `INSERT INTO cached_embedding (id, text, embedding) VALUES ($1, $2, ${vectorLiteral}::vector);`,
+        id,
+        text)
 
     // console.log(`${fnName}: results: ` + JSON.stringify(results))
 

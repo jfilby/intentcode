@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@/prisma/client'
 import { UserGroupMemberModel } from '../../models/users/user-group-member-model'
 import { UserGroupModel } from '../../models/users/user-group-model'
 

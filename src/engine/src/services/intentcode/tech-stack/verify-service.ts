@@ -1,4 +1,4 @@
-import { PrismaClient, SourceNode } from '@prisma/client'
+import { PrismaClient, SourceNode } from '@/prisma/client'
 import { BuildData } from '@/types/build-types'
 import { ProjectsQueryService } from '@/services/projects/query-service'
 import { TechStackQueryService } from './query-service'

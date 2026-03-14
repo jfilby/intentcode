@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@/prisma/client'
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { SereneAiServerOnlyTypes } from '../../../types/server-only-types'

@@ -1,7 +1,7 @@
 const fs = require('fs')
 import YAML from 'yaml'
 import { blake3 } from '@noble/hashes/blake3'
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@/prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'
 import { BaseDataTypes } from '@/types/base-data-types'

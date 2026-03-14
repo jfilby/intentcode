@@ -1,4 +1,4 @@
-import { PrismaClient, SourceNode } from '@prisma/client'
+import { PrismaClient, SourceNode } from '@/prisma/client'
 import { BuildData } from '@/types/build-types'
 import { DepsVerifyService } from '../managed-files/deps/verify-service'
 import { TechStackVerifyService } from '../intentcode/tech-stack/verify-service'

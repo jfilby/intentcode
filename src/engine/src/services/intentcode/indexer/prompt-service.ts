@@ -1,4 +1,4 @@
-import { PrismaClient, SourceNode } from '@prisma/client'
+import { PrismaClient, SourceNode } from '@/prisma/client'
 import { BuildFromFile } from '@/types/build-types'
 import { IntentCodeCommonTypes } from '../common/types'
 import { ServerOnlyTypes } from '@/types/server-only-types'

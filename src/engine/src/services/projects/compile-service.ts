@@ -1,5 +1,5 @@
 const fs = require('fs')
-import { PrismaClient, SourceNode } from '@prisma/client'
+import { PrismaClient, SourceNode } from '@/prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { BuildData, BuildFromFile } from '@/types/build-types'
 import { WalkDirService } from '@/serene-core-server/services/files/walk-dir-service'

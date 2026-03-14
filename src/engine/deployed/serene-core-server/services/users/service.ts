@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@/prisma/client'
 import { CustomError } from '../../types/errors'
 import { UserProfileModel } from '../../models/users/user-profile-model'
 import { UserModel } from '../../models/users/user-model'

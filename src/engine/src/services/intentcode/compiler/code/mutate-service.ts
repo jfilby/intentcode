@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 import fs from 'fs'
 import { blake3 } from '@noble/hashes/blake3'
-import { PrismaClient, SourceNode, Tech } from '@prisma/client'
+import { PrismaClient, SourceNode, Tech } from '@/prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { UsersService } from '@/serene-core-server/services/users/service'
 import { AiTasksService } from '@/serene-ai-server/services/ai-tasks/ai-tasks-service'

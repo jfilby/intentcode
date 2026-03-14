@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@/prisma/client'
 import { ResourceQuotaUsageModel } from '../../models/quotas/resource-quota-usage-model'
 
 // Models

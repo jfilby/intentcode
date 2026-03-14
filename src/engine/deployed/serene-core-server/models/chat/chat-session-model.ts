@@ -1,5 +1,5 @@
 const { v4: uuidv4 } = require('uuid')
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@/prisma/client'
 import { CustomError } from '../../types/errors'
 import { ChatParticipantModel } from './chat-participant-model'
 

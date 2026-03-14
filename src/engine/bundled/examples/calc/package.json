@@ -8,7 +8,9 @@
   "dependencies": {
     "tsconfig-paths": "^4",
     "ts-node": "^10",
-    "readline-sync": "^1"
+    "readline-sync": "^1",
+    "nextjs": "^15",
+    "eslint": "^8"
   },
   "devDependencies": {
     "@types/node": "^20",

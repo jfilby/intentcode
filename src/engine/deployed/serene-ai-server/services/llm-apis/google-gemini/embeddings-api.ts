@@ -1,3 +1,4 @@
+import { PrismaClient } from '@/prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { GoogleGeminiLlmService } from './llm-api'
 
@@ -11,7 +12,9 @@ export class GoogleVertexEmbeddingsService {
   clName = 'GoogleVertexEmbeddingsService'
 
   // Code
-  async requestBatchEmbeddings(texts: string[]) {
+  async requestBatchEmbeddings(
+    prisma: PrismaClient,
+    texts: string[]) {
 
     // Debug
     const fnName = `${this.clName}.requestBatchEmbeddings()`
@@ -52,7 +55,9 @@ export class GoogleVertexEmbeddingsService {
     }
   }
 
-  async requestEmbedding(text: string) {
+  async requestEmbedding(
+    prisma: PrismaClient,
+    text: string) {
 
     // Debug
     const fnName = `${this.clName}.requestEmbedding()`

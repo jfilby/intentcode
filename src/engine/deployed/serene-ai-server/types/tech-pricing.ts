@@ -17,10 +17,10 @@ export class AiTechPricing {
     },
 
     // OpenAI: https://platform.openai.com/docs/pricing
-    // GPT-5.2 (gpt-5.2) / paid / text
-    [AiTechDefs.openAi_Gpt5pt2 + `/${SereneCoreServerTypes.paid}/${AiTechPricing.text}`]: {
-      inputTokens: 1.75,
-      outputTokens: 14.00
+    // GPT-5.4 (gpt-5.4) / paid / text
+    [AiTechDefs.openAi_Gpt5pt4 + `/${SereneCoreServerTypes.paid}/${AiTechPricing.text}`]: {
+      inputTokens: 2.50,
+      outputTokens: 15.00
     },
     [AiTechDefs.openAi_Gpt5pt2Codex + `/${SereneCoreServerTypes.paid}/${AiTechPricing.text}`]: {
       inputTokens: 1.75,

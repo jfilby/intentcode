@@ -1,4 +1,4 @@
-import { Tech } from '@prisma/client'
+import { PrismaClient, Tech } from '@/prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { GoogleGeminiLlmService } from './llm-api'
 
@@ -13,17 +13,18 @@ export class GoogleGeminiImageService {
 
   // Code
   async generate(
-          prompt: string,
-          tech: Tech) {
+    prisma: PrismaClient,
+    prompt: string,
+    tech: Tech) {
 
     // Debug
     const fnName = `${this.clName}.generate()`
 
     // Get/create Gemini AI client
     const geminiAiClient = await
-            googleGeminiLlmService.getOrCreateClient(
-              prisma,
-              tech)
+      googleGeminiLlmService.getOrCreateClient(
+        prisma,
+        tech)
 
     // Validate
     if (geminiAiClient == null) {

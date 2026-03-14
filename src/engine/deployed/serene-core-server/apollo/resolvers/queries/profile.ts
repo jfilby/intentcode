@@ -1,18 +1,24 @@
-import { prisma } from '@/db'
 import { ProfileService } from '../../../services/users/profile-service'
 
+// Services
 const profileService = new ProfileService()
 
-export async function validateProfileCompleted(
-                        parent: any,
-                        args: any,
-                        context: any,
-                        info: any) {
-  // console.log('validateProfileCompleted(): ' +
-  //             `args.userProfileId: ${args.userProfileId}`)
-
-  return profileService.validateProfileCompleted(
-           prisma,
-           args.forAction,
-           args.userProfileId)
+// Factory of resolvers
+// Note: prisma must be passed into the GraphQL server's context
+export function sereneCoreProfileQueryResolvers() {
+  return {
+    Query: {
+      validateProfileCompleted: async (
+        parent: any,
+        args: any,
+        context: any,
+        info: any
+      ) => {
+        return profileService.validateProfileCompleted(
+          context.prisma,
+          args.forAction,
+          args.userProfileId)
+      },
+    },
+  }
 }

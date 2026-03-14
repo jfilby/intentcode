@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@/prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { TextParsingService } from '@/serene-ai-server/services/content/text-parsing-service'
 import { BuildData } from '@/types/build-types'

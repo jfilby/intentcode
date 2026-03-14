@@ -1,7 +1,7 @@
 import fs from 'fs'
 import chalk from 'chalk'
 import { input, select } from '@inquirer/prompts'
-import { Instance, PrismaClient, UserProfile } from '@prisma/client'
+import { Instance, PrismaClient, UserProfile } from '@/prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { InstanceModel } from '@/serene-core-server/models/instances/instance-model'
 import { CommonCommands, ServerOnlyTypes } from '@/types/server-only-types'

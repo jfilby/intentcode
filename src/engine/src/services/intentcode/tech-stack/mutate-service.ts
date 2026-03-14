@@ -1,6 +1,6 @@
 import fs from 'fs'
 import { blake3 } from '@noble/hashes/blake3'
-import { PrismaClient, SourceNode, Tech } from '@prisma/client'
+import { PrismaClient, SourceNode, Tech } from '@/prisma/client'
 import { ServerTestTypes } from '@/types/server-test-types'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { UsersService } from '@/serene-core-server/services/users/service'

@@ -1,4 +1,4 @@
-import { SourceNode } from '@prisma/client'
+import { SourceNode } from '@/prisma/client'
 import { ExtensionsData } from './source-graph-types'
 import { ProjectDetails } from './server-only-types'
 

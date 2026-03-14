@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import { select } from '@inquirer/prompts'
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@/prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { TechModel } from '@/serene-core-server/models/tech/tech-model'
 import { AiTechDefs } from '@/serene-ai-server/types/tech-defs'

@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@/prisma/client'
 import { ExternalUserIntegrationModel } from '../../models/users/external-user-integration-model'
 import { UserProfileModel } from '../../models/users/user-profile-model'
 

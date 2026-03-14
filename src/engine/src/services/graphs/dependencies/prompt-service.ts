@@ -1,4 +1,4 @@
-import { PrismaClient, SourceNode } from '@prisma/client'
+import { PrismaClient, SourceNode } from '@/prisma/client'
 import { DepDeltaNames, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
 import { DependenciesQueryService } from './query-service'
 

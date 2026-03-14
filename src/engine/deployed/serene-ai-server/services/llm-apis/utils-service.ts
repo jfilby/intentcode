@@ -1,4 +1,4 @@
-import { ChatSettings, PrismaClient } from '@prisma/client'
+import { ChatSettings, PrismaClient } from '@/prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { AiTechDefs } from '../../types/tech-defs'
 import { ChatSettingsModel } from '@/serene-core-server/models/chat/chat-settings-model'

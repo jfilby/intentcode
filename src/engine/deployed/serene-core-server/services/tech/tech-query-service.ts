@@ -1,4 +1,4 @@
-import { PrismaClient, Tech } from '@prisma/client'
+import { PrismaClient, Tech } from '@/prisma/client'
 import { CustomError } from '../../types/errors'
 import { SereneCoreServerTypes } from '../../types/user-types'
 import { TechModel } from '../../models/tech/tech-model'

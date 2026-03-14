@@ -1,4 +1,4 @@
-import { PrismaClient, UserProfile } from '@prisma/client'
+import { PrismaClient, UserProfile } from '@/prisma/client'
 import { BuildMutateService } from '../intentcode/build/mutate-service'
 import { ExtensionMutateService } from '../extensions/extension/mutate-service'
 import { ExtensionQueryService } from '../extensions/extension/query-service'

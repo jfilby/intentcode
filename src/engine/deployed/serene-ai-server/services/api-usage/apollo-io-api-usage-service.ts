@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@/prisma/client'
 import { ApiUsageBaseService } from '@/serene-core-server/services/api-usage/api-usage-base-service'
 import { SereneAiServerOnlyTypes } from '../../types/server-only-types'
 

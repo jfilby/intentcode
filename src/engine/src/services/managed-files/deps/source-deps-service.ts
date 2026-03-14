@@ -1,4 +1,4 @@
-import { PrismaClient, SourceNode } from '@prisma/client'
+import { PrismaClient, SourceNode } from '@/prisma/client'
 import { CustomError } from '@/serene-core-server/types/errors'
 import { DependenciesQueryService } from '@/services/graphs/dependencies/query-service'
 import { BuildData, DepsTools } from '@/types/build-types'

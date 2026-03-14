@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@/prisma/client'
 import { AnalyzerChatParams } from '@/types/chat-types'
 import { AnalyzerPromptTypes } from '@/types/server-only-types'
 import { IntentCodeAnalyzerPromptService } from '../intentcode/analyzer/prompt-service'

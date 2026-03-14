@@ -1,23 +1,20 @@
-import path from 'path'
+import { loadEnvConfig } from '@next/env'
 
 // Load the env file
-const envFile =
-  process.env.NODE_ENV === 'production'
-    ? '.env.production'
-    : '.env'
+const dev = process.env.NODE_ENV !== 'production'
 
-require('dotenv').config({ path: path.resolve(process.cwd(), envFile) })
-require('./services/setup/env-setup-service.ts')
-
-// Requires/imports
-import { prisma } from './db'
-import { CliService } from './services/setup/cli-service'
-import { HousekeepingDeleteService } from './services/housekeeping/delete-service'
-import { ProjectsQueryService } from './services/projects/query-service'
-import { SetupService } from './services/setup/setup-service'
+loadEnvConfig(process.cwd(), dev);
 
 // Main
 (async () => {
+
+  // Imports
+  require('./services/setup/env-setup-service')
+  const { prisma } = await import('@/db')
+  const { CliService } = await import('./services/setup/cli-service')
+  const { HousekeepingDeleteService } = await import('./services/housekeeping/delete-service')
+  const { ProjectsQueryService } = await import('./services/projects/query-service')
+  const { SetupService } = await import('./services/setup/setup-service')
 
   // Debug
   const fnName = 'cli.ts'
