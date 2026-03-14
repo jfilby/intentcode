@@ -59,19 +59,14 @@ declare global {
   var prisma: PrismaClient
 }
 
-// Initialize correct client
-const isSQLite = true;
-
-const client = isSQLite
-  ? new PrismaClient({
-      adapter: new PrismaLibSql({
-        url: process.env.DATABASE_URL!,
-      }),
-      log: ['warn', 'error'],
-    })
-  : new PrismaClient({
-      log: ['warn', 'error'],
-    })
+// Initialize client (SQLite only)
+const client =
+  new PrismaClient({
+    adapter: new PrismaLibSql({
+      url: process.env.DATABASE_URL!,
+    }),
+    log: ['warn', 'error'],
+  })
 
 // Define the prisma export and global
 export const prisma =
