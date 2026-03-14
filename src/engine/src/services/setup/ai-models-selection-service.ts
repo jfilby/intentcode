@@ -99,8 +99,8 @@ export class AiModelsSelectionService {
           value: AiTechDefs.googleGemini_V3pt1Pro
         },
         {
-          name: `GPT 5-2 (paid)`,
-          value: AiTechDefs.openAi_Gpt5pt2
+          name: `GPT 5.4 (paid)`,
+          value: AiTechDefs.openAi_Gpt5pt4
         }
       ]
 
@@ -151,10 +151,10 @@ export class AiModelsSelectionService {
           return
         }
 
-        case AiTechDefs.openAi_Gpt5pt2: {
+        case AiTechDefs.openAi_Gpt5pt4: {
           await this.setModels(
             prisma,
-            AiTaskModelPresets.gpt5pt2Based)
+            AiTaskModelPresets.gpt5pt4Based)
 
           return
         }
