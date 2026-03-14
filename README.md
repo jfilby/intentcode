@@ -6,10 +6,21 @@ Extensions contain hook and skills files, used to give detailed prompting to
 the compiler.
 
 
+## Prerequisites
+
+Install Node.js from: https://nodejs.org
+
+Get/download the latest, or v22 to be on the version IntentCode is developed
+for.
+
+
 ## Installing
 
-For the moment you have to clone the IntentCode repo. An installable NPM is
-coming soon.
+Install via NPM: `npm install -g intentcode-compiler`
+
+The same command can be used to upgrade to new versions when they're available.
+
+Start the cli by running `intent`.
 
 
 ## Running

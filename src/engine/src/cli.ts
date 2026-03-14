@@ -1,3 +1,6 @@
+#!/usr/bin/env node
+//import nextEnv from '@next/env'
+//const { loadEnvConfig } = nextEnv
 import { loadEnvConfig } from '@next/env'
 
 // Load the env file
@@ -5,11 +8,13 @@ const dev = process.env.NODE_ENV !== 'production'
 
 loadEnvConfig(process.cwd(), dev);
 
+import './services/setup/env-setup-service';
+
 // Main
 (async () => {
 
   // Imports
-  require('./services/setup/env-setup-service')
+  // await import ('./services/setup/env-setup-service')
   const { prisma } = await import('@/db')
   const { CliService } = await import('./services/setup/cli-service')
   const { HousekeepingDeleteService } = await import('./services/housekeeping/delete-service')
