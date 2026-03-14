@@ -115,18 +115,23 @@ export class ProjectCliService {
     }
 
     // Add the instance
-    instance = await
+    const projectResults = await
       projectsMutateService.getOrCreate(
         prisma,
         adminUserProfile.id,
         projectName)
 
+    // Validate
+    if (projectResults.instance == null) {
+      throw new CustomError(`${fnName}: projectResults.instance == null`)
+    }
+
     // Setup project node
     const projectNode = await
       projectSetupService.setupProject(
         prisma,
-        instance,
-        instance.name,
+        projectResults.instance,
+        projectResults.instance.name,
         projectPath)
   }
 

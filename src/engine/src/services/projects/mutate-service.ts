@@ -37,14 +37,19 @@ export class ProjectsMutateService {
         projectName)
 
     if (validationResults.status === false) {
-      return validationResults
+      return {
+        status: false,
+        message: validationResults.message,
+        instance: undefined
+      }
     }
 
     if (validationResults.key == null ||
         validationResults.name == null) {
       return {
         status: false,
-        message: `Internal error trying to validate project name`
+        message: `Internal error trying to validate project name`,
+        instance: undefined
       }
     }
 
@@ -64,7 +69,10 @@ export class ProjectsMutateService {
         validationResults.name)
 
     // Return
-    return project
+    return {
+      status: true,
+      instance: project
+    }
   }
 
   async setProjectPath(
@@ -113,7 +121,8 @@ export class ProjectsMutateService {
         validationResults.name == null) {
       return {
         status: false,
-        message: `Internal error trying to validate project name`
+        message: `Internal error trying to validate project name`,
+        instance: undefined
       }
     }
 
@@ -132,7 +141,8 @@ export class ProjectsMutateService {
 
         return {
           status: false,
-          message: `You can't update a project you didn't create.`
+          message: `You can't update a project you didn't create.`,
+          instance: undefined
         }
       }
 
@@ -141,7 +151,8 @@ export class ProjectsMutateService {
 
         return {
           status: false,
-          message: `This project isn't of a type you can update.`
+          message: `This project isn't of a type you can update.`,
+          instance: undefined
         }
       }
     }
@@ -176,7 +187,7 @@ export class ProjectsMutateService {
     // Return OK
     return {
       status: true,
-      instanceId: projectInstance.id
+      instance: projectInstance
     }
   }
 }

@@ -119,11 +119,13 @@ export class ProjectSetupService {
       }
 
       // Create instance
-      instance = await
+      const projectResults = await
         projectsMutateService.getOrCreate(
           prisma,
           adminUserProfile.id,
           projectName)
+
+      instance = projectResults.instance
     }
 
     // Setup project node

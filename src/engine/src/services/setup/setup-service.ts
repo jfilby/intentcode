@@ -134,12 +134,21 @@ export class SetupService {
           prisma: PrismaClient,
           adminUserProfile: UserProfile) {
 
+    // Debug
+    const fnName = `${this.clName}.setupBaseData()`
+
     // Setup project
-    const systemProject = await
+    const systemProjectResults = await
       projectsMutateService.getOrCreate(
         prisma,
         adminUserProfile.id,
         ServerOnlyTypes.systemProjectName)
+
+    // Validate
+    if (systemProjectResults?.instance == null) {
+      throw new CustomError(
+        `${fnName}: systemProjectResults.instance == null`)
+    }
 
     // Setup engine version
     const engineVersion = await
@@ -155,6 +164,6 @@ export class SetupService {
     // Install bundled extensions
     await loadExternalExtensionsService.loadBundledExtensions(
       prisma,
-      systemProject.id)
+      systemProjectResults.instance.id)
   }
 }
