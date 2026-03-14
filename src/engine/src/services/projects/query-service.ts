@@ -1,6 +1,6 @@
 const NodeCache = require('node-cache')
 import path from 'path'
-import { CustomError, InstanceModel, InstanceSettingModel, UsersService } from 'serene-core-server'
+import { CustomError, FieldNamingService, InstanceModel, InstanceSettingModel, UsersService } from 'serene-core-server'
 import { select } from '@inquirer/prompts'
 import { Instance, PrismaClient } from '@/prisma/client'
 import { ServerTestTypes } from '@/types/server-test-types'
@@ -26,6 +26,7 @@ const instanceSettingModel = new InstanceSettingModel()
 // Services
 const buildsGraphMutateService = new BuildsGraphMutateService()
 const dotIntentCodeGraphQueryService = new DotIntentCodeGraphQueryService()
+const fieldNamingService = new FieldNamingService()
 const fsUtilsService = new FsUtilsService()
 const intentCodeAnalysisGraphMutateService = new IntentCodeAnalysisGraphMutateService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
@@ -39,6 +40,8 @@ export class ProjectsQueryService {
 
   // Consts
   clName = 'ProjectsQueryService'
+
+  label = 'project'
 
   // Code
   getProjectDetailsByInstanceId(
@@ -449,5 +452,95 @@ export class ProjectsQueryService {
 
     // Return
     return projectDetails
+  }
+
+  async validate(
+    prisma: PrismaClient,
+    userProfileId: string,
+    name: string) {
+
+    // Validate userProfileId
+    if (userProfileId == null) {
+      return {
+        status: false,
+        message: `Invalid user`,
+        key: undefined,
+        name: undefined
+      }
+    }
+
+    // Validate the name
+    const validateNameResults =
+      fieldNamingService.validateName(
+        name,
+        this.label)
+
+    if (validateNameResults.status === false) {
+      return {
+        status: false,
+        message: validateNameResults.message,
+        key: undefined,
+        name: undefined
+      }
+    }
+
+    // Get the key
+    const key = fieldNamingService.getAsKey(validateNameResults.name!)
+
+    // Validate key
+    const validateKeyResults =
+      fieldNamingService.validateKey(
+        name,
+        this.label)
+
+    if (validateKeyResults.status === false) {
+      return {
+        status: false,
+        message: validateKeyResults.message,
+        key: undefined,
+        name: undefined
+      }
+    }
+
+    // Check if the project already exists (name)
+    var project = await
+      instanceModel.getByParentIdAndNameAndUserProfileId(
+        prisma,
+        null,  // parentId
+        key,
+        userProfileId)
+
+    if (project != null) {
+      return {
+        status: false,
+        message: `That project already exists`,
+        key: undefined,
+        name: undefined
+      }
+    }
+
+    // Check if the project already exists (key)
+    project = await
+      instanceModel.getByParentIdAndKeyAndUserProfileId(
+        prisma,
+        null,  // parentId
+        key,
+        userProfileId)
+
+    if (project != null) {
+      return {
+        status: false,
+        message: `That project already exists`,
+        key: undefined,
+        name: undefined
+      }
+    }
+
+    // Return
+    return {
+      status: true,
+      key: key,
+      name: name
+    }
   }
 }

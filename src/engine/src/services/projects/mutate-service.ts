@@ -3,6 +3,7 @@ import { InstanceModel, InstanceSettingModel } from 'serene-core-server'
 import { PrismaClient } from '@/prisma/client'
 import { BaseDataTypes } from '@/types/base-data-types'
 import { InstanceSettingNames, ServerOnlyTypes } from '@/types/server-only-types'
+import { ProjectsQueryService } from './query-service'
 
 // Cache objects must be global, to access all data (e.g. ability to delete
 // an item from an object if InstanceService).
@@ -12,6 +13,9 @@ const cachedInstancesWithIncludes = new NodeCache()
 // Models
 const instanceModel = new InstanceModel()
 const instanceSettingModel = new InstanceSettingModel()
+
+// Services
+const projectsQueryService = new ProjectsQueryService()
 
 // Class
 export class ProjectsMutateService {
@@ -25,20 +29,27 @@ export class ProjectsMutateService {
           userProfileId: string,
           projectName: string) {
 
-    // Try to get project
-    var project = await
-          instanceModel.getByParentIdAndNameAndUserProfileId(
-            prisma,
-            null,  // parentId
-            projectName,
-            userProfileId)
+    // Validate
+    const validationResults = await
+      projectsQueryService.validate(
+        prisma,
+        userProfileId,
+        projectName)
 
-    if (project != null) {
-      return project
+    if (validationResults.status === false) {
+      return validationResults
+    }
+
+    if (validationResults.key == null ||
+        validationResults.name == null) {
+      return {
+        status: false,
+        message: `Internal error trying to validate project name`
+      }
     }
 
     // Create the project
-    project = await
+    const project = await
       instanceModel.create(
         prisma,
         null,   // parentId
@@ -49,7 +60,8 @@ export class ProjectsMutateService {
         false,  // isDefault
         BaseDataTypes.activeStatus,
         null,   // publicAccess
-        projectName)
+        validationResults.key,
+        validationResults.name)
 
     // Return
     return project
@@ -87,13 +99,21 @@ export class ProjectsMutateService {
     const fnName = `${this.clName}.upsert()`
 
     // Validate
-    if (name != null) {
+    const validationResults = await
+      projectsQueryService.validate(
+        prisma,
+        userProfileId,
+        name)
 
-      if (name.trim() === '') {
-        return {
-          status: false,
-          message: `You must specify the name of the project.`
-        }
+    if (validationResults.status === false) {
+      return validationResults
+    }
+
+    if (validationResults.key == null ||
+        validationResults.name == null) {
+      return {
+        status: false,
+        message: `Internal error trying to validate project name`
       }
     }
 
@@ -141,7 +161,8 @@ export class ProjectsMutateService {
         publicAccess,
         // null,       // basePathDocNodeId
         // null,       // envVersionBranchId
-        name)
+        validationResults.key,
+        validationResults.name)
 
     // Remove the project instance from the cache maps
     if (cachedInstances.has(projectInstance.id)) {
