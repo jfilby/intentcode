@@ -1,8 +1,8 @@
-const fs = require('fs')
+import fs from 'fs'
 import { CustomError } from 'serene-core-server'
-import { SourceNode } from '@/prisma/client'
-import { BuildFromFile } from '@/types/build-types'
-import { ServerOnlyTypes } from '@/types/server-only-types'
+import { SourceNode } from '@/prisma/client.js'
+import { BuildFromFile } from '@/types/build-types.js'
+import { ServerOnlyTypes } from '@/types/server-only-types.js'
 
 export class SourceAssistIntentCodeService {
 

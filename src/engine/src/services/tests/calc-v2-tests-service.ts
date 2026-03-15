@@ -1,8 +1,8 @@
-import { PrismaClient, UserProfile } from '@/prisma/client'
-import { BuildMutateService } from '../intentcode/build/mutate-service'
-import { ExtensionQueryService } from '../extensions/extension/query-service'
-import { PathsService } from '../utils/paths-service'
-import { ProjectSetupService } from '../projects/setup-project'
+import { PrismaClient, UserProfile } from '@/prisma/client.js'
+import { BuildMutateService } from '../intentcode/build/mutate-service.js'
+import { ExtensionQueryService } from '../extensions/extension/query-service.js'
+import { PathsService } from '../utils/paths-service.js'
+import { ProjectSetupService } from '../projects/setup-project.js'
 
 // Services
 const buildMutateService = new BuildMutateService()

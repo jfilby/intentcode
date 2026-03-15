@@ -1,4 +1,4 @@
-import { SourceNode } from '@/prisma/client'
+import { SourceNode } from '@/prisma/client.js'
 
 export enum SourceEdgeNames {
 

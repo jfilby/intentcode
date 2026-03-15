@@ -1,9 +1,9 @@
 import { CustomError } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client'
-import { SourceNodeTypes } from '@/types/source-graph-types'
-import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
-import { SourceNodeModel } from '@/models/source-graph/source-node-model'
-import { FsUtilsService } from '../../utils/fs-utils-service'
+import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { SourceNodeTypes } from '@/types/source-graph-types.js'
+import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model.js'
+import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
+import { FsUtilsService } from '../../utils/fs-utils-service.js'
 
 // Models
 const sourceNodeGenerationModel = new SourceNodeGenerationModel()

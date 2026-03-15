@@ -1,4 +1,4 @@
-import { sqlLiteFile } from '../../db'
+import { sqlLiteFile } from '../../db.js'
 
 export class InfoService {
 

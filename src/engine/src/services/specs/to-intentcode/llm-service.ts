@@ -1,9 +1,9 @@
 import { AgentLlmService, LlmCacheService, LlmUtilsService } from 'serene-ai-server'
-import { PrismaClient, Tech } from '@/prisma/client'
-import { BaseDataTypes } from '@/types/base-data-types'
-import { BuildData } from '@/types/build-types'
-import { MessageTypes, ServerOnlyTypes } from '@/types/server-only-types'
-import { IntentCodeUpdaterQueryService } from '@/services/intentcode/updater/query-service'
+import { PrismaClient, Tech } from '@/prisma/client.js'
+import { BaseDataTypes } from '@/types/base-data-types.js'
+import { BuildData } from '@/types/build-types.js'
+import { MessageTypes, ServerOnlyTypes } from '@/types/server-only-types.js'
+import { IntentCodeUpdaterQueryService } from '@/services/intentcode/updater/query-service.js'
 
 // Services
 const agentLlmService = new AgentLlmService()

@@ -1,5 +1,5 @@
-import { BuildData, BuildFromFile } from '@/types/build-types'
-import { ExtensionsData } from '@/types/source-graph-types'
+import { BuildData, BuildFromFile } from '@/types/build-types.js'
+import { ExtensionsData } from '@/types/source-graph-types.js'
 
 export class CompilerQueryService {
 

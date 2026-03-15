@@ -1,12 +1,12 @@
 import { CustomError } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client'
-import { BuildData } from '@/types/build-types'
-import { ExtensionsData } from '@/types/source-graph-types'
-import { ExtensionMutateService } from '@/services/extensions/extension/mutate-service'
-import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
-import { ProjectSetupService } from '@/services/projects/setup-project'
-import { SourceDepsFileService } from './source-deps-service'
-import { ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
+import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { BuildData } from '@/types/build-types.js'
+import { ExtensionsData } from '@/types/source-graph-types.js'
+import { ExtensionMutateService } from '@/services/extensions/extension/mutate-service.js'
+import { ExtensionQueryService } from '@/services/extensions/extension/query-service.js'
+import { ProjectSetupService } from '@/services/projects/setup-project.js'
+import { SourceDepsFileService } from './source-deps-service.js'
+import { ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
 
 // Services
 const extensionMutateService = new ExtensionMutateService()

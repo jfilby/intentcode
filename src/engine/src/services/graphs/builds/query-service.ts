@@ -1,6 +1,6 @@
-import { PrismaClient, SourceNode } from '@/prisma/client'
-import { SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
-import { SourceNodeModel } from '@/models/source-graph/source-node-model'
+import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types.js'
+import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
 
 // Models
 const sourceNodeModel = new SourceNodeModel()

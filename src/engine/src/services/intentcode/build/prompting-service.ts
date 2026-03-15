@@ -1,8 +1,8 @@
 import fs from 'fs'
 import { WalkDirService } from 'serene-core-server'
-import { SourceNode } from '@/prisma/client'
-import { BuildData } from '@/types/build-types'
-import { ProjectDetails } from '@/types/server-only-types'
+import { SourceNode } from '@/prisma/client.js'
+import { BuildData } from '@/types/build-types.js'
+import { ProjectDetails } from '@/types/server-only-types.js'
 
 // Services
 const walkDirService = new WalkDirService()

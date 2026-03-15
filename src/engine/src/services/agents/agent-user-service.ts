@@ -1,7 +1,7 @@
 import { AgentUserModel } from 'serene-ai-server'
 import { CustomError } from 'serene-core-server'
-import { PrismaClient } from '@/prisma/client'
-import { BaseDataTypes } from '@/types/base-data-types'
+import { PrismaClient } from '@/prisma/client.js'
+import { BaseDataTypes } from '@/types/base-data-types.js'
 
 // Models
 const agentUserModel = new AgentUserModel()

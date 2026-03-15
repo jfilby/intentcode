@@ -1,8 +1,8 @@
 import { CustomError } from 'serene-core-server'
-import { Instance, PrismaClient } from '@/prisma/client'
-import { BuildMutateService } from '../build/mutate-service'
-import { ProjectCompileService } from '@/services/projects/compile-service'
-import { ProjectsQueryService } from '@/services/projects/query-service'
+import { Instance, PrismaClient } from '@/prisma/client.js'
+import { BuildMutateService } from '../build/mutate-service.js'
+import { ProjectCompileService } from '@/services/projects/compile-service.js'
+import { ProjectsQueryService } from '@/services/projects/query-service.js'
 
 // Services
 const buildMutateService = new BuildMutateService()

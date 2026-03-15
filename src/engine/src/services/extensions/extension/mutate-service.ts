@@ -1,14 +1,14 @@
 import { CustomError, InstanceModel } from 'serene-core-server'
 import { blake3 } from '@noble/hashes/blake3'
-import { Instance, PrismaClient } from '@/prisma/client'
-import { ServerOnlyTypes } from '@/types/server-only-types'
-import { SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
-import { SourceNodeModel } from '@/models/source-graph/source-node-model'
-import { BaseDataTypes } from '@/types/base-data-types'
-import { ExtensionQueryService } from './query-service'
-import { GraphsDeleteService } from '@/services/graphs/general/delete-service'
-import { GraphsMutateService } from '@/services/graphs/general/mutate-service'
-import { ProjectsQueryService } from '@/services/projects/query-service'
+import { Instance, PrismaClient } from '@/prisma/client.js'
+import { ServerOnlyTypes } from '@/types/server-only-types.js'
+import { SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types.js'
+import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
+import { BaseDataTypes } from '@/types/base-data-types.js'
+import { ExtensionQueryService } from './query-service.js'
+import { GraphsDeleteService } from '@/services/graphs/general/delete-service.js'
+import { GraphsMutateService } from '@/services/graphs/general/mutate-service.js'
+import { ProjectsQueryService } from '@/services/projects/query-service.js'
 
 // Models
 const instanceModel = new InstanceModel()

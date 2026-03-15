@@ -1,8 +1,8 @@
 import { CustomError, WalkDirService } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client'
-import { ImportsData, JsTsSrcTypes } from './types'
-import { ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
-import { ParseJsTsImportsService } from './parse-js-ts-service'
+import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { ImportsData, JsTsSrcTypes } from './types.js'
+import { ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
+import { ParseJsTsImportsService } from './parse-js-ts-service.js'
 
 // Services
 const parseJsTsImportsService = new ParseJsTsImportsService()

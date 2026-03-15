@@ -1,14 +1,14 @@
-const fs = require('fs')
+import fs from 'fs'
 import { CustomError, WalkDirService } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client'
-import { BuildData, BuildFromFile } from '@/types/build-types'
-import { CompilerMutateService } from '../intentcode/compiler/code/mutate-service'
-import { FsUtilsService } from '../utils/fs-utils-service'
-import { IndexerMutateService } from '../intentcode/indexer/mutate-service'
-import { IntentCodeFilenameService } from '../utils/filename-service'
-import { IntentCodePathGraphMutateService } from '../graphs/intentcode/path-graph-mutate-service'
-import { ProjectsQueryService } from './query-service'
-import { ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types'
+import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { BuildData, BuildFromFile } from '@/types/build-types.js'
+import { CompilerMutateService } from '../intentcode/compiler/code/mutate-service.js'
+import { FsUtilsService } from '../utils/fs-utils-service.js'
+import { IndexerMutateService } from '../intentcode/indexer/mutate-service.js'
+import { IntentCodeFilenameService } from '../utils/filename-service.js'
+import { IntentCodePathGraphMutateService } from '../graphs/intentcode/path-graph-mutate-service.js'
+import { ProjectsQueryService } from './query-service.js'
+import { ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types.js'
 
 // Services
 const compilerMutateService = new CompilerMutateService()

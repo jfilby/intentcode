@@ -1,6 +1,6 @@
-import { SourceNode } from '@/prisma/client'
-import { ExtensionsData } from './source-graph-types'
-import { ProjectDetails } from './server-only-types'
+import { SourceNode } from '@/prisma/client.js'
+import { ExtensionsData } from './source-graph-types.js'
+import { ProjectDetails } from './server-only-types.js'
 
 export enum BuildStageType {
   // Specs to IntentCode

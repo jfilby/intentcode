@@ -1,16 +1,16 @@
-const fs = require('fs')
 import chalk from 'chalk'
+import fs from 'fs'
 import path from 'path'
 import { CustomError, WalkDirService } from 'serene-core-server'
 import { confirm, input } from '@inquirer/prompts'
-import { PrismaClient, SourceNode } from '@/prisma/client'
-import { ServerOnlyTypes } from '@/types/server-only-types'
-import { ExtensionMutateService } from './mutate-service'
-import { GraphsDeleteService } from '@/services/graphs/general/delete-service'
-import { LoadExternalHooksService } from '../hooks/load-external-service'
-import { LoadExternalSkillsService } from '../skills/load-external-service'
-import { PathsService } from '@/services/utils/paths-service'
-import { ProjectsQueryService } from '../../projects/query-service'
+import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { ServerOnlyTypes } from '@/types/server-only-types.js'
+import { ExtensionMutateService } from './mutate-service.js'
+import { GraphsDeleteService } from '@/services/graphs/general/delete-service.js'
+import { LoadExternalHooksService } from '../hooks/load-external-service.js'
+import { LoadExternalSkillsService } from '../skills/load-external-service.js'
+import { PathsService } from '@/services/utils/paths-service.js'
+import { ProjectsQueryService } from '../../projects/query-service.js'
 
 // Services
 const extensionMutateService = new ExtensionMutateService()
@@ -124,7 +124,7 @@ export class LoadExternalExtensionsService {
       // Skip if not a dir
       const stats = await fs.statSync(fullPath)
 
-      if (stats.isDirectory(fullPath) === false) {
+      if (stats.isDirectory() === false) {
         continue
       }
 

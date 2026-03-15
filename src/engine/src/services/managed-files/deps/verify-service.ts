@@ -1,11 +1,11 @@
-const semver = require('semver')
+import semver from 'semver'
 import { CustomError } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client'
-import { ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
-import { DependenciesMutateService } from '@/services/graphs/dependencies/mutate-service'
-import { DependenciesQueryService } from '@/services/graphs/dependencies/query-service'
-import { DepsJsonService } from './deps-json-service'
-import { JsonUtilsService } from '@/services/utils/json-service'
+import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
+import { DependenciesMutateService } from '@/services/graphs/dependencies/mutate-service.js'
+import { DependenciesQueryService } from '@/services/graphs/dependencies/query-service.js'
+import { DepsJsonService } from './deps-json-service.js'
+import { JsonUtilsService } from '@/services/utils/json-service.js'
 
 // Services
 const depsJsonService = new DepsJsonService()
@@ -80,7 +80,7 @@ export class DepsVerifyService {
     for (const [packageName, minVersionNo] of
          Object.entries(jsonContent.source.deps)) {
 
-      if (!semver.validRange(minVersionNo)) {
+      if (!semver.validRange(minVersionNo as string)) {
 
         if (ServerOnlyTypes.verbosity >= VerbosityLevels.max) {
 

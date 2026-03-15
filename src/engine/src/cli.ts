@@ -1,6 +1,9 @@
 #!/usr/bin/env node
-//import nextEnv from '@next/env'
-//const { loadEnvConfig } = nextEnv
+
+// Imports
+// import { createRequire } from 'node:module'
+// const require = createRequire(import.meta.url)
+// const { loadEnvConfig } = require('@next/env')
 import { loadEnvConfig } from '@next/env'
 
 // Load the env file
@@ -8,18 +11,16 @@ const dev = process.env.NODE_ENV !== 'production'
 
 loadEnvConfig(process.cwd(), dev);
 
-import './services/setup/env-setup-service';
-
 // Main
 (async () => {
 
-  // Imports
-  // await import ('./services/setup/env-setup-service')
-  const { prisma } = await import('@/db')
-  const { CliService } = await import('./services/setup/cli-service')
-  const { HousekeepingDeleteService } = await import('./services/housekeeping/delete-service')
-  const { ProjectsQueryService } = await import('./services/projects/query-service')
-  const { SetupService } = await import('./services/setup/setup-service')
+  // Dynamic imports
+  await import('./services/setup/env-setup-service.js')
+  const { prisma } = await import('@/db.js')
+  const { CliService } = await import('./services/setup/cli-service.js')
+  const { HousekeepingDeleteService } = await import('./services/housekeeping/delete-service.js')
+  const { ProjectsQueryService } = await import('./services/projects/query-service.js')
+  const { SetupService } = await import('./services/setup/setup-service.js')
 
   // Debug
   const fnName = 'cli.ts'

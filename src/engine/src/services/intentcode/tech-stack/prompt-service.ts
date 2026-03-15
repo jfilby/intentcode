@@ -1,9 +1,9 @@
-import { PrismaClient, SourceNode } from '@/prisma/client'
-import { BuildFromFile } from '@/types/build-types'
-import { ExtensionsData } from '@/types/source-graph-types'
-import { ServerOnlyTypes } from '@/types/server-only-types'
-import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
-import { ProjectsQueryService } from '@/services/projects/query-service'
+import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { BuildFromFile } from '@/types/build-types.js'
+import { ExtensionsData } from '@/types/source-graph-types.js'
+import { ServerOnlyTypes } from '@/types/server-only-types.js'
+import { ExtensionQueryService } from '@/services/extensions/extension/query-service.js'
+import { ProjectsQueryService } from '@/services/projects/query-service.js'
 
 // Services
 const extensionQueryService = new ExtensionQueryService()

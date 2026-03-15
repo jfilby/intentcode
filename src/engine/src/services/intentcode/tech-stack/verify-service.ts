@@ -1,7 +1,7 @@
-import { PrismaClient, SourceNode } from '@/prisma/client'
-import { BuildData } from '@/types/build-types'
-import { ProjectsQueryService } from '@/services/projects/query-service'
-import { TechStackQueryService } from './query-service'
+import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { BuildData } from '@/types/build-types.js'
+import { ProjectsQueryService } from '@/services/projects/query-service.js'
+import { TechStackQueryService } from './query-service.js'
 
 // Services
 const projectsQueryService = new ProjectsQueryService()

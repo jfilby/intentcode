@@ -1,7 +1,7 @@
-import { PrismaClient, SourceNode } from '@/prisma/client'
-import { BuildData } from '@/types/build-types'
-import { DepsVerifyService } from '../managed-files/deps/verify-service'
-import { TechStackVerifyService } from '../intentcode/tech-stack/verify-service'
+import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { BuildData } from '@/types/build-types.js'
+import { DepsVerifyService } from '../managed-files/deps/verify-service.js'
+import { TechStackVerifyService } from '../intentcode/tech-stack/verify-service.js'
 
 // Services
 const depsVerifyService = new DepsVerifyService()

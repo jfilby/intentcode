@@ -1,8 +1,8 @@
 import { CustomError } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client'
-import { SourceNodeTypes } from '@/types/source-graph-types'
-import { FsUtilsService } from '../../utils/fs-utils-service'
-import { DotIntentCodeGraphMutateService } from './graph-mutate-service'
+import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { SourceNodeTypes } from '@/types/source-graph-types.js'
+import { FsUtilsService } from '../../utils/fs-utils-service.js'
+import { DotIntentCodeGraphMutateService } from './graph-mutate-service.js'
 
 // Services
 const dotIntentCodeGraphMutateService = new DotIntentCodeGraphMutateService()

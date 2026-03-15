@@ -1,15 +1,15 @@
 import fs from 'fs'
 import https from 'node:https'
 import path from 'path'
-const semver = require('semver')
+import semver from 'semver'
 import { CustomError } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client'
-import { SourceNodeTypes } from '@/types/source-graph-types'
-import { BuildData } from '@/types/build-types'
-import { ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
-import { ImportsData } from '@/services/source-code/imports/types'
-import { ProjectsQueryService } from '@/services/projects/query-service'
-import { ReadJsTsSourceImportsService } from '@/services/source-code/imports/read-js-ts-service'
+import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { SourceNodeTypes } from '@/types/source-graph-types.js'
+import { BuildData } from '@/types/build-types.js'
+import { ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
+import { ImportsData } from '@/services/source-code/imports/types.js'
+import { ProjectsQueryService } from '@/services/projects/query-service.js'
+import { ReadJsTsSourceImportsService } from '@/services/source-code/imports/read-js-ts-service.js'
 
 // Services
 const projectsQueryService = new ProjectsQueryService()
@@ -100,10 +100,10 @@ export class PackageJsonFileMutateService {
           this.getLatestVersion(dependency)
 
         // Use the major version only
-        latestVersionNo = semver.major(latestVersionNo)
+        const latestMajorVersionNo = semver.major(latestVersionNo)
 
         // Set the dependency
-        dependencies[dependency] = `^${latestVersionNo}`
+        dependencies[dependency] = `^${latestMajorVersionNo}`
       }
     }
   }
@@ -193,7 +193,7 @@ export class PackageJsonFileMutateService {
     // console.log(`${fnName}: v: ${v}`)
 
     // E.g. 5 -> 5.0.0
-    v = semver.valid(v) ?? semver.valid(semver.coerce(v))
+    v = semver.valid(v) ?? semver.valid(semver.coerce(v))!
 
     // Debug
     // console.log(`${fnName}: v: ${v}`)
@@ -448,8 +448,8 @@ export class PackageJsonFileMutateService {
 
         // If available, set the latest major version
         if (latestVersionNo != null) {
-          minVersionNo = semver.major(latestVersionNo)
-          numericMinVersionNo = this.getNumericOnlyVersionNo(minVersionNo)
+          const minVersionNo = semver.major(latestVersionNo)
+          numericMinVersionNo = this.getNumericOnlyVersionNo(`${minVersionNo}`)
         }
 
         // Debug

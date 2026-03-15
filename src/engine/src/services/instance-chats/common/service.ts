@@ -1,8 +1,8 @@
 import { ChatSessionService, SereneAiServerOnlyTypes } from 'serene-ai-server'
 import { ChatSettingsModel, CustomError } from 'serene-core-server'
-import { ChatSettings, PrismaClient } from '@/prisma/client'
-import { ChatSessionOptions, ChatTypes } from '@/types/chat-types'
-import { ChatPromptsService } from '../chat-prompts-service'
+import { ChatSettings, PrismaClient } from '@/prisma/client.js'
+import { ChatSessionOptions, ChatTypes } from '@/types/chat-types.js'
+import { ChatPromptsService } from '../chat-prompts-service.js'
 
 // Models
 const chatSettingsModel = new ChatSettingsModel()

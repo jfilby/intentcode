@@ -1,11 +1,11 @@
-const fs = require('fs')
+import fs from 'fs'
 import { CustomError, WalkDirService } from 'serene-core-server'
 import { blake3 } from '@noble/hashes/blake3'
-import { PrismaClient, SourceNode } from '@/prisma/client'
-import { BaseDataTypes } from '@/types/base-data-types'
-import { SourceNodeTypes } from '@/types/source-graph-types'
-import { SourceNodeModel } from '@/models/source-graph/source-node-model'
-import { DependenciesMutateService } from '@/services/graphs/dependencies/mutate-service'
+import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { BaseDataTypes } from '@/types/base-data-types.js'
+import { SourceNodeTypes } from '@/types/source-graph-types.js'
+import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
+import { DependenciesMutateService } from '@/services/graphs/dependencies/mutate-service.js'
 
 // Models
 const sourceNodeModel = new SourceNodeModel()

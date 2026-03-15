@@ -1,9 +1,9 @@
 import fs from 'fs'
 import path from 'path'
 import * as z from 'zod'
-import { PrismaClient, SourceNode } from '@/prisma/client'
-import { ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
-import { DotIntentCodeGraphQueryService } from '@/services/graphs/dot-intentcode/graph-query-service'
+import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
+import { DotIntentCodeGraphQueryService } from '@/services/graphs/dot-intentcode/graph-query-service.js'
 
 // Services
 const dotIntentCodeGraphQueryService = new DotIntentCodeGraphQueryService()

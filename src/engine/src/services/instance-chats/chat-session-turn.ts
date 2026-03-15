@@ -1,7 +1,7 @@
 import { AiTasksService, ChatMessage, ChatService, ChatSessionService } from 'serene-ai-server'
-import { UserProfile } from '@/prisma/client'
 import { CustomError, UserProfileModel } from 'serene-core-server'
-import { IntentCodeAiTasks, ServerOnlyTypes } from '@/types/server-only-types'
+import { UserProfile } from '@/prisma/client.js'
+import { IntentCodeAiTasks, ServerOnlyTypes } from '@/types/server-only-types.js'
 
 // Models
 const userProfileModel = new UserProfileModel()

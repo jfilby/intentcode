@@ -1,12 +1,12 @@
 import chalk from 'chalk'
 import { CustomError } from 'serene-core-server'
 import { select } from '@inquirer/prompts'
-import { Instance, PrismaClient, SourceNode } from '@/prisma/client'
-import { CommonCommands, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
-import { ExtensionMutateService } from './mutate-service'
-import { ExtensionQueryService } from './query-service'
-import { GraphsMutateService } from '@/services/graphs/general/mutate-service'
-import { ProjectsQueryService } from '@/services/projects/query-service'
+import { Instance, PrismaClient, SourceNode } from '@/prisma/client.js'
+import { CommonCommands, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
+import { ExtensionMutateService } from './mutate-service.js'
+import { ExtensionQueryService } from './query-service.js'
+import { GraphsMutateService } from '@/services/graphs/general/mutate-service.js'
+import { ProjectsQueryService } from '@/services/projects/query-service.js'
 
 // Services
 const extensionMutateService = new ExtensionMutateService()

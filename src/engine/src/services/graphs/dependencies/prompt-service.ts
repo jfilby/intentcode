@@ -1,6 +1,6 @@
-import { PrismaClient, SourceNode } from '@/prisma/client'
-import { DepDeltaNames, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
-import { DependenciesQueryService } from './query-service'
+import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { DepDeltaNames, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
+import { DependenciesQueryService } from './query-service.js'
 
 // Services
 const dependenciesQueryService = new DependenciesQueryService()

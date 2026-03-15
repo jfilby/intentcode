@@ -1,5 +1,5 @@
-import { SourceNode } from '@/prisma/client'
-import { BuildData, BuildFromFile } from './build-types'
+import { SourceNode } from '@/prisma/client.js'
+import { BuildData, BuildFromFile } from './build-types.js'
 
 export interface AnalyzerChatParams {
   projectNode: SourceNode

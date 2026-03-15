@@ -2,11 +2,11 @@ import fs from 'fs'
 import path from 'path'
 import { TextParsingService } from 'serene-ai-server'
 import { CustomError } from 'serene-core-server'
-import { PrismaClient } from '@/prisma/client'
-import { BuildData } from '@/types/build-types'
-import { FileDelta, FileOps, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
-import { FsUtilsService } from '@/services/utils/fs-utils-service'
-import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service'
+import { PrismaClient } from '@/prisma/client.js'
+import { BuildData } from '@/types/build-types.js'
+import { FileDelta, FileOps, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
+import { FsUtilsService } from '@/services/utils/fs-utils-service.js'
+import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service.js'
 
 // Service
 const fsUtilsService = new FsUtilsService()

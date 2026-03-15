@@ -1,13 +1,13 @@
 import { CustomError } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client'
-import { BuildData, BuildFromFile } from '@/types/build-types'
-import { IntentCodeCommonTypes } from '../common/types'
-import { FileOps, ServerOnlyTypes } from '@/types/server-only-types'
-import { CompilerQueryService } from '../compiler/code/query-service'
-import { DependenciesPromptService } from '@/services/graphs/dependencies/prompt-service'
-import { ExtensionQueryService } from '@/services/extensions/extension/query-service'
-import { IntentCodePromptingService } from '../build/prompting-service'
-import { ProjectsQueryService } from '@/services/projects/query-service'
+import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { BuildData, BuildFromFile } from '@/types/build-types.js'
+import { IntentCodeCommonTypes } from '../common/types.js'
+import { FileOps, ServerOnlyTypes } from '@/types/server-only-types.js'
+import { CompilerQueryService } from '../compiler/code/query-service.js'
+import { DependenciesPromptService } from '@/services/graphs/dependencies/prompt-service.js'
+import { ExtensionQueryService } from '@/services/extensions/extension/query-service.js'
+import { IntentCodePromptingService } from '../build/prompting-service.js'
+import { ProjectsQueryService } from '@/services/projects/query-service.js'
 
 // Services
 const compilerQueryService = new CompilerQueryService()

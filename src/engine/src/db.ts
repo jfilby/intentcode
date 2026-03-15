@@ -1,7 +1,7 @@
 import os from 'os'
 import path from 'path'
 import fs from 'fs'
-import { PrismaClient } from '@/prisma/client'
+import { PrismaClient } from '@/prisma/client.js'
 // Optional: import libSQL adapter if using Bun + SQLite
 import { PrismaLibSql } from '@prisma/adapter-libsql'
 import { createClient } from '@libsql/client'

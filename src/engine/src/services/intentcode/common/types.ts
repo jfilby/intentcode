@@ -1,4 +1,4 @@
-import { FileOps } from '@/types/server-only-types'
+import { FileOps } from '@/types/server-only-types.js'
 
 export class IntentCodeCommonTypes {
 

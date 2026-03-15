@@ -1,10 +1,10 @@
-const semver = require('semver')
+import semver from 'semver'
 import { CustomError } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client'
-import { ServerOnlyTypes } from '@/types/server-only-types'
-import { ExtensionsData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types'
-import { SourceNodeModel } from '@/models/source-graph/source-node-model'
-import { ProjectsQueryService } from '@/services/projects/query-service'
+import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { ServerOnlyTypes } from '@/types/server-only-types.js'
+import { ExtensionsData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types.js'
+import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
+import { ProjectsQueryService } from '@/services/projects/query-service.js'
 
 // Models
 const sourceNodeModel = new SourceNodeModel()
@@ -179,7 +179,7 @@ export class ExtensionQueryService {
       // Is the version above the minimum required?
       if (semver.lt(
             versionNo,
-            minVersionNo)) {
+            minVersionNo!)) {
 
         continue
       }

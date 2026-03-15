@@ -1,10 +1,10 @@
-import { PrismaClient, SourceNode } from '@/prisma/client'
-import { BuildFromFile } from '@/types/build-types'
-import { IntentCodeCommonTypes } from '../common/types'
-import { ServerOnlyTypes } from '@/types/server-only-types'
-import { ExtensionsData } from '@/types/source-graph-types'
-import { CompilerQueryService } from '../compiler/code/query-service'
-import { DependenciesPromptService } from '@/services/graphs/dependencies/prompt-service'
+import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { BuildFromFile } from '@/types/build-types.js'
+import { IntentCodeCommonTypes } from '../common/types.js'
+import { ServerOnlyTypes } from '@/types/server-only-types.js'
+import { ExtensionsData } from '@/types/source-graph-types.js'
+import { CompilerQueryService } from '../compiler/code/query-service.js'
+import { DependenciesPromptService } from '@/services/graphs/dependencies/prompt-service.js'
 
 // Services
 const compilerQueryService = new CompilerQueryService()

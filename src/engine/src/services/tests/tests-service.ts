@@ -1,9 +1,9 @@
 import chalk from 'chalk'
 import { select } from '@inquirer/prompts'
-import { PrismaClient, UserProfile } from '@/prisma/client'
-import { CommonCommands } from '@/types/server-only-types'
-import { CalcTestsService } from './calc-tests-service'
-import { CalcV2TestsService } from './calc-v2-tests-service'
+import { PrismaClient, UserProfile } from '@/prisma/client.js'
+import { CommonCommands } from '@/types/server-only-types.js'
+import { CalcTestsService } from './calc-tests-service.js'
+import { CalcV2TestsService } from './calc-v2-tests-service.js'
 
 // Services
 const calcTestsService = new CalcTestsService()

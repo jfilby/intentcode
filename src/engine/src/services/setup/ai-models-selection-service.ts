@@ -2,9 +2,9 @@ import chalk from 'chalk'
 import { AiTaskModel, AiTaskTechModel, AiTechDefs } from 'serene-ai-server'
 import { CustomError, TechModel } from 'serene-core-server'
 import { select } from '@inquirer/prompts'
-import { PrismaClient } from '@/prisma/client'
-import { BaseDataTypes } from '@/types/base-data-types'
-import { AiTaskModelPresets, CommonCommands, IntentCodeAiTasks, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types'
+import { PrismaClient } from '@/prisma/client.js'
+import { BaseDataTypes } from '@/types/base-data-types.js'
+import { AiTaskModelPresets, CommonCommands, IntentCodeAiTasks, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
 
 // Models
 const aiTaskModel = new AiTaskModel()

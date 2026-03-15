@@ -1,6 +1,6 @@
-import { PrismaClient } from '@/prisma/client'
-import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model'
-import { ServerOnlyTypes } from '@/types/server-only-types'
+import { PrismaClient } from '@/prisma/client.js'
+import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model.js'
+import { ServerOnlyTypes } from '@/types/server-only-types.js'
 
 // Models
 const sourceNodeGenerationModel = new SourceNodeGenerationModel()

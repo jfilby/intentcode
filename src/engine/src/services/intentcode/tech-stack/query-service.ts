@@ -1,6 +1,6 @@
 import path from 'path'
 import { WalkDirService } from 'serene-core-server'
-import { ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types'
+import { ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types.js'
 
 // Services
 const walkDirService = new WalkDirService()

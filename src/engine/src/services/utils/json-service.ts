@@ -1,4 +1,5 @@
-import { isEqual } from 'lodash'
+import _ from 'lodash'
+const { isEqual } = _
 
 export class JsonUtilsService {
 

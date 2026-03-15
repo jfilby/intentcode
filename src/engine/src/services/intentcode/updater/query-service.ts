@@ -1,5 +1,5 @@
-import { BuildData } from '@/types/build-types'
-import { FileOps } from '@/types/server-only-types'
+import { BuildData } from '@/types/build-types.js'
+import { FileOps } from '@/types/server-only-types.js'
 
 // Class
 export class IntentCodeUpdaterQueryService {

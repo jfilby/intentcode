@@ -1,10 +1,10 @@
 import { CustomError } from 'serene-core-server'
-import { PrismaClient } from '@/prisma/client'
-import { SourceNodeModel } from '@/models/source-graph/source-node-model'
-import { ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types'
-import { SourceNodeTypes } from '@/types/source-graph-types'
-import { BuildsGraphQueryService } from '@/services/graphs/builds/query-service'
-import { GraphsDeleteService } from '@/services/graphs/general/delete-service'
+import { PrismaClient } from '@/prisma/client.js'
+import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
+import { ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types.js'
+import { SourceNodeTypes } from '@/types/source-graph-types.js'
+import { BuildsGraphQueryService } from '@/services/graphs/builds/query-service.js'
+import { GraphsDeleteService } from '@/services/graphs/general/delete-service.js'
 
 // Models
 const sourceNodeModel = new SourceNodeModel()

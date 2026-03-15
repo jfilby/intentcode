@@ -1,5 +1,5 @@
-import { PrismaClient, SourceNode } from '@/prisma/client'
-import { BuildData } from '@/types/build-types'
+import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { BuildData } from '@/types/build-types.js'
 
 export class BuildHooksService {
 
