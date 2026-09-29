@@ -29,7 +29,21 @@ export class ProjectsMutateService {
           userProfileId: string,
           projectName: string) {
 
-    // Validate
+    // Get the project if it already exists
+    const existingProject = await
+      projectsQueryService.getByNameOrKey(
+        prisma,
+        userProfileId,
+        projectName)
+
+    if (existingProject != null) {
+
+      return {
+        status: true,
+        instance: existingProject
+      }
+    }
+
     const validationResults = await
       projectsQueryService.validate(
         prisma,

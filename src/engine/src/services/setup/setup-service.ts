@@ -139,7 +139,8 @@ export class SetupService {
     // Validate
     if (systemProjectResults?.instance == null) {
       throw new CustomError(
-        `${fnName}: systemProjectResults.instance == null`)
+        `${fnName}: systemProjectResults.instance == null: ` +
+        `${systemProjectResults?.message}`)
     }
 
     // Setup engine version

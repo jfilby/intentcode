@@ -474,6 +474,38 @@ export class ProjectsQueryService {
     return projectDetails
   }
 
+  async getByNameOrKey(
+    prisma: PrismaClient,
+    userProfileId: string,
+    name: string) {
+
+    // Get the key
+    const key = fieldNamingService.getAsKey(name)
+
+    // Get by name
+    var project = await
+      instanceModel.getByParentIdAndNameAndUserProfileId(
+        prisma,
+        null,  // parentId
+        name,
+        userProfileId)
+
+    if (project != null) {
+      return project
+    }
+
+    // Get by key
+    project = await
+      instanceModel.getByParentIdAndKeyAndUserProfileId(
+        prisma,
+        null,  // parentId
+        key,
+        userProfileId)
+
+    return project
+  }
+
+
   async validate(
     prisma: PrismaClient,
     userProfileId: string,
@@ -522,30 +554,12 @@ export class ProjectsQueryService {
       }
     }
 
-    // Check if the project already exists (name)
-    var project = await
-      instanceModel.getByParentIdAndNameAndUserProfileId(
-        prisma,
-        null,  // parentId
-        key,
-        userProfileId)
-
-    if (project != null) {
-      return {
-        status: false,
-        message: `That project already exists`,
-        key: undefined,
-        name: undefined
-      }
-    }
-
-    // Check if the project already exists (key)
-    project = await
-      instanceModel.getByParentIdAndKeyAndUserProfileId(
-        prisma,
-        null,  // parentId
-        key,
-        userProfileId)
+    // Check if the project already exists (name or key)
+    const project = await
+            this.getByNameOrKey(
+              prisma,
+              userProfileId,
+              name)
 
     if (project != null) {
       return {
