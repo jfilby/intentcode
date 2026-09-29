@@ -1,6 +1,6 @@
 [
   {
-    "id": "0mumvyeck8z5ibbde2f385",
+    "id": "0mumwqqlh7b8yx98d8957f",
     "parentId": null,
     "projectId": "system",
     "status": "A",
@@ -11,12 +11,12 @@
     "jsonContent": null,
     "jsonContentHash": null,
     "contentUpdated": null,
-    "created": "2026-09-29T16:23:29.060Z",
-    "updated": "2026-09-29T16:23:29.060Z"
+    "created": "2026-09-29T16:45:31.301Z",
+    "updated": "2026-09-29T16:45:31.301Z"
   },
   {
-    "id": "0mumvyecu8z5ic6af24207",
-    "parentId": "0mumvyeck8z5ibbde2f385",
+    "id": "0mumwqqlo7b8yyfdce7e64",
+    "parentId": "0mumwqqlh7b8yx98d8957f",
     "projectId": "system",
     "status": "A",
     "type": "Extension",
@@ -33,12 +33,31 @@
     },
     "jsonContentHash": "194,90,22,131,87,33,131,57,209,69,51,25,159,187,248,119,180,64,139,128,120,99,208,38,59,71,101,55,0,251,250,6",
     "contentUpdated": null,
-    "created": "2026-09-29T16:23:29.070Z",
-    "updated": "2026-09-29T16:23:29.070Z"
+    "created": "2026-09-29T16:45:31.308Z",
+    "updated": "2026-09-29T16:45:32.466Z"
   },
   {
-    "id": "0mumvyeef8z5id71de3b7a",
-    "parentId": "0mumvyecu8z5ic6af24207",
+    "id": "0mumwqqnh7b8z1b5a9bce4",
+    "parentId": "0mumwqqlh7b8yx98d8957f",
+    "projectId": "system",
+    "status": "A",
+    "type": "Extension",
+    "name": "intentcode/nodejs-typescript",
+    "content": null,
+    "contentHash": null,
+    "jsonContent": {
+      "id": "intentcode/nodejs-typescript",
+      "name": "Bundled Node.js + TypeScript",
+      "version": "0.0.1"
+    },
+    "jsonContentHash": "31,251,168,92,192,172,232,120,68,204,35,80,81,11,23,246,125,166,72,49,26,139,74,5,109,10,82,66,2,187,100,147",
+    "contentUpdated": null,
+    "created": "2026-09-29T16:45:31.373Z",
+    "updated": "2026-09-29T16:45:32.527Z"
+  },
+  {
+    "id": "0mumwqrj56vpl57ffa3d6c",
+    "parentId": "0mumwqqlo7b8yyfdce7e64",
     "projectId": "system",
     "status": "A",
     "type": "Skill",
@@ -58,13 +77,13 @@
       }
     },
     "jsonContentHash": "218,57,155,84,64,246,136,255,190,3,204,54,116,34,190,243,90,9,86,50,40,63,198,153,220,188,93,85,91,97,248,252",
-    "contentUpdated": "2026-09-29T16:23:29.124Z",
-    "created": "2026-09-29T16:23:29.127Z",
-    "updated": "2026-09-29T16:23:29.127Z"
+    "contentUpdated": "2026-09-29T16:45:32.512Z",
+    "created": "2026-09-29T16:45:32.513Z",
+    "updated": "2026-09-29T16:45:32.513Z"
   },
   {
-    "id": "0mumvyeeo8z5ie4649c661",
-    "parentId": "0mumvyecu8z5ic6af24207",
+    "id": "0mumwqrjd6vpl6f241caf7",
+    "parentId": "0mumwqqlo7b8yyfdce7e64",
     "projectId": "system",
     "status": "A",
     "type": "Hooks",
@@ -102,32 +121,13 @@
       }
     },
     "jsonContentHash": "182,76,217,84,129,102,137,89,131,98,39,17,189,168,31,33,149,144,26,177,207,31,60,163,137,133,183,190,103,57,35,108",
-    "contentUpdated": "2026-09-29T16:23:29.135Z",
-    "created": "2026-09-29T16:23:29.136Z",
-    "updated": "2026-09-29T16:23:29.136Z"
+    "contentUpdated": "2026-09-29T16:45:32.520Z",
+    "created": "2026-09-29T16:45:32.521Z",
+    "updated": "2026-09-29T16:45:32.521Z"
   },
   {
-    "id": "0mumvyeet8z5if996f5b4c",
-    "parentId": "0mumvyeck8z5ibbde2f385",
-    "projectId": "system",
-    "status": "A",
-    "type": "Extension",
-    "name": "intentcode/nodejs-typescript",
-    "content": null,
-    "contentHash": null,
-    "jsonContent": {
-      "id": "intentcode/nodejs-typescript",
-      "name": "Bundled Node.js + TypeScript",
-      "version": "0.0.1"
-    },
-    "jsonContentHash": "31,251,168,92,192,172,232,120,68,204,35,80,81,11,23,246,125,166,72,49,26,139,74,5,109,10,82,66,2,187,100,147",
-    "contentUpdated": null,
-    "created": "2026-09-29T16:23:29.141Z",
-    "updated": "2026-09-29T16:23:29.141Z"
-  },
-  {
-    "id": "0mumvyef38z5igd69eaf25",
-    "parentId": "0mumvyeet8z5if996f5b4c",
+    "id": "0mumwqrk86vpl74e20a18b",
+    "parentId": "0mumwqqnh7b8z1b5a9bce4",
     "projectId": "system",
     "status": "A",
     "type": "Skill",
@@ -147,13 +147,13 @@
       }
     },
     "jsonContentHash": "87,184,77,157,83,201,114,153,149,185,185,154,208,61,90,26,223,179,76,114,31,35,124,165,16,176,210,208,165,203,15,240",
-    "contentUpdated": "2026-09-29T16:23:29.148Z",
-    "created": "2026-09-29T16:23:29.151Z",
-    "updated": "2026-09-29T16:23:29.151Z"
+    "contentUpdated": "2026-09-29T16:45:32.551Z",
+    "created": "2026-09-29T16:45:32.552Z",
+    "updated": "2026-09-29T16:45:32.552Z"
   },
   {
-    "id": "0mumvyefg8z5ih2feb7485",
-    "parentId": "0mumvyeet8z5if996f5b4c",
+    "id": "0mumwqrkg6vpl8d8a3f7c8",
+    "parentId": "0mumwqqnh7b8z1b5a9bce4",
     "projectId": "system",
     "status": "A",
     "type": "Skill",
@@ -174,13 +174,13 @@
       }
     },
     "jsonContentHash": "9,102,59,182,160,222,121,113,46,144,195,181,162,244,175,109,65,24,102,10,116,90,104,233,113,81,233,52,64,108,1,12",
-    "contentUpdated": "2026-09-29T16:23:29.163Z",
-    "created": "2026-09-29T16:23:29.164Z",
-    "updated": "2026-09-29T16:23:29.164Z"
+    "contentUpdated": "2026-09-29T16:45:32.559Z",
+    "created": "2026-09-29T16:45:32.560Z",
+    "updated": "2026-09-29T16:45:32.560Z"
   },
   {
-    "id": "0mumvyegz8z5ii59c9a87d",
-    "parentId": "0mumvyeet8z5if996f5b4c",
+    "id": "0mumwqrkm6vpl97558e371",
+    "parentId": "0mumwqqnh7b8z1b5a9bce4",
     "projectId": "system",
     "status": "A",
     "type": "Hooks",
@@ -224,8 +224,8 @@
       }
     },
     "jsonContentHash": "154,244,102,232,103,33,175,103,172,30,154,203,104,107,93,118,223,174,117,131,182,193,167,91,33,123,122,99,131,21,246,18",
-    "contentUpdated": "2026-09-29T16:23:29.218Z",
-    "created": "2026-09-29T16:23:29.219Z",
-    "updated": "2026-09-29T16:23:29.219Z"
+    "contentUpdated": "2026-09-29T16:45:32.565Z",
+    "created": "2026-09-29T16:45:32.565Z",
+    "updated": "2026-09-29T16:45:32.565Z"
   }
 ]

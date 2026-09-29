@@ -17,6 +17,12 @@ importers:
       '@ai-sdk/openai':
         specifier: ^4.0.80
         version: 4.0.80(zod@4.6.5)
+      '@ai-sdk/openai-compatible':
+        specifier: ^3.0.57
+        version: 3.0.57(zod@4.6.5)
+      '@ai-sdk/provider':
+        specifier: ^4.0.19
+        version: 4.0.19
       '@inquirer/prompts':
         specifier: ^8.7.2
         version: 8.7.2(@types/node@20.19.43)
@@ -110,6 +116,12 @@ packages:
 
   '@ai-sdk/google@4.0.82':
     resolution: {integrity: sha512-2zPYyBSyIcywLtOEJRxlrtXjBjz4KxEU19Qqg/Dk8I9BrsB08+ghG2jv155dtuDZj8qZMrh6LO8J+Wt5O4xVhg==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  '@ai-sdk/openai-compatible@3.0.57':
+    resolution: {integrity: sha512-TEY5Ng/bTJXrYy9wpdxK70gABdYejYedaKbmPCZLhBkPe21rmLzkGxAGkfPYgAfCKPaoAO9THrEhmwUZ4Xhg2Q==}
     engines: {node: '>=22'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -2828,6 +2840,12 @@ snapshots:
       zod: 4.6.5
 
   '@ai-sdk/google@4.0.82(zod@4.6.5)':
+    dependencies:
+      '@ai-sdk/provider': 4.0.18
+      '@ai-sdk/provider-utils': 5.0.49(zod@4.6.5)
+      zod: 4.6.5
+
+  '@ai-sdk/openai-compatible@3.0.57(zod@4.6.5)':
     dependencies:
       '@ai-sdk/provider': 4.0.18
       '@ai-sdk/provider-utils': 5.0.49(zod@4.6.5)

@@ -67,7 +67,9 @@ OPENAI_API_KEY=
 ANTHROPIC_API_KEY=
 GOOGLE_GENERATIVE_AI_API_KEY=
 OPENROUTER_API_KEY=
+COMMANDCODE_API_KEY=
 ```
+
 
 A model with no `[model]` table in `intent.toml` is taken from the
 environment:
@@ -77,7 +79,26 @@ AI_MODEL=google/gemini-3.1-pro-preview
 ```
 
 The value is `provider/model`. The providers are `openai`, `anthropic`,
-`google`, `openrouter` and `openai-compatible`.
+`google`, `openrouter`, `openai-compatible` and `commandcode`.
+
+A model id may carry its own namespace, as OpenRouter's and CommandCode's do:
+`openrouter/anthropic/claude-sonnet-4.5` is OpenRouter serving a Claude, and
+`commandcode/stealth/space-bunny-alpha` is one CommandCode model. In an
+`intent.toml` `[model]` table, state the provider in `provider` and give the
+model id as that provider calls it; the two are joined for you.
+
+### CommandCode
+
+CommandCode is not an OpenAI-shaped gateway — it has a transport of its own
+(`POST /alpha/generate`, a stream of JSON events) — so it is named as a
+provider rather than as an endpoint. Set `COMMANDCODE_API_KEY` (or
+`COMMAND_CODE_API_KEY`):
+
+```toml
+[model]
+provider = "commandcode"
+model = "stealth/space-bunny-alpha"
+```
 
 ### Pointing at a different provider
 

@@ -1,3 +1,6 @@
 .intentcode
 intent/src
 src
+
+# The engine's derived state: the graph, builds, chats and cached replies
+.intent

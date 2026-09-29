@@ -1,6 +1,6 @@
 [
   {
-    "id": "0mumvye9q8z5i65722eb66",
+    "id": "0mumwqqit7b8ysf4787cad",
     "uniqueRefId": "Batch",
     "name": "Batch",
     "role": "Batch processing",
@@ -8,7 +8,7 @@
     "defaultPrompt": null
   },
   {
-    "id": "0mumvye9w8z5i77a1f6c19",
+    "id": "0mumwqqj07b8ytba11b35e",
     "uniqueRefId": "Coder",
     "name": "Coder",
     "role": "Talk to users",

@@ -2,21 +2,27 @@
  * Provider construction.
  *
  * One place turns a resolved model configuration into a Vercel AI SDK model.
- * Every provider is reached through its OpenAI-compatible chat interface where
- * it has one, so a new provider is a row in this file rather than a branch
- * through the services.
+ * A provider with an OpenAI-shaped surface is reached through the compatible
+ * package, which speaks that surface without OpenAI's own defaults; a provider
+ * with its own transport is reached through its own module. Either way, adding
+ * a provider is a row in this file rather than a branch through the services.
  */
 
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { createOpenAI } from '@ai-sdk/openai'
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 import type { LanguageModel } from 'ai'
 import { IntentError } from '../errors.js'
+import { createCommandCode } from './commandcode.js'
 import type { ModelConfiguration } from './model.js'
 
 /**
- * The model to generate with. Anthropic is the one provider reached through
- * its own package, because its messages API is not OpenAI-shaped; the rest
- * are OpenAI-compatible.
+ * The model to generate with.
+ *
+ * CommandCode is the one provider with a transport of its own, in
+ * `commandcode.ts`. OpenRouter and any other OpenAI-shaped endpoint go through
+ * the compatible package rather than OpenAI's, because that package adds none
+ * of OpenAI's own defaults to a gateway that does not want them.
  */
 export function createLanguageModel(
   config: ModelConfiguration
@@ -39,15 +45,26 @@ export function createLanguageModel(
       }).chat(config.model)
     }
 
-    case 'openai':
+    case 'openai': {
+      return createOpenAI({ apiKey: config.apiKey }).chat(config.model)
+    }
+
     case 'openrouter':
     case 'openai-compatible': {
-      const openai = createOpenAI({
+      return createOpenAICompatible({
+        name: config.provider,
+        baseURL: config.baseUrl ?? '',
         apiKey: config.apiKey,
-        ...(config.baseUrl == null ? {} : { baseURL: config.baseUrl }),
         ...(config.headers == null ? {} : { headers: config.headers })
-      })
-      return openai.chat(config.model)
+      })(config.model)
+    }
+
+    case 'commandcode': {
+      return createCommandCode({
+        apiKey: config.apiKey,
+        baseUrl: config.baseUrl ?? '',
+        ...(config.headers == null ? {} : { headers: config.headers })
+      })(config.model)
     }
 
     default: {

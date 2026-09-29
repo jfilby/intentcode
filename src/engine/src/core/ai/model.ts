@@ -25,6 +25,7 @@
  */
 
 import { IntentError } from '../errors.js'
+import { COMMANDCODE_BASE_URL } from './commandcode.js'
 import type { ProjectModelConfig } from '../project-config.js'
 
 export type ProviderName =
@@ -33,6 +34,7 @@ export type ProviderName =
   | 'google'
   | 'openrouter'
   | 'openai-compatible'
+  | 'commandcode'
 
 /** OpenRouter serves every model behind one OpenAI compatible endpoint. */
 export const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
@@ -56,7 +58,12 @@ const ENV_KEYS: Record<ProviderName, readonly string[]> = {
   anthropic: ['ANTHROPIC_API_KEY', 'AI_API_KEY'],
   google: ['GOOGLE_GENERATIVE_AI_API_KEY', 'GOOGLE_API_KEY', 'AI_API_KEY'],
   openrouter: ['OPENROUTER_API_KEY', 'AI_API_KEY'],
-  'openai-compatible': ['AI_API_KEY']
+  'openai-compatible': ['AI_API_KEY'],
+  commandcode: [
+    'COMMANDCODE_API_KEY',
+    'COMMAND_CODE_API_KEY',
+    'AI_API_KEY'
+  ]
 }
 
 /** A `[model]` table that names a provider but no model id. */
@@ -66,7 +73,8 @@ const PROVIDER_ONLY: Record<string, ProviderName> = {
   google: 'google',
   gemini: 'google',
   openrouter: 'openrouter',
-  'openai-compatible': 'openai-compatible'
+  'openai-compatible': 'openai-compatible',
+  commandcode: 'commandcode'
 }
 
 function modelError(message: string, detail?: string): IntentError {
@@ -146,10 +154,14 @@ export function resolveModel(
 
   const baseUrl =
     provider === 'openrouter'
-      ? env.AI_BASE_URL || OPENROUTER_BASE_URL
-      : provider === 'openai-compatible'
-        ? env.AI_BASE_URL
-        : undefined
+      ? OPENROUTER_BASE_URL
+      : provider === 'commandcode'
+        // Pointable at a relay in front of CommandCode, or at a stand-in for
+        // one, which is where a test drives this provider from.
+        ? env.COMMANDCODE_BASE_URL || COMMANDCODE_BASE_URL
+        : provider === 'openai-compatible'
+          ? env.AI_BASE_URL
+          : undefined
 
   if (provider === 'openai-compatible' && baseUrl === undefined) {
     throw modelError(
@@ -219,12 +231,33 @@ export function resolveModelForTask(
     )
   }
 
-  // A model id may already carry its provider; joining it again would name a
-  // provider "google/google".
-  return resolveModel(
-    config.model.includes('/') || config.provider == null
-      ? config.model
-      : `${config.provider}/${config.model}`,
-    env
-  )
+  // A `[model]` table states the provider, so it is always the provider the
+  // table named — the model is whatever the provider calls it. Joining is
+  // only skipped when the table named no provider, in which case the model
+  // has to carry one.
+  //
+  // The obvious test — "does the model id already start with a provider
+  // name?" — is wrong here, and silently so. OpenRouter model ids are namespaced
+  // by the vendor behind them, so `anthropic/claude-sonnet-4.5` under
+  // `provider = "openrouter"` does start with a known provider name and is
+  // not one. Guessing from the id loses the provider and the endpoint with
+  // it, and the request goes to the wrong host.
+  const spec = config.provider == null
+    ? config.model
+    : `${config.provider}/${config.model}`
+
+  // A table that names the provider twice is a mistake worth reporting: the
+  // model id goes to the provider as written, so `provider = "google"` with
+  // `model = "google/gemini-..."` asks Google for a model it does not have.
+  if (config.provider != null &&
+      config.model.split('/')[0] === config.provider) {
+
+    throw modelError(
+      `the model for ${task} names the provider twice`,
+      `either drop "provider" and keep "${config.model}", or set ` +
+        `model to the id on its own`
+    )
+  }
+
+  return resolveModel(spec, env)
 }

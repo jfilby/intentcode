@@ -2,6 +2,9 @@
 .intentcode
 /src
 
+# The engine's derived state: the graph, builds, chats and cached replies
+.intent
+
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies

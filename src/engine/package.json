@@ -23,6 +23,8 @@
     "@ai-sdk/anthropic": "^4.0.65",
     "@ai-sdk/google": "^4.0.82",
     "@ai-sdk/openai": "^4.0.80",
+    "@ai-sdk/openai-compatible": "^3.0.57",
+    "@ai-sdk/provider": "^4.0.19",
     "@inquirer/prompts": "^8.7.2",
     "@noble/hashes": "^1.8.0",
     "@types/lodash": "^4.17.25",

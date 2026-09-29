@@ -1,0 +1,7 @@
+name = "calc-v2"
+key = "calc-v2"
+
+[model]
+provider = "commandcode"
+model = "stealth/space-bunny-alpha"
+
