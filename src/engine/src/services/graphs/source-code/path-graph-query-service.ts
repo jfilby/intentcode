@@ -72,7 +72,7 @@ export class SourceCodePathGraphQueryService {
 
     // Validate project path
     if (projectSourcePath == null ||
-        !fullPath.startsWith(projectSourcePath)) {
+        !fsUtilsService.isPathWithin(fullPath, projectSourcePath)) {
 
       throw new CustomError(
         `${fnName}: Invalid path: ${fullPath} for project source node: ` +
@@ -97,10 +97,6 @@ export class SourceCodePathGraphQueryService {
     var sourceCodeDir: SourceNode = projectSourceNode
 
     for (const dir of dirs) {
-
-      if (dir.length === 0) {
-        break
-      }
 
       // Try to get the dir node
       sourceCodeDir = await

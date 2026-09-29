@@ -113,8 +113,10 @@ export class ReadJsTsSourceImportsService {
             {
               recursive: true,
               fileExts: JsTsSrcTypes.includeFileExts,
-              ignoreDirs: JsTsSrcTypes.ignoredDirs,
-              ignoreFilePatterns: JsTsSrcTypes.ignoredFilePatterns
+              ignoreRegexs: [
+                ...JsTsSrcTypes.ignoredDirRegexs,
+                ...JsTsSrcTypes.ignoredFilePatterns
+              ]
             })
 
     // Process relevant files

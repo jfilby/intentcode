@@ -45,7 +45,7 @@ export class IntentCodeAnalyzerQueryService {
 
     // Get buildFromFiles
     const buildFromFiles = await
-      projectCompileService.getBuildFromFiles(projectDetails)
+      projectCompileService.getBuildFromFiles(prisma, projectDetails)
 
     // Return
     return {

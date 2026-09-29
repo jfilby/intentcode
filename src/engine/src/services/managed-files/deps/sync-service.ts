@@ -198,10 +198,18 @@ export class DepsSyncService {
         depsNodeExtensions)
     }
 
-    // Try to delete any extensions not in the new depsNode
-    await this.deleteExtensionsNotInDepsNode(
-      prisma,
-      projectExtensionsData,
-      depsNodeExtensions)
+    // Try to delete any extensions not in the new depsNode. Only prune when
+    // deps.json actually carries an extensions map: a Deps node with no
+    // 'extensions' key is the normal state for a project whose extensions
+    // came from the system project, and passing undefined through here both
+    // threw on Object.entries(undefined) and cascade-deleted every one of the
+    // project's extensions.
+    if (depsNodeExtensions != null) {
+
+      await this.deleteExtensionsNotInDepsNode(
+        prisma,
+        projectExtensionsData,
+        depsNodeExtensions)
+    }
   }
 }

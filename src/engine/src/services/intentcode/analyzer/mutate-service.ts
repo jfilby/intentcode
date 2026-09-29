@@ -220,7 +220,7 @@ export class IntentCodeAnalyzerMutateService {
 
     // Get build file list
     const buildFromFiles = await
-      projectCompileService.getBuildFromFiles(projectDetails)
+      projectCompileService.getBuildFromFiles(prisma, projectDetails)
 
     // Process spec files
     await this.processWithLlm(

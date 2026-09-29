@@ -87,8 +87,12 @@ export class PackageJsonFileMutateService {
         continue
       }
 
-      // Switch non-numeric entries to latest
-      if (/[^0-9^]/.test(minVersionNo as string)) {
+      // A dist-tag or other non-semver specifier ('latest', 'next', a git URL,
+      // 'file:..') has to be resolved against the registry. The previous test
+      // was /[^0-9^]/, which matched the dots in an ordinary pin like '4.1.2',
+      // so every pinned dependency was rewritten to ^<latestMajor> on every
+      // build, silently upgrading users across major versions.
+      if (semver.validRange(minVersionNo as string) == null) {
         minVersionNo = this.latest
       }
 
@@ -192,8 +196,18 @@ export class PackageJsonFileMutateService {
     // Debug
     // console.log(`${fnName}: v: ${v}`)
 
-    // E.g. 5 -> 5.0.0
-    v = semver.valid(v) ?? semver.valid(semver.coerce(v))!
+    // E.g. 5 -> 5.0.0. The non-null assertion was load-bearing only because
+    // callers guaranteed a numeric version; a dist-tag slipped through and
+    // produced null, which then surfaced much later as
+    // "Invalid Version: null" from semver.minVersion().
+    const normalized = semver.valid(v) ?? semver.valid(semver.coerce(v))
+
+    if (normalized == null) {
+
+      throw new CustomError(`${fnName}: invalid version: ${v}`)
+    }
+
+    v = normalized
 
     // Debug
     // console.log(`${fnName}: v: ${v}`)
@@ -446,10 +460,18 @@ export class PackageJsonFileMutateService {
           console.log(`${fnName}: latestVersionNo: ${latestVersionNo}`)
         }
 
-        // If available, set the latest major version
+        // If available, set the latest major version. This must assign the
+        // loop's minVersionNo, not a block-scoped shadow of it: the old
+        // `const minVersionNo = ...` left the caller passing the literal
+        // string 'latest' into setIfHigher(), where normalizeSemVer() produced
+        // null and semver.minVersion(null) threw, killing the build.
         if (latestVersionNo != null) {
-          const minVersionNo = semver.major(latestVersionNo)
-          numericMinVersionNo = this.getNumericOnlyVersionNo(`${minVersionNo}`)
+
+          const latestMajorVersionNo = semver.major(latestVersionNo)
+
+          minVersionNo = `${latestMajorVersionNo}`
+          numericMinVersionNo =
+            this.getNumericOnlyVersionNo(minVersionNo)
         }
 
         // Debug

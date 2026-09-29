@@ -1,9 +1,3 @@
-#!/usr/bin/env node
-
-// Imports
-// import { createRequire } from 'node:module'
-// const require = createRequire(import.meta.url)
-// const { loadEnvConfig } = require('@next/env')
 import { loadEnvConfig } from '@next/env'
 
 // Load the env file

@@ -31,7 +31,7 @@ export class IntentCodePathGraphMutateService {
 
     // Validate project path
     if (projectSourcePath == null ||
-        !fullPath.startsWith(projectSourcePath)) {
+        !fsUtilsService.isPathWithin(fullPath, projectSourcePath)) {
 
       throw new CustomError(
         `${fnName}: Invalid path: ${fullPath} for project source node: ` +
@@ -56,10 +56,6 @@ export class IntentCodePathGraphMutateService {
     var dirSourceNode: SourceNode = projectIntentCodeNode
 
     for (const dir of dirs) {
-
-      if (dir.length === 0) {
-        break
-      }
 
       dirSourceNode = await
         intentCodeGraphQueryService.getIntentCodeDir(
@@ -97,7 +93,7 @@ export class IntentCodePathGraphMutateService {
 
     // Validate project path
     if (projectSourcePath == null ||
-        !fullPath.startsWith(projectSourcePath)) {
+        !fsUtilsService.isPathWithin(fullPath, projectSourcePath)) {
 
       throw new CustomError(
         `${fnName}: Invalid path: ${fullPath} for project source node: ` +
@@ -122,10 +118,6 @@ export class IntentCodePathGraphMutateService {
     var dirSourceNode: SourceNode = projectIntentCodeNode
 
     for (const dir of dirs) {
-
-      if (dir.length === 0) {
-        break
-      }
 
       dirSourceNode = await
         intentCodeGraphMutateService.getOrCreateIntentCodeDir(

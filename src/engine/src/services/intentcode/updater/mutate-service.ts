@@ -1,5 +1,4 @@
 import fs from 'fs'
-import path from 'path'
 import { TextParsingService } from 'serene-ai-server'
 import { CustomError } from 'serene-core-server'
 import { PrismaClient } from '@/prisma/client.js'
@@ -51,9 +50,14 @@ export class IntentCodeUpdaterMutateService {
     const intentCodePath =
       (projectDetails.projectIntentCodeNode.jsonContent as any).path
 
-    // Determine intentCodeFullPath
+    // Determine intentCodeFullPath. fileDelta.relativePath comes straight from
+    // the LLM, so resolve it inside the project's intent dir and reject any
+    // '..' escape. Without this, a '..' segment let the model write to, or
+    // unlink, any file the process could reach.
     const intentCodeFullPath =
-      `${intentCodePath}${path.sep}${fileDelta.relativePath}`
+      fsUtilsService.resolvePathWithin(
+        intentCodePath,
+        fileDelta.relativePath)
 
     if (ServerOnlyTypes.verbosity >= VerbosityLevels.min) {
 

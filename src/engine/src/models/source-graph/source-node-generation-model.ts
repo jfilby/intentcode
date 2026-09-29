@@ -1,4 +1,5 @@
 import { PrismaClient } from '@/prisma/client.js'
+import { isPrismaNotFound } from '../prisma-error-utils.js'
 
 export class SourceNodeGenerationModel {
 
@@ -57,7 +58,7 @@ export class SourceNodeGenerationModel {
         }
       })
     } catch(error: any) {
-      if (!(error instanceof error.NotFound)) {
+      if (isPrismaNotFound(error) === false) {
         console.error(`${fnName}: error: ${error}`)
         throw 'Prisma error'
       }
@@ -79,7 +80,7 @@ export class SourceNodeGenerationModel {
         }
       })
     } catch(error: any) {
-      if (!(error instanceof error.NotFound)) {
+      if (isPrismaNotFound(error) === false) {
         console.error(`${fnName}: error: ${error}`)
         throw 'Prisma error'
       }
@@ -105,7 +106,7 @@ export class SourceNodeGenerationModel {
         }
       })
     } catch(error: any) {
-      if (!(error instanceof error.NotFound)) {
+      if (isPrismaNotFound(error) === false) {
         console.error(`${fnName}: error: ${error}`)
         throw 'Prisma error'
       }
@@ -149,7 +150,7 @@ export class SourceNodeGenerationModel {
         }
       })
     } catch(error: any) {
-      if (!(error instanceof error.NotFound)) {
+      if (isPrismaNotFound(error) === false) {
         console.error(`${fnName}: error: ${error}`)
         throw 'Prisma error'
       }
@@ -186,7 +187,7 @@ export class SourceNodeGenerationModel {
         }
       })
     } catch(error: any) {
-      if (!(error instanceof error.NotFound)) {
+      if (isPrismaNotFound(error) === false) {
         console.error(`${fnName}: error: ${error}`)
         throw 'Prisma error'
       }
@@ -226,7 +227,7 @@ export class SourceNodeGenerationModel {
         ]
       })
     } catch(error: any) {
-      if (!(error instanceof error.NotFound)) {
+      if (isPrismaNotFound(error) === false) {
         console.error(`${fnName}: error: ${error}`)
         throw 'Prisma error'
       }

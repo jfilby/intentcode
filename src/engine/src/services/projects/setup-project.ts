@@ -154,7 +154,10 @@ export class ProjectSetupService {
     // Determine project path
     var projectPath = inputProjectPath
 
-    if (inputProjectPath.trim.length === 0) {
+    // `.trim.length` was the function's arity (1), not the trimmed string's
+    // length, so pressing Enter never selected the current directory and
+    // initProject() exited with "Path doesn't exist: ".
+    if (inputProjectPath.trim().length === 0) {
       projectPath = process.cwd()
     }
 

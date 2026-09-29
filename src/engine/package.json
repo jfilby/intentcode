@@ -1,6 +1,6 @@
 {
   "name": "intentcode-compiler",
-  "version": "0.1.17",
+  "version": "0.1.19",
   "type": "module",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -8,7 +8,9 @@
     "intent": "./dist/cli.cjs"
   },
   "files": [
-    "dist"
+    "dist",
+    "bundled/extensions",
+    "prisma/schema/data.db"
   ],
   "scripts": {
     "dev": "next dev",
@@ -31,7 +33,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "boxen": "^8.0.1",
-    "chalk": "^5.6.2",
+    "chalk": "^4.1.2",
     "eslint": "^9",
     "eslint-config-next": "16.1.0",
     "jsonrepair": "^3.13.0",
@@ -44,7 +46,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "serene-ai-server": "^0.1.8",
-    "serene-core-server": "^0.1.8",
+    "serene-core-server": "^0.1.17",
     "tsconfig-paths": "^4.2.0",
     "tsx": "^4.21.0",
     "uuid": "^11.1.0",

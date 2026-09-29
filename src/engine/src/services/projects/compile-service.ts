@@ -25,7 +25,9 @@ export class ProjectCompileService {
   clName = 'ProjectCompileService'
 
   // Code
-  async getBuildFromFiles(projectDetails: ProjectDetails) {
+  async getBuildFromFiles(
+          prisma: PrismaClient,
+          projectDetails: ProjectDetails) {
 
     // Get buildFileList
     const buildFileList = await this.getBuildFileList(projectDetails)
@@ -146,7 +148,7 @@ export class ProjectCompileService {
 
     // Get buildFromFiles
     const buildFromFiles = await
-      this.getBuildFromFiles(projectDetails)
+      this.getBuildFromFiles(prisma, projectDetails)
 
     // Compile IntentCode to source
     for (const buildFromFile of buildFromFiles) {
@@ -182,7 +184,7 @@ export class ProjectCompileService {
 
     // Get buildFromFiles
     const buildFromFiles = await
-      this.getBuildFromFiles(projectDetails)
+      this.getBuildFromFiles(prisma, projectDetails)
 
     // Compile IntentCode to source
     for (const buildFromFile of buildFromFiles) {

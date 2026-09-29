@@ -30,7 +30,7 @@ export class SourceCodePathGraphMutateService {
 
     // Validate project path
     if (projectSourcePath == null ||
-        !fullPath.startsWith(projectSourcePath)) {
+        !fsUtilsService.isPathWithin(fullPath, projectSourcePath)) {
 
       throw new CustomError(
         `${fnName}: Invalid path: ${fullPath} for project source node: ` +
@@ -55,10 +55,6 @@ export class SourceCodePathGraphMutateService {
     var dirSourceNode: SourceNode = projectSourceNode
 
     for (const dir of dirs) {
-
-      if (dir.length === 0) {
-        break
-      }
 
       dirSourceNode = await
         sourceCodeGraphMutateService.getOrCreateSourceCodeDir(

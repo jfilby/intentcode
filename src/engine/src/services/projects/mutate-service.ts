@@ -57,6 +57,7 @@ export class ProjectsMutateService {
     const project = await
       instanceModel.create(
         prisma,
+        null,   // publicId
         null,   // parentId
         userProfileId,
         ServerOnlyTypes.projectInstanceType,
@@ -162,6 +163,7 @@ export class ProjectsMutateService {
       instanceModel.upsert(
         prisma,
         id,
+        null,       // publicId
         null,       // parentId
         userProfileId,
         ServerOnlyTypes.projectInstanceType,

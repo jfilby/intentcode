@@ -65,4 +65,13 @@ export class JsTsSrcTypes {
     'tmp',
     'temp'
   ])
+
+  // WalkDirConfig in serene-core-server >= 0.1.17 takes ignoreRegexs, tested
+  // against the path relative to the walk root, in place of the removed
+  // ignoreDirs / ignoreFilePatterns. Each ignored directory name becomes a
+  // whole-segment match so a sibling such as 'distribution' is not skipped
+  // just because it contains 'dist'.
+  static ignoredDirRegexs: RegExp[] =
+    [...JsTsSrcTypes.ignoredDirs].map(
+      (dir) => new RegExp(`(^|[\\\\/])${dir}([\\\\/]|$)`))
 }

@@ -1,5 +1,6 @@
 import { CustomError } from 'serene-core-server'
 import { PrismaClient } from '@/prisma/client.js'
+import { isPrismaNotFound } from '../prisma-error-utils.js'
 
 export class SourceNodeModel {
 
@@ -67,7 +68,7 @@ export class SourceNodeModel {
         }
       })
     } catch(error: any) {
-      if (!(error instanceof error.NotFound)) {
+      if (isPrismaNotFound(error) === false) {
         console.error(`${fnName}: error: ${error}`)
         throw 'Prisma error'
       }
@@ -168,7 +169,7 @@ export class SourceNodeModel {
         }
       })
     } catch(error: any) {
-      if (!(error instanceof error.NotFound)) {
+      if (isPrismaNotFound(error) === false) {
         console.error(`${fnName}: error: ${error}`)
         throw 'Prisma error'
       }
@@ -225,7 +226,7 @@ export class SourceNodeModel {
         }
       })
     } catch(error: any) {
-      if (!(error instanceof error.NotFound)) {
+      if (isPrismaNotFound(error) === false) {
         console.error(`${fnName}: error: ${error}`)
         throw 'Prisma error'
       }

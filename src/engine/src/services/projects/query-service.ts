@@ -168,15 +168,21 @@ export class ProjectsQueryService {
     // Debug
     const fnName = `${this.clName}.getParentProjectByPath()`
 
-    // Get path root
+    // Resolve first. For a relative input, getPathRoot() resolves against
+    // process.cwd() and returns an absolute root, while path.dirname() walked
+    // a relative chain that never reached it ('myproj' -> '.' -> '.' -> ...),
+    // so the loop below never terminated and issued a DB query every
+    // iteration. The caller's safety counter was commented out and did not
+    // help.
     const root = fsUtilsService.getPathRoot(fullPath)
-    var curPath = fullPath
-
+    var curPath = path.resolve(fullPath)
     // Debug
     // console.log(`${fnName}: root: ${root}`)
     // console.log(`${fnName}: curPath: ${curPath}`)
 
-    // Iterate
+    // Iterate. path.dirname() on a resolved path always shortens toward the
+    // root, so this terminates; the counter is a backstop rather than the
+    // thing that makes it work.
     var i = 0
 
     while (curPath !== root) {
@@ -201,12 +207,12 @@ export class ProjectsQueryService {
       // Set curPath
       curPath = parentPath
 
-      /* Safety iterator
+      // Safety iterator
       i += 1
 
       if (i > 1000) {
         throw new CustomError(`${fnName}: path too deep!`)
-      } */
+      }
     }
 
     // Not found
@@ -254,31 +260,45 @@ export class ProjectsQueryService {
     // Debug
     // console.log(`${fnName}: fullPath: ${fullPath}`)
 
-    // Get project's path
+    // Get every registered project path. The previous call passed fullPath as
+    // the `value` argument, which InstanceSettingModel.filter() applies as an
+    // exact SQL equality match. That made the containment loop below
+    // unreachable: running the CLI from any subdirectory of a project (the
+    // common case, since cli.ts passes process.cwd()) never bound to a
+    // project, and getProjectByPath() returned null.
     const projectPaths = await
             instanceSettingModel.filter(
               prisma,
               undefined,  // instanceId
               InstanceSettingNames.projectPath,
-              fullPath)   // value
+              undefined)  // value
 
     // Debug
     // console.log(`${fnName}: projectPaths: ` + JSON.stringify(projectPaths))
 
-    // Matching
-    for (const projectPath of projectPaths) {
+    // Matching. A nested project is registered alongside its parent, so the
+    // most specific (longest) containing path must win. Matching is by
+    // containment rather than a raw startsWith(), so the name-prefix sibling
+    // '/a/proj-b' is not treated as living inside '/a/proj'.
+    const matches = projectPaths.filter(
+      (projectPath) =>
+        fsUtilsService.isPathWithin(fullPath, projectPath.value))
 
-      if (fullPath.startsWith(projectPath.value)) {
+    matches.sort(
+      (a, b) => (b.value?.length ?? 0) - (a.value?.length ?? 0))
 
-        // Get instance
-        const instance = await
-                instanceModel.getById(
-                  prisma,
-                  projectPath.instanceId)
+    const best = matches[0]
 
-        // Return instance
-        return instance
-      }
+    if (best != null) {
+
+      // Get instance
+      const instance = await
+              instanceModel.getById(
+                prisma,
+                best.instanceId)
+
+      // Return instance
+      return instance
     }
 
     // Not found

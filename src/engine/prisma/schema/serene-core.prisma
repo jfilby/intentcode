@@ -56,6 +56,7 @@ model UserPreference {
 
 model UserProfile {
   id                        String        @id @default(cuid())
+  publicId                  String?       @map("public_id")
   userId                    String?       @map("user_id") @unique // Map to NextAuth's User model
   user                      User?         @relation(fields: [userId], references: [id])
   isAdmin                   Boolean       @map("is_admin")
@@ -236,12 +237,16 @@ model FeatureFlag {
 model Instance {
   // An instance is a project
   id                           String               @id @default(cuid())
+  publicId                     String?              @map("public_id")
   parentId                     String?              @map("parent_id")
   parent                       Instance?            @relation("parent", fields: [parentId], references: [id])
   userProfileId                String               @map("user_profile_id")
   userProfile                  UserProfile          @relation(fields: [userProfileId], references: [id])
   status                       String
   name                         String
+  // Stable per-project identifier used by the compiler to key an instance
+  // without depending on its display name. Required by InstanceModel.
+  key                          String
   created                      DateTime             @default(now())
   updated                      DateTime             @updatedAt
   // Additional fields (should be moved to InstanceSetting)

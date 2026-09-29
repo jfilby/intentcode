@@ -45,11 +45,68 @@ export const sqlLiteFile = path.join(userAppDir, 'data.db')
 
 process.env.DATABASE_URL ||= `file:${sqlLiteFile}`
 
-// 2. Copy the SQLite DB file to the userAppDir if not yet there
+// 2. Copy the SQLite DB file to the userAppDir if not yet there.
+//
+// The seed must be located relative to the installed package, not to the
+// process's working directory. The old path was './prisma/schema/data.db',
+// which is cwd-relative: for a globally installed `intent` binary the cwd is
+// the user's own project, so the copy threw ENOENT and the CLI died on first
+// run for every new user.
 if (!fs.existsSync(sqlLiteFile)) {
 
+  // Locate the seed by searching up from each candidate root for the file
+  // itself, rather than counting levels up from a module location. A bare
+  // `__dirname` cannot be trusted here: the Prisma generated client assigns
+  // `globalThis['__dirname']` when imported, and __dirname does not exist at
+  // all when tsx loads the sources as ESM. The old build used
+  // './prisma/schema/data.db', which is cwd-relative, so a globally installed
+  // `intent` binary (cwd = the user's project) died with ENOENT on first run.
+  const seedRelPath = path.join('prisma', 'schema', 'data.db')
+
+  const seeds: string[] = typeof __dirname !== 'undefined'
+    ? [__dirname, process.cwd()]
+    : [process.cwd()]
+
+  var seedFilename: string | undefined = undefined
+
+  for (const seed of seeds) {
+
+    var cur = path.resolve(seed)
+
+    while (true) {
+
+      const candidate = path.join(cur, seedRelPath)
+
+      if (fs.existsSync(candidate)) {
+        seedFilename = candidate
+        break
+      }
+
+      const parent = path.dirname(cur)
+
+      if (parent === cur) {
+        break
+      }
+
+      cur = parent
+    }
+
+    if (seedFilename != null) {
+      break
+    }
+  }
+
+  if (seedFilename == null) {
+
+    console.error(
+      `Unable to create the IntentCode database: could not find ` +
+      `${seedRelPath} in any parent of the engine installation.`)
+
+    process.exit(1)
+  }
+
   fs.copyFileSync(
-    `.${path.sep}prisma${path.sep}schema${path.sep}data.db`,
+    seedFilename,
     `${userAppDir}${path.sep}data.db`)
 }
 

@@ -210,9 +210,16 @@ export class CompilerLlmService {
       }
     }
 
-    if (queryResults.json.errors == null &&
-        queryResults.json.errors.length === 0 &&
-        queryResults.json.targetSource == null) {
+    // A response with neither a targetSource nor any errors is unusable, so it
+    // must fail validation and be retried. `errors == null &&` (rather than
+    // `||`) short-circuited into `errors.length` on undefined and threw a
+    // TypeError on every well-formed response that simply omitted 'errors'.
+    const hasErrors =
+      queryResults.json.errors != null &&
+      queryResults.json.errors.length > 0
+
+    if (queryResults.json.targetSource == null &&
+        hasErrors === false) {
 
       console.log(`${fnName}: targetSource not specified (and no errors)`)
       return false

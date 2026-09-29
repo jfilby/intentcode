@@ -1,4 +1,5 @@
 import { PrismaClient } from '@/prisma/client.js'
+import { isPrismaNotFound } from '../prisma-error-utils.js'
 
 export class VersionModel {
 
@@ -43,7 +44,7 @@ export class VersionModel {
         }
       })
     } catch(error: any) {
-      if (!(error instanceof error.NotFound)) {
+      if (isPrismaNotFound(error) === false) {
         console.error(`${fnName}: error: ${error}`)
         throw 'Prisma error'
       }
@@ -82,7 +83,7 @@ export class VersionModel {
         }
       })
     } catch(error: any) {
-      if (!(error instanceof error.NotFound)) {
+      if (isPrismaNotFound(error) === false) {
         console.error(`${fnName}: error: ${error}`)
         throw 'Prisma error'
       }
@@ -115,7 +116,7 @@ export class VersionModel {
         }
       })
     } catch(error: any) {
-      if (!(error instanceof error.NotFound)) {
+      if (isPrismaNotFound(error) === false) {
         console.error(`${fnName}: error: ${error}`)
         throw 'Prisma error'
       }
@@ -166,13 +167,19 @@ export class VersionModel {
     if (id == null &&
         name != null) {
 
-      const version = await
+      // Must not shadow the `version` parameter: the original
+      // `const version = await this.getByUniqueKey(...)` bound this block's
+      // local to the Version record, so the `version == null` guard below
+      // tested the lookup result (always null for a new name, so creating a
+      // version always threw) and create() was handed the record instead of
+      // the version string.
+      const existing = await
               this.getByUniqueKey(
                 prisma,
                 name)
 
-      if (version != null) {
-        id = version.id
+      if (existing != null) {
+        id = existing.id
       }
     }
 

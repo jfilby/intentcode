@@ -27,7 +27,12 @@ export class FsUtilsService {
 
   getDirectoriesArray(dirsPath: string) {
 
-    return dirsPath.split(path.sep)
+    // The dirs part is a path relative to the project, so it has a leading
+    // separator. Splitting it yields an empty first (and, for a file at the
+    // project root, last) segment. Those are not directory names, and keeping
+    // them stops the callers' dir walk from descending past the first real
+    // segment, which flattens the whole tree into the project node.
+    return dirsPath.split(path.sep).filter((dir) => dir.length > 0)
   }
 
   getFileExtension(filenamePath: string) {
@@ -108,6 +113,82 @@ export class FsUtilsService {
 
     // Return
     return relativePath
+  }
+
+  isPathWithin(
+        fullPath: string,
+        rootPath: string) {
+
+    // Debug
+    const fnName = `${this.clName}.isPathWithin()`
+
+    // Validate
+    if (rootPath == null ||
+        rootPath.length === 0) {
+
+      throw new CustomError(`${fnName}: rootPath == null`)
+    }
+
+    const root = path.resolve(rootPath)
+    const full = path.resolve(fullPath)
+
+    // path.relative() is '' for the root itself, a relative path when full is
+    // inside the root, and starts with '..' when it escapes. A sibling that
+    // merely shares a name prefix (e.g. /proj/intent-evil vs /proj/intent) is
+    // reported as '..' here, which a raw startsWith() test would have missed.
+    const rel = path.relative(root, full)
+
+    // The root counts as within itself: looking up a project by its own root
+    // path has to match.
+    if (rel === '') {
+      return true
+    }
+
+    if (rel === '..' ||
+        rel.startsWith(`..${path.sep}`) ||
+        path.isAbsolute(rel)) {
+
+      return false
+    }
+
+    return true
+  }
+
+  resolvePathWithin(
+        rootPath: string,
+        relativePath: string) {
+
+    // Debug
+    const fnName = `${this.clName}.resolvePathWithin()`
+
+    // Validate
+    if (relativePath == null) {
+      throw new CustomError(`${fnName}: relativePath == null`)
+    }
+
+    // path.join(), not path.resolve(relativePath): relativePath follows this
+    // codebase's convention of carrying a leading separator, which
+    // path.resolve() would read as an absolute path and discard the root.
+    const fullPath = path.resolve(path.join(rootPath, relativePath))
+
+    if (this.isPathWithin(fullPath, rootPath) === false) {
+
+      throw new CustomError(
+        `${fnName}: path escapes root: ${relativePath} ` +
+        `(root: ${rootPath})`)
+    }
+
+    // A delta must name something inside the root, not the root itself: a
+    // relativePath that resolves back to the intent dir would otherwise be
+    // written over as if it were a file.
+    if (fullPath === path.resolve(rootPath)) {
+
+      throw new CustomError(
+        `${fnName}: path is the root itself: ${relativePath} ` +
+        `(root: ${rootPath})`)
+    }
+
+    return fullPath
   }
 
   async writeTextFile(
