@@ -41,8 +41,9 @@ provider = "openai"
 model = "gpt-5"
 ```
 
-The compiler and the indexer are separate AI tasks, so `[models.compiler]` and
-`[models.indexer]` let a project run them on different models.
+`compiler` is the only AI task, so `[models.compiler]` is how one project runs
+on a different model from another. A model is named the way Pi names one:
+`provider/model`, with an optional `:thinking` suffix.
 
 Run `intent` and select `Info` to see the project the engine resolved, the
 state directory it will use, and the model each AI task resolved to.
@@ -50,17 +51,31 @@ state directory it will use, and the model each AI task resolved to.
 
 ## Setup AI
 
-IntentCode talks to models through the Vercel AI SDK. The credentials come
-from the environment; the choice of model comes from the project's
-`intent.toml`, falling back to the environment.
-
-Put the key in `src/engine/.env`:
+IntentCode runs on [Pi](https://omp.sh), the coding agent. The choice of model
+comes from the project's `intent.toml`, falling back to the environment.
 
 ```sh
-AI_API_KEY=
+AI_MODEL=google/gemini-3.1-pro-preview
 ```
 
-To use a provider's own key instead of the generic one:
+The value is `provider/model`, the same form Pi uses, with an optional
+`:thinking` suffix (`anthropic/claude-opus-4-5:high`). Every provider Pi knows
+is available; ask it what it has with:
+
+```sh
+omp --list-models
+```
+
+A model id may carry its own namespace, as OpenRouter's do:
+`openrouter/anthropic/claude-sonnet-4.5` is OpenRouter serving a Claude. In an
+`intent.toml` `[model]` table, state the provider in `provider` and give the
+model id as that provider calls it; the two are joined for you.
+
+### Credentials
+
+The engine holds no credentials of its own. Pi resolves the key for whichever
+provider a model names, so a key is set wherever Pi expects it — its own
+config, or the environment:
 
 ```sh
 OPENAI_API_KEY=
@@ -70,54 +85,34 @@ OPENROUTER_API_KEY=
 COMMANDCODE_API_KEY=
 ```
 
+To point Pi at a self-hosted or OpenAI-compatible endpoint, configure it in
+Pi's own models config rather than in `intent.toml`: the model is then named
+the way that provider is named there.
 
-A model with no `[model]` table in `intent.toml` is taken from the
-environment:
+## Skills
 
-```sh
-AI_MODEL=google/gemini-3.1-pro-preview
+An extension carries skills as markdown files under `skills/`. A skill's
+front-matter says when it applies:
+
+```yaml
+---
+name: Bundled TypeScript
+description: TypeScript skill
+context:
+  anyDependency:
+    - name: typescript
+      minVersion: 5
+  fileExts: .ts, .tsx
+---
 ```
 
-The value is `provider/model`. The providers are `openai`, `anthropic`,
-`google`, `openrouter`, `openai-compatible` and `commandcode`.
+- `fileExts` — the skill is about files of those extensions, and is given only
+  to a session working on one.
+- `anyDependency` — the project has to have one of those dependencies, at or
+  above the stated version, read from the project's `package.json`.
 
-A model id may carry its own namespace, as OpenRouter's and CommandCode's do:
-`openrouter/anthropic/claude-sonnet-4.5` is OpenRouter serving a Claude, and
-`commandcode/stealth/space-bunny-alpha` is one CommandCode model. In an
-`intent.toml` `[model]` table, state the provider in `provider` and give the
-model id as that provider calls it; the two are joined for you.
-
-### CommandCode
-
-CommandCode is not an OpenAI-shaped gateway — it has a transport of its own
-(`POST /alpha/generate`, a stream of JSON events) — so it is named as a
-provider rather than as an endpoint. Set `COMMANDCODE_API_KEY` (or
-`COMMAND_CODE_API_KEY`):
-
-```toml
-[model]
-provider = "commandcode"
-model = "stealth/space-bunny-alpha"
-```
-
-### Pointing at a different provider
-
-Anything that speaks the OpenAI chat-completions API works, including LiteLLM
-and a local vLLM server. Use the `openai-compatible` provider and name the
-endpoint:
-
-```sh
-AI_MODEL=openai-compatible/my-model
-AI_BASE_URL=http://localhost:8000/v1
-AI_API_KEY=anything
-```
-
-For OpenRouter, attribution headers are sent when these are set:
-
-```sh
-OPENROUTER_SITE_URL=https://example.com
-OPENROUTER_APP_NAME=MyApp
-```
+A skill declaring neither applies everywhere, which is what a general
+convention is.
 
 
 ## Running

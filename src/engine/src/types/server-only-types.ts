@@ -1,14 +1,5 @@
 import type { ProjectRecord, SourceNodeRecord } from '@/core/records.js'
 
-export enum CompilerMetaDataApproachs {
-  analyzer = 'analyzer',
-  indexer = 'indexer'
-}
-
-export enum IntentCodeAiTasks {
-  compiler = 'compiler',
-  indexer = 'indexer'
-}
 
 export enum VerbosityLevels {
   off = 0,
@@ -36,21 +27,11 @@ export class ServerOnlyTypes {
   // Verbosity
   static verbosity = VerbosityLevels.min
 
-  // Compiler meta-data approach
-  static compilerMetaDataApproach = CompilerMetaDataApproachs.analyzer
-
   // Builds
   static oldBuildsToKeep = 3
 
   // Source node generation
   static keepOldSourceNodeGenerations = 3
-
-  // Existing source mode
-  static includeExistingSourceMode = true
-
-  // Libraries related
-  static indexerAutoAddLibraries = true
-  static compilerAutoAddLibraries = true
 
   // Important file extensions (with .)
   static dotMdFileExt = '.md'

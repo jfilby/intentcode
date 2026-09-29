@@ -107,7 +107,8 @@ export class LoadExternalSkillsService {
             projectId,
             extensionNode,
             frontMatter,
-            markdown)
+            markdown,
+            fullPath)
   }
 
   async saveSkill(
@@ -115,7 +116,8 @@ export class LoadExternalSkillsService {
           projectId: string,
           extensionNode: SourceNodeRecord,
           frontMatter: any,
-          markdown: string) {
+          markdown: string,
+          fullPath: string) {
 
     // Debug
     const fnName = `${this.clName}.saveSkill()`
@@ -142,14 +144,15 @@ export class LoadExternalSkillsService {
       markdownHash = blake3(markdown).toString()
     }
 
-    // Get jsonContentHash
-    var frontMatterHash: string | null = null
-
-    if (frontMatter != null) {
-
-      // Blake3 hash
-      frontMatterHash = blake3(JSON.stringify(frontMatter)).toString()
+    // The path the skill was loaded from, kept so a session can be handed the
+    // skill as a file rather than as text. The engine is what decides which
+    // skills apply; the session is only told where to read the ones that do.
+    const jsonContent = {
+      ...frontMatter,
+      filePath: fullPath
     }
+
+    const jsonContentHash = blake3(JSON.stringify(jsonContent)).toString()
 
     // Upsert skill node
     const skillNode = await
@@ -161,10 +164,10 @@ export class LoadExternalSkillsService {
               BaseDataTypes.activeStatus,
               SourceNodeTypes.skillType,
               frontMatter.name,  // name
-              markdown,          // contentHash
+              markdown,          // content
               markdownHash,      // contentHash
-              frontMatter,       // jsonContent
-              frontMatterHash,   // jsonContentHash
+              jsonContent,       // jsonContent
+              jsonContentHash,   // jsonContentHash
               new Date())        // contentUpdated
   }
 

@@ -7,7 +7,6 @@ export enum BuildStageType {
   defineTechStack = 'define-tech-stack',
   // IntentCode to Source
   intentCodeAnalyzer = 'intent-code-analyzer',
-  index = 'index',
   compile = 'compile',
   updateDeps = 'update-deps',
   // Verify
@@ -28,27 +27,6 @@ export enum DepsTools {
   npm = 'npm'
 }
 
-export interface IntentFileBuild {
-
-  // Info
-  filename: string
-
-  // Build todo
-  indexBuildNo: number
-  compileBuildNo: number
-
-  // Build history
-  indexedSteps: number
-  compiledSteps: number
-
-  lastIndexed?: Date
-  lastCompiled?: Date
-  lastHooksRun?: Date
-
-  errorInBuildNo?: number
-  buildErrorMessage?: string
-}
-
 export interface BuildStage {
 
   // Build info
@@ -57,9 +35,6 @@ export interface BuildStage {
 
   // Dependency-related
   depsUpdated: boolean
-
-  // IntentFile build by full-path filename
-  intentFileBuilds: Record<string, IntentFileBuild>
 }
 
 export interface BuildData {

@@ -1,24 +1,28 @@
-import { getModelId } from '@/services/intentcode/common/model-id.js'
+/**
+ * What this project is built with.
+ *
+ * A project's tech stack is written by hand, in `tech-stack.md`, and this stage
+ * turns it into the two things the rest of the build needs: the extensions
+ * that carry the conventions for it, and the libraries its source depends on.
+ *
+ * The work is a reading of a document against a catalogue rather than a
+ * generation, so it is asked of a session that can look at the extensions on
+ * offer and say which apply — and that is given no way to change anything,
+ * because what comes back is merged into a record rather than written out.
+ */
+
 import { IntentError } from '@/core/errors.js'
 import fs from 'fs'
-import { blake3 } from '@noble/hashes/blake3'
-import { ProjectStore } from '@/core/store.js'
-import { SourceNodeRecord } from '@/core/records.js'
-import type { NodeContent } from '@/core/records.js'
-import { BuildData, BuildFromFile } from '@/types/build-types.js'
-import { IntentCodeAiTasks } from '@/types/server-only-types.js'
-import { SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types.js'
-import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model.js'
-import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
+import type { NodeContent, SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
+import { BuildData } from '@/types/build-types.js'
+import { IntentCodeAiTasks } from '@/core/ai/model.js'
+import { SourceNodeGenerationData } from '@/types/source-graph-types.js'
 import { DependenciesMutateService } from '@/services/graphs/dependencies/mutate-service.js'
-import { DotIntentCodeGraphQueryService } from '@/services/graphs/dot-intentcode/graph-query-service.js'
-import { FsUtilsService } from '@/services/utils/fs-utils-service.js'
 import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service.js'
 import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service.js'
-import { IntentCodeMessagesService } from '@/services/intentcode/common/messages-service.js'
+import { PiService } from '@/services/ai/pi-service.js'
 import { ProjectsQueryService } from '@/services/projects/query-service.js'
-import { TechStackLlmService } from './llm-service.js'
-import { TechStackPromptService } from './prompt-service.js'
 import { TechStackQueryService } from './query-service.js'
 
 /** Whether a JSON value is an object whose keys can be written to. */
@@ -27,21 +31,21 @@ function isJsonObject(value: unknown): value is Record<string, unknown> {
     Array.isArray(value) === false
 }
 
-/**
- * The extensions and deps the model reported, merged into what the project's
- * deps node already records. A key the model did not mention is left alone,
- * which is why this merges rather than replaces.
- */
+/** The extensions and deps a session reported, merged into what is recorded. */
 function mergeIntoDepsJson(
   existing: NodeContent | null,
-  reported: any): NodeContent {
+  reported: NodeContent): NodeContent {
 
   const depsJson: NodeContent = existing ?? {}
 
   const extensions =
     isJsonObject(depsJson.extensions) ? depsJson.extensions : {}
 
-  for (const [key, value] of Object.entries(reported.extensions ?? {})) {
+  const reportedExtensions = isJsonObject(reported.extensions)
+    ? reported.extensions
+    : {}
+
+  for (const [key, value] of Object.entries(reportedExtensions)) {
     extensions[key] = value
   }
   depsJson.extensions = extensions
@@ -49,8 +53,12 @@ function mergeIntoDepsJson(
   const source = isJsonObject(depsJson.source) ? depsJson.source : {}
   const deps = isJsonObject(source.deps) ? source.deps : {}
 
-  for (const [key, value] of
-       Object.entries(reported.source?.deps ?? {})) {
+  const reportedSource = isJsonObject(reported.source) ? reported.source : {}
+  const reportedDeps = isJsonObject(reportedSource.deps)
+    ? reportedSource.deps
+    : {}
+
+  for (const [key, value] of Object.entries(reportedDeps)) {
     deps[key] = value
   }
   source.deps = deps
@@ -59,20 +67,12 @@ function mergeIntoDepsJson(
   return depsJson
 }
 
-// Models
-const sourceNodeGenerationModel = new SourceNodeGenerationModel()
-const sourceNodeModel = new SourceNodeModel()
-
 // Services
 const dependenciesMutateService = new DependenciesMutateService()
-const dotIntentCodeGraphQueryService = new DotIntentCodeGraphQueryService()
-const fsUtilsService = new FsUtilsService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
-const intentCodeMessagesService = new IntentCodeMessagesService()
 const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
+const piService = new PiService()
 const projectsQueryService = new ProjectsQueryService()
-const techStackLlmService = new TechStackLlmService()
-const techStackPromptService = new TechStackPromptService()
 const techStackQueryService = new TechStackQueryService()
 
 // Class
@@ -82,114 +82,6 @@ export class TechStackMutateService {
   clName = 'TechStackMutateService'
 
   // Code
-  async getExistingJsonContent(
-          store: ProjectStore,
-          intentFileNode: SourceNodeRecord,
-          modelId: string,
-          prompt: string) {
-
-    // Debug
-    const fnName = `${this.clName}.getExistingJsonContent()`
-
-    // Try to get existing indexer data SourceNode
-    const indexerDataSourceNode = await
-            sourceNodeModel.getByUniqueKey(
-              store,
-              intentFileNode.id,  // parentId
-              intentFileNode.projectId,
-              SourceNodeTypes.intentCodeIndexedData,
-              SourceNodeNames.indexedData)
-
-    if (indexerDataSourceNode == null) {
-      return null
-    }
-
-    // Get promptHash
-    const promptHash = blake3(JSON.stringify(prompt)).toString()
-
-    // Try to get existing SourceNodeGeneration
-    const sourceNodeGeneration = await
-            sourceNodeGenerationModel.getByUniqueKey(
-              store,
-              indexerDataSourceNode.id,
-              modelId,
-              promptHash)
-
-    if (sourceNodeGeneration == null ||
-        sourceNodeGeneration.prompt !== prompt) {
-
-      return
-    }
-
-    // Return jsonContent
-    return sourceNodeGeneration.jsonContent
-  }
-
-  async processTechStackFileWithLlm(
-          store: ProjectStore,
-          buildData: BuildData,
-          projectNode: SourceNodeRecord,
-          projectIntentCodeNode: SourceNodeRecord,
-          projectDotIntentCodeNode: SourceNodeRecord,
-          buildFromFile: BuildFromFile) {
-
-    // Debug
-    const fnName = `${this.clName}.indexFileWithLlm()`
-
-    // Verbose output
-    console.log(`processing: ${buildFromFile.filename}..`)
-
-    // The model id
-    const modelId = await getModelId(IntentCodeAiTasks.compiler)
-
-    // Get prompt
-    const prompt = await
-      techStackPromptService.getPrompt(
-        buildData.extensionsData,
-        buildFromFile)
-
-    // Already generated? The value is whatever the model replied with, so it
-    // stays untyped until processQueryResults reads it.
-    var jsonContent: unknown = await
-          this.getExistingJsonContent(
-            store,
-            buildFromFile.fileNode,
-            modelId,
-            prompt)
-
-    // Run
-    if (jsonContent == null) {
-
-      // Debug
-      // console.log(`${fnName}: LLM request..`)
-
-      // LLM request
-      const llmResults = await
-              techStackLlmService.llmRequest(
-                store,
-                                IntentCodeAiTasks.compiler,
-                prompt)
-
-      jsonContent = llmResults.queryResultsJson
-    }
-
-    // Define SourceNodeGeneration
-    const sourceNodeGenerationData: SourceNodeGenerationData = {
-      modelId: modelId,
-      prompt: prompt
-    }
-
-    // Process the results
-    await this.processQueryResults(
-            store,
-            projectNode,
-            projectIntentCodeNode,
-            projectDotIntentCodeNode,
-            buildFromFile,
-            sourceNodeGenerationData,
-            jsonContent)
-  }
-
   async processTechStack(
           store: ProjectStore,
           buildData: BuildData,
@@ -204,86 +96,94 @@ export class TechStackMutateService {
         projectNode.projectId,
         buildData.projects)
 
-    // Get dotIntentCode node
-    const projectDotIntentCodeNode = await
-            dotIntentCodeGraphQueryService.getDotIntentCodeProject(
-              store,
-              projectNode)
-
-    // Validate
-    if (projectDotIntentCodeNode == null) {
-      console.error(`Missing .intentcode project node`)
-      process.exit(1)
-    }
-
     // Get tech-stack.md
-    const { intentCodePath, techStackFilename } = await
+    const { techStackFilename } = await
       techStackQueryService.getFilename(projectDetails)
 
-    // Skip if not found
-    if (techStackFilename == null) {
+    if (techStackFilename == null) return
 
-      console.error(`The tech-stack.md file was expected but not found`)
-      process.exit(1)
-    }
+    // Read the document
+    const techStack = fs.readFileSync(
+      techStackFilename,
+      { encoding: 'utf8', flag: 'r' })
 
-    // Get relative path
-    const techStackRelativePath =
-      techStackFilename.substring(intentCodePath.length + 1)
+    // Record the file against the project, so the graph holds what the stack
+    // was when it was read.
+    await intentCodePathGraphMutateService.upsertIntentCodePathAsGraph(
+      store,
+      projectDetails.projectIntentCodeNode,
+      techStackFilename,
+      techStack)
 
-    // Get last save time of the file
-    const fileModifiedTime = await
-            fsUtilsService.getLastUpdateTime(techStackFilename)
+    // The extensions on offer, so the answer names ones that exist
+    const extensionsPrompting =
+      buildData.extensionsData.extensionNodes
+        .map((extensionNode) => {
+          const jsonContent = extensionNode.jsonContent
+          if (jsonContent == null) return null
+          return `- ${String(jsonContent.id)} ` +
+                 `(${String(jsonContent.name)}): ` +
+                 `${String(jsonContent.version)}`
+        })
+        .filter((line) => line != null)
+        .join('\n')
 
-    // Read file
-    const techStack = await
-            fs.readFileSync(
-              techStackFilename,
-              { encoding: 'utf8', flag: 'r' })
+    // Ask
+    const prompt =
+      `This project states its tech stack:\n` +
+      `\n` +
+      `\`\`\`\n${techStack}\`\`\`\n` +
+      `\n` +
+      `Name the extensions and the libraries it implies.\n` +
+      `\n` +
+      `The extensions available are:\n${extensionsPrompting}\n\n` +
+      `Reply with JSON only, in this shape:\n` +
+      `{"extensions": {"<extension id>": "<min version>"}, ` +
+      `"source": {"deps": {"<package>": "<min version>"}}}\n` +
+      `\n` +
+      `List an extension only if it is in the list above. Give a library ` +
+      `only if the stack clearly calls for it.`
 
-      // Get/create the file's SourceNode
-      const techStackNode = await
-        intentCodePathGraphMutateService.upsertIntentCodePathAsGraph(
-          store,
-          projectDetails.projectIntentCodeNode,
-          techStackFilename)
+    const { modelId, text } = await piService.cachedRequest(store, {
+      cwd: projectDetails.project.path,
+      aiTask: IntentCodeAiTasks.compiler,
+      prompt,
+      // Reading only: what comes back is merged into a record, so the session
+      // has no reason to be able to write.
+      tools: {
+        toolNames: ['read'],
+        restrict: true
+      }
+    })
 
-    // Check if the file has been updated since last indexed
-    if (techStackNode?.contentUpdated != null &&
-        new Date(techStackNode.contentUpdated) <= fileModifiedTime) {
+    // The reply is JSON inside whatever prose the model wrapped it in
+    const reported = this.parseJson(text)
 
-      // console.log(`${fnName}: file: ${intentCodeFilename} already indexed`)
+    if (reported == null) {
+      console.log(`Could not read the tech stack: no JSON in the reply.`)
       return
     }
 
-    // Build file
-    const buildFromFile: BuildFromFile = {
-      filename: techStackFilename,
-      relativePath: techStackRelativePath,
-      content: techStack,
-      fileModifiedTime: fileModifiedTime,
-      fileNode: techStackNode,
-      targetFileExt: '.json'
+    // Record it
+    const sourceNodeGenerationData: SourceNodeGenerationData = {
+      modelId,
+      prompt
     }
 
-    // Process tech-stack.md
-    await this.processTechStackFileWithLlm(
-            store,
-            buildData,
-            projectNode,
-            projectDetails.projectIntentCodeNode,
-            projectDotIntentCodeNode,
-            buildFromFile)
+    await this.processQueryResults(
+      store,
+      projectNode,
+      projectDetails.projectIntentCodeNode,
+      reported,
+      sourceNodeGenerationData)
   }
 
   async processQueryResults(
           store: ProjectStore,
           projectNode: SourceNodeRecord,
           projectIntentCodeNode: SourceNodeRecord,
-          projectDotIntentCodeNode: SourceNodeRecord,
-          buildFromFile: BuildFromFile,
-          sourceNodeGenerationData: SourceNodeGenerationData,
-          jsonContent: any) {
+          reported: NodeContent,
+          sourceNodeGenerationData: SourceNodeGenerationData) {
 
     // Debug
     const fnName = `${this.clName}.processQueryResults()`
@@ -298,48 +198,20 @@ export class TechStackMutateService {
       })
     }
 
-    const fileJsonContent = buildFromFile.fileNode.jsonContent
-    if (fileJsonContent == null) {
-
-      throw new IntentError({
-        category: 'ValidationError',
-        stage: fnName,
-        message: `${fnName}: intentFileNode.jsonContent == null`
-      })
-    }
-
-    if (typeof fileJsonContent !== 'object' ||
-        !('relativePath' in fileJsonContent) ||
-        fileJsonContent.relativePath == null) {
-
-      throw new IntentError({
-        category: 'ValidationError',
-        stage: fnName,
-        message: `${fnName}: intentFileNode.jsonContent.relativePath == null`
-      })
-    }
-
-    // Debug
-    console.log(`${fnName}: jsonContent: ` + JSON.stringify(jsonContent))
-
     // Update DepsNode and write it to .intentcode/deps.json
-    if (jsonContent.extensions != null ||
-        jsonContent.source?.deps != null) {
+    if (reported.extensions != null || reported.source != null) {
 
-      // Get/create deps node
       const depsNode = await
               dependenciesMutateService.getOrCreateDepsNode(
                 store,
                 projectNode)
 
-      // Update depsNode. Its jsonContent is the persisted record, so it is
-      // merged in place rather than replaced: a deps key the model did not
-      // mention has to survive.
+      // Merged rather than replaced: a deps key the session did not mention
+      // has to survive.
       depsNode.jsonContent = mergeIntoDepsJson(
         depsNode.jsonContent,
-        jsonContent)
+        reported)
 
-      // Update depsNode
       await dependenciesMutateService.updateDepsNode(
         store,
         projectNode,
@@ -348,16 +220,31 @@ export class TechStackMutateService {
     }
 
     // Upsert the tech-stack.json node
-    const techStackJsonSourceNode = await
-      intentCodeGraphMutateService.upsertTechStackJson(
-        store,
-        projectIntentCodeNode.projectId,
-        projectIntentCodeNode,  // parentNode
-        jsonContent,
-        sourceNodeGenerationData,
-        buildFromFile.fileModifiedTime)
+    await intentCodeGraphMutateService.upsertTechStackJson(
+      store,
+      projectIntentCodeNode.projectId,
+      projectIntentCodeNode,  // parentNode
+      reported,
+      sourceNodeGenerationData,
+      new Date())
+  }
 
-    // Print warnings and errors
-    intentCodeMessagesService.handleMessages(jsonContent)
+  /**
+   * The outermost JSON object in a reply. Models wrap JSON in a fence or in a
+   * sentence of prose, and neither is worth failing a build over.
+   */
+  private parseJson(text: string): NodeContent | null {
+
+    const start = text.search(/[[{]/)
+    const end = Math.max(text.lastIndexOf('}'), text.lastIndexOf(']'))
+
+    if (start < 0 || end <= start) return null
+
+    try {
+      const parsed: unknown = JSON.parse(text.slice(start, end + 1))
+      return isJsonObject(parsed) ? parsed : null
+    } catch {
+      return null
+    }
   }
 }

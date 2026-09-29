@@ -1,26 +1,33 @@
-import { getModelId } from '@/services/intentcode/common/model-id.js'
+/**
+ * What is wrong with a project's Intent.
+ *
+ * The analyzer reads the Intent and reports what it finds: the places where an
+ * Intent is ambiguous, incomplete, or contradicted by the source beside it. It
+ * does not change anything.
+ *
+ * That is a deliberate change from what this did before. The analyzer used to
+ * be handed a ranked list of suggestions and apply the approved ones to the
+ * Intent itself, which meant the engine was rewriting a file it had only just
+ * read on the strength of a model agreeing it was wrong. Now a session reads
+ * the report and decides what to do with it, with the whole project in front
+ * of it — which is the only vantage from which "this Intent is ambiguous" can
+ * be resolved rather than merely recorded.
+ */
+
 import { IntentError } from '@/core/errors.js'
 import type { ProjectStore } from '@/core/store.js'
 import type { SourceNodeRecord } from '@/core/records.js'
-import { BuildData, BuildFromFile } from '@/types/build-types.js'
-import { AnalyzerPromptTypes, IntentCodeAiTasks } from '@/types/server-only-types.js'
-import { SourceNodeGenerationData } from '@/types/source-graph-types.js'
-import { IntentCodeAnalysisGraphMutateService } from '@/services/graphs/intentcode-analysis/mutate-service.js'
-import { IntentCodeAnalyzerLlmService } from './llm-service.js'
-import { IntentCodeAnalyzerPromptService } from './prompt-service.js'
-import { IntentCodeAnalyzerSuggestionsMutateService } from '../analyzer-suggestions/mutate-service.js'
-import { ProjectCompileService } from '@/services/projects/compile-service.js'
+import { BuildData } from '@/types/build-types.js'
+import { IntentCodeAiTasks } from '@/core/ai/model.js'
+import { PiService } from '@/services/ai/pi-service.js'
+import { PiSkillsService } from
+  '@/services/extensions/skills/pi-skills-service.js'
 import { ProjectsQueryService } from '@/services/projects/query-service.js'
-import { SpecsGraphQueryService } from '@/services/graphs/specs/graph-query-service.js'
 
 // Services
-const intentCodeAnalysisGraphMutateService = new IntentCodeAnalysisGraphMutateService()
-const intentCodeAnalyzerLlmService = new IntentCodeAnalyzerLlmService()
-const intentCodeAnalyzerPromptService = new IntentCodeAnalyzerPromptService()
-const intentCodeAnalyzerSuggestionsMutateService = new IntentCodeAnalyzerSuggestionsMutateService()
-const projectCompileService = new ProjectCompileService()
+const piService = new PiService()
+const piSkillsService = new PiSkillsService()
 const projectsQueryService = new ProjectsQueryService()
-const specsGraphQueryService = new SpecsGraphQueryService()
 
 // Class
 export class IntentCodeAnalyzerMutateService {
@@ -29,159 +36,6 @@ export class IntentCodeAnalyzerMutateService {
   clName = 'IntentCodeAnalyzerMutateService'
 
   // Code
-  getSuggestionsByPriority(suggestions: any) {
-
-    // Generate a map of counts by priority
-    const countByPriority = new Map<number, number>()
-
-    for (const suggestion of suggestions) {
-
-      countByPriority.set(
-        suggestion.priority,
-        (countByPriority.get(suggestion.priority) ?? 0) + 1)
-    }
-
-    // Create a string
-    var str = ``
-
-    const sortedPriorities = [...countByPriority.keys()].sort((a, b) => a - b)
-
-    for (const priority of sortedPriorities) {
-      if (str.length > 0) {
-        str += `  `
-      }
-
-      const count = countByPriority.get(priority)!
-      str += `p${priority}: ${count}`
-    }
-
-    // Return the counts string
-    return str
-  }
-
-  async processQueryResults(
-            store: ProjectStore,
-            buildData: BuildData,
-            buildFromFiles: BuildFromFile[],
-            projectSpecsNode: SourceNodeRecord | null,
-            sourceNodeGenerationData: SourceNodeGenerationData,
-            jsonContent: any) {
-
-    // Debug
-    const fnName = `${this.clName}.processQueryResults()`
-
-    // Debug
-    // console.log(`${fnName}: jsonContent: ` + JSON.stringify(jsonContent))
-
-    // Write IntentCode files
-    if (jsonContent != null &&
-        jsonContent.suggestions.length > 0) {
-
-      // Save the suggestions
-      for (const suggestion of jsonContent.suggestions) {
-
-        // Get ProjectDetail
-        const projectDetail = buildData.projects[suggestion.projectNo]
-
-        // Validate
-        if (projectDetail == null) {
-          throw new IntentError({
-            category: 'StorageError',
-            stage: fnName,
-            message: `projectDetail == null`})
-        }
-
-        // Validate
-        if (projectDetail.projectIntentCodeAnalysisNode == null) {
-          throw new IntentError({
-            category: 'StorageError',
-            stage: fnName,
-            message: `projectDetail.projectIntentCodeAnalysisNode == null`})
-        }
-
-        // Upsert suggestions
-        await intentCodeAnalysisGraphMutateService.upsertSuggestion(
-          store,
-          projectDetail.projectIntentCodeAnalysisNode,
-          suggestion)
-      }
-
-      // Output
-      console.log(``)
-      console.log(`Found ${jsonContent.suggestions.length} suggestions:`)
-
-      // Get counts by priority
-      const countByPriorityStr =
-        this.getSuggestionsByPriority(jsonContent.suggestions)
-
-      console.log(countByPriorityStr)
-
-      // User to decide on how to handle the suggestions
-      await intentCodeAnalyzerSuggestionsMutateService.userMenu(
-        store,
-        buildData,
-        buildFromFiles,
-        jsonContent.suggestions)
-    }
-  }
-
-  async processWithLlm(
-          store: ProjectStore,
-          buildData: BuildData,
-          buildFromFiles: BuildFromFile[],
-          projectSpecsNode: SourceNodeRecord | null) {
-
-    // Debug
-    const fnName = `${this.clName}.processWithLlm()`
-
-    // The model id
-    const modelId = await getModelId(IntentCodeAiTasks.compiler)
-
-    // Get prompt
-    const prompt = await
-      intentCodeAnalyzerPromptService.getPrompt(
-        AnalyzerPromptTypes.createSuggestions,
-        projectSpecsNode,
-        buildData,
-        buildFromFiles)
-
-    /* Already generated?
-    var jsonContent = await
-          this.getExistingJsonContent(
-            store,
-            projectSpecsNode,
-            modelId,
-            prompt)
-
-    // Run
-    if (jsonContent == null) { */
-
-      const llmResults = await
-              intentCodeAnalyzerLlmService.llmRequest(
-                store,
-                buildData,
-                                IntentCodeAiTasks.compiler,
-                prompt)
-
-      const jsonContent = llmResults.jsonContent
-    // }
-
-    // Define SourceNodeGeneration
-    const sourceNodeGenerationData: SourceNodeGenerationData = {
-      modelId: modelId,
-      prompt: prompt
-    }
-
-    // Process the results
-    await this.processQueryResults(
-            store,
-            buildData,
-            buildFromFiles,
-            projectSpecsNode,
-            sourceNodeGenerationData,
-            jsonContent)
-  }
-
   async run(store: ProjectStore,
             buildData: BuildData,
             projectNode: SourceNodeRecord) {
@@ -190,7 +44,7 @@ export class IntentCodeAnalyzerMutateService {
     const fnName = `${this.clName}.run()`
 
     // Console output
-    console.log(`Running an analysis on the IntentCode..`)
+    console.log(`Reading the IntentCode..`)
 
     // Get ProjectDetails
     const projectDetails =
@@ -198,21 +52,69 @@ export class IntentCodeAnalyzerMutateService {
         projectNode.projectId,
         buildData.projects)
 
-    // Get project specs node (might not exist)
-    const projectSpecsNode = await
-            specsGraphQueryService.getSpecsProjectNode(
-              store,
-              projectNode)
+    // The Intent files, which is what is being read
+    const intentCodePath = this.getIntentCodePath(projectDetails)
 
-    // Get build file list
-    const buildFromFiles = await
-      projectCompileService.getBuildFromFiles(store, projectDetails)
+    if (intentCodePath == null) return
 
-    // Process spec files
-    await this.processWithLlm(
-            store,
-            buildData,
-            buildFromFiles,
-            projectSpecsNode)
+    // The skills, which are about the project rather than one file
+    const skills = piSkillsService.getSkills(
+      buildData.extensionsData,
+      projectDetails.project.path)
+
+    // Ask
+    const { text } = await piService.request(store, {
+      cwd: projectDetails.project.path,
+      aiTask: IntentCodeAiTasks.compiler,
+      skills,
+      // The analyzer reads; it is given no way to write, so a report cannot
+      // become a change by accident.
+      tools: {
+        toolNames: ['read', 'glob', 'grep'],
+        restrict: true
+      },
+      prompt:
+        `Read this project's IntentCode in ${intentCodePath} and the source ` +
+        `it describes, and report what is wrong with it.\n` +
+        `\n` +
+        `Look for Intent that is ambiguous, that contradicts the source, that ` +
+        `is missing something the source needs, and that two files disagree ` +
+        `about. Rank what you find by how much it costs to be wrong.\n` +
+        `\n` +
+        `Report only. Do not change any file.\n` +
+        `\n` +
+        `For each finding, name the Intent file it is in, and say in one ` +
+        `sentence what would resolve it.`
+    })
+
+    // Report
+    console.log(``)
+
+    if (text === ``) {
+      console.log(`Nothing to report.`)
+      return
+    }
+
+    console.log(text)
+  }
+
+  private getIntentCodePath(
+            projectDetails: { projectIntentCodeNode: SourceNodeRecord }) {
+
+    const jsonContent = projectDetails.projectIntentCodeNode.jsonContent
+
+    if (jsonContent == null ||
+        typeof jsonContent !== 'object' ||
+        !('path' in jsonContent) ||
+        typeof jsonContent.path !== 'string') {
+
+      throw new IntentError({
+        category: 'ProjectError',
+        stage: `${this.clName}.getIntentCodePath()`,
+        message: 'the project IntentCode node has no path'
+      })
+    }
+
+    return jsonContent.path
   }
 }

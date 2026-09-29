@@ -1,80 +1,28 @@
 /**
- * Model configuration.
+ * Model selection.
  *
- * The engine contains no provider-specific logic beyond resolving which
- * provider package to construct and with which credentials. The selection
- * comes from the project's `intent.toml`, then the environment:
+ * A model is named the same way Pi names one: `provider/model`, with an
+ * optional `:thinking` suffix. `intent.toml` may state the two halves as
+ * separate `provider` and `model` keys, and they are joined here, so a project
+ * that names a provider is always talking to that provider.
  *
- *   AI_MODEL=openai/gpt-5                     Vercel AI SDK provider + model id
- *   AI_MODEL=anthropic/claude-sonnet-4-5
- *   AI_MODEL=google/gemini-3.1-pro-preview
- *   AI_MODEL=openrouter/anthropic/claude-sonnet-4.5
- *   AI_MODEL=openai-compatible/my-model      with AI_BASE_URL
- *
- *   AI_API_KEY      generic credential
- *   OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_GENERATIVE_AI_API_KEY
- *   OPENROUTER_API_KEY  enables the openrouter provider
- *   AI_BASE_URL     endpoint for openai-compatible providers
- *   OPENROUTER_SITE_URL, OPENROUTER_APP_NAME  optional OpenRouter attribution
- *
- * A project's `intent.toml` names the model in a `[model]` table, and an
- * `intent.toml` may give an AI task its own under `[models.<task>]`. The
- * config file wins over the environment, because a project that names a model
- * is stating which one it is built with; the environment is the fallback for
- * a project that does not.
+ * Everything about *how* a request is made — credentials, endpoints, retries,
+ * transport — belongs to Pi. What is left for the engine is turning a
+ * project's configuration into a selector Pi can resolve, and saying so
+ * clearly when the configuration cannot be resolved at all.
  */
 
 import { IntentError } from '../errors.js'
-import { COMMANDCODE_BASE_URL } from './commandcode.js'
-import type { ProjectModelConfig } from '../project-config.js'
+import { findProjectRoot, readProjectConfig } from '../project-config.js'
+import type { ProjectConfig, ProjectModelConfig } from '../project-config.js'
 
-export type ProviderName =
-  | 'openai'
-  | 'anthropic'
-  | 'google'
-  | 'openrouter'
-  | 'openai-compatible'
-  | 'commandcode'
-
-/** OpenRouter serves every model behind one OpenAI compatible endpoint. */
-export const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
-
-/** The provider used when a model id names no provider of its own. */
-export const DEFAULT_PROVIDER: ProviderName = 'openai-compatible'
-
-export interface ModelConfiguration {
-  /** Recorded in a generation record, so a build says which model made it. */
-  readonly id: string
-  readonly provider: ProviderName
-  readonly model: string
-  readonly apiKey: string
-  readonly baseUrl?: string
-  /** Extra request headers, such as the attribution OpenRouter accepts. */
-  readonly headers?: Record<string, string>
-}
-
-const ENV_KEYS: Record<ProviderName, readonly string[]> = {
-  openai: ['OPENAI_API_KEY', 'AI_API_KEY'],
-  anthropic: ['ANTHROPIC_API_KEY', 'AI_API_KEY'],
-  google: ['GOOGLE_GENERATIVE_AI_API_KEY', 'GOOGLE_API_KEY', 'AI_API_KEY'],
-  openrouter: ['OPENROUTER_API_KEY', 'AI_API_KEY'],
-  'openai-compatible': ['AI_API_KEY'],
-  commandcode: [
-    'COMMANDCODE_API_KEY',
-    'COMMAND_CODE_API_KEY',
-    'AI_API_KEY'
-  ]
-}
-
-/** A `[model]` table that names a provider but no model id. */
-const PROVIDER_ONLY: Record<string, ProviderName> = {
-  openai: 'openai',
-  anthropic: 'anthropic',
-  google: 'google',
-  gemini: 'google',
-  openrouter: 'openrouter',
-  'openai-compatible': 'openai-compatible',
-  commandcode: 'commandcode'
+/**
+ * The AI tasks a project can name a model for. A task with no entry of its own
+ * falls back to the project's shared `[model]`, and then to the environment.
+ */
+export enum IntentCodeAiTasks {
+  /** Every task the engine runs: analysis, the tech stack, and the agent. */
+  compiler = 'compiler'
 }
 
 function modelError(message: string, detail?: string): IntentError {
@@ -86,178 +34,98 @@ function modelError(message: string, detail?: string): IntentError {
   })
 }
 
-function firstEnvKey(
-  provider: ProviderName,
-  env: NodeJS.ProcessEnv
-): string | undefined {
-
-  for (const key of ENV_KEYS[provider]) {
-    const value = env[key]
-    if (value !== undefined && value !== '') return value
-  }
-  return undefined
-}
-
 /**
- * Resolves a model from a spec and the environment. A missing or malformed
- * configuration fails loudly rather than producing a compiler that cannot
- * generate anything.
+ * The selector for a task, from a project's `[model]` and `[models.<task>]`
+ * tables over the `AI_MODEL` environment variable.
+ *
+ * The per-task table wins over the shared one, and a table naming a provider
+ * but no model is joined with the model the environment names, so the two
+ * halves can be stated in whichever place each of them is already known.
  */
-export function resolveModel(
-  spec: string | undefined,
-  env: NodeJS.ProcessEnv = process.env
-): ModelConfiguration {
-
-  const requested = spec ?? env.AI_MODEL ?? ''
-
-  if (requested === '') {
-    throw modelError(
-      'no model configured',
-      'set a [model] table in intent.toml, or set AI_MODEL ' +
-        '(for example AI_MODEL=google/gemini-3.1-pro-preview)'
-    )
-  }
-
-  const separator = requested.indexOf('/')
-  const providerName = separator > 0
-    ? requested.slice(0, separator)
-    : undefined
-  const model = separator > 0
-    ? requested.slice(separator + 1)
-    : requested
-
-  if (model === '') {
-    throw modelError(
-      `invalid model "${requested}"`,
-      'expected provider/model, for example google/gemini-3.1-pro-preview'
-    )
-  }
-
-  // A spec whose first segment is not a known provider names a model on the
-  // default provider, so `AI_MODEL=gemini-3.1-pro-preview` still works.
-  const provider: ProviderName =
-    providerName != null && Object.hasOwn(ENV_KEYS, providerName)
-      ? providerName as ProviderName
-      : separator > 0 && providerName != null &&
-          Object.hasOwn(PROVIDER_ONLY, providerName)
-        ? PROVIDER_ONLY[providerName]
-        : DEFAULT_PROVIDER
-
-  const apiKey = firstEnvKey(provider, env)
-
-  if (apiKey === undefined) {
-    throw modelError(
-      `missing API key for provider "${provider}"`,
-      `set one of ${ENV_KEYS[provider].join(', ')}`
-    )
-  }
-
-  const baseUrl =
-    provider === 'openrouter'
-      ? OPENROUTER_BASE_URL
-      : provider === 'commandcode'
-        // Pointable at a relay in front of CommandCode, or at a stand-in for
-        // one, which is where a test drives this provider from.
-        ? env.COMMANDCODE_BASE_URL || COMMANDCODE_BASE_URL
-        : provider === 'openai-compatible'
-          ? env.AI_BASE_URL
-          : undefined
-
-  if (provider === 'openai-compatible' && baseUrl === undefined) {
-    throw modelError(
-      'the openai-compatible provider needs an endpoint',
-      'set AI_BASE_URL to the provider endpoint'
-    )
-  }
-
-  // OpenRouter attributes requests to the app that made them when these are
-  // set.
-  const headers: Record<string, string> = {}
-  if (env.OPENROUTER_SITE_URL != null && env.OPENROUTER_SITE_URL !== '') {
-    headers['HTTP-Referer'] = env.OPENROUTER_SITE_URL
-  }
-  if (env.OPENROUTER_APP_NAME != null && env.OPENROUTER_APP_NAME !== '') {
-    headers['X-Title'] = env.OPENROUTER_APP_NAME
-  }
-
-  return {
-    id: requested,
-    provider,
-    model,
-    apiKey,
-    ...(baseUrl === undefined ? {} : { baseUrl }),
-    ...(Object.keys(headers).length === 0 ? {} : { headers })
-  }
-}
-
-/**
- * Resolves from a project's `[model]` and `[models.<task>]` tables, falling
- * back to the environment. A table that names a provider and a model
- * separately is joined into one spec, because that is the form the
- * environment uses and the one every provider package is constructed from.
- */
-export function resolveModelForTask(
-  task: string,
+export function resolveModelPattern(
+  task: IntentCodeAiTasks,
   shared: ProjectModelConfig | undefined,
   perTask: Record<string, ProjectModelConfig> | undefined,
   env: NodeJS.ProcessEnv = process.env
-): ModelConfiguration {
+): string {
 
   const config = perTask?.[task] ?? shared
+  const fromEnv = env.AI_MODEL?.trim() ?? ''
 
-  if (config == null) return resolveModel(undefined, env)
+  // Nothing configured: the environment is the only source.
+  if (config == null) {
 
-  // A table naming only a provider is a request for that provider's default
-  // model, which only the environment can say, so the two halves are joined
-  // rather than one silently standing in for the other.
-  if (config.model == null && config.provider != null) {
-    const fromEnv = env.AI_MODEL ?? ''
+    if (fromEnv === '') {
+      throw modelError(
+        'no model configured',
+        'set a [model] table in intent.toml, or set AI_MODEL ' +
+          '(for example AI_MODEL=google/gemini-3.1-pro-preview)')
+    }
+
+    return fromEnv
+  }
+
+  // A provider with no model of its own: the environment names the model, and
+  // only the environment can, so the halves are joined rather than one
+  // silently standing in for the other.
+  if (config.model == null) {
+
     const separator = fromEnv.indexOf('/')
+
     if (separator <= 0) {
       throw modelError(
         `the model for ${task} names a provider but no model`,
         'set "model" in the [model] table, or set AI_MODEL to ' +
-          `${config.provider}/<model>`
-      )
+          `${config.provider}/<model>`)
     }
-    return resolveModel(
-      `${config.provider}/${fromEnv.slice(separator + 1)}`, env)
+
+    return `${config.provider}/${fromEnv.slice(separator + 1)}`
   }
 
-  if (config.model == null) {
-    throw modelError(
-      `the model for ${task} names no model`,
-      'set "model" in the [model] table in intent.toml'
-    )
-  }
-
-  // A `[model]` table states the provider, so it is always the provider the
-  // table named — the model is whatever the provider calls it. Joining is
-  // only skipped when the table named no provider, in which case the model
-  // has to carry one.
-  //
-  // The obvious test — "does the model id already start with a provider
-  // name?" — is wrong here, and silently so. OpenRouter model ids are namespaced
-  // by the vendor behind them, so `anthropic/claude-sonnet-4.5` under
-  // `provider = "openrouter"` does start with a known provider name and is
-  // not one. Guessing from the id loses the provider and the endpoint with
-  // it, and the request goes to the wrong host.
-  const spec = config.provider == null
-    ? config.model
-    : `${config.provider}/${config.model}`
-
-  // A table that names the provider twice is a mistake worth reporting: the
-  // model id goes to the provider as written, so `provider = "google"` with
-  // `model = "google/gemini-..."` asks Google for a model it does not have.
+  // A model id goes to the provider as written, so a table that names the
+  // provider twice is asking that provider for a model it does not have.
   if (config.provider != null &&
       config.model.split('/')[0] === config.provider) {
 
     throw modelError(
       `the model for ${task} names the provider twice`,
       `either drop "provider" and keep "${config.model}", or set ` +
-        `model to the id on its own`
-    )
+        `model to the id on its own`)
   }
 
-  return resolveModel(spec, env)
+  return config.provider == null
+    ? config.model
+    : `${config.provider}/${config.model}`
+}
+
+// The config of each project read so far. A build resolves a model per file
+// and a session per chat turn, and the file that names them is read once.
+const projectConfigs = new Map<string, ProjectConfig | undefined>()
+
+/** The resolved config for the project a command is running in. */
+async function getProjectConfig(): Promise<ProjectConfig | undefined> {
+
+  const projectPath = findProjectRoot()
+
+  if (projectPath == null) return undefined
+
+  if (projectConfigs.has(projectPath) === false) {
+    projectConfigs.set(
+      projectPath,
+      await readProjectConfig(projectPath).catch(() => undefined))
+  }
+
+  return projectConfigs.get(projectPath)
+}
+
+/** The model selector an AI task runs on, for the current project. */
+export async function getModelPattern(
+  task: IntentCodeAiTasks): Promise<string> {
+
+  const projectConfig = await getProjectConfig()
+
+  return resolveModelPattern(
+    task,
+    projectConfig?.model,
+    projectConfig?.models)
 }

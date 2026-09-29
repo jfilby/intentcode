@@ -1,29 +1,35 @@
-import { ModelMessage } from 'ai'
-import { IntentError } from '@/core/errors.js'
-import type {
-  AgentUserRecord,
-  ChatParticipantRecord,
-  ChatSessionWithSettings
-} from '@/core/records.js'
-import type { ProjectStore } from '@/core/store.js'
-import { ChatMessage } from '@/types/ai-types.js'
-import { IntentCodeAiTasks } from '@/types/server-only-types.js'
-import { LlmService } from '@/services/ai/llm-service.js'
-import { ChatSessionService } from './chat-session-service.js'
+/**
+ * A chat turn.
+ *
+ * A chat is a session that is kept rather than discarded: its transcript is
+ * the history, so the next turn continues the same conversation instead of
+ * being handed a list of previous messages to read. That is why this opens a
+ * file-backed session and hands the same one back each time.
+ */
 
-// Contract
-export interface RunSessionTurnResults {
-  chatSession: ChatSessionWithSettings
-  toChatParticipant: ChatParticipantRecord
-  agentUser: AgentUserRecord
-  fromContents: ChatMessage[]
-  toContents: ChatMessage[]
-  toJson: unknown
-}
+import { input } from '@inquirer/prompts'
+import type { ProjectRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
+import { IntentCodeAiTasks } from '@/core/ai/model.js'
+import { PiService } from '@/services/ai/pi-service.js'
+import { ExtensionQueryService } from
+  '@/services/extensions/extension/query-service.js'
+import { PiSkillsService } from
+  '@/services/extensions/skills/pi-skills-service.js'
+
 
 // Services
-const chatSessionService = new ChatSessionService()
-const llmService = new LlmService()
+const piService = new PiService()
+const piSkillsService = new PiSkillsService()
+
+const extensionQueryService = new ExtensionQueryService()
+
+// Contract
+export interface ChatTurnResults {
+
+  /** What the agent said. */
+  text: string
+}
 
 // Class
 export class ChatService {
@@ -31,164 +37,101 @@ export class ChatService {
   // Consts
   clName = 'ChatService'
 
+  /** How a person ends a chat. */
+  exitCommand = '/b'
+
   // Code
-  async runSessionTurn(
+
+  /**
+   * Hold a conversation about a project, until the person leaves.
+   *
+   * The session is opened once and prompted once per turn, so the agent's
+   * tools stay available across the whole conversation: it can read the
+   * project while it answers, rather than answering from what it was told.
+   */
+  async chat(
           store: ProjectStore,
-          chatSessionId: string,
-          fromContents: ChatMessage[]): Promise<RunSessionTurnResults> {
+          project: ProjectRecord,
+          framing: string) {
 
     // Debug
-    const fnName = `${this.clName}.runSessionTurn()`
+    const fnName = `${this.clName}.chat()`
 
-    // Get the session
-    const chatSessionResults = await
-      chatSessionService.getChatSessionById(
-        store,
-        chatSessionId)
+    // The project's own skills, read the way a build reads them. A chat has no
+    // build behind it, so the extensions are loaded here rather than passed in.
+    const extensionsData =
+      await extensionQueryService.loadExtensions(store, project.id)
 
-    if (chatSessionResults.status === false) {
-      throw new IntentError({
-        category: 'ChatError',
-        stage: fnName,
-        message: `chatSession not found: ${chatSessionId}`
-      })
-    }
+    const skills = piSkillsService.getSkills(
+      extensionsData ?? {
+        extensionNodes: [],
+        skillNodes: [],
+        hooksNodes: []
+      },
+      project.path)
 
-    const chatSession = chatSessionResults.chatSession!
-
-    // Get the agent
-    const agentUser = chatSession.agentUser
-
-    if (agentUser == null) {
-      throw new IntentError({
-        category: 'ChatError',
-        stage: fnName,
-        message: `agentUser == null: ${chatSessionId}`
-      })
-    }
-
-    // The settings framing the session
-    const chatSettings = chatSession.chatSettings
-
-    if (chatSettings == null) {
-      throw new IntentError({
-        category: 'ChatError',
-        stage: fnName,
-        message: `chatSettings == null: ${chatSessionId}`
-      })
-    }
-
-    // The agent participant
-    const chatParticipants = await
-      chatSessionService.getParticipants(
-        store,
-        chatSessionId)
-
-    // Get the history
-    const historyResults = await
-      chatSessionService.getChatMessages(
-        store,
-        chatSessionId,
-        agentUser.maxPrevMessages)
-
-    // The messages, oldest first
-    const messages: ModelMessage[] =
-      historyResults.chatMessages.map((chatMessage) => ({
-        role: chatMessage.sentByAi ? 'assistant' : 'user',
-        content: chatMessage.message
-      }))
-
-    // The new user message
-    messages.push({
-      role: 'user',
-      content: fromContents
-        .map((content) => content.text)
-        .join(`\n\n`)
+    // Open the session. It is prompted below rather than here, because a
+    // session that is opened and never asked anything is a session with an
+    // empty transcript saved against the chat.
+    const session = await piService.openSession(store, {
+      cwd: project.path,
+      aiTask: IntentCodeAiTasks.compiler,
+      skills,
+      persistent: true,
+      // The framing is what the chat is about: who the agent is, and what it
+      // is being asked.
+      systemPrompt: framing,
+      tools: {
+        toolNames: ['read', 'glob', 'grep', 'write', 'edit'],
+        restrict: true
+      },
+      prompt: `Say hello, and state in one line what you can help with in ` +
+              `this project. Do not change any file yet.`
     })
 
-    // The system prompt: what the agent is, then what this session is about
-    const system =
-      [
-        agentUser.defaultPrompt,
-        agentUser.role,
-        chatSettings.prompt
-      ]
-        .filter((part) => part != null && part !== ``)
-        .join(`\n\n`)
+    // The conversation loop, with the session torn down on the way out. A chat
+    // keeps its session rather than having it closed after each turn, so this
+    // is the one place that disposes it.
+    try {
+    while (true) {
 
-    // The model call
-    const isJsonMode = chatSettings.isJsonMode
+      console.log(``)
 
-    const results = await
-      llmService.chat({
-        aiTask: IntentCodeAiTasks.compiler,
-        system: system,
-        messages: messages,
-        isJsonMode: isJsonMode
+      const userInput = (await input({
+        message: `Chat.. or ${this.exitCommand} (Back)`
+      })).trim()
+
+      if (userInput === this.exitCommand) return
+
+      if (userInput === ``) continue
+
+      // Ask
+      const unsubscribe = session.subscribe((event) => {
+
+        if (event.type === `message_update` &&
+            event.assistantMessageEvent.type === `text_delta`) {
+
+          process.stdout.write(event.assistantMessageEvent.delta)
+        }
       })
 
-    // The reply: the model's messages if it sent any, else its raw text
-    const toContents = isJsonMode === true ?
-      extractMessages(results.json) :
-      []
+      try {
+        await session.prompt(userInput)
+      } catch (error) {
 
-    if (toContents.length === 0) {
-      toContents.push({
-        type: '',
-        text: results.text
-      })
+        console.log(``)
+        console.log(`The session failed to answer: ` +
+                    `${error instanceof Error ? error.message : String(error)}`)
+
+      } finally {
+        unsubscribe()
+      }
+
+      console.log(``)
     }
 
-    // Return
-    return {
-      chatSession: chatSession,
-      toChatParticipant: chatParticipants.agent,
-      agentUser: agentUser,
-      fromContents: fromContents,
-      toContents: toContents,
-      toJson: results.json
+    } finally {
+      await session.dispose()
     }
   }
-}
-
-// In JSON mode the model returns its rendered reply under 'messages'
-function extractMessages(json: unknown): ChatMessage[] {
-
-  // Validate
-  if (json == null ||
-      typeof json !== 'object' ||
-      !('messages' in json)) {
-
-    return []
-  }
-
-  const messages = json.messages
-
-  if (Array.isArray(messages) === false) {
-    return []
-  }
-
-  // Extract
-  const contents: ChatMessage[] = []
-
-  for (const message of messages) {
-
-    if (message == null ||
-        typeof message !== 'object' ||
-        !('text' in message) ||
-        typeof message.text !== 'string') {
-
-      continue
-    }
-
-    contents.push({
-      type: ('type' in message && typeof message.type === 'string') ?
-        message.type :
-        '',
-      text: message.text
-    })
-  }
-
-  // Return
-  return contents
 }

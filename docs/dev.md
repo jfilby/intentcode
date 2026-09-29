@@ -35,22 +35,30 @@ might not have it.
 
 ## The AI layer
 
-The engine uses the Vercel AI SDK (`ai` plus the provider packages). Model
-resolution is in `src/core/ai`:
+Everything the engine asks a model to do is a [Pi](https://omp.sh) session.
+There is one door onto it, `src/services/ai/pi-service.ts`:
 
-- `model.ts` turns a `provider/model` spec into a `ModelConfiguration`. The
-  provider decides which environment key is read, and which provider package
-  is constructed. `resolveModelForTask` layers a project's `[model]` and
-  `[models.<task>]` tables over the environment.
-- `provider.ts` turns a resolved configuration into an SDK model. Anthropic is
-  reached through its own package; the rest go through the OpenAI-compatible
-  surface.
-- `src/services/ai/llm-service.ts` owns the cache lookup, the JSON extraction
-  and the retry loop. Callers pass a prompt and a `validate` callback; they
-  must not re-implement any of that.
-- `llm-cache-service.ts` is the cached reply, keyed on the prompt hash and the
-  model id, stored under `.intent/cache/llm.json`.
+- `request` creates a session, prompts it once, and returns what it said. The
+  differences between a compile worker, a chat and a one-shot question are the
+  session's lifetime, its tools and its model, so they are parameters rather
+  than separate code paths.
+- `openSession` is `request` for a caller that keeps talking — a chat, which
+  continues one transcript rather than being handed a list of previous
+  messages to read.
+- `cachedRequest` is a one-shot request whose reply is remembered against its
+  prompt.
 
-The single-shot `request` path is cached per model id. The `chat` path is not
-cached: its message list grows with every turn, so an entry would never be hit
-again.
+A worker's session is `SessionManager.inMemory()`: one prompt, then discarded.
+A chat's is file-backed, so the transcript outlives the process.
+
+The engine holds no credentials. Pi resolves the key for whichever provider a
+model names, which is why `core/ai/model.ts` is only about turning a project's
+`[model]` and `[models.<task>]` tables into a `provider/model` selector — and
+why the 658-line hand-written CommandCode provider is gone: Pi ships that
+provider itself.
+
+`llm-cache-service.ts` is the cached reply, keyed on the prompt hash and the
+model id, stored under `.intent/cache/llm.json`. It stays because Pi caches
+provider-side prompt prefixes, not replies: a repeated prompt still costs a
+round trip. Only `cachedRequest` uses it; a worker that edits files has no
+reply worth remembering.

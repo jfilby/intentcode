@@ -3,8 +3,8 @@ import { IntentError } from '@/core/errors.js'
 import type { SourceNodeRecord } from '@/core/records.js'
 import type { ProjectRecord } from '@/core/records.js'
 import type { ProjectStore } from '@/core/store.js'
-import { BuildData, BuildStage, BuildStageType, IntentFileBuild } from '@/types/build-types.js'
-import { CompilerMetaDataApproachs, ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types.js'
+import { BuildData, BuildStage, BuildStageType } from '@/types/build-types.js'
+import { ProjectDetails } from '@/types/server-only-types.js'
 import { SourceNodeTypes } from '@/types/source-graph-types.js'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
 import { DeleteBuildService } from './delete-service.js'
@@ -69,15 +69,11 @@ export class BuildMutateService {
       return null
     }
 
-    // Get all IntentCode files modified since last build
-    var intentFileBuilds: Record<string, IntentFileBuild> = {}
-
     // Create BuildStage
     const buildStage: BuildStage = {
       buildNo: buildNo,
       buildStageType: buildData.buildStageTypes[buildNo - 1],
-      depsUpdated: false,
-      intentFileBuilds: intentFileBuilds
+      depsUpdated: false
     }
 
     // Add to BuildData
@@ -102,11 +98,6 @@ export class BuildMutateService {
       BuildStageType.updateDeps,
       BuildStageType.intentCodeAnalyzer
     ]
-
-    // Is the indexer approach enabled?
-    if (ServerOnlyTypes.compilerMetaDataApproach === CompilerMetaDataApproachs.indexer) {
-      buildStages.push(BuildStageType.index)
-    }
 
     // Add final build stages
     buildStages = buildStages.concat([
@@ -367,16 +358,6 @@ export class BuildMutateService {
       case BuildStageType.updateDeps: {
 
         await depsSyncService.update(
-          store,
-          buildData,
-          projectNode)
-
-        break
-      }
-
-      case BuildStageType.index: {
-
-        await projectCompileService.runIndexBuildStage(
           store,
           buildData,
           projectNode)

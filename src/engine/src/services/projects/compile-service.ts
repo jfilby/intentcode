@@ -4,17 +4,15 @@ import type { SourceNodeRecord } from '@/core/records.js'
 import type { ProjectStore } from '@/core/store.js'
 import { walkDir } from '@/core/walk-dir.js'
 import { BuildData, BuildFromFile } from '@/types/build-types.js'
-import { CompilerMutateService } from '../intentcode/compiler/code/mutate-service.js'
+import { CompilerService } from '../intentcode/compiler/code/compile-service.js'
 import { FsUtilsService } from '../utils/fs-utils-service.js'
-import { IndexerMutateService } from '../intentcode/indexer/mutate-service.js'
 import { IntentCodeFilenameService } from '../utils/filename-service.js'
 import { IntentCodePathGraphMutateService } from '../graphs/intentcode/path-graph-mutate-service.js'
 import { ProjectDetails } from '@/types/server-only-types.js'
 
 // Services
-const compilerMutateService = new CompilerMutateService()
+const compilerService = new CompilerService()
 const fsUtilsService = new FsUtilsService()
-const indexerMutateService = new IndexerMutateService()
 const intentCodeFilenameService = new IntentCodeFilenameService()
 const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
 
@@ -72,12 +70,15 @@ export class ProjectCompileService {
                 buildFile.intentCodeFilename,
                 { encoding: 'utf8', flag: 'r' })
 
-      // Get/create the file's IntentCode node
+      // Get/create the file's IntentCode node, recording what the file holds.
+      // The graph is the record of what a project intended as well as of what
+      // it built, so the Intent's own text is kept with it.
       const intentFileNode = await
         intentCodePathGraphMutateService.upsertIntentCodePathAsGraph(
           store,
           projectDetails.projectIntentCodeNode,
-          buildFile.intentCodeFilename)
+          buildFile.intentCodeFilename,
+          intentCode)
 
       // Define BuildFromFile
       const buildFromFile: BuildFromFile = {
@@ -170,14 +171,14 @@ export class ProjectCompileService {
     const buildFromFiles = await
       this.getBuildFromFiles(store, projectDetails)
 
-    // Compile IntentCode to source
+    // Compile IntentCode to source. Each file is a session of its own, so one
+    // file that cannot be written does not take the rest of the project with
+    // it.
     for (const buildFromFile of buildFromFiles) {
 
-      // Compile
-      await compilerMutateService.run(
+      await compilerService.run(
               store,
               buildData,
-              projectNode,
               projectDetails,
               buildFromFile)
     }
@@ -186,43 +187,4 @@ export class ProjectCompileService {
     console.log(``)
   }
 
-  async runIndexBuildStage(
-          store: ProjectStore,
-          buildData: BuildData,
-          projectNode: SourceNodeRecord) {
-
-    // Debug
-    const fnName = `${this.clName}.runIndexBuildStage()`
-
-    console.log(`Indexing IntentCode..`)
-
-    // Get ProjectDetails
-    const projectDetails = getBuildProjectDetails(
-      buildData,
-      projectNode.projectId)
-
-    // Get buildFromFiles
-    const buildFromFiles = await
-      this.getBuildFromFiles(store, projectDetails)
-
-    // Compile IntentCode to source
-    for (const buildFromFile of buildFromFiles) {
-
-      // Check if the file has been updated since last indexed
-      if (buildFromFile?.contentUpdated != null &&
-          buildFromFile.contentUpdated <= buildFromFile.fileModifiedTime) {
-
-        // console.log(`${fnName}: file: ${intentCodeFilename} already indexed`)
-        continue
-      }
-
-      // Index the file
-      await indexerMutateService.indexFileWithLlm(
-              store,
-              buildData,
-              projectNode,
-              projectDetails.projectIntentCodeNode,
-              buildFromFile)
-    }
-  }
 }

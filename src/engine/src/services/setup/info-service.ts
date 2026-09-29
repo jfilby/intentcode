@@ -12,8 +12,7 @@ import { isIntentError } from '@/core/errors.js'
 import { readProjectConfig } from '@/core/project-config.js'
 import type { ProjectRecord } from '@/core/records.js'
 import type { ProjectStore } from '@/core/store.js'
-import { resolveModelForTask } from '@/core/ai/model.js'
-import { IntentCodeAiTasks } from '@/types/server-only-types.js'
+import { IntentCodeAiTasks, resolveModelPattern } from '@/core/ai/model.js'
 
 export class InfoService {
 
@@ -42,25 +41,24 @@ export class InfoService {
     }
 
     console.log(``)
-    console.log(`# AI models`)
+    console.log(`# Models`)
 
     for (const aiTask of Object.values(IntentCodeAiTasks)) {
 
-      let modelId: string
+      let modelPattern: string
 
       try {
-        modelId = resolveModelForTask(
+        modelPattern = resolveModelPattern(
           aiTask,
           config?.model,
-          config?.models
-        ).id
+          config?.models)
       } catch (error) {
-        modelId = isIntentError(error)
+        modelPattern = isIntentError(error)
           ? `(not set: ${error.message})`
           : `(not set: ${String(error)})`
       }
 
-      console.log(`AI model for ${aiTask}: ${modelId}`)
+      console.log(`Model for ${aiTask}: ${modelPattern}`)
     }
 
     console.log(``)
