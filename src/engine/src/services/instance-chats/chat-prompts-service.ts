@@ -1,4 +1,3 @@
-import { PrismaClient } from '@/prisma/client.js'
 import { AnalyzerChatParams } from '@/types/chat-types.js'
 import { AnalyzerPromptTypes } from '@/types/server-only-types.js'
 import { IntentCodeAnalyzerPromptService } from '../intentcode/analyzer/prompt-service.js'
@@ -14,7 +13,6 @@ export class ChatPromptsService {
 
   // Code
   async getAnalyzerSuggestionsPrompt(
-    prisma: PrismaClient,
     params: AnalyzerChatParams) {
 
     // Debug
@@ -25,7 +23,6 @@ export class ChatPromptsService {
     // Get the prompt
     const prompt = await
       intentCodeAnalyzerPromptService.getPrompt(
-        prisma,
         AnalyzerPromptTypes.chatAboutSuggestion,
         params.projectNode,
         params.buildData,

@@ -1,12 +1,11 @@
-import { CustomError, UsersService } from 'serene-core-server'
 import { input } from '@inquirer/prompts'
-import { PrismaClient } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type { ProjectStore } from '@/core/store.js'
 import { BaseDataTypes } from '@/types/base-data-types.js'
 import { ChatMessage } from '@/types/ai-types.js'
 import { BuildData, BuildFromFile } from '@/types/build-types.js'
 import { AnalyzerChatParams, ChatSessionOptions, ChatTypes, getAnalyzerSuggestion } from '@/types/chat-types.js'
 import { ProjectDetails } from '@/types/server-only-types.js'
-import { ServerTestTypes } from '@/types/server-test-types.js'
 import { InstanceChatsService } from '@/services/instance-chats/common/service.js'
 import { ChatSessionTurnService } from '@/services/instance-chats/chat-session-turn.js'
 import { TuiService } from '@/services/utils/tui-service.js'
@@ -15,7 +14,6 @@ import { TuiService } from '@/services/utils/tui-service.js'
 const chatSessionTurnService = new ChatSessionTurnService()
 const instanceChatsService = new InstanceChatsService()
 const tuiService = new TuiService()
-const usersService = new UsersService()
 
 // Class
 export class IntentCodeAnalyzerSuggestionsChatService {
@@ -28,8 +26,7 @@ export class IntentCodeAnalyzerSuggestionsChatService {
 
   // Code
   async createChatSession(
-    prisma: PrismaClient,
-    userProfileId: string,
+    store: ProjectStore,
     projectDetails: ProjectDetails,
     buildData: BuildData,
     buildFromFiles: BuildFromFile[],
@@ -56,9 +53,8 @@ export class IntentCodeAnalyzerSuggestionsChatService {
     // Get/create a chat session
     const results = await
       instanceChatsService.getOrCreateChatSession(
-        prisma,
-        projectDetails.instance.id,
-        userProfileId,
+        store,
+        projectDetails.project.id,
         chatSessionId,
         BaseDataTypes.coderChatSettingsName,  // chatSettingsName
         JSON.stringify(appCustom),
@@ -66,7 +62,11 @@ export class IntentCodeAnalyzerSuggestionsChatService {
 
     // Validate
     if (results.status === false) {
-      throw new CustomError(`${fnName}: results.status === false`)
+      throw new IntentError({
+        category: 'ChatError',
+        stage: fnName,
+        message: `results.status === false`
+      })
     }
 
     // Return
@@ -74,7 +74,7 @@ export class IntentCodeAnalyzerSuggestionsChatService {
   }
 
   async openChat(
-    prisma: PrismaClient,
+    store: ProjectStore,
     buildData: BuildData,
     buildFromFiles: BuildFromFile[],
     suggestion: any) {
@@ -85,13 +85,6 @@ export class IntentCodeAnalyzerSuggestionsChatService {
     // Track the potentially updated suggestion separately
     var thisSuggestion = suggestion
 
-    // Get/create an admin user
-    const adminUserProfile = await
-      usersService.getOrCreateUserByEmail(
-        prisma,
-        ServerTestTypes.adminUserEmail,
-        undefined)  // defaultUserPreferences
-
     // Get ProjectDetails
     const projectDetails = buildData.projects[suggestion.projectNo]
 
@@ -100,14 +93,17 @@ export class IntentCodeAnalyzerSuggestionsChatService {
 
     // Validate
     if (projectDetails == null) {
-      throw new CustomError(`${fnName}: projectDetails == null`)
+      throw new IntentError({
+        category: 'ChatError',
+        stage: fnName,
+        message: `projectDetails == null`
+      })
     }
 
     // Create chat session
-    const { chatSession, chatParticipant } = await
+    const { chatSession } = await
       this.createChatSession(
-        prisma,
-        adminUserProfile.id,
+        store,
         projectDetails,
         buildData,
         buildFromFiles,
@@ -158,10 +154,8 @@ export class IntentCodeAnalyzerSuggestionsChatService {
       // Get the AI's reply
       const replyData = await
         chatSessionTurnService.turn(
-          prisma,
+          store,
           chatSession.id,
-          chatParticipant.id,
-          adminUserProfile,
           contents)
 
       // Debug
@@ -188,7 +182,6 @@ export class IntentCodeAnalyzerSuggestionsChatService {
         console.log(`UPDATED: ${updatedSuggestion.text}`)
 
         for (const fileDelta of updatedSuggestion.fileDeltas) {
-
           console.log(`.. ${fileDelta.fileOp} ${fileDelta.relativePath}: ` +
             `${fileDelta.change}`)
         }

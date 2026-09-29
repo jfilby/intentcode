@@ -1,0 +1,18 @@
+[
+  {
+    "id": "0mumvyeai8z5i8cdfb17ee",
+    "name": "default",
+    "agentUniqueRefId": "Batch",
+    "isJsonMode": true,
+    "prompt": null,
+    "appCustom": null
+  },
+  {
+    "id": "0mumvyeb78z5i9fde231c4",
+    "name": "coder",
+    "agentUniqueRefId": "Coder",
+    "isJsonMode": true,
+    "prompt": null,
+    "appCustom": null
+  }
+]

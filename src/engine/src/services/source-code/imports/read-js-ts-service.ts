@@ -1,12 +1,12 @@
-import { CustomError, WalkDirService } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { walkDir } from '@/core/walk-dir.js'
+import type { ProjectStore } from '@/core/store.js'
+import type { SourceNodeRecord } from '@/core/records.js'
 import { ImportsData, JsTsSrcTypes } from './types.js'
 import { ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
 import { ParseJsTsImportsService } from './parse-js-ts-service.js'
 
 // Services
 const parseJsTsImportsService = new ParseJsTsImportsService()
-const walkDirService = new WalkDirService()
 
 // Class
 export class ReadJsTsSourceImportsService {
@@ -81,8 +81,8 @@ export class ReadJsTsSourceImportsService {
     }
   }
 
-  async run(prisma: PrismaClient,
-            projectIntentCodeNode: SourceNode,
+  async run(store: ProjectStore,
+            projectIntentCodeNode: SourceNodeRecord,
             srcPath: string) {
 
     // ImportsData var
@@ -107,7 +107,7 @@ export class ReadJsTsSourceImportsService {
     // Read source files
     var fileList: string[] = []
 
-    await walkDirService.walkDir(
+    await walkDir(
             srcPath,
             fileList,
             {

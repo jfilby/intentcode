@@ -1,5 +1,6 @@
-import { CustomError } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type { ProjectStore } from '@/core/store.js'
+import type { SourceNodeRecord } from '@/core/records.js'
 import { BuildData, BuildFromFile } from '@/types/build-types.js'
 import { ExtensionsData } from '@/types/source-graph-types.js'
 import { IntentCodeCommonTypes } from '../../common/types.js'
@@ -25,10 +26,10 @@ export class CompilerPromptService {
 
   // Code
   async getPrompt(
-    prisma: PrismaClient,
+    store: ProjectStore,
     buildData: BuildData,
     buildFromFile: BuildFromFile,
-    projectNode: SourceNode,
+    projectNode: SourceNodeRecord,
     projectDetails: ProjectDetails,
     extensionsData: ExtensionsData) {
 
@@ -38,7 +39,7 @@ export class CompilerPromptService {
     // Get deps prompting
     const depsPrompting = await
             dependenciesPromptService.getDepsPrompting(
-              prisma,
+              store,
               projectNode,
               buildFromFile.fileNode,
               buildFromFile.targetFullPath)
@@ -109,7 +110,10 @@ export class CompilerPromptService {
         `\n`
 
     } else {
-      throw new CustomError(`${fnName}: invalid compilerMetaDataApproach`)
+      throw new IntentError({
+        category: 'CompilerError',
+        stage: fnName,
+        message: `invalid compilerMetaDataApproach`})
     }
 
     // Continue the prompt
@@ -189,7 +193,7 @@ export class CompilerPromptService {
 
       prompt += await
         this.addIndexerPrompting(
-          prisma,
+          store,
           projectDetails)
 
     } else if (ServerOnlyTypes.compilerMetaDataApproach === CompilerMetaDataApproachs.analyzer) {
@@ -203,7 +207,10 @@ export class CompilerPromptService {
       }
 
     } else {
-      throw new CustomError(`${fnName}: invalid compilerMetaDataApproach`)
+      throw new IntentError({
+        category: 'CompilerError',
+        stage: fnName,
+        message: `invalid compilerMetaDataApproach`})
     }
 
     // Get prompt without source
@@ -222,7 +229,7 @@ export class CompilerPromptService {
   }
 
   async addExistingSource(
-    projectSourceNode: SourceNode,
+    projectSourceNode: SourceNodeRecord,
     buildFromFile: BuildFromFile) {
 
     // Existing source code
@@ -245,7 +252,7 @@ export class CompilerPromptService {
   }
 
   async addIndexerPrompting(
-    prisma: PrismaClient,
+    store: ProjectStore,
     projectDetails: ProjectDetails) {
 
     // Debug
@@ -254,11 +261,14 @@ export class CompilerPromptService {
     // Get all related indexed data, including for this file
     const indexedDataSourceNodes = await
       intentCodeGraphQueryService.getAllIndexedData(
-        prisma,
+        store,
         projectDetails.projectIntentCodeNode)
 
     if (indexedDataSourceNodes.length === 0) {
-      throw new CustomError(`${fnName}: indexedDataSourceNodes.length === 0`)
+      throw new IntentError({
+        category: 'CompilerError',
+        stage: fnName,
+        message: `indexedDataSourceNodes.length === 0`})
     }
 
     // Initial prompting
@@ -275,16 +285,32 @@ export class CompilerPromptService {
       for (const indexedDataSourceNode of indexedDataSourceNodes) {
 
         // Validate
-        if ((indexedDataSourceNode as any).parent == null) {
-          throw new CustomError(`${fnName}: indexedDataSourceNode.parent`)
+        if (indexedDataSourceNode.parent == null) {
+          throw new IntentError({
+            category: 'CompilerError',
+            stage: fnName,
+            message: `indexedDataSourceNode.parent`})
         }
 
         // Get fields
-        const intentCodeFileSourceNode = (indexedDataSourceNode as any).parent
-        const relativePath = intentCodeFileSourceNode.jsonContent.relativePath
+        const intentCodeFileSourceNode = indexedDataSourceNode.parent
+        const parentJsonContent = intentCodeFileSourceNode.jsonContent
+        const relativePath =
+          parentJsonContent != null &&
+          typeof parentJsonContent === 'object' &&
+          'relativePath' in parentJsonContent &&
+          typeof parentJsonContent.relativePath === 'string'
+            ? parentJsonContent.relativePath
+            : undefined
 
-        const astTree =
-          JSON.stringify((indexedDataSourceNode.jsonContent as any).astTree)
+        // The ast tree is stored as jsonContent on the indexed node
+        const indexedJsonContent = indexedDataSourceNode.jsonContent
+        const astTree = JSON.stringify(
+          indexedJsonContent != null &&
+          typeof indexedJsonContent === 'object' &&
+          'astTree' in indexedJsonContent
+            ? indexedJsonContent.astTree
+            : undefined)
 
         prompting +=
           `### File: ${relativePath}\n` +

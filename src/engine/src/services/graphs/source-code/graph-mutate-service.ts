@@ -1,6 +1,7 @@
-import { CustomError } from 'serene-core-server'
+import { IntentError } from '@/core/errors.js'
 import { blake3 } from '@noble/hashes/blake3'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { BaseDataTypes } from '@/types/base-data-types.js'
 import { SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types.js'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model.js'
@@ -22,8 +23,8 @@ export class SourceCodeGraphMutateService {
 
   // Code
   async getOrCreateSourceCodeProject(
-          prisma: PrismaClient,
-          buildNode: SourceNode,
+          store: ProjectStore,
+          buildNode: SourceNodeRecord,
           localPath: string) {
 
     // Debug
@@ -31,19 +32,27 @@ export class SourceCodeGraphMutateService {
 
     // Validate
     if (buildNode == null) {
-      throw new CustomError(`${fnName}: buildNode == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: buildNode == null`
+      })
     }
 
     if (buildNode.type !== SourceNodeTypes.build) {
-      throw new CustomError(`${fnName}: invalid type: ${buildNode.type}`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: invalid type: ${buildNode.type}`
+      })
     }
 
     // Try to get the node
     var sourceCodeProject = await
           sourceNodeModel.getByUniqueKey(
-            prisma,
+            store,
             buildNode.id,  // parentId
-            buildNode.instanceId,
+            buildNode.projectId,
             SourceNodeTypes.projectSourceCode,
             SourceNodeNames.projectSourceCode)
 
@@ -68,9 +77,9 @@ export class SourceCodeGraphMutateService {
     // Create the node
     sourceCodeProject = await
       sourceNodeModel.create(
-        prisma,
+        store,
         buildNode.id,  // parentId
-        buildNode.instanceId,
+        buildNode.projectId,
         BaseDataTypes.activeStatus,
         SourceNodeTypes.projectSourceCode,
         SourceNodeNames.projectSourceCode,
@@ -85,9 +94,9 @@ export class SourceCodeGraphMutateService {
   }
 
   async getOrCreateSourceCodeDir(
-          prisma: PrismaClient,
-          instanceId: string,
-          parentNode: SourceNode,
+          store: ProjectStore,
+          projectId: string,
+          parentNode: SourceNodeRecord,
           name: string) {
 
     // Debug
@@ -95,22 +104,30 @@ export class SourceCodeGraphMutateService {
 
     // Validate
     if (parentNode == null) {
-      throw new CustomError(`${fnName}: parentNode == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: parentNode == null`
+      })
     }
 
     if (![SourceNodeTypes.projectSourceCode,
           SourceNodeTypes.sourceCodeDir].includes(
             parentNode.type as SourceNodeTypes)) {
 
-      throw new CustomError(`${fnName}: invalid type: ${parentNode.type}`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: invalid type: ${parentNode.type}`
+      })
     }
 
     // Try to get the node
     var sourceCodeDir = await
           sourceNodeModel.getByUniqueKey(
-            prisma,
+            store,
             parentNode.id,
-            instanceId,
+            projectId,
             SourceNodeTypes.sourceCodeDir,
             name)
 
@@ -121,9 +138,9 @@ export class SourceCodeGraphMutateService {
     // Create the node
     sourceCodeDir = await
       sourceNodeModel.create(
-        prisma,
+        store,
         parentNode.id,  // parentId
-        instanceId,
+        projectId,
         BaseDataTypes.activeStatus,
         SourceNodeTypes.sourceCodeDir,
         name,
@@ -138,9 +155,9 @@ export class SourceCodeGraphMutateService {
   }
 
   async upsertSourceCodeFile(
-          prisma: PrismaClient,
-          instanceId: string,
-          parentNode: SourceNode,
+          store: ProjectStore,
+          projectId: string,
+          parentNode: SourceNodeRecord,
           name: string,
           content: string | null,
           sourceNodeGenerationData: SourceNodeGenerationData) {
@@ -150,14 +167,22 @@ export class SourceCodeGraphMutateService {
 
     // Validate
     if (parentNode == null) {
-      throw new CustomError(`${fnName}: parentNode == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: parentNode == null`
+      })
     }
 
     if (![SourceNodeTypes.projectSourceCode,
           SourceNodeTypes.sourceCodeDir].includes(
             parentNode.type as SourceNodeTypes)) {
 
-      throw new CustomError(`${fnName}: invalid type: ${parentNode.type}`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: invalid type: ${parentNode.type}`
+      })
     }
 
     // Get contentHash
@@ -170,10 +195,10 @@ export class SourceCodeGraphMutateService {
     // Upsert the node
     const sourceCodeFile = await
             sourceNodeModel.upsert(
-              prisma,
+              store,
               undefined,      // id
               parentNode.id,  // parentId
-              instanceId,
+              projectId,
               BaseDataTypes.activeStatus,
               SourceNodeTypes.sourceCodeFile,
               name,
@@ -190,7 +215,7 @@ export class SourceCodeGraphMutateService {
     // Upsert SourceNodeGeneration
     const sourceNodeGeneration = await
             sourceNodeGenerationModel.upsert(
-              prisma,
+              store,
               undefined,          // id
               sourceCodeFile.id,  // sourceNodeId
               sourceNodeGenerationData.modelId,
@@ -204,7 +229,7 @@ export class SourceCodeGraphMutateService {
 
     // Delete old SourceNodeGenerations
     await sourceNodeGenerationService.deleteOld(
-            prisma,
+            store,
             sourceCodeFile.id)  // sourceNodeId
 
     // Return

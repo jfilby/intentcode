@@ -1,9 +1,9 @@
-import { PrismaClient } from '@/prisma/client.js'
 import { LlmService } from '@/services/ai/llm-service.js'
 import { IntentCodeUpdaterQueryService } from '@/services/intentcode/updater/query-service.js'
 import { BaseDataTypes } from '@/types/base-data-types.js'
 import { BuildData } from '@/types/build-types.js'
 import { IntentCodeAiTasks, MessageTypes } from '@/types/server-only-types.js'
+import type { ProjectStore } from '@/core/store.js'
 
 // Services
 const intentCodeUpdaterQueryService = new IntentCodeUpdaterQueryService()
@@ -16,7 +16,7 @@ export class SpecsLlmService {
 
   // Code
   async llmRequest(
-          prisma: PrismaClient,
+          store: ProjectStore,
           buildData: BuildData,
           aiTask: IntentCodeAiTasks,
           prompt: string) {
@@ -27,7 +27,7 @@ export class SpecsLlmService {
     // The request
     const results = await
       llmService.request({
-        prisma: prisma,
+        store: store,
         aiTask: aiTask,
         system: BaseDataTypes.coderAgentRole,
         prompt: prompt,

@@ -1,12 +1,12 @@
-import { CustomError, UsersService } from 'serene-core-server'
 import { input, select } from '@inquirer/prompts'
-import { Instance, PrismaClient } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type { ProjectRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { ChatMessage } from '@/types/ai-types.js'
 import { BaseDataTypes } from '@/types/base-data-types.js'
 import { BuildData, BuildFromFile } from '@/types/build-types.js'
 import { AnalyzerChatParams, ChatSessionOptions, ChatTypes, getAnalyzerSuggestion } from '@/types/chat-types.js'
 import { ProjectDetails } from '@/types/server-only-types.js'
-import { ServerTestTypes } from '@/types/server-test-types.js'
 import { ChatSessionTurnService } from '@/services/instance-chats/chat-session-turn.js'
 import { InstanceChatsService } from '@/services/instance-chats/common/service.js'
 import { IntentCodeAnalyzerQueryService } from './query-service.js'
@@ -19,7 +19,6 @@ const instanceChatsService = new InstanceChatsService()
 const intentCodeAnalyzerQueryService = new IntentCodeAnalyzerQueryService()
 const intentCodeAnalyzerSuggestionsMutateService = new IntentCodeAnalyzerSuggestionsMutateService()
 const tuiService = new TuiService()
-const usersService = new UsersService()
 
 // Class
 export class IntentCodeAnalyzerChatService {
@@ -34,8 +33,7 @@ export class IntentCodeAnalyzerChatService {
 
   // Code
   async createChatSession(
-    prisma: PrismaClient,
-    userProfileId: string,
+    store: ProjectStore,
     projectDetails: ProjectDetails,
     buildData: BuildData,
     buildFromFiles: BuildFromFile[]) {
@@ -61,9 +59,8 @@ export class IntentCodeAnalyzerChatService {
     // Get/create a chat session
     const results = await
       instanceChatsService.getOrCreateChatSession(
-        prisma,
-        projectDetails.instance.id,
-        userProfileId,
+        store,
+        projectDetails.project.id,
         chatSessionId,
         BaseDataTypes.coderChatSettingsName,  // chatSettingsName
         JSON.stringify(appCustom),
@@ -71,7 +68,11 @@ export class IntentCodeAnalyzerChatService {
 
     // Validate
     if (results.status === false) {
-      throw new CustomError(`${fnName}: results.status === false`)
+      throw new IntentError({
+        category: 'ChatError',
+        stage: fnName,
+        message: `results.status === false`
+      })
     }
 
     // Return
@@ -79,30 +80,23 @@ export class IntentCodeAnalyzerChatService {
   }
 
   async openChat(
-    prisma: PrismaClient,
-    instance: Instance) {
+    store: ProjectStore,
+    project: ProjectRecord) {
 
     // Debug
     const fnName = `${this.clName}.openChat()`
 
-    // Get/create an admin user
-    const adminUserProfile = await
-      usersService.getOrCreateUserByEmail(
-        prisma,
-        ServerTestTypes.adminUserEmail,
-        undefined)  // defaultUserPreferences
 
     // Get build info
     var { buildData, buildFromFiles, projectDetails } = await
       intentCodeAnalyzerQueryService.getBuildInfo(
-        prisma,
-        instance)
+        store,
+        project)
 
     // Create chat session
-    const { chatSession, chatParticipant } = await
+    const { chatSession } = await
       this.createChatSession(
-        prisma,
-        adminUserProfile.id,
+        store,
         projectDetails,
         buildData,
         buildFromFiles)
@@ -136,10 +130,8 @@ export class IntentCodeAnalyzerChatService {
       // Get the AI's reply
       const replyData = await
         chatSessionTurnService.turn(
-          prisma,
+          store,
           chatSession.id,
-          chatParticipant.id,
-          adminUserProfile,
           contents)
 
       // Debug
@@ -197,7 +189,7 @@ export class IntentCodeAnalyzerChatService {
 
           // Action the suggestion
           await intentCodeAnalyzerSuggestionsMutateService.approveSuggestions(
-            prisma,
+            store,
             buildData,
             buildFromFiles,
             [thisSuggestion]);
@@ -205,8 +197,8 @@ export class IntentCodeAnalyzerChatService {
           // Get build info
           ({ buildData, buildFromFiles, projectDetails } = await
             intentCodeAnalyzerQueryService.getBuildInfo(
-              prisma,
-              instance))
+              store,
+              project))
         }
       }
     }

@@ -1,28 +1,26 @@
-import { v4 as uuidv4 } from 'uuid'
-import { CustomError } from 'serene-core-server'
-import {
-  AgentUser,
-  ChatMessage as ChatMessageRecord,
-  ChatParticipant,
-  ChatSession,
-  PrismaClient,
-  UserProfile
-} from '@/prisma/client.js'
+import { createId } from '@/core/ids.js'
+import { IntentError } from '@/core/errors.js'
+import type {
+  AgentUserRecord,
+  ChatMessageRecord,
+  ChatParticipantRecord,
+  ChatSessionWithSettings
+} from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { ChatMessage } from '@/types/ai-types.js'
 import { BaseDataTypes } from '@/types/base-data-types.js'
 import { ChatParticipantRoles } from '@/types/chat-types.js'
 
 // Contract
 export interface ChatParticipants {
-  user: ChatParticipant
-  agent: ChatParticipant
+  user: ChatParticipantRecord
+  agent: ChatParticipantRecord
 }
 
 export interface ChatSessionTurnData {
-  chatSession: ChatSession
-  toChatParticipant: ChatParticipant
-  toUserProfile: UserProfile
-  agentUser: AgentUser
+  chatSession: ChatSessionWithSettings
+  toChatParticipant: ChatParticipantRecord
+  agentUser: AgentUserRecord
   fromContents: ChatMessage[]
   toContents: ChatMessage[]
   toJson: unknown
@@ -35,11 +33,16 @@ export class ChatSessionService {
   clName = 'ChatSessionService'
 
   // Code
+
+  // A session points at one of the chat settings seeded at setup, which is
+  // what names the agent answering it. The settings a session is started with
+  // carry its own prompt and app data, so those are written to the settings
+  // record: it is the one place a session's framing is kept, and a chat
+  // configuration is used by one chat at a time.
   async createChatSession(
-          prisma: PrismaClient,
+          store: ProjectStore,
           baseChatSettingsId: string,
-          userProfileId: string,
-          instanceId: string | null,
+          projectId: string | null,
           isEncryptedAtRest: boolean,
           isJsonMode: boolean | null,
           prompt: string | null,
@@ -49,66 +52,69 @@ export class ChatSessionService {
     // Debug
     const fnName = `${this.clName}.createChatSession()`
 
-    // The base ChatSettings carries the agent; the session gets its own copy
-    // so the per-session prompt and appCustom don't leak into other sessions
+    // The chat settings carrying the agent
     const baseChatSettings = await
-      prisma.chatSettings.findFirst({
+      store.chatSettings.findFirst({
         where: {
           id: baseChatSettingsId
         }
       })
 
     if (baseChatSettings == null) {
-      throw new CustomError(`${fnName}: baseChatSettings == null`)
+      throw new IntentError({
+        category: 'ChatError',
+        stage: fnName,
+        message: `baseChatSettings == null: ${baseChatSettingsId}`
+      })
     }
 
-    const chatSettings = await
-      prisma.chatSettings.create({
-        data: {
-          baseChatSettingsId: baseChatSettingsId,
-          status: BaseDataTypes.activeStatus,
-          isEncryptedAtRest: isEncryptedAtRest,
-          isJsonMode: isJsonMode ?? false,
-          isPinned: false,
-          name: null,
-          agentUserId: baseChatSettings.agentUserId,
-          prompt: prompt,
-          appCustom: appCustom as never,
-          createdById: userProfileId
-        }
-      })
+    // The session's own framing
+    await store.chatSettings.update({
+      where: {
+        id: baseChatSettingsId
+      },
+      data: {
+        isJsonMode: isJsonMode ?? baseChatSettings.isJsonMode,
+        prompt: prompt,
+        appCustom: appCustom
+      }
+    })
 
     // Create the session
+    const created = new Date().toISOString()
+
     const chatSession = await
-      prisma.chatSession.create({
+      store.chatSessions.create({
         data: {
-          chatSettingsId: chatSettings.id,
-          instanceId: instanceId,
+          id: createId(),
+          chatSettingsId: baseChatSettingsId,
+          projectId: projectId,
           status: BaseDataTypes.activeStatus,
           isEncryptedAtRest: isEncryptedAtRest,
-          token: uuidv4(),
-          name: name,
-          externalIntegration: null,
           externalId: null,
-          createdById: userProfileId
+          name: name,
+          created: created,
+          updated: created
         }
       })
 
     // The two participants
     const chatParticipant = await
-      prisma.chatParticipant.create({
+      store.chatParticipants.create({
         data: {
+          id: createId(),
           chatSessionId: chatSession.id,
-          userProfileId: userProfileId,
-          role: ChatParticipantRoles.user
+          role: ChatParticipantRoles.user,
+          created: created
         }
       })
 
-    await prisma.chatParticipant.create({
+    await store.chatParticipants.create({
       data: {
+        id: createId(),
         chatSessionId: chatSession.id,
-        userProfileId: userProfileId,
-        role: ChatParticipantRoles.agent
+        role: ChatParticipantRoles.agent,
+        created: created
       }
     })
 
@@ -120,27 +126,21 @@ export class ChatSessionService {
   }
 
   async getChatSessionById(
-          prisma: PrismaClient,
-          chatSessionId: string,
-          userProfileId: string) {
+          store: ProjectStore,
+          chatSessionId: string) {
 
     // Debug
     const fnName = `${this.clName}.getChatSessionById()`
 
     // Query
     const chatSession = await
-      prisma.chatSession.findFirst({
+      store.chatSessions.findFirst({
         where: {
-          id: chatSessionId,
-          createdById: userProfileId
+          id: chatSessionId
         },
         include: {
-          chatSettings: {
-            include: {
-              agentUser: true
-            }
-          },
-          ofChatParticipants: true
+          chatSettings: true,
+          agentUser: true
         }
       })
 
@@ -154,11 +154,20 @@ export class ChatSessionService {
     }
 
     // The user's participant
-    const chatParticipant = chatSession.ofChatParticipants.find(
-      (participant) => participant.role === ChatParticipantRoles.user)
+    const chatParticipant = await
+      store.chatParticipants.findFirst({
+        where: {
+          chatSessionId: chatSessionId,
+          role: ChatParticipantRoles.user
+        }
+      })
 
     if (chatParticipant == null) {
-      throw new CustomError(`${fnName}: chatParticipant == null`)
+      throw new IntentError({
+        category: 'ChatError',
+        stage: fnName,
+        message: `chatParticipant == null: ${chatSessionId}`
+      })
     }
 
     // Return
@@ -171,7 +180,7 @@ export class ChatSessionService {
 
   // The agent identity, for the failure path
   async getAgentInfo(
-          prisma: PrismaClient,
+          store: ProjectStore,
           chatSessionId: string) {
 
     // Debug
@@ -179,40 +188,41 @@ export class ChatSessionService {
 
     // Query
     const chatSession = await
-      prisma.chatSession.findFirst({
+      store.chatSessions.findFirst({
         where: {
           id: chatSessionId
         },
         include: {
-          chatSettings: {
-            include: {
-              agentUser: true
-            }
-          }
+          chatSettings: true,
+          agentUser: true
         }
       })
 
     // Validate
     if (chatSession == null) {
-      throw new CustomError(`${fnName}: chatSession == null`)
+      throw new IntentError({
+        category: 'ChatError',
+        stage: fnName,
+        message: `chatSession == null: ${chatSessionId}`
+      })
     }
 
     // The agent participant
     const chatParticipants = await
       this.getParticipants(
-        prisma,
+        store,
         chatSessionId)
 
     // Return
     return {
       toChatParticipant: chatParticipants.agent,
-      agentUser: chatSession.chatSettings.agentUser
+      agentUser: chatSession.agentUser
     }
   }
 
   // The history for the prompt, oldest first
   async getChatMessages(
-          prisma: PrismaClient,
+          store: ProjectStore,
           chatSessionId: string,
           maxMessages: number | null) {
 
@@ -221,26 +231,29 @@ export class ChatSessionService {
 
     // Query the newest messages, then flip them
     const chatMessages = await
-      prisma.chatMessage.findMany({
+      store.chatMessages.findMany({
         where: {
           chatSessionId: chatSessionId
         },
         orderBy: {
           created: 'desc'
-        },
-        take: maxMessages ?? undefined
+        }
       })
+
+    const newestFirst = maxMessages == null
+      ? chatMessages
+      : chatMessages.slice(0, maxMessages)
 
     // Return
     return {
       status: true,
-      chatMessages: chatMessages.reverse()
+      chatMessages: newestFirst.reverse()
     }
   }
 
   async saveMessages(
-          prisma: PrismaClient,
-          chatSession: ChatSession,
+          store: ProjectStore,
+          chatSession: ChatSessionWithSettings,
           sessionTurnData: ChatSessionTurnData) {
 
     // Debug
@@ -249,13 +262,13 @@ export class ChatSessionService {
     // The two participants
     const chatParticipants = await
       this.getParticipants(
-        prisma,
+        store,
         chatSession.id)
 
     // The user's message
     const userChatMessage = await
       this.createChatMessage(
-        prisma,
+        store,
         chatSession.id,
         chatParticipants.user.id,
         chatParticipants.agent.id,
@@ -265,13 +278,12 @@ export class ChatSessionService {
     // The agent's reply
     const aiReplyChatMessage = await
       this.createChatMessage(
-        prisma,
+        store,
         chatSession.id,
         chatParticipants.agent.id,
         chatParticipants.user.id,
         true,
-        joinContents(sessionTurnData.toContents),
-        userChatMessage.id)
+        joinContents(sessionTurnData.toContents))
 
     // Return
     return {
@@ -282,7 +294,7 @@ export class ChatSessionService {
   }
 
   async getParticipants(
-          prisma: PrismaClient,
+          store: ProjectStore,
           chatSessionId: string): Promise<ChatParticipants> {
 
     // Debug
@@ -290,7 +302,7 @@ export class ChatSessionService {
 
     // Query
     const chatParticipants = await
-      prisma.chatParticipant.findMany({
+      store.chatParticipants.findMany({
         where: {
           chatSessionId: chatSessionId
         }
@@ -309,8 +321,11 @@ export class ChatSessionService {
     if (user == null ||
         agent == null) {
 
-      throw new CustomError(`${fnName}: the session needs a user and an ` +
-        `agent participant`)
+      throw new IntentError({
+        category: 'ChatError',
+        stage: fnName,
+        message: `the session needs a user and an agent participant`
+      })
     }
 
     // Return
@@ -321,27 +336,31 @@ export class ChatSessionService {
   }
 
   async createChatMessage(
-          prisma: PrismaClient,
+          store: ProjectStore,
           chatSessionId: string,
           fromChatParticipantId: string,
           toChatParticipantId: string,
           sentByAi: boolean,
-          message: string,
-          replyToId?: string): Promise<ChatMessageRecord> {
+          message: string): Promise<ChatMessageRecord> {
 
     // Debug
     const fnName = `${this.clName}.createChatMessage()`
 
+    // The message is created and last changed at the same moment
+    const created = new Date().toISOString()
+
     // Create record
-    return await prisma.chatMessage.create({
+    return await store.chatMessages.create({
       data: {
+        id: createId(),
         chatSessionId: chatSessionId,
-        replyToId: replyToId,
         fromChatParticipantId: fromChatParticipantId,
         toChatParticipantId: toChatParticipantId,
         externalId: null,
         sentByAi: sentByAi,
-        message: message
+        message: message,
+        created: created,
+        updated: created
       }
     })
   }

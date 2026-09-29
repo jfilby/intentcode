@@ -9,25 +9,22 @@
   },
   "files": [
     "dist",
-    "bundled/extensions",
-    "prisma/schema/data.db"
+    "bundled/extensions"
   ],
   "scripts": {
     "dev": "next dev",
     "build": "tsup && npm link",
     "start": "next start",
     "lint": "eslint",
-    "cli": "tsx ./src/cli.ts"
+    "cli": "tsx ./src/cli.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.65",
+    "@ai-sdk/google": "^4.0.82",
     "@ai-sdk/openai": "^4.0.80",
     "@inquirer/prompts": "^8.7.2",
-    "@libsql/client": "^0.17.4",
-    "@next/env": "16.1.0",
     "@noble/hashes": "^1.8.0",
-    "@paralleldrive/cuid2": "^3.3.0",
-    "@prisma/adapter-libsql": "^7.10.0",
-    "@prisma/client": "^7.10.0",
     "@types/lodash": "^4.17.25",
     "@types/node": "^20.19.43",
     "@types/react": "^19.3.0",
@@ -37,17 +34,13 @@
     "chalk": "^4.1.2",
     "eslint": "^9.39.5",
     "eslint-config-next": "16.1.0",
-    "jsonrepair": "^3.15.0",
     "lodash": "^4.18.1",
     "next": "16.1.0",
     "node-cache": "^5.1.2",
-    "pg": "^8.23.0",
-    "prisma": "^7.10.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "semver": "^7.8.5",
-    "serene-core-server": "^0.1.17",
-    "tsconfig-paths": "^4.2.0",
+    "smol-toml": "^1.9.0",
     "tsx": "^4.23.15",
     "uuid": "^11.1.1",
     "yaml": "^2.9.1",
@@ -55,7 +48,6 @@
   },
   "devDependencies": {
     "@types/semver": "^7.8.0",
-    "esbuild-plugin-tsconfig-paths": "^1.0.2",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   }

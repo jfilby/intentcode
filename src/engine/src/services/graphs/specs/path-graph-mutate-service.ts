@@ -1,5 +1,6 @@
-import { CustomError } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { FsUtilsService } from '../../utils/fs-utils-service.js'
 import { SpecsGraphMutateService } from './graph-mutate-service.js'
 
@@ -15,23 +16,33 @@ export class SpecsPathGraphMutateService {
 
   // Code
   async getOrCreateSpecsPathAsGraph(
-          prisma: PrismaClient,
-          projectSpecsNode: SourceNode,
+          store: ProjectStore,
+          projectSpecsNode: SourceNodeRecord,
           fullPath: string) {
 
     // Debug
     const fnName = `${this.clName}.getOrCreateSpecsPathAsGraph()`
 
     // Get project source path
-    const projectSourcePath = (projectSpecsNode.jsonContent as any)?.path
+    const jsonContent = projectSpecsNode.jsonContent
+    const projectSourcePath =
+      jsonContent != null &&
+      typeof jsonContent === 'object' &&
+      'path' in jsonContent &&
+      typeof jsonContent.path === 'string'
+        ? jsonContent.path
+        : undefined
 
     // Validate project path
     if (projectSourcePath == null ||
         !fsUtilsService.isPathWithin(fullPath, projectSourcePath)) {
 
-      throw new CustomError(
-        `${fnName}: Invalid path: ${fullPath} for project source node: ` +
-        `${projectSourcePath}`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: Invalid path: ${fullPath} for project source ` +
+          `node: ${projectSourcePath}`
+      })
     }
 
     // Strip project path from fullPath prefix
@@ -49,14 +60,14 @@ export class SpecsPathGraphMutateService {
     // console.log(`${fnName}: dirs: ${dirs}`)
 
     // Get/create nodes for dirs
-    var dirSourceNode: SourceNode = projectSpecsNode
+    var dirSourceNode: SourceNodeRecord = projectSpecsNode
 
     for (const dir of dirs) {
 
       dirSourceNode = await
         specsGraphMutateService.getOrCreateSpecsDir(
-          prisma,
-          projectSpecsNode.instanceId,
+          store,
+          projectSpecsNode.projectId,
           dirSourceNode,
           dir)
     }
@@ -64,8 +75,8 @@ export class SpecsPathGraphMutateService {
     // Get/create nodes for the filename
     const filenameSourceNode = await
             specsGraphMutateService.getOrCreateSpecsFile(
-              prisma,
-              projectSpecsNode.instanceId,
+              store,
+              projectSpecsNode.projectId,
               dirSourceNode,
               filename,
               relativePath)

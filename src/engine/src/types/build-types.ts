@@ -1,4 +1,4 @@
-import { SourceNode } from '@/prisma/client.js'
+import type { SourceNodeRecord } from '@/core/records.js'
 import { ExtensionsData } from './source-graph-types.js'
 import { ProjectDetails } from './server-only-types.js'
 
@@ -19,7 +19,7 @@ export interface BuildFromFile {
   relativePath: string
   fileModifiedTime: Date
   content: string
-  fileNode: SourceNode
+  fileNode: SourceNodeRecord
   targetFileExt: string
   targetFullPath?: string
 }

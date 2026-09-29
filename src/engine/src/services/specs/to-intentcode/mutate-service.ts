@@ -1,36 +1,36 @@
+import { getModelId } from '@/services/intentcode/common/model-id.js'
 import fs from 'fs'
 import path from 'path'
-import { WalkDirService } from 'serene-core-server'
+import { IntentError } from '@/core/errors.js'
+import { walkDir, type WalkDirConfig } from '@/core/walk-dir.js'
 import { blake3 } from '@noble/hashes/blake3'
-import { AiModelService } from '@/services/ai/ai-model-service.js'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
 import { BuildData, BuildFromFile } from '@/types/build-types.js'
+import type { ProjectStore } from '@/core/store.js'
+import type { SourceNodeRecord } from '@/core/records.js'
 import { IntentCodeAiTasks, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
 import { SourceNodeGenerationData } from '@/types/source-graph-types.js'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model.js'
 import { FsUtilsService } from '@/services/utils/fs-utils-service.js'
 import { IntentCodeMessagesService } from '@/services/intentcode/common/messages-service.js'
 import { IntentCodeUpdaterMutateService } from '@/services/intentcode/updater/mutate-service.js'
-import { ProjectsQueryService } from '@/services/projects/query-service.js'
 import { SpecsGraphQueryService } from '@/services/graphs/specs/graph-query-service.js'
 import { SpecsLlmService } from './llm-service.js'
 import { SpecsPathGraphMutateService } from '@/services/graphs/specs/path-graph-mutate-service.js'
 import { SpecsToIntentCodePromptService } from './prompt-service.js'
+import { ProjectsQueryService } from '@/services/projects/query-service.js'
 
 // Models
 const sourceNodeGenerationModel = new SourceNodeGenerationModel()
 
 // Services
-const aiModelService = new AiModelService()
 const fsUtilsService = new FsUtilsService()
 const intentCodeMessagesService = new IntentCodeMessagesService()
 const intentCodeUpdaterMutateService = new IntentCodeUpdaterMutateService()
-const projectsQueryService = new ProjectsQueryService()
 const specsGraphQueryService = new SpecsGraphQueryService()
 const specsLlmService = new SpecsLlmService()
+const projectsQueryService = new ProjectsQueryService()
 const specsPathGraphMutateService = new SpecsPathGraphMutateService()
 const specsToIntentCodePromptService = new SpecsToIntentCodePromptService()
-const walkDirService = new WalkDirService()
 
 // Class
 export class SpecsToIntentCodeMutateService {
@@ -40,8 +40,8 @@ export class SpecsToIntentCodeMutateService {
 
   // Code
   async getExistingJsonContent(
-          prisma: PrismaClient,
-          projectSpecsNode: SourceNode,
+          store: ProjectStore,
+          projectSpecsNode: SourceNodeRecord,
           modelId: string,
           prompt: string) {
 
@@ -54,7 +54,7 @@ export class SpecsToIntentCodeMutateService {
     // Try to get existing SourceNodeGeneration
     const sourceNodeGeneration = await
             sourceNodeGenerationModel.getByUniqueKey(
-              prisma,
+              store,
               projectSpecsNode.id,
               modelId,
               promptHash)
@@ -70,9 +70,9 @@ export class SpecsToIntentCodeMutateService {
   }
 
   async processQueryResults(
-            prisma: PrismaClient,
+            store: ProjectStore,
             buildData: BuildData,
-            projectSpecsNode: SourceNode,
+            projectSpecsNode: SourceNodeRecord,
             sourceNodeGenerationData: SourceNodeGenerationData,
             jsonContent: any) {
 
@@ -89,7 +89,7 @@ export class SpecsToIntentCodeMutateService {
 
       // Process fileDelta
       await intentCodeUpdaterMutateService.processFileDeltas(
-        prisma,
+        store,
         buildData,
         jsonContent.intentCode)
     }
@@ -99,29 +99,30 @@ export class SpecsToIntentCodeMutateService {
   }
 
   async processSpecFilesWithLlm(
-          prisma: PrismaClient,
+          store: ProjectStore,
           buildData: BuildData,
-          projectSpecsNode: SourceNode,
+          projectSpecsNode: SourceNodeRecord,
           buildFromFiles: BuildFromFile[]) {
 
     // Debug
     const fnName = `${this.clName}.processSpecFilesWithLlm()`
 
     // The model id
-    const modelId = aiModelService.getModelId(IntentCodeAiTasks.compiler)
+    const modelId = await getModelId(IntentCodeAiTasks.compiler)
 
     // Get prompt
     const prompt = await
       specsToIntentCodePromptService.getPrompt(
-        prisma,
+        store,
         projectSpecsNode,
         buildData,
         buildFromFiles)
 
-    // Already generated?
-    var jsonContent = await
+    // Already generated? The value is whatever the model replied with, so it
+    // stays untyped until processQueryResults reads it.
+    var jsonContent: unknown = await
           this.getExistingJsonContent(
-            prisma,
+            store,
             projectSpecsNode,
             modelId,
             prompt)
@@ -131,7 +132,7 @@ export class SpecsToIntentCodeMutateService {
 
       const llmResults = await
               specsLlmService.llmRequest(
-                prisma,
+                store,
                 buildData,
                                 IntentCodeAiTasks.compiler,
                 prompt)
@@ -147,16 +148,16 @@ export class SpecsToIntentCodeMutateService {
 
     // Process the results
     await this.processQueryResults(
-            prisma,
+            store,
             buildData,
             projectSpecsNode,
             sourceNodeGenerationData,
             jsonContent)
   }
 
-  async run(prisma: PrismaClient,
+  async run(store: ProjectStore,
             buildData: BuildData,
-            projectNode: SourceNode) {
+            projectNode: SourceNodeRecord) {
 
     // Debug
     const fnName = `${this.clName}.run()`
@@ -166,14 +167,24 @@ export class SpecsToIntentCodeMutateService {
 
     // Get ProjectDetails
     const projectDetails =
-            projectsQueryService.getProjectDetailsByInstanceId(
-              projectNode.instanceId,
-              buildData.projects)
+      projectsQueryService.getProjectDetailsByProjectId(
+        projectNode.projectId,
+        buildData.projects)
+
+    // Get project intentcode node path
+    const projectIntentCodeJsonContent = projectDetails.projectIntentCodeNode.jsonContent
+    const projectIntentCodePath =
+      projectIntentCodeJsonContent != null &&
+      typeof projectIntentCodeJsonContent === 'object' &&
+      'path' in projectIntentCodeJsonContent &&
+      typeof projectIntentCodeJsonContent.path === 'string'
+        ? projectIntentCodeJsonContent.path
+        : undefined
 
     // Get project specs node
     const projectSpecsNode = await
             specsGraphQueryService.getSpecsProjectNode(
-              prisma,
+              store,
               projectNode)
 
     // Validate
@@ -182,7 +193,21 @@ export class SpecsToIntentCodeMutateService {
     }
 
     // Get specs path
-    const specsPath = (projectSpecsNode.jsonContent as any).path
+    const specsJsonContent = projectSpecsNode.jsonContent
+    const specsPath =
+      specsJsonContent != null && typeof specsJsonContent === 'object' &&
+      'path' in specsJsonContent && typeof specsJsonContent.path === 'string'
+        ? specsJsonContent.path
+        : undefined
+
+    // Validate
+    if (specsPath == null) {
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: specsPath == null`
+      })
+    }
 
     // Debug
     // console.log(`${fnName}: specsPath: ${specsPath}`)
@@ -190,7 +215,7 @@ export class SpecsToIntentCodeMutateService {
     // Walk dir
     var mdFilesList: string[] = []
 
-    await walkDirService.walkDir(
+    await walkDir(
             specsPath,
             mdFilesList,
             {
@@ -228,13 +253,13 @@ export class SpecsToIntentCodeMutateService {
       // Get/create the file's SourceNode
       const specFileNode = await
         specsPathGraphMutateService.getOrCreateSpecsPathAsGraph(
-          prisma,
+          store,
           projectSpecsNode,
           mdFilename)
 
       // Check if the file has been updated since last indexed
       if (specFileNode?.contentUpdated != null &&
-          specFileNode.contentUpdated <= fileModifiedTime) {
+          new Date(specFileNode.contentUpdated) <= fileModifiedTime) {
 
         console.log(`${fnName}: file: ${mdFilename} already processed`)
         return
@@ -250,7 +275,7 @@ export class SpecsToIntentCodeMutateService {
 
         // Determine target full path
         targetFullPath =
-          `${(projectDetails.projectIntentCodeNode.jsonContent as any).path}` +
+          `${projectIntentCodePath}` +
           `${path.sep}${relativePath}`
       }
 
@@ -277,7 +302,7 @@ export class SpecsToIntentCodeMutateService {
 
     // Process spec files
     await this.processSpecFilesWithLlm(
-            prisma,
+            store,
             buildData,
             projectSpecsNode,
             buildFromFiles)

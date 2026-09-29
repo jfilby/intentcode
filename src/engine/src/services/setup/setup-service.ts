@@ -1,159 +1,155 @@
-import { CustomError, ChatSettingsModel, UsersService } from 'serene-core-server'
-import { Instance, PrismaClient, UserProfile } from '@/prisma/client.js'
+/**
+ * Seeding a project.
+ *
+ * A project needs three things before it can be built: the agent identities a
+ * chat can be held with, the named chat settings those chats use, and a
+ * record of the engine version that last touched it. All three are derived
+ * from the engine, not chosen by the user, so they are written once and then
+ * left alone — a chat started against an agent keeps the agent it started
+ * with even after the engine's prompt for it changes.
+ *
+ * The System project is seeded too. It holds the bundled extensions every
+ * project inherits from, and it is the one project the engine seeds without
+ * being asked.
+ */
+
+import { createId } from '@/core/ids.js'
+import { IntentError } from '@/core/errors.js'
+import type { ProjectStore } from '@/core/store.js'
 import { BaseDataTypes } from '@/types/base-data-types.js'
 import { ServerOnlyTypes, VersionNames } from '@/types/server-only-types.js'
-import { ServerTestTypes } from '@/types/server-test-types.js'
 import { VersionModel } from '@/models/engine/version-model.js'
 import { AgentUserModel } from '@/models/agents/agent-user-model.js'
-import { AgentUserService } from '@/services/agents/agent-user-service.js'
-import { LoadExternalExtensionsService } from '../extensions/extension/load-external-service.js'
-import { ProjectsMutateService } from '../projects/mutate-service.js'
-import { ProjectsQueryService } from '../projects/query-service.js'
+import { LoadExternalExtensionsService } from
+  '../extensions/extension/load-external-service.js'
+import { ProjectRegistryService } from '../projects/project-registry.js'
 
 // Models
 const agentUserModel = new AgentUserModel()
-const chatSettingsModel = new ChatSettingsModel()
 const versionModel = new VersionModel()
 
 // Services
-const agentUserService = new AgentUserService()
 const loadExternalExtensionsService = new LoadExternalExtensionsService()
-const projectsMutateService = new ProjectsMutateService()
-const projectsQueryService = new ProjectsQueryService()
-const usersService = new UsersService()
+const projectRegistryService = new ProjectRegistryService()
 
-// Class
 export class SetupService {
 
-  // Consts
   clName = 'SetupService'
 
-  // Services
-  async chatSettingsSetup(
-          prisma: any,
-          userProfileId: string) {
+  /** The agent identities and the chat settings that name them. */
+  async chatSettingsSetup(store: ProjectStore) {
 
-    // Debug
-    const fnName = `${this.clName}.chatSettingsSetup()`
+    for (const agent of BaseDataTypes.agents) {
 
-    // Debug
-    console.log(`${fnName}: upserting ChatSettings record with ` +
-      `userProfileId: ${userProfileId}`)
+      await agentUserModel.upsert(
+        store,
+        agent.agentRefId,
+        agent.agentName,
+        agent.agentRole,
+        BaseDataTypes.maxPrevMessages,
+        null)  // defaultPrompt
+    }
 
-    // Upsert AgentUser records
-    await agentUserService.setup(prisma)
+    for (const settings of BaseDataTypes.chatSettings) {
 
-    // Upsert ChatSetting records
-    for (const chatSetting of BaseDataTypes.chatSettings) {
+      // The settings name an agent by its ref id, which is what the agent
+      // record is written under above.
+      const existing = await store.chatSettings.findFirst({
+        where: { name: settings.name }
+      })
 
-      // Get the tech and agent for the chat settings
-      const agentUser = await
-        agentUserModel.getByUniqueRefId(
-          prisma,
-          chatSetting.agentUniqueRef)
+      if (existing != null) continue
 
-      // Validate
-      if (agentUser == null) {
-        throw new CustomError(`${fnName}: agentUser == null`)
-      }
-
-      // Upsert ChatSettings
-      await chatSettingsModel.upsert(
-        prisma,
-        undefined,  // id
-        null,       // baseChatSettingsId
-        BaseDataTypes.activeStatus,
-        true,       // isEncryptedAtRest
-        chatSetting.isJsonMode,
-        true,       // isPinned
-        chatSetting.name,
-        agentUser.id,
-        null,       // prompt
-        null,       // appCustom
-        userProfileId)
+      await store.chatSettings.create({
+        data: {
+          id: createId(),
+          name: settings.name,
+          agentUniqueRefId: settings.agentUniqueRef,
+          isJsonMode: settings.isJsonMode,
+          prompt: null,
+          appCustom: null
+        }
+      })
     }
   }
 
-  async setup(prisma: PrismaClient) {
+  /**
+   * Seeds the System project: the agents, the chat settings, the engine
+   * version, and the bundled extensions the other projects inherit from.
+   */
+  async setupSystemProject(): Promise<void> {
 
-    // Get/create an admin user
-    const adminUserProfile = await
-      usersService.getOrCreateUserByEmail(
-        prisma,
-        ServerTestTypes.adminUserEmail,
-        undefined)  // defaultUserPreferences
+    const system = projectRegistryService.getSystemProject()
+    const store = projectRegistryService.getStore(system)
 
-    // Chat settings setup
-    await this.chatSettingsSetup(
-      prisma,
-      adminUserProfile.id)
+    await this.chatSettingsSetup(store)
 
-    // Setup base data
-    await this.setupBaseData(
-      prisma,
-      adminUserProfile)
-  }
+    await versionModel.upsert(
+      store,
+      undefined,
+      VersionNames.engine,
+      ServerOnlyTypes.engineVersion)
 
-  async setupIfRequired(prisma: PrismaClient) {
-
-    // Try to get the admin user profile
-    const adminUserProfile = await
-      usersService.getUserProfileByEmail(
-        prisma,
-        ServerTestTypes.adminUserEmail)
-
-    // Try to get the System project
-    var systemProject: Instance | undefined = undefined
-
-    if (adminUserProfile != null) {
-
-      systemProject = await
-        projectsQueryService.getProject(
-          prisma,
-          null,  // parentId
-          ServerOnlyTypes.systemProjectName)
-    }
-
-    // Run setup if not found
-    if (adminUserProfile == null ||
-        systemProject == null) {
-
-      await this.setup(prisma)
-    }
-  }
-
-  async setupBaseData(
-          prisma: PrismaClient,
-          adminUserProfile: UserProfile) {
-
-    // Debug
-    const fnName = `${this.clName}.setupBaseData()`
-
-    // Setup project
-    const systemProjectResults = await
-      projectsMutateService.getOrCreate(
-        prisma,
-        adminUserProfile.id,
-        ServerOnlyTypes.systemProjectName)
-
-    // Validate
-    if (systemProjectResults?.instance == null) {
-      throw new CustomError(
-        `${fnName}: systemProjectResults.instance == null: ` +
-        `${systemProjectResults?.message}`)
-    }
-
-    // Setup engine version
-    const engineVersion = await
-      versionModel.upsert(
-        prisma,
-        undefined,  // id
-        VersionNames.engine,
-        ServerOnlyTypes.engineVersion)
-
-    // Install bundled extensions
     await loadExternalExtensionsService.loadBundledExtensions(
-      prisma,
-      systemProjectResults.instance.id)
+      store,
+      system.id)
+  }
+
+  /**
+   * Seeds a user project. The bundled extensions are not copied here: a
+   * project reads them from the System project, and copying them is a
+   * deliberate action so a project can be pinned to a version.
+   */
+  async setupProject(store: ProjectStore, projectId: string): Promise<void> {
+
+    await this.chatSettingsSetup(store)
+
+    await versionModel.upsert(
+      store,
+      undefined,
+      VersionNames.engine,
+      ServerOnlyTypes.engineVersion)
+
+    void projectId
+  }
+
+  /**
+   * Seeds the System project when it has not been seeded, and the project the
+   * command is running in when there is one. Called on every start, so it has
+   * to be cheap when there is nothing to do.
+   */
+  async setupIfRequired(store: ProjectStore | undefined): Promise<void> {
+
+    await this.setupSystemProject()
+
+    if (store == null) return
+
+    const engine = await versionModel.getByUniqueKey(
+      store,
+      VersionNames.engine)
+
+    if (engine != null && engine.version === ServerOnlyTypes.engineVersion) {
+      return
+    }
+
+    // The engine version moved, so the project's agents and chat settings are
+    // brought up to date. Both writes leave an existing record alone.
+    await this.setupProject(store, '')
+  }
+
+  /** Re-runs every seed, for the Setup menu entry. */
+  async setup(store: ProjectStore | undefined): Promise<void> {
+
+    if (store == null) {
+      throw new IntentError({
+        category: 'ProjectError',
+        stage: `${this.clName}.setup()`,
+        message: 'run this from a project directory: there is nothing to set ' +
+          'up outside one'
+      })
+    }
+
+    await this.setupSystemProject()
+    await this.setupProject(store, '')
   }
 }

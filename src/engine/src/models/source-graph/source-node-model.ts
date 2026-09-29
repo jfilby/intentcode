@@ -1,506 +1,328 @@
-import { CustomError } from 'serene-core-server'
-import { PrismaClient } from '@/prisma/client.js'
-import { isPrismaNotFound } from '../prisma-error-utils.js'
+/**
+ * The source graph's nodes.
+ *
+ * A node is one thing the engine knows about a project: a spec file, a piece
+ * of indexed source, a build, a directory, an extension. Which kind it is
+ * lives in `type`, so one collection holds the whole graph rather than a
+ * table per kind.
+ */
+
+import { IntentError } from '@/core/errors.js'
+import type { NodeContent, SourceNodeWithRelations } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
+import { createId } from '@/core/ids.js'
+
+const ORDER_BY_UNIQUE_KEY = {
+  parentId: 'asc',
+  projectId: 'asc',
+  type: 'asc',
+  name: 'asc'
+} as const
 
 export class SourceNodeModel {
 
-  // Consts
   clName = 'SourceNodeModel'
 
-  // Code
   async create(
-          prisma: PrismaClient,
-          parentId: string | null,
-          instanceId: string,
-          status: string,
-          type: string,
-          name: string,
-          content: string | null,
-          contentHash: string | null,
-          jsonContent: any,
-          jsonContentHash: string | null,
-          contentUpdated: Date | null) {
+    store: ProjectStore,
+    parentId: string | null,
+    projectId: string,
+    status: string,
+    type: string,
+    name: string,
+    content: string | null,
+    contentHash: string | null,
+    jsonContent: NodeContent | null,
+    jsonContentHash: string | null,
+    contentUpdated: Date | null
+  ): Promise<SourceNodeWithRelations> {
 
-    // Debug
-    const fnName = `${this.clName}.create()`
-
-    // Validate
-    if (name != null &&
-        name.length === 0) {
-
-      throw new CustomError(`${fnName}: name.length === 0`)
-    }
-
-    // Create record
-    try {
-      return await prisma.sourceNode.create({
-        data: {
-          parentId: parentId,
-          instanceId: instanceId,
-          status: status,
-          type: type,
-          name: name,
-          content: content,
-          contentHash: contentHash,
-          jsonContent: jsonContent,
-          jsonContentHash: jsonContentHash,
-          contentUpdated: contentUpdated
-        }
+    if (name == null || name.length === 0) {
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: `${this.clName}.create()`,
+        message: 'name.length === 0'
       })
-    } catch(error) {
-      console.error(`${fnName}: error: ${error}`)
-      throw error
     }
+
+    const now = new Date().toISOString()
+
+    return await store.sourceNodes.create({
+      data: {
+        id: createId(),
+        parentId,
+        projectId,
+        status,
+        type,
+        name,
+        content,
+        contentHash,
+        jsonContent,
+        jsonContentHash,
+        contentUpdated: contentUpdated?.toISOString() ?? null,
+        created: now,
+        updated: now
+      }
+    })
   }
 
-  async deleteById(
-          prisma: PrismaClient,
-          id: string) {
+  /** A record that is already gone is not a failure; nothing depends on it. */
+  async deleteById(store: ProjectStore, id: string) {
+    return await store.sourceNodes.delete({ where: { id } })
+  }
 
-    // Debug
-    const fnName = `${this.clName}.deleteById()`
-
-    // Delete
-    try {
-      return await prisma.sourceNode.delete({
-        where: {
-          id: id
-        }
-      })
-    } catch(error: any) {
-      if (isPrismaNotFound(error) === false) {
-        console.error(`${fnName}: error: ${error}`)
-        throw 'Prisma error'
-      }
-    }
+  async deleteByProjectId(store: ProjectStore, projectId: string) {
+    return await store.sourceNodes.deleteMany({ where: { projectId } })
   }
 
   async filter(
-          prisma: PrismaClient,
-          parentId: string | null | undefined = undefined,
-          instanceId: string | undefined = undefined,
-          type: string | undefined = undefined,
-          name: string | undefined = undefined,
-          contentHash: string | null | undefined = undefined,
-          jsonContentHash: string | null | undefined = undefined,
-          orderByUniqueKey: boolean = false) {
+    store: ProjectStore,
+    parentId: string | null | undefined = undefined,
+    projectId: string | undefined = undefined,
+    type: string | undefined = undefined,
+    name: string | undefined = undefined,
+    contentHash: string | null | undefined = undefined,
+    jsonContentHash: string | null | undefined = undefined,
+    orderByUniqueKey: boolean = false
+  ): Promise<SourceNodeWithRelations[]> {
 
-    // Debug
-    const fnName = `${this.clName}.filter()`
-
-    // Query
-    try {
-      return await prisma.sourceNode.findMany({
-        where: {
-          parentId: parentId,
-          instanceId: instanceId,
-          type: type,
-          name: name,
-          contentHash: contentHash,
-          jsonContentHash: jsonContentHash
-        },
-        orderBy: orderByUniqueKey ? [
-          {
-            parentId: 'asc'
-          },
-          {
-            instanceId: 'asc'
-          },
-          {
-            type: 'asc'
-          },
-          {
-            name: 'asc'
-          }
-        ] : undefined
-      })
-    } catch(error: any) {
-      console.error(`${fnName}: error: ${error}`)
-      throw 'Prisma error'
-    }
+    return await store.sourceNodes.findMany({
+      where: {
+        parentId,
+        projectId,
+        type,
+        name,
+        contentHash,
+        jsonContentHash
+      },
+      orderBy: orderByUniqueKey ? ORDER_BY_UNIQUE_KEY : undefined
+    })
   }
 
+  /**
+   * Nodes of one type with their children of the given types attached. The
+   * graph services read a directory and its entries in one call rather than
+   * one call per directory.
+   */
   async filterWithChildNodes(
-          prisma: PrismaClient,
-          instanceId: string | undefined = undefined,
-          type: string | undefined = undefined,
-          childTypes: string[] | undefined) {
+    store: ProjectStore,
+    projectId: string | undefined = undefined,
+    type: string | undefined = undefined,
+    childTypes: string[] | undefined
+  ): Promise<SourceNodeWithRelations[]> {
 
-    // Debug
-    const fnName = `${this.clName}.filterWithChildNodes()`
+    const parents = await store.sourceNodes.findMany({
+      where: { projectId, type }
+    })
 
-    // Query
-    try {
-      return await prisma.sourceNode.findMany({
-        include: {
-          children: {
-            where: {
-              type: {
-                in: childTypes
-              }
-            }
-          }
-        },
-        where: {
-          instanceId: instanceId,
-          type: type,
-        }
-      })
-    } catch(error: any) {
-      console.error(`${fnName}: error: ${error}`)
-      throw 'Prisma error'
+    const out: SourceNodeWithRelations[] = []
+
+    for (const parent of parents) {
+      const children = childTypes == null
+        ? []
+        : await store.sourceNodes.findMany({
+          where: { parentId: parent.id, type: childTypes }
+        })
+      out.push({ ...parent, children })
     }
+
+    return out
   }
 
   async getById(
-          prisma: PrismaClient,
-          id: string) {
+    store: ProjectStore,
+    id: string
+  ): Promise<SourceNodeWithRelations | null> {
 
-    // Debug
-    const fnName = `${this.clName}.getById()`
-
-    // Query
-    var sourceNode: any = null
-
-    try {
-      sourceNode = await prisma.sourceNode.findUnique({
-        where: {
-          id: id
-        }
-      })
-    } catch(error: any) {
-      if (isPrismaNotFound(error) === false) {
-        console.error(`${fnName}: error: ${error}`)
-        throw 'Prisma error'
-      }
-    }
-
-    // Return
-    return sourceNode
+    return await store.sourceNodes.findFirst({ where: { id } })
   }
 
+  /**
+   * The node a set of names identifies. `parentId` is part of the key, so a
+   * name may repeat under different parents, and `null` is a real value here:
+   * a root node has no parent, and undefined would mean "any parent".
+   */
   async getByUniqueKey(
-          prisma: PrismaClient,
-          parentId: string | null,
-          instanceId: string,
-          type: string,
-          name: string) {
+    store: ProjectStore,
+    parentId: string | null,
+    projectId: string,
+    type: string,
+    name: string
+  ): Promise<SourceNodeWithRelations | null> {
 
-    // Debug
-    const fnName = `${this.clName}.getByUniqueKey()`
+    if (parentId === undefined ||
+        projectId == null ||
+        type == null ||
+        name == null) {
 
-    // console.log(`${fnName}: parentId: ${parentId} instanceId: ${instanceId} ` +
-    //             `type: ${type} name: ${name}`)
-
-    // Validate
-    if (parentId === undefined) {
-      console.error(`${fnName}: parentId === undefined`)
-      throw 'Validation error'
-    }
-
-    if (instanceId == null) {
-      console.error(`${fnName}: instanceId == null`)
-      throw 'Validation error'
-    }
-
-    if (type == null) {
-      console.error(`${fnName}: type == null`)
-      throw 'Validation error'
-    }
-
-    if (name == null) {
-      console.error(`${fnName}: name == null`)
-      throw 'Validation error'
-    }
-
-    // Query
-    var sourceNode: any = null
-
-    try {
-      sourceNode = await prisma.sourceNode.findFirst({
-        where: {
-          parentId: parentId,
-          instanceId: instanceId,
-          type: type,
-          name: name
-        }
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: `${this.clName}.getByUniqueKey()`,
+        message: 'a node key needs a parentId, projectId, type and name'
       })
-    } catch(error: any) {
-      if (isPrismaNotFound(error) === false) {
-        console.error(`${fnName}: error: ${error}`)
-        throw 'Prisma error'
-      }
     }
 
-    // Return
-    return sourceNode
+    return await store.sourceNodes.findFirst({
+      where: { parentId, projectId, type, name }
+    })
   }
 
   async getJsonContentByParentIdAndType(
-          prisma: PrismaClient,
-          parentId: string,
-          type: string,
-          includeParent: boolean = false,
-          orderByUniqueKey: boolean = false) {
-
-    // Debug
-    const fnName = `${this.clName}.getJsonContentByParentIdAndType()`
-
-    // Query
-    try {
-      return await prisma.sourceNode.findMany({
-        include: {
-          parent: includeParent
-        },
-        where: {
-          parentId: parentId,
-          type: type
-        },
-        // Order by the unique key fields (excluding those in the where clause)
-        orderBy: orderByUniqueKey ? [
-          {
-            parentId: 'asc'
-          },
-          {
-            name: 'asc'
-          }
-        ] : undefined
-      })
-    } catch(error: any) {
-      console.error(`${fnName}: error: ${error}`)
-      throw 'Prisma error'
-    }
-  }
-
-  async getOldest(
-    prisma: PrismaClient,
+    store: ProjectStore,
     parentId: string,
     type: string,
-    latestRecordsIgnored: number) {
+    includeParent: boolean = false,
+    orderByUniqueKey: boolean = false
+  ): Promise<SourceNodeWithRelations[]> {
 
-    // Debug
-    const fnName = `${this.clName}.getOldest()`
+    return await store.sourceNodes.findMany({
+      where: { parentId, type },
+      orderBy: orderByUniqueKey ? { name: 'asc' } : undefined,
+      include: includeParent ? { parent: true } : undefined
+    })
+  }
 
-    // Query
-    try {
-      return await prisma.sourceNode.findMany({
-        skip: latestRecordsIgnored,
-        where: {
-          parentId: parentId,
-          type: type
-        },
-        orderBy: [
-          {
-            created: 'desc'
-          }
-        ]
-      })
-    } catch(error: any) {
-      console.error(`${fnName}: error: ${error}`)
-      throw 'Prisma error'
-    }
+  /**
+   * Nodes of a type, newest first, past the ones a build already has. Used to
+   * age out old records without counting them in memory first.
+   */
+  async getOldest(
+    store: ProjectStore,
+    parentId: string,
+    type: string,
+    latestRecordsIgnored: number
+  ): Promise<SourceNodeWithRelations[]> {
+
+    const matched = await store.sourceNodes.findMany({
+      where: { parentId, type },
+      orderBy: { created: 'desc' }
+    })
+
+    return matched.slice(latestRecordsIgnored)
   }
 
   async setJsonContent(
-          prisma: PrismaClient,
-          id: string,
-          jsonContent: any | undefined,
-          jsonContentHash: string | null | undefined) {
+    store: ProjectStore,
+    id: string,
+    jsonContent: NodeContent | null,
+    jsonContentHash: string | null | undefined
+  ) {
 
-    // Debug
-    const fnName = `${this.clName}.setJsonContent()`
-
-    // Update record
-    try {
-      return await prisma.sourceNode.update({
-        data: {
-          jsonContent: jsonContent,
-          jsonContentHash: jsonContentHash,
-          contentUpdated: new Date()
-        },
-        where: {
-          id: id
-        }
-      })
-    } catch(error) {
-      console.error(`${fnName}: error: ${error}`)
-      throw 'Prisma error'
-    }
+    return await store.sourceNodes.update({
+      where: { id },
+      data: {
+        jsonContent,
+        jsonContentHash,
+        contentUpdated: new Date().toISOString(),
+        updated: new Date().toISOString()
+      }
+    })
   }
 
   async update(
-          prisma: PrismaClient,
-          id: string,
-          parentId: string | null | undefined,
-          instanceId: string | undefined,
-          status: string | undefined,
-          type: string | undefined,
-          name: string | undefined,
-          content: string | null | undefined,
-          contentHash: string | null | undefined,
-          jsonContent: any | undefined,
-          jsonContentHash: string | null | undefined,
-          contentUpdated: Date | null | undefined) {
+    store: ProjectStore,
+    id: string,
+    parentId: string | null | undefined,
+    projectId: string | undefined,
+    status: string | undefined,
+    type: string | undefined,
+    name: string | undefined,
+    content: string | null | undefined,
+    contentHash: string | null | undefined,
+    jsonContent: NodeContent | null,
+    jsonContentHash: string | null | undefined,
+    contentUpdated: Date | null | undefined
+  ) {
 
-    // Debug
-    const fnName = `${this.clName}.update()`
-
-    // Validate
-    if (name != null &&
-        name.length === 0) {
-
-      throw new CustomError(`${fnName}: name.length === 0`)
-    }
-
-    // Update record
-    try {
-      return await prisma.sourceNode.update({
-        data: {
-          parentId: parentId,
-          instanceId: instanceId,
-          status: status,
-          type: type,
-          name: name,
-          content: content,
-          contentHash: contentHash,
-          jsonContent: jsonContent,
-          jsonContentHash: jsonContentHash,
-          contentUpdated: contentUpdated
-        },
-        where: {
-          id: id
-        }
+    if (name != null && name.length === 0) {
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: `${this.clName}.update()`,
+        message: 'name.length === 0'
       })
-    } catch(error) {
-      console.error(`${fnName}: error: ${error}`)
-      throw 'Prisma error'
     }
+
+    return await store.sourceNodes.update({
+      where: { id },
+      data: {
+        parentId,
+        projectId,
+        status,
+        type,
+        name,
+        content,
+        contentHash,
+        jsonContent,
+        jsonContentHash,
+        contentUpdated: contentUpdated?.toISOString(),
+        updated: new Date().toISOString()
+      }
+    })
   }
 
+  /**
+   * Writes the node named by the key, creating it when there is none. A
+   * caller that knows only the key passes no id; one that has read the node
+   * passes its id and updates it directly.
+   */
   async upsert(
-          prisma: PrismaClient,
-          id: string | undefined,
-          parentId: string | null | undefined,
-          instanceId: string | undefined,
-          status: string | undefined,
-          type: string | undefined,
-          name: string | undefined,
-          content: string | null | undefined,
-          contentHash: string | null | undefined,
-          jsonContent: any | undefined,
-          jsonContentHash: string | null | undefined,
-          contentUpdated: Date | null | undefined) {
+    store: ProjectStore,
+    id: string | undefined,
+    parentId: string | null | undefined,
+    projectId: string | undefined,
+    status: string | undefined,
+    type: string | undefined,
+    name: string | undefined,
+    content: string | null | undefined,
+    contentHash: string | null | undefined,
+    jsonContent: NodeContent | null,
+    jsonContentHash: string | null | undefined,
+    contentUpdated: Date | null | undefined
+  ) {
 
-    // Debug
-    const fnName = `${this.clName}.upsert()`
-
-    // console.log(`${fnName}: starting with id: ` + JSON.stringify(id))
-
-    // If id isn't specified, but the unique keys are, try to get the record
     if (id == null &&
         parentId !== undefined &&
-        instanceId !== undefined &&
+        projectId !== undefined &&
         type != null &&
         name != null) {
 
-      const sourceNode = await
-              this.getByUniqueKey(
-                prisma,
-                parentId,
-                instanceId,
-                type,
-                name)
-
-      if (sourceNode != null) {
-        id = sourceNode.id
-      }
+      const existing = await this.getByUniqueKey(
+        store, parentId, projectId, type, name)
+      if (existing != null) id = existing.id
     }
 
-    // Upsert
-    if (id == null) {
-
-      // Validate for create (mainly for type validation of the create call)
-      if (parentId === undefined) {
-        console.error(`${fnName}: id is null and parentId is undefined`)
-        throw 'Prisma error'
-      }
-
-      if (instanceId === undefined) {
-        console.error(`${fnName}: id is null and instanceId is undefined`)
-        throw 'Prisma error'
-      }
-
-      if (status == null) {
-        console.error(`${fnName}: id is null and status is null`)
-        throw 'Prisma error'
-      }
-
-      if (type == null) {
-        console.error(`${fnName}: id is null and type is null`)
-        throw 'Prisma error'
-      }
-
-      if (name == null) {
-        console.error(`${fnName}: id is null and name is null`)
-        throw 'Prisma error'
-      }
-
-      if (content === undefined) {
-        console.error(`${fnName}: id is null and content is undefined`)
-        throw 'Prisma error'
-      }
-
-      if (contentHash === undefined) {
-        console.error(`${fnName}: id is null and contentHash is undefined`)
-        throw 'Prisma error'
-      }
-
-      if (jsonContent === undefined) {
-        console.error(`${fnName}: id is null and jsonContent is undefined`)
-        throw 'Prisma error'
-      }
-
-      if (jsonContentHash === undefined) {
-        console.error(`${fnName}: id is null and jsonContentHash is undefined`)
-        throw 'Prisma error'
-      }
-
-      if (contentUpdated === undefined) {
-        console.error(`${fnName}: id is null and contentUpdated is undefined`)
-        throw 'Prisma error'
-      }
-
-      // Create
-      return await
-               this.create(
-                 prisma,
-                 parentId,
-                 instanceId,
-                 status,
-                 type,
-                 name,
-                 content,
-                 contentHash,
-                 jsonContent,
-                 jsonContentHash,
-                 contentUpdated)
-    } else {
-
-      // Update
-      return await
-               this.update(
-                 prisma,
-                 id,
-                 parentId,
-                 instanceId,
-                 status,
-                 type,
-                 name,
-                 content,
-                 contentHash,
-                 jsonContent,
-                 jsonContentHash,
-                 contentUpdated)
+    if (id != null) {
+      return await this.update(
+        store, id, parentId, projectId, status, type, name, content,
+        contentHash, jsonContent, jsonContentHash, contentUpdated)
     }
+
+    if (parentId === undefined ||
+        projectId === undefined ||
+        status == null ||
+        type == null ||
+        name == null) {
+
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: `${this.clName}.upsert()`,
+        message: 'creating a node needs a parentId, projectId, status, type ' +
+          'and name',
+        detail: `got parentId: ${String(parentId)}, ` +
+          `projectId: ${String(projectId)}, status: ${String(status)}, ` +
+          `type: ${String(type)}, name: ${String(name)}`
+      })
+    }
+
+    // A field the caller did not name is undefined here, and create stores
+    // null for "no value". The defaults keep the two spellings of absence
+    // from reaching the record as different things.
+    return await this.create(
+      store, parentId, projectId, status, type, name,
+      content ?? null,
+      contentHash ?? null,
+      jsonContent,
+      jsonContentHash ?? null,
+      contentUpdated ?? null)
   }
 }

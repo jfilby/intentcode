@@ -1,7 +1,9 @@
 import fs from 'fs'
-import { CustomError, WalkDirService } from 'serene-core-server'
 import { blake3 } from '@noble/hashes/blake3'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
+import { walkDir } from '@/core/walk-dir.js'
 import { BaseDataTypes } from '@/types/base-data-types.js'
 import { SourceNodeTypes } from '@/types/source-graph-types.js'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
@@ -12,7 +14,6 @@ const sourceNodeModel = new SourceNodeModel()
 
 // Services
 const dependenciesMutateService = new DependenciesMutateService()
-const walkDirService = new WalkDirService()
 
 // Class
 export class LoadExternalHooksService {
@@ -22,27 +23,35 @@ export class LoadExternalHooksService {
 
   // Code
   async loadFromPath(
-          prisma: PrismaClient,
-          instanceId: string,
-          extensionNode: SourceNode,
+          store: ProjectStore,
+          projectId: string,
+          extensionNode: SourceNodeRecord,
           loadPath: string) {
 
     // Debug
     const fnName = `${this.clName}.loadFromPath()`
 
     // Validate
-    if (instanceId == null) {
-      throw new CustomError(`${fnName}: instanceId == null`)
+    if (projectId == null) {
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: 'projectId == null'
+      })
     }
 
     if (loadPath == null) {
-      throw new CustomError(`${fnName}: loadPath == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: 'loadPath == null'
+      })
     }
 
     // Walk dir for json files
     var jsonFiles: string[] = []
 
-    await walkDirService.walkDir(
+    await walkDir(
             loadPath,
             jsonFiles,
             {
@@ -54,17 +63,17 @@ export class LoadExternalHooksService {
     for (const jsonFile of jsonFiles) {
 
       await this.loadHooksJsonFile(
-              prisma,
-              instanceId,
+              store,
+              projectId,
               extensionNode,
               jsonFile)
     }
   }
 
   async loadHooksJsonFile(
-          prisma: PrismaClient,
-          instanceId: string,
-          extensionNode: SourceNode,
+          store: ProjectStore,
+          projectId: string,
+          extensionNode: SourceNodeRecord,
           fullPath: string) {
 
     // Output
@@ -82,16 +91,16 @@ export class LoadExternalHooksService {
 
     // Save the hooks
     await this.saveHooks(
-            prisma,
-            instanceId,
+            store,
+            projectId,
             extensionNode,
             hooksJson)
   }
 
   async saveHooks(
-          prisma: PrismaClient,
-          instanceId: string,
-          extensionNode: SourceNode,
+          store: ProjectStore,
+          projectId: string,
+          extensionNode: SourceNodeRecord,
           hooksJson: any) {
 
     // Debug
@@ -99,7 +108,11 @@ export class LoadExternalHooksService {
 
     // Validate
     if (hooksJson == null) {
-      throw new CustomError(`${fnName}: hooksJson == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: 'hooksJson == null'
+      })
     }
 
     if (hooksJson.name == null) {
@@ -118,10 +131,10 @@ export class LoadExternalHooksService {
     // Upsert hook node
     const hookNode = await
             sourceNodeModel.upsert(
-              prisma,
+              store,
               undefined,         // id
               extensionNode.id,  // parentId
-              instanceId,
+              projectId,
               BaseDataTypes.activeStatus,
               SourceNodeTypes.hooksType,
               hooksJson.name,    // name
@@ -133,8 +146,8 @@ export class LoadExternalHooksService {
   }
 
   async setDepsToolForProjects(
-          prisma: PrismaClient,
-          instanceId: string,
+          store: ProjectStore,
+          projectId: string,
           hooksJson: any) {
 
     // Debug
@@ -143,15 +156,15 @@ export class LoadExternalHooksService {
     // Get project nodes
     const projectNodes = await
             sourceNodeModel.filter(
-              prisma,
+              store,
               null,                     // parentId
-              instanceId,
+              projectId,
               SourceNodeTypes.project)  // type
 
     // Debug
     console.log(
       `${fnName}: setting up deps tool for ${projectNodes.length} projects ` +
-      `with instanceId: ${instanceId}..`)
+      `with projectId: ${projectId}..`)
 
     // Skip if no projects
     if (projectNodes.length === 0) {
@@ -167,25 +180,28 @@ export class LoadExternalHooksService {
       // console.log(`${fnName}: hooksJson: ` + JSON.stringify(hooksJson))
 
       // Use AI to infer a deps tool
-      throw new CustomError(
-        `${fnName}: using AI to infer deps tool is unimplemented`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: 'using AI to infer deps tool is unimplemented'
+      })
     }
 
     // Set deps tool for each project
     for (const projectNode of projectNodes) {
 
       await this.setPackageManagerForProject(
-              prisma,
-              instanceId,
+              store,
+              projectId,
               projectNode,
               packageManager)
     }
   }
 
   async setPackageManagerForProject(
-          prisma: PrismaClient,
-          instanceId: string,
-          projectNode: SourceNode,
+          store: ProjectStore,
+          projectId: string,
+          projectNode: SourceNodeRecord,
           packageManager: string) {
 
     // Debug
@@ -199,11 +215,12 @@ export class LoadExternalHooksService {
     // Get/create Deps node
     var depsNode = await
           dependenciesMutateService.getOrCreateDepsNode(
-            prisma,
+            store,
             projectNode)
 
     // Already set?
-    if (depsNode.jsonContent?.source?.packageManager === packageManager) {
+    if ((depsNode.jsonContent as any)?.source?.packageManager ===
+        packageManager) {
 
       console.log(
         `${fnName}: skipping, package manager already set as expected`)
@@ -217,27 +234,29 @@ export class LoadExternalHooksService {
     }
 
     // Set deps tool
-    if (depsNode.jsonContent.source == null) {
-      depsNode.jsonContent.source = {}
+    const depsNodeJson = depsNode.jsonContent as any
+
+    if (depsNodeJson.source == null) {
+      depsNodeJson.source = {}
     }
 
-    depsNode.jsonContent.source.packageManager = packageManager
+    depsNodeJson.source.packageManager = packageManager
 
     // Debug
     // console.log(`${fnName}: depsNode.jsonContent: ` +
     //             JSON.stringify(depsNode.jsonContent))
 
     // Get jsonContentHash
-    depsNode.jsonContentHash =
-      blake3(JSON.stringify(depsNode.jsonContent)).toString()
+    const depsNodeJsonHash =
+      blake3(JSON.stringify(depsNodeJson)).toString()
 
     // Save node
     depsNode = await
       sourceNodeModel.setJsonContent(
-        prisma,
+        store,
         depsNode.id,
-        depsNode.jsonContent,
-        depsNode.jsonContentHash)
+        depsNodeJson,
+        depsNodeJsonHash)
 
     // Debug
     // console.log(`${fnName}: updated depsNode with id: ${depsNode.id}`)

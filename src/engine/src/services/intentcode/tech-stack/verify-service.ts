@@ -1,4 +1,5 @@
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { ProjectStore } from '@/core/store.js'
+import { SourceNodeRecord } from '@/core/records.js'
 import { BuildData } from '@/types/build-types.js'
 import { ProjectsQueryService } from '@/services/projects/query-service.js'
 import { TechStackQueryService } from './query-service.js'
@@ -15,15 +16,18 @@ export class TechStackVerifyService {
 
   // Code
   async verify(
-    prisma: PrismaClient,
+    store: ProjectStore,
     buildData: BuildData,
-    projectNode: SourceNode) {
+    projectNode: SourceNodeRecord) {
+
+    // Debug
+    const fnName = `${this.clName}.verify()`
 
     // Get ProjectDetails
     const projectDetails =
-            projectsQueryService.getProjectDetailsByInstanceId(
-              projectNode.instanceId,
-              buildData.projects)
+      projectsQueryService.getProjectDetailsByProjectId(
+        projectNode.projectId,
+        buildData.projects)
 
     // Get tech-stack filename
     const { intentCodePath, techStackFilename } = await

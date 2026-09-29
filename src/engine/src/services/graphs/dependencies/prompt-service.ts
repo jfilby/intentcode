@@ -1,4 +1,5 @@
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { DepDeltaNames, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
 import { DependenciesQueryService } from './query-service.js'
 
@@ -13,9 +14,9 @@ export class DependenciesPromptService {
 
   // Code
   async getDepsPrompting(
-          prisma: PrismaClient,
-          projectIntentCodeNode: SourceNode,
-          intentFileNode: SourceNode,
+          store: ProjectStore,
+          projectIntentCodeNode: SourceNodeRecord,
+          intentFileNode: SourceNodeRecord,
           sourceFileRelativePath?: string) {
 
     // Debug
@@ -24,7 +25,7 @@ export class DependenciesPromptService {
     // Try to get deps node
     const depsNode = await
             dependenciesQueryService.getDepsNode(
-              prisma,
+              store,
               projectIntentCodeNode)
 
     // Get jsonContent
@@ -88,7 +89,7 @@ export class DependenciesPromptService {
 
   getProjectDepsPrompting(
     depsJsonContent: any,
-    projectIntentCodeNode: SourceNode) {
+    projectIntentCodeNode: SourceNodeRecord) {
 
     // Debug
     const fnName = `${this.clName}.getProjectDepsPrompting()`

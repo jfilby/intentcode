@@ -32,6 +32,9 @@ export class BaseDataTypes {
   static coderAgentName = 'Coder'
   static coderAgentRole = 'Talk to users'
 
+  // How much of a chat's history an agent is given on each turn
+  static maxPrevMessages = 10
+
   static agents = [
     {
       agentRefId: this.batchAgentRefId,

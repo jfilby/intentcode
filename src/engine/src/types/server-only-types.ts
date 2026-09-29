@@ -1,4 +1,4 @@
-import { Instance, SourceNode } from '@/prisma/client.js'
+import type { ProjectRecord, SourceNodeRecord } from '@/core/records.js'
 
 export enum CompilerMetaDataApproachs {
   analyzer = 'analyzer',
@@ -89,9 +89,6 @@ export enum FileOps {
   del = 'del'
 }
 
-export enum InstanceSettingNames {
-  projectPath = 'Project path'
-}
 
 export enum MessageTypes {
   errors = 'errors',
@@ -124,12 +121,22 @@ export interface ProjectDetails {
   // Indents relative to project hierarchy
   indents: number
 
-  // Project objects
-  instance: Instance
-  projectNode: SourceNode
-  dotIntentCodeProjectNode: SourceNode
-  projectSpecsNode: SourceNode
-  projectIntentCodeNode: SourceNode
-  projectSourceNode: SourceNode
-  projectIntentCodeAnalysisNode: SourceNode
+  // The project and the nodes every build needs. A build cannot run without
+  // these, so they are read as required.
+  project: ProjectRecord
+  projectNode: SourceNodeRecord
+  projectIntentCodeNode: SourceNodeRecord
+  projectSourceNode: SourceNodeRecord
+
+  // Nodes that exist only for some projects. The specs node is only ever
+  // read, never created, and the config-directory node is absent for a
+  // project with no .intentcode directory; both consumers already handle
+  // their absence. Making them non-null would mean inventing a path for the
+  // specs node, which would start the specs stage walking and rewriting
+  // Intent files across a project that has no specs set up.
+  dotIntentCodeProjectNode: SourceNodeRecord | null
+  projectSpecsNode: SourceNodeRecord | null
+
+  // Present once the analyzer has run over the project.
+  projectIntentCodeAnalysisNode: SourceNodeRecord | null
 }

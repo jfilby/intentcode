@@ -1,8 +1,8 @@
-import { CustomError } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import type { ProjectStore } from '@/core/store.js'
+import type { SourceNodeRecord } from '@/core/records.js'
 import { BuildData, BuildFromFile } from '@/types/build-types.js'
 import { IntentCodeCommonTypes } from '@/services/intentcode/common/types.js'
-import { FileOps, ServerOnlyTypes } from '@/types/server-only-types.js'
+import { ServerOnlyTypes } from '@/types/server-only-types.js'
 import { CompilerQueryService } from '@/services/intentcode/compiler/code/query-service.js'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service.js'
 import { IntentCodePromptingService } from '@/services/intentcode/build/prompting-service.js'
@@ -22,8 +22,8 @@ export class SpecsToIntentCodePromptService {
 
   // Code
   async getPrompt(
-          prisma: PrismaClient,
-          projectSpecsNode: SourceNode,
+          store: ProjectStore,
+          projectSpecsNode: SourceNodeRecord,
           buildData: BuildData,
           buildFromFiles: BuildFromFile[]) {
 
@@ -95,7 +95,12 @@ export class SpecsToIntentCodePromptService {
       `\n`
 
     // Iterate spec files
-    const specsPath = (projectSpecsNode.jsonContent as any).path
+    const jsonContent = projectSpecsNode.jsonContent
+    const specsPath =
+      jsonContent != null && typeof jsonContent === 'object' &&
+      'path' in jsonContent && typeof jsonContent.path === 'string'
+        ? jsonContent.path
+        : ''
 
     for (const buildFromFile of buildFromFiles) {
 
@@ -121,14 +126,15 @@ export class SpecsToIntentCodePromptService {
     if (buildData.projects != null) {
 
       prompt +=
-        projectsQueryService.getProjectsPrompting(buildData.projects)
+        projectsQueryService.getProjectsPrompting(
+          buildData.projects)
     }
 
     // Add installed extensions
     const projectExtensionsPrompting = await
             extensionQueryService.getAsPrompting(
-              prisma,
-              projectSpecsNode.instanceId)
+              store,
+              projectSpecsNode.projectId)
 
     if (projectExtensionsPrompting != null) {
 

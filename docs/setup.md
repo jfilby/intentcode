@@ -1,60 +1,125 @@
 # Setup
 
+## Project configuration
+
+A project is a directory containing an `intent.toml`. There is nothing to
+register: create the file and the directory is a project. The engine finds the
+project for a command by walking up from the working directory, so running it
+anywhere inside a project binds to that project.
+
+A minimal `intent.toml`:
+
+```toml
+name = "my-app"
+```
+
+Everything else is optional:
+
+```toml
+name = "my-app"
+
+# The slug the project is addressed by. Defaults to the name.
+key = "my-app"
+
+# Your framework and preferred libraries. This is the tech stack the compiler
+# builds against.
+techStack = """
+Next.js 16, TypeScript 5.9, Postgres via Prisma
+"""
+
+# Extension directories to load into this project.
+extensions = ["./extensions"]
+
+# The model every AI task uses.
+[model]
+provider = "google"
+model = "gemini-3.1-pro-preview"
+
+# A different model for one AI task.
+[models.compiler]
+provider = "openai"
+model = "gpt-5"
+```
+
+The compiler and the indexer are separate AI tasks, so `[models.compiler]` and
+`[models.indexer]` let a project run them on different models.
+
+Run `intent` and select `Info` to see the project the engine resolved, the
+state directory it will use, and the model each AI task resolved to.
+
+
 ## Setup AI
 
-IntentCode talks to any OpenAI-compatible chat-completions endpoint through
-the Vercel AI SDK. The model is chosen in the environment, not in a database
-table or a menu.
+IntentCode talks to models through the Vercel AI SDK. The credentials come
+from the environment; the choice of model comes from the project's
+`intent.toml`, falling back to the environment.
 
-Put these in `src/engine/.env`:
-
-```sh
-# The key for the endpoint
-INTENTCODE_AI_API_KEY=
-
-# Any OpenAI-compatible endpoint. The default serves the free Gemini tier.
-INTENTCODE_AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
-
-# The model id to request from that endpoint
-INTENTCODE_AI_MODEL=gemini-3.1-pro-preview
-```
-
-The compiler and the indexer run as separate AI tasks, so they can use
-different models. Set a per-task variable to override the shared one:
+Put the key in `src/engine/.env`:
 
 ```sh
-INTENTCODE_AI_COMPILER_MODEL=
-INTENTCODE_AI_INDEXER_MODEL=
+AI_API_KEY=
 ```
 
-Run `intent` and select `Info` from the main menu to see which model each AI
-task resolves to.
+To use a provider's own key instead of the generic one:
+
+```sh
+OPENAI_API_KEY=
+ANTHROPIC_API_KEY=
+GOOGLE_GENERATIVE_AI_API_KEY=
+OPENROUTER_API_KEY=
+```
+
+A model with no `[model]` table in `intent.toml` is taken from the
+environment:
+
+```sh
+AI_MODEL=google/gemini-3.1-pro-preview
+```
+
+The value is `provider/model`. The providers are `openai`, `anthropic`,
+`google`, `openrouter` and `openai-compatible`.
 
 ### Pointing at a different provider
 
-Any service that speaks the OpenAI chat-completions API works, including
-OpenAI, OpenRouter, LiteLLM, and a local vLLM server. Change
-`INTENTCODE_AI_BASE_URL`, `INTENTCODE_AI_API_KEY` and `INTENTCODE_AI_MODEL` to
-match that provider's values.
+Anything that speaks the OpenAI chat-completions API works, including LiteLLM
+and a local vLLM server. Use the `openai-compatible` provider and name the
+endpoint:
+
+```sh
+AI_MODEL=openai-compatible/my-model
+AI_BASE_URL=http://localhost:8000/v1
+AI_API_KEY=anything
+```
+
+For OpenRouter, attribution headers are sent when these are set:
+
+```sh
+OPENROUTER_SITE_URL=https://example.com
+OPENROUTER_APP_NAME=MyApp
+```
 
 
-## Run the IntentCode engine
+## Running
 
-To run: `npm run ic`
-Or to run with dev checks (slower): `npm run ic-dev`
+To run the cli: `npm run cli` from `src/engine`.
+For an install: `npm install -g intentcode-compiler`, then run `intent`.
 
 
 ## Upgrading an existing install
 
-The `llm_cache` and `source_node_generation` tables changed shape: the model
-is now identified by a model id string instead of a row in the old model
-catalogue, and the `ai_task` / `ai_task_tech` tables are gone. A database
-created by an earlier version cannot be migrated in place, so delete it and let
-the engine recreate it from the bundled seed on the next run:
+The engine no longer uses a database. Everything it derived for a project used
+to live in a SQLite file; it now lives under `.intent/` in the project
+directory, and the projects themselves used to be rows in a table; they are now
+the directories holding an `intent.toml`.
+
+The old database can be deleted. It is not read by any version of the engine
+from this release on:
 
 - Linux: `~/.local/share/IntentCode/data.db`
 - macOS: `~/Library/Application Support/IntentCode/data.db`
 - Windows: `%APPDATA%\IntentCode\data.db`
 
-The project graph and the chat history in that file are lost, so re-run a build
-after upgrading.
+A project that was registered before the upgrade is no longer registered,
+because registration was the database row. Create an `intent.toml` in the
+project directory to make it a project again; the source, the Intent files and
+the extensions in the directory are untouched by the upgrade.

@@ -1,5 +1,6 @@
-import { CustomError } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { FsUtilsService } from '../../utils/fs-utils-service.js'
 import { SourceCodeGraphMutateService } from './graph-mutate-service.js'
 import { SourceNodeGenerationData } from '@/types/source-graph-types.js'
@@ -16,8 +17,8 @@ export class SourceCodePathGraphMutateService {
 
   // Code
   async upsertSourceCodePathAsGraph(
-          prisma: PrismaClient,
-          projectSourceNode: SourceNode,
+          store: ProjectStore,
+          projectSourceNode: SourceNodeRecord,
           fullPath: string,
           content: string,
           sourceNodeGenerationData: SourceNodeGenerationData) {
@@ -26,15 +27,25 @@ export class SourceCodePathGraphMutateService {
     const fnName = `${this.clName}.upsertSourceCodePathAsGraph()`
 
     // Get project source path
-    const projectSourcePath = (projectSourceNode.jsonContent as any)?.path
+    const jsonContent = projectSourceNode.jsonContent
+    const projectSourcePath =
+      jsonContent != null &&
+      typeof jsonContent === 'object' &&
+      'path' in jsonContent &&
+      typeof jsonContent.path === 'string'
+        ? jsonContent.path
+        : undefined
 
     // Validate project path
     if (projectSourcePath == null ||
         !fsUtilsService.isPathWithin(fullPath, projectSourcePath)) {
 
-      throw new CustomError(
-        `${fnName}: Invalid path: ${fullPath} for project source node: ` +
-        `${projectSourcePath}`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: Invalid path: ${fullPath} for project source ` +
+          `node: ${projectSourcePath}`
+      })
     }
 
     // Strip project path from fullPath prefix
@@ -52,14 +63,14 @@ export class SourceCodePathGraphMutateService {
     // console.log(`${fnName}: dirs: ${dirs}`)
 
     // Get/create nodes for dirs
-    var dirSourceNode: SourceNode = projectSourceNode
+    var dirSourceNode: SourceNodeRecord = projectSourceNode
 
     for (const dir of dirs) {
 
       dirSourceNode = await
         sourceCodeGraphMutateService.getOrCreateSourceCodeDir(
-          prisma,
-          projectSourceNode.instanceId,
+          store,
+          projectSourceNode.projectId,
           dirSourceNode,
           dir)
     }
@@ -67,8 +78,8 @@ export class SourceCodePathGraphMutateService {
     // Get/create nodes for the filename
     const filenameSourceNode = await
             sourceCodeGraphMutateService.upsertSourceCodeFile(
-              prisma,
-              projectSourceNode.instanceId,
+              store,
+              projectSourceNode.projectId,
               dirSourceNode,
               filename,
               content,

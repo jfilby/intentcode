@@ -1,4 +1,5 @@
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types.js'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
 
@@ -13,8 +14,8 @@ export class SpecsGraphQueryService {
 
   // Code
   async getSpecsProjectNode(
-          prisma: PrismaClient,
-          projectNode: SourceNode) {
+          store: ProjectStore,
+          projectNode: SourceNodeRecord) {
 
     // Debug
     const fnName = `${this.clName}.getSpecsProjectNode()`
@@ -22,9 +23,9 @@ export class SpecsGraphQueryService {
     // Get the node
     var specsProjectNode = await
           sourceNodeModel.getByUniqueKey(
-            prisma,
+            store,
             projectNode.id,  // parentId
-            projectNode.instanceId,
+            projectNode.projectId,
             SourceNodeTypes.projectSpecs,
             SourceNodeNames.projectSpecs)
 

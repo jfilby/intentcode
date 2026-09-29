@@ -1,5 +1,8 @@
-import { CustomError } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import path from 'path'
+import { IntentError } from '@/core/errors.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { BuildData, BuildStage, BuildStageType, IntentFileBuild } from '@/types/build-types.js'
 import { CompilerMetaDataApproachs, ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types.js'
 import { SourceNodeTypes } from '@/types/source-graph-types.js'
@@ -8,22 +11,36 @@ import { DeleteBuildService } from './delete-service.js'
 import { DepsSyncService } from '@/services/managed-files/deps/sync-service.js'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service.js'
 import { IntentCodeAnalyzerMutateService } from '../analyzer/mutate-service.js'
-import { ProjectsQueryService } from '@/services/projects/query-service.js'
 import { ProjectCompileService } from '@/services/projects/compile-service.js'
+import { ProjectRegistryService } from '@/services/projects/project-registry.js'
 import { ProjectVerifyService } from '@/services/projects/verify-service.js'
 import { TechStackMutateService } from '@/services/intentcode/tech-stack/mutate-service.js'
+import { BuildsGraphMutateService } from '@/services/graphs/builds/mutate-service.js'
+import { DotIntentCodeGraphQueryService } from '@/services/graphs/dot-intentcode/graph-query-service.js'
+import { IntentCodeAnalysisGraphMutateService } from '@/services/graphs/intentcode-analysis/mutate-service.js'
+import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service.js'
+import { ProjectGraphQueryService } from '@/services/graphs/project/query-service.js'
+import { SourceCodeGraphMutateService } from '@/services/graphs/source-code/graph-mutate-service.js'
+import { SpecsGraphQueryService } from '@/services/graphs/specs/graph-query-service.js'
 
 // Models
 const sourceNodeModel = new SourceNodeModel()
 
 // Services
+const buildsGraphMutateService = new BuildsGraphMutateService()
 const deleteBuildService = new DeleteBuildService()
 const depsSyncService = new DepsSyncService()
+const dotIntentCodeGraphQueryService = new DotIntentCodeGraphQueryService()
 const extensionQueryService = new ExtensionQueryService()
+const intentCodeAnalysisGraphMutateService = new IntentCodeAnalysisGraphMutateService()
 const intentCodeAnalyzerMutateService = new IntentCodeAnalyzerMutateService()
+const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
 const projectCompileService = new ProjectCompileService()
-const projectsQueryService = new ProjectsQueryService()
+const projectGraphQueryService = new ProjectGraphQueryService()
+const projectRegistryService = new ProjectRegistryService()
 const projectVerifyService = new ProjectVerifyService()
+const sourceCodeGraphMutateService = new SourceCodeGraphMutateService()
+const specsGraphQueryService = new SpecsGraphQueryService()
 const techStackMutateService = new TechStackMutateService()
 
 // Class
@@ -102,9 +119,102 @@ export class BuildMutateService {
     return buildStages
   }
 
+  /**
+   * The nodes a build needs for one project, read from or created in that
+   * project's own store.
+   */
+  async createProjectDetails(
+          store: ProjectStore,
+          indents: number,
+          project: ProjectRecord) {
+
+    // Debug
+    const fnName = `${this.clName}.createProjectDetails()`
+
+    // Get ProjectNode
+    const projectNode = await
+            projectGraphQueryService.getProjectNode(
+              store,
+              project.id)
+
+    // Validate
+    if (projectNode == null) {
+      throw new IntentError({
+        category: 'StorageError',
+        stage: fnName,
+        message: `${fnName}: projectNode == null`,
+        detail: `the project ${project.key} has no Project node`
+      })
+    }
+
+    // Determine paths
+    const projectPath = project.path
+    const intentPath = `${projectPath}${path.sep}intent`
+    const srcPath = `${projectPath}`
+
+    // Get DotIntentCodeProjectNode
+    const dotIntentCodeProjectNode = await
+      dotIntentCodeGraphQueryService.getDotIntentCodeProject(
+        store,
+        projectNode)
+
+    // Get ProjectSpecsNode
+    const projectSpecsNode = await
+      specsGraphQueryService.getSpecsProjectNode(
+        store,
+        projectNode)
+
+    // Get/create builds node
+    const buildsNode = await
+     buildsGraphMutateService.getOrCreateBuildsNode(
+      store,
+      projectNode)
+
+    // Create a new build node
+    const buildNode = await
+      buildsGraphMutateService.createBuildNode(
+        store,
+        buildsNode)
+
+    // Get or create ProjectIntentCodeNode
+    const projectIntentCodeNode = await
+      intentCodeGraphMutateService.getOrCreateIntentCodeProjectNode(
+        store,
+        buildNode,
+        intentPath)
+
+    // Get or create ProjectSourceNode
+    const projectSourceNode = await
+      sourceCodeGraphMutateService.getOrCreateSourceCodeProject(
+        store,
+        buildNode,
+        srcPath)
+
+    // Get or create ProjectIntentCodeAnalysisNode
+    const projectIntentCodeAnalysisNode = await
+      intentCodeAnalysisGraphMutateService.getOrCreateProjectIntentCodeAnalysisNode(
+        store,
+        buildNode)
+
+    // Define ProjectDetails
+    const projectDetails: ProjectDetails = {
+      indents: indents,
+      project: project,
+      projectNode: projectNode,
+      dotIntentCodeProjectNode: dotIntentCodeProjectNode,
+      projectSpecsNode: projectSpecsNode,
+      projectIntentCodeNode: projectIntentCodeNode,
+      projectSourceNode: projectSourceNode,
+      projectIntentCodeAnalysisNode: projectIntentCodeAnalysisNode
+    }
+
+    // Return
+    return projectDetails
+  }
+
   async initBuildData(
-          prisma: PrismaClient,
-          instanceId: string): Promise<BuildData> {
+          store: ProjectStore,
+          projectId: string): Promise<BuildData> {
 
     // Debug
     const fnName = `${this.clName}.initBuildData()`
@@ -116,29 +226,47 @@ export class BuildMutateService {
     // Initial builds array
     const buildStages: BuildStage[] = []
 
-    // Get numbered projects map
-    const projects: Record<number, ProjectDetails> = {}
+    // The project being built. A project is a directory, so the store already
+    // names it and its intent.toml is the one record of it.
+    const project = await
+      projectRegistryService.getProjectByRoot(store.projectPath)
 
-    await projectsQueryService.createProjectsList(
-      prisma,
-      instanceId,
-      undefined,  // instance
-      projects)
+    // Validate
+    if (project.id !== projectId) {
+
+      throw new IntentError({
+        category: 'ProjectError',
+        stage: fnName,
+        message: `${fnName}: the store holds ${project.key}, not ` +
+          `${projectId}`,
+        detail: `store.projectPath: ${store.projectPath}`
+      })
+    }
+
+    // Get numbered projects map. A project is its own root, so a project
+    // nested inside another is a separate build rather than a child of this
+    // one.
+    const projects: Record<number, ProjectDetails> = {
+      1: await this.createProjectDetails(store, 0, project)
+    }
 
     // Load extensions
     const extensionsData = await
       extensionQueryService.loadExtensions(
-        prisma,
-        instanceId)
+        store,
+        projectId)
 
     // Validate
     if (extensionsData == null) {
-      throw new CustomError(`${fnName}: extensionsData == null`)
+      throw new IntentError({
+        category: 'StorageError',
+        stage: fnName,
+        message: `${fnName}: extensionsData == null`
+      })
     }
 
     // Delete old build graphs
     await deleteBuildService.deleteOldBuildGraphs(
-      prisma,
       projects)
 
     // Create BuildData
@@ -155,8 +283,8 @@ export class BuildMutateService {
   }
 
   async runBuild(
-          prisma: PrismaClient,
-          instanceId: string,
+          store: ProjectStore,
+          projectId: string,
           projectName: string) {
 
     // Debug
@@ -165,22 +293,26 @@ export class BuildMutateService {
     // Get IntentCode project node
     const projectNode = await
             sourceNodeModel.getByUniqueKey(
-              prisma,
+              store,
               null,                     // parentId
-              instanceId,
+              projectId,
               SourceNodeTypes.project,  // type
               projectName)
 
     // Validate
     if (projectNode == null) {
-      throw new CustomError(`${fnName}: projectNode == null`)
+      throw new IntentError({
+        category: 'StorageError',
+        stage: fnName,
+        message: `${fnName}: projectNode == null`
+      })
     }
 
     // Init BuildData
     const buildData = await
             this.initBuildData(
-              prisma,
-              instanceId)
+              store,
+              projectId)
 
     // Debug
     // console.log(`${fnName}: buildData: ` + JSON.stringify(buildData))
@@ -192,15 +324,15 @@ export class BuildMutateService {
 
       nextIter = await
         this.runNextBuildStage(
-          prisma,
+          store,
           projectNode,
           buildData)
     }
   }
 
   async runBuildStage(
-          prisma: PrismaClient,
-          projectNode: SourceNode,
+          store: ProjectStore,
+          projectNode: SourceNodeRecord,
           buildData: BuildData) {
 
     // Debug
@@ -215,7 +347,7 @@ export class BuildMutateService {
       case BuildStageType.defineTechStack: {
 
         await techStackMutateService.processTechStack(
-          prisma,
+          store,
           buildData,
           projectNode)
 
@@ -225,7 +357,7 @@ export class BuildMutateService {
       case BuildStageType.intentCodeAnalyzer: {
 
         await intentCodeAnalyzerMutateService.run(
-          prisma,
+          store,
           buildData,
           projectNode)
 
@@ -235,7 +367,7 @@ export class BuildMutateService {
       case BuildStageType.updateDeps: {
 
         await depsSyncService.update(
-          prisma,
+          store,
           buildData,
           projectNode)
 
@@ -245,7 +377,7 @@ export class BuildMutateService {
       case BuildStageType.index: {
 
         await projectCompileService.runIndexBuildStage(
-          prisma,
+          store,
           buildData,
           projectNode)
 
@@ -255,7 +387,7 @@ export class BuildMutateService {
       case BuildStageType.compile: {
 
         await projectCompileService.runCompileBuildStage(
-          prisma,
+          store,
           buildData,
           projectNode)
 
@@ -265,7 +397,7 @@ export class BuildMutateService {
       case BuildStageType.verifyInternals: {
 
         await projectVerifyService.run(
-          prisma,
+          store,
           buildData,
           projectNode)
 
@@ -273,14 +405,19 @@ export class BuildMutateService {
       }
 
       default: {
-        throw new CustomError(`${fnName}: invalid buildStageType: ${buildStage.buildStageType}`)
+        throw new IntentError({
+          category: 'CompilerError',
+          stage: fnName,
+          message: `${fnName}: invalid buildStageType: ` +
+            `${buildStage.buildStageType}`
+        })
       }
     }
   }
 
   async runNextBuildStage(
-          prisma: PrismaClient,
-          projectNode: SourceNode,
+          store: ProjectStore,
+          projectNode: SourceNodeRecord,
           buildData: BuildData) {
 
     // Create the next build if one is required
@@ -294,7 +431,7 @@ export class BuildMutateService {
 
     // Run the build stage
     await this.runBuildStage(
-            prisma,
+            store,
             projectNode,
             buildData)
 

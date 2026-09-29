@@ -1,6 +1,6 @@
 import fs from 'fs'
-import { CustomError } from 'serene-core-server'
-import { PrismaClient } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import { ProjectStore } from '@/core/store.js'
 import { BuildData } from '@/types/build-types.js'
 import { FileDelta, FileOps, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
 import { FsUtilsService } from '@/services/utils/fs-utils-service.js'
@@ -20,7 +20,7 @@ export class IntentCodeUpdaterMutateService {
 
   // Code
   async processFileDelta(
-    prisma: PrismaClient,
+    store: ProjectStore,
     buildData: BuildData,
     fileDelta: FileDelta) {
 
@@ -40,12 +40,29 @@ export class IntentCodeUpdaterMutateService {
 
     // Validate
     if (projectDetails == null) {
-      throw new CustomError(`${fnName}: projectDetails == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: projectDetails == null`
+      })
     }
 
     // Get IntentCode path
+    const projectJsonContent = projectDetails.projectIntentCodeNode.jsonContent
     const intentCodePath =
-      (projectDetails.projectIntentCodeNode.jsonContent as any).path
+      projectJsonContent != null && typeof projectJsonContent === 'object' &&
+      'path' in projectJsonContent && typeof projectJsonContent.path === 'string'
+        ? projectJsonContent.path
+        : undefined
+
+    // Validate. Without the path there is no intent dir to write a delta into.
+    if (intentCodePath == null) {
+      throw new IntentError({
+        category: 'StorageError',
+        stage: fnName,
+        message: `${fnName}: the IntentCode project node has no path`
+      })
+    }
 
     // Determine intentCodeFullPath. fileDelta.relativePath comes straight from
     // the LLM, so resolve it inside the project's intent dir and reject any
@@ -66,7 +83,7 @@ export class IntentCodeUpdaterMutateService {
 
       // Upsert IntentCode path graph
       await intentCodePathGraphMutateService.upsertIntentCodePathAsGraph(
-        prisma,
+        store,
         projectDetails.projectIntentCodeNode,
         intentCodeFullPath)
 
@@ -80,7 +97,7 @@ export class IntentCodeUpdaterMutateService {
 
       // Delete IntentCode path graph
       await intentCodePathGraphMutateService.deleteIntentCodePathAsGraph(
-        prisma,
+        store,
         projectDetails.projectIntentCodeNode,
         intentCodeFullPath)
 
@@ -90,7 +107,7 @@ export class IntentCodeUpdaterMutateService {
   }
 
   async processFileDeltas(
-    prisma: PrismaClient,
+    store: ProjectStore,
     buildData: BuildData,
     fileDeltas: FileDelta[]) {
 
@@ -112,7 +129,7 @@ export class IntentCodeUpdaterMutateService {
 
       // Process fileDelta
       await this.processFileDelta(
-        prisma,
+        store,
         buildData,
         fileDelta)
     }

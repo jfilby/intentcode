@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import { select } from '@inquirer/prompts'
-import { PrismaClient } from '@/prisma/client.js'
+import type { ProjectStore } from '@/core/store.js'
 import { BuildData, BuildFromFile } from '@/types/build-types.js'
 import { IntentCodeAiTasks } from '@/types/server-only-types.js'
 import { IntentCodeAnalyzerSuggestionsChatService } from './chat-service.js'
@@ -31,7 +31,7 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
 
   // Code
   async approveSuggestions(
-    prisma: PrismaClient,
+    store: ProjectStore,
     buildData: BuildData,
     buildFromFiles: BuildFromFile[],
     suggestions: any[]) {
@@ -42,7 +42,6 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
     // Get the prompt
     const prompt = await
       intentCodeAnalyzerSuggestionsPromptService.getPrompt(
-        prisma,
         buildData,
         buildFromFiles,
         suggestions)
@@ -50,20 +49,20 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
     // LLM request
     const { status, message, jsonContent } = await
       intentCodeAnalyzerSuggestionsLlmService.llmRequest(
-        prisma,
+        store,
         buildData,
                 IntentCodeAiTasks.compiler,
         prompt)
 
     // Process changes
     await this.processSuggestionChanges(
-      prisma,
+      store,
       buildData,
       jsonContent)
   }
 
   async processSuggestionChanges(
-    prisma: PrismaClient,
+    store: ProjectStore,
     buildData: BuildData,
     jsonContent: any) {
 
@@ -74,13 +73,13 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
 
     // Process fileDelta
     await intentCodeUpdaterMutateService.processFileDeltas(
-      prisma,
+      store,
       buildData,
       jsonContent.intentCode)
   }
 
   async reviewSuggestion(
-    prisma: PrismaClient,
+    store: ProjectStore,
     buildData: BuildData,
     buildFromFiles: BuildFromFile[],
     suggestion: any) {
@@ -150,7 +149,7 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
         case this.chatCommand: {
           const results = await
             intentCodeAnalyzerSuggestionsChatService.openChat(
-              prisma,
+              store,
               buildData,
               buildFromFiles,
               suggestion)
@@ -214,7 +213,7 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
   }
 
   async reviewSuggestionsOneByOne(
-    prisma: PrismaClient,
+    store: ProjectStore,
     buildData: BuildData,
     buildFromFiles: BuildFromFile[],
     suggestions: any[]) {
@@ -231,7 +230,7 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
       // Review suggestion
       const { addToApprovedList, stopReview, ignoreAll } = await
         this.reviewSuggestion(
-          prisma,
+          store,
           buildData,
           buildFromFiles,
           suggestion)
@@ -260,14 +259,14 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
     console.log(`${fnName}: making ${approvedList.length} changes..`)
 
     await this.approveSuggestions(
-      prisma,
+      store,
       buildData,
       buildFromFiles,
       approvedList)
   }
 
   async userMenu(
-    prisma: PrismaClient,
+    store: ProjectStore,
     buildData: BuildData,
     buildFromFiles: BuildFromFile[],
     suggestions: any[]) {
@@ -307,7 +306,7 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
         case this.reviewCommand: {
 
           await this.reviewSuggestionsOneByOne(
-            prisma,
+            store,
             buildData,
             buildFromFiles,
             suggestions)
@@ -324,7 +323,7 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
         case this.approveAllCommand: {
 
           await this.approveSuggestions(
-            prisma,
+            store,
             buildData,
             buildFromFiles,
             suggestions)

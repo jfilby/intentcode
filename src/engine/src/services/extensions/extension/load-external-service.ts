@@ -1,16 +1,16 @@
 import chalk from 'chalk'
 import fs from 'fs'
 import path from 'path'
-import { CustomError, WalkDirService } from 'serene-core-server'
+import { IntentError } from '@/core/errors.js'
+import type { ProjectRecord, SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
+import { listSubdirectories } from '@/core/walk-dir.js'
 import { confirm, input } from '@inquirer/prompts'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
-import { ServerOnlyTypes } from '@/types/server-only-types.js'
 import { ExtensionMutateService } from './mutate-service.js'
 import { GraphsDeleteService } from '@/services/graphs/general/delete-service.js'
 import { LoadExternalHooksService } from '../hooks/load-external-service.js'
 import { LoadExternalSkillsService } from '../skills/load-external-service.js'
 import { PathsService } from '@/services/utils/paths-service.js'
-import { ProjectsQueryService } from '../../projects/query-service.js'
 
 // Services
 const extensionMutateService = new ExtensionMutateService()
@@ -18,8 +18,6 @@ const pathsService = new PathsService()
 const graphsDeleteService = new GraphsDeleteService()
 const loadExternalHooksService = new LoadExternalHooksService()
 const loadExternalSkillsService = new LoadExternalSkillsService()
-const projectsQueryService = new ProjectsQueryService()
-const walkDirService = new WalkDirService()
 
 // Class
 export class LoadExternalExtensionsService {
@@ -29,8 +27,8 @@ export class LoadExternalExtensionsService {
 
   // Code
   async getOrCreateExtension(
-          prisma: PrismaClient,
-          instanceId: string,
+          store: ProjectStore,
+          projectId: string,
           loadPath: string) {
 
     // Debug
@@ -57,19 +55,23 @@ export class LoadExternalExtensionsService {
     // Get extensions node
     const extensionsNode = await
             extensionMutateService.getOrCreateExtensionsNode(
-              prisma,
-              instanceId)
+              store,
+              projectId)
 
     // Validate
     if (extensionsNode == null) {
-      throw new CustomError(`${fnName}: extensionsNode == null`)
+      throw new IntentError({
+        category: 'ExtensionError',
+        stage: fnName,
+        message: 'extensionsNode == null'
+      })
     }
 
     // Get/create extension node
     const extensionNode = await
             extensionMutateService.getOrSaveExtensionNode(
-              prisma,
-              instanceId,
+              store,
+              projectId,
               extensionsNode.id,
               extensionJson)
 
@@ -78,8 +80,8 @@ export class LoadExternalExtensionsService {
   }
 
   async loadBundledExtensions(
-    prisma: PrismaClient,
-    instanceId: string) {
+    store: ProjectStore,
+    projectId: string) {
 
     // Debug
     const fnName = `${this.clName}.loadBundledExtensions()`
@@ -93,40 +95,26 @@ export class LoadExternalExtensionsService {
 
     // Install bundled extensions
     await this.loadExtensionsInPath(
-      prisma,
-      instanceId,
+      store,
+      projectId,
       extensionsPath)
   }
 
   async loadExtensionsInPath(
-          prisma: PrismaClient,
-          instanceId: string,
+          store: ProjectStore,
+          projectId: string,
           loadPath: string) {
 
     // Debug
     const fnName = `${this.clName}.loadExtensionsInPath()`
 
-    // Walk dir
-    var pathsList: string[] = []
-
-    await walkDirService.walkDir(
-            loadPath,
-            pathsList,
-            {
-              recursive: false
-            })
+    // Get the extension directories below the path
+    const pathsList = await listSubdirectories(loadPath)
 
     // Load extensions
-    const extensionNodes: SourceNode[] = []
+    const extensionNodes: SourceNodeRecord[] = []
 
     for (const fullPath of pathsList) {
-
-      // Skip if not a dir
-      const stats = await fs.statSync(fullPath)
-
-      if (stats.isDirectory() === false) {
-        continue
-      }
 
       // Debug
       // console.log(`${fnName}: fullPath: ${fullPath}`)
@@ -141,8 +129,8 @@ export class LoadExternalExtensionsService {
       // Load extension
       const extensionNode = await
         this.loadExtensionInPath(
-          prisma,
-          instanceId,
+          store,
+          projectId,
           fullPath)
 
       // Add to extensionNodes
@@ -156,51 +144,63 @@ export class LoadExternalExtensionsService {
   }
 
   async loadExtensionInPath(
-          prisma: PrismaClient,
-          instanceId: string,
+          store: ProjectStore,
+          projectId: string,
           loadPath: string) {
 
     // Debug
     const fnName = `${this.clName}.loadExtensionInPath()`
 
     // Validate
-    if (instanceId == null) {
-      throw new CustomError(`${fnName}: instanceId == null`)
+    if (projectId == null) {
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: 'projectId == null'
+      })
     }
 
     if (loadPath == null) {
-      throw new CustomError(`${fnName}: loadPath == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: 'loadPath == null'
+      })
     }
 
     // Get/create the extension
     const extensionNode = await
             this.getOrCreateExtension(
-              prisma,
-              instanceId,
+              store,
+              projectId,
               loadPath)
 
     // Validate
     if (extensionNode == null) {
-      throw new CustomError(`${fnName}: extensionNode == null`)
+      throw new IntentError({
+        category: 'ExtensionError',
+        stage: fnName,
+        message: 'extensionNode == null'
+      })
     }
 
     // Delete any nodes under the extension
     await graphsDeleteService.deleteSourceNodeCascade(
-            prisma,
+            store,
             extensionNode.id,
             false)  // deleteThisNode
 
     // Load skills
     await loadExternalSkillsService.loadFromPath(
-            prisma,
-            instanceId,
+            store,
+            projectId,
             extensionNode,
             `${loadPath}/skills`)
 
     // Load hooks
     await loadExternalHooksService.loadFromPath(
-            prisma,
-            instanceId,
+            store,
+            projectId,
             extensionNode,
             `${loadPath}/hooks`)
 
@@ -208,7 +208,9 @@ export class LoadExternalExtensionsService {
     return extensionNode
   }
 
-  async promptForAndLoadPath(prisma: PrismaClient) {
+  async promptForAndLoadPath(
+    store: ProjectStore,
+    project: ProjectRecord) {
 
     // Prompt for a path
     console.log(``)
@@ -218,24 +220,11 @@ export class LoadExternalExtensionsService {
     var loadPath = await
       input({ message: `Enter the path to load extensions from` })
 
-    // Get the System project
-    const systemInstance = await
-            projectsQueryService.getProject(
-              prisma,
-              null,  // parentId
-              ServerOnlyTypes.systemProjectName)
-
-    // Validate
-    if (systemInstance == null) {
-      console.error(`System project not found (run setup)`)
-      return
-    }
-
     // Load path
     const extensionNodes = await
       this.loadExtensionsInPath(
-        prisma,
-        systemInstance.id,
+        store,
+        project.id,
         loadPath)
 
     // Prompt whether to load into user projects
@@ -253,7 +242,8 @@ export class LoadExternalExtensionsService {
     // Load into user projects
     const copyCount = await
       extensionMutateService.upgradeToUserProjects(
-        prisma,
+        store,
+        project,
         extensionNodes)
 
     // Done

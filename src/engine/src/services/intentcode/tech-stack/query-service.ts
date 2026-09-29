@@ -1,9 +1,6 @@
 import path from 'path'
-import { WalkDirService } from 'serene-core-server'
+import { walkDir } from '@/core/walk-dir.js'
 import { ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types.js'
-
-// Services
-const walkDirService = new WalkDirService()
 
 // Class
 export class TechStackQueryService {
@@ -14,14 +11,29 @@ export class TechStackQueryService {
   // Code
   async getFilename(projectDetails: ProjectDetails) {
 
+    // Debug
+    const fnName = `${this.clName}.getFilename()`
+
     // Get intentCodePath
+    const jsonContent = projectDetails.projectIntentCodeNode.jsonContent
     const intentCodePath =
-      (projectDetails.projectIntentCodeNode.jsonContent as any).path
+      jsonContent != null && typeof jsonContent === 'object' &&
+      'path' in jsonContent && typeof jsonContent.path === 'string'
+        ? jsonContent.path
+        : undefined
+
+    // Validate. A project node without its path has no IntentCode tree to
+    // walk, so there is no tech-stack.md to find.
+    if (intentCodePath == null) {
+
+      console.error(`The IntentCode project node has no path`)
+      process.exit(1)
+    }
 
     // Walk dir
     var mdFilesList: string[] = []
 
-    await walkDirService.walkDir(
+    await walkDir(
       intentCodePath,
       mdFilesList,
       {

@@ -1,5 +1,6 @@
-import { CustomError } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { SourceNodeTypes } from '@/types/source-graph-types.js'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
 import { FsUtilsService } from '../../utils/fs-utils-service.js'
@@ -18,23 +19,33 @@ export class IntentCodePathGraphQueryService {
 
   // Code
   async getIntentCodePathAsGraph(
-          prisma: PrismaClient,
-          projectIntentCodeNode: SourceNode,
+          store: ProjectStore,
+          projectIntentCodeNode: SourceNodeRecord,
           fullPath: string) {
 
     // Debug
     const fnName = `${this.clName}.getIntentCodePathAsGraph()`
 
     // Get project source path
-    const projectSourcePath = (projectIntentCodeNode.jsonContent as any)?.path
+    const jsonContent = projectIntentCodeNode.jsonContent
+    const projectSourcePath =
+      jsonContent != null &&
+      typeof jsonContent === 'object' &&
+      'path' in jsonContent &&
+      typeof jsonContent.path === 'string'
+        ? jsonContent.path
+        : undefined
 
     // Validate project path
     if (projectSourcePath == null ||
         !fsUtilsService.isPathWithin(fullPath, projectSourcePath)) {
 
-      throw new CustomError(
-        `${fnName}: Invalid path: ${fullPath} for project source node: ` +
-        `${projectSourcePath}`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: Invalid path: ${fullPath} for project source ` +
+          `node: ${projectSourcePath}`
+      })
     }
 
     // Strip project path from fullPath prefix
@@ -52,26 +63,38 @@ export class IntentCodePathGraphQueryService {
     // console.log(`${fnName}: dirs: ${dirs}`)
 
     // Get/create nodes for dirs
-    var intentCodeDir: SourceNode = projectIntentCodeNode
+    var intentCodeDir: SourceNodeRecord = projectIntentCodeNode
 
     for (const dir of dirs) {
 
       // Try to get the dir node
-      intentCodeDir = await
+      const found = await
         sourceNodeModel.getByUniqueKey(
-          prisma,
+          store,
           intentCodeDir.id,
-          projectIntentCodeNode.instanceId,
+          projectIntentCodeNode.projectId,
           SourceNodeTypes.intentCodeDir,
           dir)
+
+      if (found == null) {
+
+        throw new IntentError({
+          category: 'StorageError',
+          stage: fnName,
+          message: `${fnName}: no IntentCode dir node for dir: ${dir}`,
+          detail: `under the node ${intentCodeDir.id}`
+        })
+      }
+
+      intentCodeDir = found
     }
 
     // Try to get the node
     const intentCodeFile = await
             sourceNodeModel.getByUniqueKey(
-              prisma,
+              store,
               intentCodeDir.id,  // parentId
-              projectIntentCodeNode.instanceId,
+              projectIntentCodeNode.projectId,
               SourceNodeTypes.intentCodeFile,
               filename)
 

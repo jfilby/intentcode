@@ -1,6 +1,7 @@
-import { CustomError } from 'serene-core-server'
+import { IntentError } from '@/core/errors.js'
 import { blake3 } from '@noble/hashes/blake3'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { BaseDataTypes } from '@/types/base-data-types.js'
 import { DepDelta, DepDeltaNames } from '@/types/server-only-types.js'
 import { SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types.js'
@@ -8,6 +9,22 @@ import { SourceEdgeModel } from '@/models/source-graph/source-edge-model.js'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
 import { DependenciesQueryService } from './query-service.js'
 import { DepsJsonService } from '@/services/managed-files/deps/deps-json-service.js'
+
+/** The shape `updateNodeDepDeltas` reads out of a node's jsonContent. */
+interface DepsJson {
+  source?: {
+    deps?: Record<string, string | undefined>
+  }
+  [key: string]: unknown
+}
+
+/**
+ * Whether a node's jsonContent is an object this service can edit the deps of.
+ * A node carrying no jsonContent yet is not an error, it is simply empty.
+ */
+function isDepsJson(value: unknown): value is DepsJson {
+  return value != null && typeof value === 'object'
+}
 
 // Models
 const sourceEdgeModel = new SourceEdgeModel()
@@ -25,15 +42,15 @@ export class DependenciesMutateService {
 
   // Code
   async delDep(
-          prisma: PrismaClient,
-          depsNode: SourceNode,
-          intentFileNode: SourceNode,
+          store: ProjectStore,
+          depsNode: SourceNodeRecord,
+          intentFileNode: SourceNodeRecord,
           name: string) {
 
     // Try to get by unique key
     const depEdge = await
             sourceEdgeModel.getByUniqueKey(
-              prisma,
+              store,
               intentFileNode.id,
               depsNode.id,
               name)
@@ -44,13 +61,13 @@ export class DependenciesMutateService {
 
     // Delete edge
     await sourceEdgeModel.deleteById(
-            prisma,
+            store,
             depEdge.id)
   }
 
   async getOrCreateDepsNode(
-          prisma: PrismaClient,
-          projectNode: SourceNode) {
+          store: ProjectStore,
+          projectNode: SourceNodeRecord) {
 
     // Debug
     const fnName = `${this.clName}.getOrCreateDepsNode()`
@@ -58,14 +75,17 @@ export class DependenciesMutateService {
     // Validate
     if (projectNode.type !== SourceNodeTypes.project) {
 
-      throw new CustomError(
-        `${fnName}: projectNode.type !== SourceNodeTypes.project`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: projectNode.type !== SourceNodeTypes.project`
+      })
     }
 
     // Try to get the existing node
     var depsNode = await
           dependenciesQueryService.getDepsNode(
-            prisma,
+            store,
             projectNode)
 
     if (depsNode != null) {
@@ -74,9 +94,9 @@ export class DependenciesMutateService {
 
     depsNode = await
       sourceNodeModel.create(
-        prisma,
+        store,
         projectNode.id,  // parentId
-        projectNode.instanceId,
+        projectNode.projectId,
         BaseDataTypes.activeStatus,
         SourceNodeTypes.deps,
         SourceNodeNames.depsName,
@@ -91,9 +111,9 @@ export class DependenciesMutateService {
   }
 
   async processDeps(
-          prisma: PrismaClient,
-          projectNode: SourceNode,
-          intentFileNode: SourceNode,
+          store: ProjectStore,
+          projectNode: SourceNodeRecord,
+          intentFileNode: SourceNodeRecord,
           depDeltas: DepDelta[]) {
 
     // Debug
@@ -105,24 +125,28 @@ export class DependenciesMutateService {
     }
 
     if (intentFileNode == null) {
-      throw new CustomError(`${fnName}: intentFileNode == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: intentFileNode == null`
+      })
     }
 
     // Get/create deps node
     const depsNode = await
             this.getOrCreateDepsNode(
-              prisma,
+              store,
               projectNode)
 
     // Update jsonContent of intentFileNode
     await this.updateNodeDepDeltas(
-            prisma,
+            store,
             intentFileNode,
             depDeltas)
 
     // Update jsonContent of depsNode
     await this.updateNodeDepDeltas(
-            prisma,
+            store,
             depsNode,
             depDeltas)
 
@@ -132,7 +156,7 @@ export class DependenciesMutateService {
       if (depDelta.delta === DepDeltaNames.set) {
 
         await this.setDep(
-                prisma,
+                store,
                 depsNode,
                 intentFileNode,
                 depDelta.name)
@@ -140,7 +164,7 @@ export class DependenciesMutateService {
       } else if (depDelta.delta === DepDeltaNames.del) {
 
         await this.delDep(
-                prisma,
+                store,
                 depsNode,
                 intentFileNode,
                 depDelta.name)
@@ -149,21 +173,21 @@ export class DependenciesMutateService {
 
     // Write the updated deps.json file
     await depsJsonService.writeToFile(
-            prisma,
+            store,
             projectNode,
             depsNode)
   }
 
   async setDep(
-          prisma: PrismaClient,
-          depsNode: SourceNode,
-          intentFileNode: SourceNode,
+          store: ProjectStore,
+          depsNode: SourceNodeRecord,
+          intentFileNode: SourceNodeRecord,
           name: string) {
 
     // Upsert edge
     const depEdge = await
             sourceEdgeModel.upsert(
-              prisma,
+              store,
               undefined,  // id
               intentFileNode.id,
               depsNode.id,
@@ -172,9 +196,9 @@ export class DependenciesMutateService {
   }
 
   async updateDepsNode(
-          prisma: PrismaClient,
-          projectNode: SourceNode,
-          depsNode: SourceNode,
+          store: ProjectStore,
+          projectNode: SourceNodeRecord,
+          depsNode: SourceNodeRecord,
           writeToDepsJson: boolean = true) {
 
     // Get contentHash
@@ -198,10 +222,10 @@ export class DependenciesMutateService {
     // Update
     depsNode = await
       sourceNodeModel.update(
-        prisma,
+        store,
         depsNode.id,
         depsNode.parentId,
-        depsNode.instanceId,
+        depsNode.projectId,
         BaseDataTypes.activeStatus,
         SourceNodeTypes.deps,
         SourceNodeNames.depsName,
@@ -209,29 +233,28 @@ export class DependenciesMutateService {
         depsNode.contentHash,
         depsNode.jsonContent,
         depsNode.jsonContentHash,
-        depsNode.contentUpdated)
+        depsNode.contentUpdated == null
+          ? null
+          : new Date(depsNode.contentUpdated))
 
     // Write deps.json
     if (writeToDepsJson === true) {
 
       await depsJsonService.writeToFile(
-              prisma,
+              store,
               projectNode,
               depsNode)
     }
   }
 
   async updateNodeDepDeltas(
-          prisma: PrismaClient,
-          node: SourceNode,
+          store: ProjectStore,
+          node: SourceNodeRecord,
           depDeltas: DepDelta[]) {
 
     // Update jsonContent as depsJson
-    var depsJson: any = structuredClone(node.jsonContent)
-
-    if (depsJson == null) {
-      depsJson = {}
-    }
+    const cloned: unknown = structuredClone(node.jsonContent)
+    const depsJson: DepsJson = isDepsJson(cloned) ? cloned : {}
 
     if (depsJson.source == null) {
       depsJson.source = {}
@@ -264,7 +287,7 @@ export class DependenciesMutateService {
     // Upsert IntentFileNode
     node = await
       sourceNodeModel.setJsonContent(
-        prisma,
+        store,
         node.id,
         depsJson,
         depsJsonHash)

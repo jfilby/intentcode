@@ -1,4 +1,4 @@
-import { PrismaClient } from '@/prisma/client.js'
+import type { ProjectStore } from '@/core/store.js'
 
 // Class
 export class HousekeepingDeleteService {
@@ -7,58 +7,51 @@ export class HousekeepingDeleteService {
   clName = 'HousekeepingDeleteService'
 
   // Code
-  async deleteOldRecords(prisma: PrismaClient) {
+
+  // A chat session and everything under it is disposable, so a session old
+  // enough to be forgotten is deleted whole: its messages, its participants,
+  // then the session itself.
+  async deleteOldRecords(store: ProjectStore) {
 
     // Debug
     const fnName = `${this.clName}.deleteOldRecords()`
 
-    // The cutoffs
+    // The cutoff
     const chatSessionsDaysAgo = 30
-    const chatMessageCreatedDaysAgo = 90
 
     const chatSessionsCutoff =
-      new Date(Date.now() - chatSessionsDaysAgo * 24 * 60 * 60 * 1000)
+      Date.now() - chatSessionsDaysAgo * 24 * 60 * 60 * 1000
 
-    const chatMessageCreatedCutoff =
-      new Date(Date.now() - chatMessageCreatedDaysAgo * 24 * 60 * 60 * 1000)
+    // The old sessions
+    const chatSessions = await store.chatSessions.findMany()
 
-    // Delete the messages of old chat sessions first (participants and
-    // sessions reference them)
-    await prisma.chatMessage.deleteMany({
-      where: {
-        chatSession: {
-          created: {
-            lt: chatSessionsCutoff
-          }
-        }
+    for (const chatSession of chatSessions) {
+
+      if (new Date(chatSession.created).getTime() >= chatSessionsCutoff) {
+
+        continue
       }
-    })
 
-    await prisma.chatParticipant.deleteMany({
-      where: {
-        chatSession: {
-          created: {
-            lt: chatSessionsCutoff
-          }
+      // The messages of the session
+      await store.chatMessages.deleteMany({
+        where: {
+          chatSessionId: chatSession.id
         }
-      }
-    })
+      })
 
-    await prisma.chatSession.deleteMany({
-      where: {
-        created: {
-          lt: chatSessionsCutoff
+      // The participants of the session
+      await store.chatParticipants.deleteMany({
+        where: {
+          chatSessionId: chatSession.id
         }
-      }
-    })
+      })
 
-    // Delete the per-message usage records
-    await prisma.chatMessageCreated.deleteMany({
-      where: {
-        created: {
-          lt: chatMessageCreatedCutoff
+      // The session itself
+      await store.chatSessions.deleteMany({
+        where: {
+          id: chatSession.id
         }
-      }
-    })
+      })
+    }
   }
 }

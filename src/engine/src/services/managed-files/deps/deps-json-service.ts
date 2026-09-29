@@ -1,7 +1,9 @@
 import fs from 'fs'
 import path from 'path'
 import * as z from 'zod'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
 import { DotIntentCodeGraphQueryService } from '@/services/graphs/dot-intentcode/graph-query-service.js'
 
@@ -18,8 +20,8 @@ export class DepsJsonService {
 
   // Code
   async readFile(
-          prisma: PrismaClient,
-          projectNode: SourceNode) {
+          store: ProjectStore,
+          projectNode: SourceNodeRecord) {
 
     // Debug
     const fnName = `${this.clName}.readFile()`
@@ -30,7 +32,7 @@ export class DepsJsonService {
     // Get dotIntentCode node
     const projectDotIntentCodeNode = await
             dotIntentCodeGraphQueryService.getDotIntentCodeProject(
-              prisma,
+              store,
               projectNode)
 
     // Validate
@@ -96,9 +98,9 @@ export class DepsJsonService {
   }
 
   async writeToFile(
-          prisma: PrismaClient,
-          projectNode: SourceNode,
-          depsNode: any) {
+          store: ProjectStore,
+          projectNode: SourceNodeRecord,
+          depsNode: SourceNodeRecord) {
 
     // Debug
     const fnName = `${this.clName}.writeToFile()`
@@ -114,7 +116,7 @@ export class DepsJsonService {
     // Get dotIntentCode node
     const projectDotIntentCodeNode = await
       dotIntentCodeGraphQueryService.getDotIntentCodeProject(
-        prisma,
+        store,
         projectNode)
 
     // Validate
@@ -123,18 +125,29 @@ export class DepsJsonService {
       process.exit(1)
     }
 
-    // Validate by schema
-    const data = this.validate(depsNode.jsonContent)
+    // The path is where deps.json lives, and the node it comes from is only
+    // present for a project set up with a config directory.
+    const dotIntentFilePath =
+      projectDotIntentCodeNode.jsonContent?.path
 
-    // Determine the path and filename
-    const dotIntentFilePath = projectDotIntentCodeNode.jsonContent?.path
-    const filename = `${dotIntentFilePath}${path.sep}${this.depsJson}`
+    if (typeof dotIntentFilePath !== 'string' ||
+        dotIntentFilePath === '') {
 
-    // Create the path if needed
-    if (!fs.existsSync(dotIntentFilePath)) {
-
-      fs.mkdirSync(dotIntentFilePath, { recursive: true })
+      throw new IntentError({
+        category: 'ProjectError',
+        stage: fnName,
+        message: 'the .intentcode node records no path, so there is nowhere ' +
+          'to write deps.json'
+      })
     }
+
+    // Validate by schema, so a malformed deps node is refused before it
+    // becomes a file the user has to unpick.
+    this.validate(depsNode.jsonContent)
+
+    const filename = path.join(dotIntentFilePath, this.depsJson)
+
+    fs.mkdirSync(dotIntentFilePath, { recursive: true })
 
     // Write the file
     const prettyData =

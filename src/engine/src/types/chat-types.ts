@@ -1,8 +1,8 @@
-import { SourceNode } from '@/prisma/client.js'
+import type { SourceNodeRecord } from '@/core/records.js'
 import { BuildData, BuildFromFile } from './build-types.js'
 
 export interface AnalyzerChatParams {
-  projectNode: SourceNode
+  projectNode: SourceNodeRecord
   buildData: BuildData
   buildFromFiles: BuildFromFile[]
   suggestion: any

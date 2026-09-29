@@ -1,5 +1,6 @@
-import { CustomError } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { FsUtilsService } from '../../utils/fs-utils-service.js'
 import { IntentCodeGraphMutateService } from './graph-mutate-service.js'
 import { IntentCodeGraphQueryService } from './graph-query-service.js'
@@ -17,8 +18,8 @@ export class IntentCodePathGraphMutateService {
 
   // Code
   async deleteIntentCodePathAsGraph(
-          prisma: PrismaClient,
-          projectIntentCodeNode: SourceNode,
+          store: ProjectStore,
+          projectIntentCodeNode: SourceNodeRecord,
           fullPath: string) {
 
     // Debug
@@ -27,15 +28,25 @@ export class IntentCodePathGraphMutateService {
     // console.log(`${fnName}: fullPath: ${fullPath}`)
 
     // Get project source path
-    const projectSourcePath = (projectIntentCodeNode.jsonContent as any)?.path
+    const jsonContent = projectIntentCodeNode.jsonContent
+    const projectSourcePath =
+      jsonContent != null &&
+      typeof jsonContent === 'object' &&
+      'path' in jsonContent &&
+      typeof jsonContent.path === 'string'
+        ? jsonContent.path
+        : undefined
 
     // Validate project path
     if (projectSourcePath == null ||
         !fsUtilsService.isPathWithin(fullPath, projectSourcePath)) {
 
-      throw new CustomError(
-        `${fnName}: Invalid path: ${fullPath} for project source node: ` +
-        `${projectSourcePath}`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: Invalid path: ${fullPath} for project source ` +
+          `node: ${projectSourcePath}`
+      })
     }
 
     // Strip project path from fullPath prefix
@@ -52,15 +63,16 @@ export class IntentCodePathGraphMutateService {
     // console.log(`${fnName}: dirsPath: ${dirsPath}`)
     // console.log(`${fnName}: dirs: ${dirs}`)
 
-    // Get/create nodes for dirs
-    var dirSourceNode: SourceNode = projectIntentCodeNode
+    // Get/create nodes for dirs. A dir that is not in the graph means the
+    // file below it was never written, so there is nothing to delete.
+    var dirSourceNode: SourceNodeRecord | null = projectIntentCodeNode
 
     for (const dir of dirs) {
 
       dirSourceNode = await
         intentCodeGraphQueryService.getIntentCodeDir(
-          prisma,
-          projectIntentCodeNode.instanceId,
+          store,
+          projectIntentCodeNode.projectId,
           dirSourceNode,
           dir)
 
@@ -71,15 +83,15 @@ export class IntentCodePathGraphMutateService {
 
     // Get/create nodes for the filename
     await intentCodeGraphMutateService.deleteIntentCodeFile(
-      prisma,
-      projectIntentCodeNode.instanceId,
+      store,
+      projectIntentCodeNode.projectId,
       dirSourceNode,
       filename)
   }
 
   async upsertIntentCodePathAsGraph(
-          prisma: PrismaClient,
-          projectIntentCodeNode: SourceNode,
+          store: ProjectStore,
+          projectIntentCodeNode: SourceNodeRecord,
           fullPath: string,
           content?: string) {
 
@@ -89,15 +101,25 @@ export class IntentCodePathGraphMutateService {
     // console.log(`${fnName}: fullPath: ${fullPath}`)
 
     // Get project source path
-    const projectSourcePath = (projectIntentCodeNode.jsonContent as any)?.path
+    const jsonContent = projectIntentCodeNode.jsonContent
+    const projectSourcePath =
+      jsonContent != null &&
+      typeof jsonContent === 'object' &&
+      'path' in jsonContent &&
+      typeof jsonContent.path === 'string'
+        ? jsonContent.path
+        : undefined
 
     // Validate project path
     if (projectSourcePath == null ||
         !fsUtilsService.isPathWithin(fullPath, projectSourcePath)) {
 
-      throw new CustomError(
-        `${fnName}: Invalid path: ${fullPath} for project source node: ` +
-        `${projectSourcePath}`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: Invalid path: ${fullPath} for project source ` +
+          `node: ${projectSourcePath}`
+      })
     }
 
     // Strip project path from fullPath prefix
@@ -115,14 +137,14 @@ export class IntentCodePathGraphMutateService {
     // console.log(`${fnName}: dirs: ${dirs}`)
 
     // Get/create nodes for dirs
-    var dirSourceNode: SourceNode = projectIntentCodeNode
+    var dirSourceNode: SourceNodeRecord = projectIntentCodeNode
 
     for (const dir of dirs) {
 
       dirSourceNode = await
         intentCodeGraphMutateService.getOrCreateIntentCodeDir(
-          prisma,
-          projectIntentCodeNode.instanceId,
+          store,
+          projectIntentCodeNode.projectId,
           dirSourceNode,
           dir)
     }
@@ -130,8 +152,8 @@ export class IntentCodePathGraphMutateService {
     // Get/create nodes for the filename
     const filenameSourceNode = await
             intentCodeGraphMutateService.upsertIntentCodeFile(
-              prisma,
-              projectIntentCodeNode.instanceId,
+              store,
+              projectIntentCodeNode.projectId,
               dirSourceNode,
               filename,
               relativePath,

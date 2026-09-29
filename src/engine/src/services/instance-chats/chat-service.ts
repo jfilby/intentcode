@@ -1,12 +1,11 @@
 import { ModelMessage } from 'ai'
-import { CustomError } from 'serene-core-server'
-import {
-  AgentUser,
-  ChatParticipant,
-  ChatSession,
-  PrismaClient,
-  UserProfile
-} from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type {
+  AgentUserRecord,
+  ChatParticipantRecord,
+  ChatSessionWithSettings
+} from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { ChatMessage } from '@/types/ai-types.js'
 import { IntentCodeAiTasks } from '@/types/server-only-types.js'
 import { LlmService } from '@/services/ai/llm-service.js'
@@ -14,10 +13,9 @@ import { ChatSessionService } from './chat-session-service.js'
 
 // Contract
 export interface RunSessionTurnResults {
-  chatSession: ChatSession
-  toChatParticipant: ChatParticipant
-  toUserProfile: UserProfile
-  agentUser: AgentUser
+  chatSession: ChatSessionWithSettings
+  toChatParticipant: ChatParticipantRecord
+  agentUser: AgentUserRecord
   fromContents: ChatMessage[]
   toContents: ChatMessage[]
   toJson: unknown
@@ -35,10 +33,8 @@ export class ChatService {
 
   // Code
   async runSessionTurn(
-          prisma: PrismaClient,
+          store: ProjectStore,
           chatSessionId: string,
-          fromChatParticipantId: string,
-          fromUserProfile: UserProfile,
           fromContents: ChatMessage[]): Promise<RunSessionTurnResults> {
 
     // Debug
@@ -47,33 +43,51 @@ export class ChatService {
     // Get the session
     const chatSessionResults = await
       chatSessionService.getChatSessionById(
-        prisma,
-        chatSessionId,
-        fromUserProfile.id)
+        store,
+        chatSessionId)
 
     if (chatSessionResults.status === false) {
-      throw new CustomError(`${fnName}: chatSession not found`)
+      throw new IntentError({
+        category: 'ChatError',
+        stage: fnName,
+        message: `chatSession not found: ${chatSessionId}`
+      })
     }
 
     const chatSession = chatSessionResults.chatSession!
 
     // Get the agent
-    const agentUser = chatSession.chatSettings.agentUser
+    const agentUser = chatSession.agentUser
 
     if (agentUser == null) {
-      throw new CustomError(`${fnName}: agentUser == null`)
+      throw new IntentError({
+        category: 'ChatError',
+        stage: fnName,
+        message: `agentUser == null: ${chatSessionId}`
+      })
+    }
+
+    // The settings framing the session
+    const chatSettings = chatSession.chatSettings
+
+    if (chatSettings == null) {
+      throw new IntentError({
+        category: 'ChatError',
+        stage: fnName,
+        message: `chatSettings == null: ${chatSessionId}`
+      })
     }
 
     // The agent participant
     const chatParticipants = await
       chatSessionService.getParticipants(
-        prisma,
+        store,
         chatSessionId)
 
     // Get the history
     const historyResults = await
       chatSessionService.getChatMessages(
-        prisma,
+        store,
         chatSessionId,
         agentUser.maxPrevMessages)
 
@@ -97,13 +111,13 @@ export class ChatService {
       [
         agentUser.defaultPrompt,
         agentUser.role,
-        chatSession.chatSettings.prompt
+        chatSettings.prompt
       ]
         .filter((part) => part != null && part !== ``)
         .join(`\n\n`)
 
     // The model call
-    const isJsonMode = chatSession.chatSettings.isJsonMode
+    const isJsonMode = chatSettings.isJsonMode
 
     const results = await
       llmService.chat({
@@ -129,7 +143,6 @@ export class ChatService {
     return {
       chatSession: chatSession,
       toChatParticipant: chatParticipants.agent,
-      toUserProfile: fromUserProfile,
       agentUser: agentUser,
       fromContents: fromContents,
       toContents: toContents,

@@ -1,13 +1,14 @@
 import { blake3 } from '@noble/hashes/blake3'
-import { InputJsonValue } from '@/prisma/internal/prismaNamespace.js'
-import { LlmCache, PrismaClient } from '@/prisma/client.js'
+import { createId } from '@/core/ids.js'
+import type { LlmCacheRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { LlmMessage } from '@/types/ai-types.js'
 
 // Contract
 export interface LlmCacheGetResults {
   cacheKey: string
   inputMessage: string
-  llmCache: LlmCache | null
+  llmCache: LlmCacheRecord | null
 }
 
 // Class
@@ -36,7 +37,7 @@ export class LlmCacheService {
   }
 
   async tryGet(
-          prisma: PrismaClient,
+          store: ProjectStore,
           modelId: string,
           messages: LlmMessage[]): Promise<LlmCacheGetResults> {
 
@@ -48,10 +49,10 @@ export class LlmCacheService {
       this.buildCacheKey(messages)
 
     // Query
-    var llmCache: LlmCache | null = null
+    var llmCache: LlmCacheRecord | null = null
 
     try {
-      llmCache = await prisma.llmCache.findFirst({
+      llmCache = await store.llmCache.findFirst({
         where: {
           key: cacheKey,
           modelId: modelId
@@ -71,7 +72,7 @@ export class LlmCacheService {
   }
 
   async deleteByModelIdAndKey(
-          prisma: PrismaClient,
+          store: ProjectStore,
           modelId: string,
           cacheKey: string) {
 
@@ -80,7 +81,7 @@ export class LlmCacheService {
 
     // Delete records
     try {
-      await prisma.llmCache.deleteMany({
+      await store.llmCache.deleteMany({
         where: {
           key: cacheKey,
           modelId: modelId
@@ -93,24 +94,22 @@ export class LlmCacheService {
   }
 
   async save(
-          prisma: PrismaClient,
+          store: ProjectStore,
           modelId: string,
           cacheKey: string,
           inputMessage: string,
           outputMessage: string,
-          outputJson: InputJsonValue) {
+          outputJson: unknown) {
 
     // Debug
     const fnName = `${this.clName}.save()`
 
     // Upsert record
     try {
-      await prisma.llmCache.upsert({
+      await store.llmCache.upsert({
         where: {
-          key_modelId: {
-            key: cacheKey,
-            modelId: modelId
-          }
+          key: cacheKey,
+          modelId: modelId
         },
         update: {
           inputMessage: inputMessage,
@@ -118,11 +117,13 @@ export class LlmCacheService {
           outputJson: outputJson
         },
         create: {
+          id: createId(),
           modelId: modelId,
           key: cacheKey,
           inputMessage: inputMessage,
           outputMessage: outputMessage,
-          outputJson: outputJson
+          outputJson: outputJson,
+          created: new Date().toISOString()
         }
       })
     } catch(error) {

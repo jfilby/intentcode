@@ -1,5 +1,5 @@
-import { CustomError } from 'serene-core-server'
-import { Instance, PrismaClient } from '@/prisma/client.js'
+import type { ProjectStore } from '@/core/store.js'
+import type { ProjectRecord } from '@/core/records.js'
 import { BuildMutateService } from '../build/mutate-service.js'
 import { ProjectCompileService } from '@/services/projects/compile-service.js'
 import { ProjectsQueryService } from '@/services/projects/query-service.js'
@@ -17,8 +17,8 @@ export class IntentCodeAnalyzerQueryService {
 
   // Code
   async getBuildInfo(
-    prisma: PrismaClient,
-    instance: Instance) {
+    store: ProjectStore,
+    project: ProjectRecord) {
 
     // Debug
     const fnName = `${this.clName}.getBuildInfo()`
@@ -26,26 +26,18 @@ export class IntentCodeAnalyzerQueryService {
     // Init BuildData
     const buildData = await
       buildMutateService.initBuildData(
-        prisma,
-        instance.id)
+        store,
+        project.id)
 
     // Get ProjectDetails
     const projectDetails =
-      projectsQueryService.getProjectDetailsByInstanceId(
-        instance.id,
+      projectsQueryService.getProjectDetailsByProjectId(
+        project.id,
         buildData.projects)
-
-    // Debug
-    // console.log(`${fnName}: projectDetails: ` + JSON.stringify(projectDetails))
-
-    // Validate
-    if (projectDetails == null) {
-      throw new CustomError(`${fnName}: projectDetails == null`)
-    }
 
     // Get buildFromFiles
     const buildFromFiles = await
-      projectCompileService.getBuildFromFiles(prisma, projectDetails)
+      projectCompileService.getBuildFromFiles(store, projectDetails)
 
     // Return
     return {

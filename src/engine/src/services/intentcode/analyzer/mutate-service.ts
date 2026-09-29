@@ -1,6 +1,7 @@
-import { CustomError } from 'serene-core-server'
-import { AiModelService } from '@/services/ai/ai-model-service.js'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { getModelId } from '@/services/intentcode/common/model-id.js'
+import { IntentError } from '@/core/errors.js'
+import type { ProjectStore } from '@/core/store.js'
+import type { SourceNodeRecord } from '@/core/records.js'
 import { BuildData, BuildFromFile } from '@/types/build-types.js'
 import { AnalyzerPromptTypes, IntentCodeAiTasks } from '@/types/server-only-types.js'
 import { SourceNodeGenerationData } from '@/types/source-graph-types.js'
@@ -13,7 +14,6 @@ import { ProjectsQueryService } from '@/services/projects/query-service.js'
 import { SpecsGraphQueryService } from '@/services/graphs/specs/graph-query-service.js'
 
 // Services
-const aiModelService = new AiModelService()
 const intentCodeAnalysisGraphMutateService = new IntentCodeAnalysisGraphMutateService()
 const intentCodeAnalyzerLlmService = new IntentCodeAnalyzerLlmService()
 const intentCodeAnalyzerPromptService = new IntentCodeAnalyzerPromptService()
@@ -60,10 +60,10 @@ export class IntentCodeAnalyzerMutateService {
   }
 
   async processQueryResults(
-            prisma: PrismaClient,
+            store: ProjectStore,
             buildData: BuildData,
             buildFromFiles: BuildFromFile[],
-            projectSpecsNode: SourceNode,
+            projectSpecsNode: SourceNodeRecord | null,
             sourceNodeGenerationData: SourceNodeGenerationData,
             jsonContent: any) {
 
@@ -85,12 +85,23 @@ export class IntentCodeAnalyzerMutateService {
 
         // Validate
         if (projectDetail == null) {
-          throw new CustomError(`${fnName}: projectDetail == null`)
+          throw new IntentError({
+            category: 'StorageError',
+            stage: fnName,
+            message: `projectDetail == null`})
+        }
+
+        // Validate
+        if (projectDetail.projectIntentCodeAnalysisNode == null) {
+          throw new IntentError({
+            category: 'StorageError',
+            stage: fnName,
+            message: `projectDetail.projectIntentCodeAnalysisNode == null`})
         }
 
         // Upsert suggestions
         await intentCodeAnalysisGraphMutateService.upsertSuggestion(
-          prisma,
+          store,
           projectDetail.projectIntentCodeAnalysisNode,
           suggestion)
       }
@@ -107,7 +118,7 @@ export class IntentCodeAnalyzerMutateService {
 
       // User to decide on how to handle the suggestions
       await intentCodeAnalyzerSuggestionsMutateService.userMenu(
-        prisma,
+        store,
         buildData,
         buildFromFiles,
         jsonContent.suggestions)
@@ -115,21 +126,20 @@ export class IntentCodeAnalyzerMutateService {
   }
 
   async processWithLlm(
-          prisma: PrismaClient,
+          store: ProjectStore,
           buildData: BuildData,
           buildFromFiles: BuildFromFile[],
-          projectSpecsNode: SourceNode) {
+          projectSpecsNode: SourceNodeRecord | null) {
 
     // Debug
     const fnName = `${this.clName}.processWithLlm()`
 
     // The model id
-    const modelId = aiModelService.getModelId(IntentCodeAiTasks.compiler)
+    const modelId = await getModelId(IntentCodeAiTasks.compiler)
 
     // Get prompt
     const prompt = await
       intentCodeAnalyzerPromptService.getPrompt(
-        prisma,
         AnalyzerPromptTypes.createSuggestions,
         projectSpecsNode,
         buildData,
@@ -138,7 +148,7 @@ export class IntentCodeAnalyzerMutateService {
     /* Already generated?
     var jsonContent = await
           this.getExistingJsonContent(
-            prisma,
+            store,
             projectSpecsNode,
             modelId,
             prompt)
@@ -148,7 +158,7 @@ export class IntentCodeAnalyzerMutateService {
 
       const llmResults = await
               intentCodeAnalyzerLlmService.llmRequest(
-                prisma,
+                store,
                 buildData,
                                 IntentCodeAiTasks.compiler,
                 prompt)
@@ -164,7 +174,7 @@ export class IntentCodeAnalyzerMutateService {
 
     // Process the results
     await this.processQueryResults(
-            prisma,
+            store,
             buildData,
             buildFromFiles,
             projectSpecsNode,
@@ -172,9 +182,9 @@ export class IntentCodeAnalyzerMutateService {
             jsonContent)
   }
 
-  async run(prisma: PrismaClient,
+  async run(store: ProjectStore,
             buildData: BuildData,
-            projectNode: SourceNode) {
+            projectNode: SourceNodeRecord) {
 
     // Debug
     const fnName = `${this.clName}.run()`
@@ -184,23 +194,23 @@ export class IntentCodeAnalyzerMutateService {
 
     // Get ProjectDetails
     const projectDetails =
-            projectsQueryService.getProjectDetailsByInstanceId(
-              projectNode.instanceId,
-              buildData.projects)
+      projectsQueryService.getProjectDetailsByProjectId(
+        projectNode.projectId,
+        buildData.projects)
 
     // Get project specs node (might not exist)
     const projectSpecsNode = await
             specsGraphQueryService.getSpecsProjectNode(
-              prisma,
+              store,
               projectNode)
 
     // Get build file list
     const buildFromFiles = await
-      projectCompileService.getBuildFromFiles(prisma, projectDetails)
+      projectCompileService.getBuildFromFiles(store, projectDetails)
 
     // Process spec files
     await this.processWithLlm(
-            prisma,
+            store,
             buildData,
             buildFromFiles,
             projectSpecsNode)

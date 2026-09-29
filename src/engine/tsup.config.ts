@@ -6,10 +6,6 @@ export default defineConfig({
   platform: 'node',
   dts: true,
   outDir: 'dist',
-  // The prisma-client generator emits `fileURLToPath(import.meta.url)`, which
-  // has no meaning in the CJS bundle this package ships as its bin. Without
-  // this shim the CLI dies at import time with
-  // "The path argument must be of type string or an instance of URL".
   shims: true,
   esbuildOptions(options) {
     options.bundle = true

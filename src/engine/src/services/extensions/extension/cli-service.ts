@@ -1,18 +1,19 @@
 import chalk from 'chalk'
-import { CustomError } from 'serene-core-server'
 import { select } from '@inquirer/prompts'
-import { Instance, PrismaClient, SourceNode } from '@/prisma/client.js'
-import { CommonCommands, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
+import { IntentError } from '@/core/errors.js'
+import type { ProjectRecord, SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
+import { CommonCommands } from '@/types/server-only-types.js'
 import { ExtensionMutateService } from './mutate-service.js'
 import { ExtensionQueryService } from './query-service.js'
 import { GraphsMutateService } from '@/services/graphs/general/mutate-service.js'
-import { ProjectsQueryService } from '@/services/projects/query-service.js'
+import { ProjectRegistryService } from '@/services/projects/project-registry.js'
 
 // Services
 const extensionMutateService = new ExtensionMutateService()
 const extensionQueryService = new ExtensionQueryService()
 const graphsMutateService = new GraphsMutateService()
-const projectsQueryService = new ProjectsQueryService()
+const projectRegistryService = new ProjectRegistryService()
 
 // Class
 export class ManageExtensionsCliService {
@@ -31,10 +32,16 @@ export class ManageExtensionsCliService {
   deleteExtensionCommand = '`delete'
 
   // Code
+
+  /**
+   * Copies an extension from the System project into a project the user picks.
+   * The two are separate stores, so the System one is named here rather than
+   * taken from the caller: the caller may be running in the System project
+   * itself.
+   */
   async loadExtensionIntoProject(
-          prisma: PrismaClient,
-          systemProject: Instance,
-          extensionNode: SourceNode) {
+          systemStore: ProjectStore,
+          extensionNode: SourceNodeRecord) {
 
     // Debug
     const fnName = `${this.clName}.loadExtensionIntoProject()`
@@ -45,34 +52,39 @@ export class ManageExtensionsCliService {
     console.log(`---`)
 
     // Get project by list
-    const loadToInstance = await
-            projectsQueryService.getProjectByList(prisma)
+    const loadToProject = await this.getProjectByList()
 
     // Non-project (back)
-    if (loadToInstance == null) {
+    if (loadToProject == null) {
       return
     }
 
     // Output
     console.log(``)
-    console.log(`Loading into project: ${loadToInstance.name}..`)
+    console.log(`Loading into project: ${loadToProject.name}..`)
 
-    // Get the extensions node of the to project
+    // Get the store and extensions node of the to project
+    const loadToStore = projectRegistryService.getStore(loadToProject)
+
     var extensionsNode = await
           extensionMutateService.getOrCreateExtensionsNode(
-            prisma,
-            loadToInstance.id)
+            loadToStore,
+            loadToProject.id)
 
     // Validate
     if (extensionsNode == null) {
-      throw new CustomError(`${fnName}: extensionsNode == null`)
+      throw new IntentError({
+        category: 'ExtensionError',
+        stage: fnName,
+        message: 'extensionsNode == null'
+      })
     }
 
     // Load the Extension into the selected project
     await graphsMutateService.copyNodesToProject(
-            prisma,
-            systemProject.id,
-            loadToInstance.id,
+            systemStore,
+            loadToStore,
+            loadToProject.id,
             extensionNode.id,
             extensionsNode.id)  // parentToNodeId
 
@@ -80,12 +92,45 @@ export class ManageExtensionsCliService {
     console.log(`Extension copied OK`)
   }
 
-  async repl(
-    prisma: PrismaClient,
-    instance?: Instance) {
+  /**
+   * Asks which project to act on, from the projects under the working
+   * directory. Returns undefined when the user backs out.
+   */
+  async getProjectByList(): Promise<ProjectRecord | undefined> {
 
-    // Debug
-    const fnName = `${this.clName}.repl()`
+    // Get the projects
+    const projects = await projectRegistryService.getProjectList()
+
+    // Prompt
+    const selected = await select({
+      message: `Select a project`,
+      loop: false,
+      pageSize: 10,
+      choices: [
+        {
+          name: `Back`,
+          value: CommonCommands.back
+        },
+        ...projects.map(
+          (project) => ({
+            name: `${project.name} (${project.path})`,
+            value: project.id
+          }))
+      ]
+    })
+
+    // Back
+    if (selected === CommonCommands.back) {
+      return undefined
+    }
+
+    // Return
+    return projects.find((project) => project.id === selected)
+  }
+
+  async repl(
+    store: ProjectStore,
+    project: ProjectRecord) {
 
     // Loop
     while (true) {
@@ -107,7 +152,9 @@ export class ManageExtensionsCliService {
         }
       ]
 
-      if (instance != null) {
+      // The System project has nothing of its own to list: its extensions are
+      // the bundled ones, which is what the option above shows.
+      if (project.isSystem === false) {
         choices.push({
           name: `Enabled extensions for this project`,
           value: this.projectExtensionsCommand
@@ -130,14 +177,14 @@ export class ManageExtensionsCliService {
         }
 
         case this.systemExtensionsCommand: {
-          await this.systemProjectExtensions(prisma)
+          await this.systemProjectExtensions()
           break
         }
 
         case this.projectExtensionsCommand: {
           await this.userProjectExtensions(
-                  prisma,
-                  instance!)
+                  store,
+                  project)
 
           break
         }
@@ -149,59 +196,71 @@ export class ManageExtensionsCliService {
     }
   }
 
-  async run(prisma: PrismaClient) {
+  async run(store: ProjectStore, project: ProjectRecord) {
 
     // Debug
     const fnName = `${this.clName}.run()`
 
-    // Ask for project load method
+    // Start
     console.log(``)
     console.log(chalk.bold(`─── Do you want to specify a project? ───`))
     console.log(``)
+
+    // Choices
+    var choices = [
+      {
+        name: `Back`,
+        value: CommonCommands.back
+      },
+      {
+        name: `Yes, by current directory`,
+        value: this.currentDirCommand
+      },
+      {
+        name: `Yes, by list`,
+        value: this.listDirCommand
+      },
+      {
+        name: `No (system only)`,
+        value: this.systemOnlyCommand
+      }
+    ]
+
+    // The menu was opened in the System project, so there is no current
+    // directory to bind to and the option is not offered.
+    if (project.isSystem === true) {
+      choices = choices.filter(
+        (choice) => choice.value !== this.currentDirCommand)
+    }
 
     // Prompt
     const command = await select({
       message: `Select an option`,
       loop: false,
       pageSize: 10,
-      choices: [
-        {
-          name: `Back`,
-          value: CommonCommands.back
-        },
-        {
-          name: `Yes, by current directory`,
-          value: this.currentDirCommand
-        },
-        {
-          name: `Yes, by list`,
-          value: this.listDirCommand
-        },
-        {
-          name: `No (system only)`,
-          value: this.systemOnlyCommand
-        }
-      ]
+      choices: choices
     })
 
     // Get project by method
-    var instance: Instance | undefined = undefined
+    var selectedProject: ProjectRecord =
+      projectRegistryService.getSystemProject()
 
     switch (command) {
 
       case this.currentDirCommand: {
-        instance = await
-          projectsQueryService.getProjectByPath(
-            prisma,
-            process.cwd())
-
+        selectedProject = project
         break
       }
 
       case this.listDirCommand: {
-        instance = await
-          projectsQueryService.getProjectByList(prisma)
+        const picked = await this.getProjectByList()
 
+        // Back
+        if (picked == null) {
+          return
+        }
+
+        selectedProject = picked
         break
       }
 
@@ -221,36 +280,33 @@ export class ManageExtensionsCliService {
 
     // REPL
     await this.repl(
-            prisma,
-            instance)
+            projectRegistryService.getStore(selectedProject),
+            selectedProject)
   }
 
-  async systemProjectExtensions(prisma: PrismaClient) {
+  async systemProjectExtensions() {
 
     // Debug
     const fnName = `${this.clName}.systemProjectExtensions()`
 
     // Get System project
-    const systemProject = await
-            projectsQueryService.getProject(
-              prisma,
-              null,  // parentId
-              ServerOnlyTypes.systemProjectName)
-
-    // Validate
-    if (systemProject == null) {
-      throw new CustomError(`${fnName}: systemProject == null`)
-    }
+    const systemProject = projectRegistryService.getSystemProject()
 
     // Get system extensions
+    const systemStore = projectRegistryService.getStore(systemProject)
+
     const extensionsData = await
             extensionQueryService.loadExtensions(
-              prisma,
+              systemStore,
               systemProject.id)
 
     // Validate
     if (extensionsData == null) {
-      throw new CustomError(`${fnName}: extensionsData == null`)
+      throw new IntentError({
+        category: 'ExtensionError',
+        stage: fnName,
+        message: 'extensionsData == null'
+      })
     }
 
     // Start
@@ -258,7 +314,7 @@ export class ManageExtensionsCliService {
     console.log(chalk.bold(`─── Project: ${systemProject.name} ───`))
     console.log(``)
 
-    // Choices
+    // Choices, numbered so the extension is picked by position
     var choices = [
       {
         name: `Back`,
@@ -266,9 +322,9 @@ export class ManageExtensionsCliService {
       }
     ]
 
-    // List project extensions
+    var extensionsMap: Record<string, SourceNodeRecord> = {}
+
     var i = 1
-    var extensionsMap = new Map<string, SourceNode>()
 
     for (const extension of extensionsData.extensionNodes) {
 
@@ -277,9 +333,7 @@ export class ManageExtensionsCliService {
         value: `${i}`
       })
 
-      extensionsMap.set(
-        `${i}`,
-        extension)
+      extensionsMap[`${i}`] = extension
 
       i += 1
     }
@@ -298,18 +352,18 @@ export class ManageExtensionsCliService {
     }
 
     // Handle extension selection
-    if (extensionsMap.has(command)) {
+    if (extensionsMap[command] != null) {
 
       await this.viewExtension(
-              prisma,
+              systemStore,
               systemProject,
-              extensionsMap.get(command)!)
+              extensionsMap[command])
     }
   }
 
   async userProjectExtensions(
-          prisma: PrismaClient,
-          instance: Instance) {
+          store: ProjectStore,
+          project: ProjectRecord) {
 
     // Debug
     const fnName = `${this.clName}.userProjectExtensions()`
@@ -317,27 +371,24 @@ export class ManageExtensionsCliService {
     // Get project extensions
     const extensionsData = await
             extensionQueryService.loadExtensions(
-              prisma,
-              instance.id)
+              store,
+              project.id)
 
     // Validate
     if (extensionsData == null) {
-      throw new CustomError(`${fnName}: extensionsData == null`)
+      throw new IntentError({
+        category: 'ExtensionError',
+        stage: fnName,
+        message: 'extensionsData == null'
+      })
     }
-
-    /* Debug
-    if (ServerOnlyTypes.verbosity >= VerbosityLevels.max) {
-
-      console.log(`${fnName}: found ${extensionsData.extensionNodes.length} ` +
-        `extensions for instanceId: ${instance.id}`)
-    } */
 
     // Start
     console.log(``)
-    console.log(chalk.bold(`─── Project: ${instance.name} ───`))
+    console.log(chalk.bold(`─── Project: ${project.name} ───`))
     console.log(``)
 
-    // Choices
+    // Choices, numbered so the extension is picked by position
     var choices = [
       {
         name: `Back`,
@@ -345,9 +396,9 @@ export class ManageExtensionsCliService {
       }
     ]
 
-    // List project extensions
+    var extensionsMap: Record<string, SourceNodeRecord> = {}
+
     var i = 1
-    var extensionsMap = new Map<string, SourceNode>()
 
     for (const extension of extensionsData.extensionNodes) {
 
@@ -356,9 +407,7 @@ export class ManageExtensionsCliService {
         value: `${i}`
       })
 
-      extensionsMap.set(
-        `${i}`,
-        extension)
+      extensionsMap[`${i}`] = extension
 
       i += 1
     }
@@ -377,23 +426,23 @@ export class ManageExtensionsCliService {
     }
 
     // Handle extension selection
-    if (extensionsMap.has(command)) {
+    if (extensionsMap[command] != null) {
 
       await this.viewExtension(
-              prisma,
-              instance,
-              extensionsMap.get(command)!)
+              store,
+              project,
+              extensionsMap[command])
     }
   }
 
   async viewExtension(
-          prisma: PrismaClient,
-          instance: Instance,
-          extensionNode: SourceNode) {
+          store: ProjectStore,
+          project: ProjectRecord,
+          extensionNode: SourceNodeRecord) {
 
     // Start
     console.log(``)
-    console.log(chalk.bold(`─── Project: ${instance.name} ───`))
+    console.log(chalk.bold(`─── Project: ${project.name} ───`))
     console.log(chalk.bold(`─── Extension: ${extensionNode.name} ───`))
     console.log(``)
 
@@ -405,7 +454,9 @@ export class ManageExtensionsCliService {
       }
     ]
 
-    if (instance.name === ServerOnlyTypes.systemProjectName) {
+    // An extension is copied out of the System project, so the option only
+    // makes sense there.
+    if (project.isSystem === true) {
 
       choices.push({
         name: `Load extension into a project`,
@@ -435,8 +486,7 @@ export class ManageExtensionsCliService {
 
       case this.loadExtensionIntoProjectCommand: {
         await this.loadExtensionIntoProject(
-                prisma,
-                instance,
+                store,
                 extensionNode)
 
         break
@@ -444,7 +494,7 @@ export class ManageExtensionsCliService {
 
       case this.deleteExtensionCommand: {
         await extensionMutateService.deleteExtension(
-                prisma,
+                store,
                 extensionNode.id)
 
         break

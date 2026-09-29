@@ -1,6 +1,7 @@
-import { CustomError } from 'serene-core-server'
+import { IntentError } from '@/core/errors.js'
 import { blake3 } from '@noble/hashes/blake3'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { BaseDataTypes } from '@/types/base-data-types.js'
 import { SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types.js'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model.js'
@@ -22,9 +23,9 @@ export class IntentCodeGraphMutateService {
 
   // Code
   async deleteIntentCodeFile(
-          prisma: PrismaClient,
-          instanceId: string,
-          parentNode: SourceNode,
+          store: ProjectStore,
+          projectId: string,
+          parentNode: SourceNodeRecord,
           filename: string) {
 
     // Debug
@@ -32,22 +33,30 @@ export class IntentCodeGraphMutateService {
 
     // Validate
     if (parentNode == null) {
-      throw new CustomError(`${fnName}: parentNode == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: parentNode == null`
+      })
     }
 
     if (![SourceNodeTypes.projectIntentCode,
           SourceNodeTypes.intentCodeDir].includes(
             parentNode.type as SourceNodeTypes)) {
 
-      throw new CustomError(`${fnName}: invalid type: ${parentNode.type}`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: invalid type: ${parentNode.type}`
+      })
     }
 
     // Try to get the node
     var intentCodeFile = await
           sourceNodeModel.getByUniqueKey(
-            prisma,
+            store,
             parentNode.id,
-            instanceId,
+            projectId,
             SourceNodeTypes.intentCodeFile,
             filename)
 
@@ -55,15 +64,15 @@ export class IntentCodeGraphMutateService {
     if (intentCodeFile != null) {
 
       await sourceNodeModel.deleteById(
-        prisma,
+        store,
         intentCodeFile.id)
     }
   }
 
   async getOrCreateIntentCodeDir(
-          prisma: PrismaClient,
-          instanceId: string,
-          parentNode: SourceNode,
+          store: ProjectStore,
+          projectId: string,
+          parentNode: SourceNodeRecord,
           name: string) {
 
     // Debug
@@ -71,22 +80,30 @@ export class IntentCodeGraphMutateService {
 
     // Validate
     if (parentNode == null) {
-      throw new CustomError(`${fnName}: parentNode == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: parentNode == null`
+      })
     }
 
     if (![SourceNodeTypes.projectIntentCode,
           SourceNodeTypes.intentCodeDir].includes(
             parentNode.type as SourceNodeTypes)) {
 
-      throw new CustomError(`${fnName}: invalid type: ${parentNode.type}`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: invalid type: ${parentNode.type}`
+      })
     }
 
     // Try to get the node
     var intentCodeDir = await
           sourceNodeModel.getByUniqueKey(
-            prisma,
+            store,
             parentNode.id,
-            instanceId,
+            projectId,
             SourceNodeTypes.intentCodeDir,
             name)
 
@@ -97,9 +114,9 @@ export class IntentCodeGraphMutateService {
     // Create the node
     intentCodeDir = await
       sourceNodeModel.create(
-        prisma,
+        store,
         parentNode.id,  // parentId
-        instanceId,
+        projectId,
         BaseDataTypes.activeStatus,
         SourceNodeTypes.intentCodeDir,
         name,
@@ -114,9 +131,9 @@ export class IntentCodeGraphMutateService {
   }
 
   async upsertIntentCodeFile(
-          prisma: PrismaClient,
-          instanceId: string,
-          parentNode: SourceNode,
+          store: ProjectStore,
+          projectId: string,
+          parentNode: SourceNodeRecord,
           name: string,
           relativePath: string,
           content?: string) {
@@ -126,22 +143,30 @@ export class IntentCodeGraphMutateService {
 
     // Validate
     if (parentNode == null) {
-      throw new CustomError(`${fnName}: parentNode == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: parentNode == null`
+      })
     }
 
     if (![SourceNodeTypes.projectIntentCode,
           SourceNodeTypes.intentCodeDir].includes(
             parentNode.type as SourceNodeTypes)) {
 
-      throw new CustomError(`${fnName}: invalid type: ${parentNode.type}`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: invalid type: ${parentNode.type}`
+      })
     }
 
     // Try to get the node
     var intentCodeFile = await
           sourceNodeModel.getByUniqueKey(
-            prisma,
+            store,
             parentNode.id,
-            instanceId,
+            projectId,
             SourceNodeTypes.intentCodeFile,
             name)
 
@@ -157,10 +182,10 @@ export class IntentCodeGraphMutateService {
     // Create the node
     intentCodeFile = await
       sourceNodeModel.upsert(
-        prisma,
+        store,
         undefined,      // id
         parentNode.id,  // parentId
-        instanceId,
+        projectId,
         BaseDataTypes.activeStatus,
         SourceNodeTypes.intentCodeFile,
         name,
@@ -177,8 +202,8 @@ export class IntentCodeGraphMutateService {
   }
 
   async getOrCreateIntentCodeProjectNode(
-          prisma: PrismaClient,
-          buildNode: SourceNode,
+          store: ProjectStore,
+          buildNode: SourceNodeRecord,
           localPath: string) {
 
     // Debug
@@ -186,20 +211,28 @@ export class IntentCodeGraphMutateService {
 
     // Validate
     if (buildNode == null) {
-      throw new CustomError(`${fnName}: buildNode == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: buildNode == null`
+      })
     }
 
     if (buildNode.type !== SourceNodeTypes.build) {
 
-      throw new CustomError(`${fnName}: invalid type: ${buildNode.type}`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: invalid type: ${buildNode.type}`
+      })
     }
 
     // Try to get the node
     var intentCodeProject = await
           sourceNodeModel.getByUniqueKey(
-            prisma,
+            store,
             buildNode.id,  // parentId
-            buildNode.instanceId,
+            buildNode.projectId,
             SourceNodeTypes.projectIntentCode,
             SourceNodeNames.projectIntentCode)
 
@@ -222,9 +255,9 @@ export class IntentCodeGraphMutateService {
     // Create the node
     intentCodeProject = await
       sourceNodeModel.create(
-        prisma,
+        store,
         buildNode.id,  // parentId
-        buildNode.instanceId,
+        buildNode.projectId,
         BaseDataTypes.activeStatus,
         SourceNodeTypes.projectIntentCode,
         SourceNodeNames.projectIntentCode,
@@ -239,9 +272,9 @@ export class IntentCodeGraphMutateService {
   }
 
   async upsertTechStackJson(
-          prisma: PrismaClient,
-          instanceId: string | undefined,
-          parentNode: SourceNode | undefined,
+          store: ProjectStore,
+          projectId: string | undefined,
+          parentNode: SourceNodeRecord | undefined,
           jsonContent: any,
           sourceNodeGenerationData: SourceNodeGenerationData,
           fileModifiedTime: Date) {
@@ -251,13 +284,20 @@ export class IntentCodeGraphMutateService {
 
     // Validate
     if (parentNode == null) {
-      throw new CustomError(`${fnName}: parentNode == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: parentNode == null`
+      })
     }
 
     if (parentNode.type !== SourceNodeTypes.projectIntentCode) {
 
-      throw new CustomError(`${fnName}: parentNode.type !== ` +
-        `SourceNodeTypes.projectSpecs`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: parentNode.type !== SourceNodeTypes.projectSpecs`
+      })
     }
 
     // Get jsonContentHash
@@ -272,10 +312,10 @@ export class IntentCodeGraphMutateService {
     // Create the node
     const techStackJsonSourceNode = await
             sourceNodeModel.upsert(
-              prisma,
+              store,
               undefined,         // id
               parentNode.id,     // parentId
-              instanceId,
+              projectId,
               BaseDataTypes.activeStatus,
               SourceNodeTypes.techStackJsonFile,
               SourceNodeNames.techStackJsonFile,
@@ -292,7 +332,7 @@ export class IntentCodeGraphMutateService {
     // Upsert SourceNodeGeneration
     const sourceNodeGeneration = await
             sourceNodeGenerationModel.upsert(
-              prisma,
+              store,
               undefined,                  // id
               techStackJsonSourceNode.id,  // sourceNodeId
               sourceNodeGenerationData.modelId,
@@ -306,7 +346,7 @@ export class IntentCodeGraphMutateService {
 
     // Delete old SourceNodeGenerations
     await sourceNodeGenerationService.deleteOld(
-            prisma,
+            store,
             techStackJsonSourceNode.id)  // sourceNodeId
 
     // Return
@@ -314,9 +354,9 @@ export class IntentCodeGraphMutateService {
   }
 
   async upsertIntentCodeCompilerData(
-          prisma: PrismaClient,
-          instanceId: string | undefined,
-          parentNode: SourceNode | undefined,
+          store: ProjectStore,
+          projectId: string | undefined,
+          parentNode: SourceNodeRecord | undefined,
           name: string,
           jsonContent: any,
           sourceNodeGenerationData: SourceNodeGenerationData,
@@ -327,13 +367,21 @@ export class IntentCodeGraphMutateService {
 
     // Validate
     if (parentNode == null) {
-      throw new CustomError(`${fnName}: parentNode == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: parentNode == null`
+      })
     }
 
     if (parentNode.type !== SourceNodeTypes.intentCodeFile) {
 
-      throw new CustomError(`${fnName}: parentNode.type !== ` +
-                            `SourceNodeTypes.intentCodeFile`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: parentNode.type !== ` +
+                 `SourceNodeTypes.intentCodeFile`
+      })
     }
 
     // Get jsonContentHash
@@ -346,10 +394,10 @@ export class IntentCodeGraphMutateService {
     // Create the node
     const intentCodeCompilerData = await
             sourceNodeModel.upsert(
-              prisma,
+              store,
               undefined,         // id
               parentNode.id,     // parentId
-              instanceId,
+              projectId,
               BaseDataTypes.activeStatus,
               SourceNodeTypes.intentCodeCompilerData,
               name,
@@ -366,7 +414,7 @@ export class IntentCodeGraphMutateService {
     // Upsert SourceNodeGeneration
     const sourceNodeGeneration = await
             sourceNodeGenerationModel.upsert(
-              prisma,
+              store,
               undefined,                  // id
               intentCodeCompilerData.id,  // sourceNodeId
               sourceNodeGenerationData.modelId,
@@ -380,7 +428,7 @@ export class IntentCodeGraphMutateService {
 
     // Delete old SourceNodeGenerations
     await sourceNodeGenerationService.deleteOld(
-            prisma,
+            store,
             intentCodeCompilerData.id)  // sourceNodeId
 
     // Return
@@ -388,9 +436,9 @@ export class IntentCodeGraphMutateService {
   }
 
   async upsertIntentCodeIndexedData(
-          prisma: PrismaClient,
-          instanceId: string | undefined,
-          parentNode: SourceNode | undefined,
+          store: ProjectStore,
+          projectId: string | undefined,
+          parentNode: SourceNodeRecord | undefined,
           name: string,
           jsonContent: any,
           sourceNodeGenerationData: SourceNodeGenerationData,
@@ -401,13 +449,20 @@ export class IntentCodeGraphMutateService {
 
     // Validate
     if (parentNode == null) {
-      throw new CustomError(`${fnName}: parentNode == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: parentNode == null`
+      })
     }
 
     if (parentNode.type !== SourceNodeTypes.intentCodeFile) {
 
-      throw new CustomError(
-        `${fnName}: parentNode.type !== SourceNodeTypes.intentCodeFile`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: parentNode.type !== SourceNodeTypes.intentCodeFile`
+      })
     }
 
     // Get jsonContentHash
@@ -420,10 +475,10 @@ export class IntentCodeGraphMutateService {
     // Create the node
     const intentCodeIndexedData = await
             sourceNodeModel.upsert(
-              prisma,
+              store,
               undefined,         // id
               parentNode.id,     // parentId
-              instanceId,
+              projectId,
               BaseDataTypes.activeStatus,
               SourceNodeTypes.intentCodeIndexedData,
               name,
@@ -440,7 +495,7 @@ export class IntentCodeGraphMutateService {
     // Upsert SourceNodeGeneration
     const sourceNodeGeneration = await
             sourceNodeGenerationModel.upsert(
-              prisma,
+              store,
               undefined,                  // id
               intentCodeIndexedData.id,  // sourceNodeId
               sourceNodeGenerationData.modelId,
@@ -454,7 +509,7 @@ export class IntentCodeGraphMutateService {
 
     // Delete old SourceNodeGenerations
     await sourceNodeGenerationService.deleteOld(
-            prisma,
+            store,
             intentCodeIndexedData.id)  // sourceNodeId
 
     // Return

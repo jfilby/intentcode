@@ -1,5 +1,6 @@
-import { CustomError } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { DepDeltaNames } from '@/types/server-only-types.js'
 import { SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types.js'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
@@ -15,8 +16,8 @@ export class DependenciesQueryService {
 
   // Code
   async getDepsNode(
-          prisma: PrismaClient,
-          projectNode: SourceNode) {
+          store: ProjectStore,
+          projectNode: SourceNodeRecord) {
 
     // Debug
     const fnName = `${this.clName}.getDepsNode()`
@@ -24,16 +25,19 @@ export class DependenciesQueryService {
     // Validate
     if (projectNode.type !== SourceNodeTypes.project) {
 
-      throw new CustomError(
-        `${fnName}: projectNode.type !== SourceNodeTypes.project`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: projectNode.type !== SourceNodeTypes.project`
+      })
     }
 
     // Try to get an existing node
     var depsNode = await
           sourceNodeModel.getByUniqueKey(
-            prisma,
+            store,
             projectNode.id,
-            projectNode.instanceId,
+            projectNode.projectId,
             SourceNodeTypes.deps,
             SourceNodeNames.depsName)
 

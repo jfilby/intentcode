@@ -1,14 +1,15 @@
 import fs from 'fs'
-import { CustomError, WalkDirService } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
+import { walkDir } from '@/core/walk-dir.js'
 import { BuildData, BuildFromFile } from '@/types/build-types.js'
 import { CompilerMutateService } from '../intentcode/compiler/code/mutate-service.js'
 import { FsUtilsService } from '../utils/fs-utils-service.js'
 import { IndexerMutateService } from '../intentcode/indexer/mutate-service.js'
 import { IntentCodeFilenameService } from '../utils/filename-service.js'
 import { IntentCodePathGraphMutateService } from '../graphs/intentcode/path-graph-mutate-service.js'
-import { ProjectsQueryService } from './query-service.js'
-import { ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types.js'
+import { ProjectDetails } from '@/types/server-only-types.js'
 
 // Services
 const compilerMutateService = new CompilerMutateService()
@@ -16,8 +17,32 @@ const fsUtilsService = new FsUtilsService()
 const indexerMutateService = new IndexerMutateService()
 const intentCodeFilenameService = new IntentCodeFilenameService()
 const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
-const projectsQueryService = new ProjectsQueryService()
-const walkDirService = new WalkDirService()
+
+/**
+ * The build's details for a project. A build holds every project it covers,
+ * keyed by number, so the project is found by the id on the node rather than
+ * by the number: the caller has a node, not a number.
+ */
+function getBuildProjectDetails(
+          buildData: BuildData,
+          projectId: string) {
+
+  // Debug
+  const fnName = 'getBuildProjectDetails()'
+
+  for (const projectDetails of Object.values(buildData.projects)) {
+
+    if (projectDetails.project.id === projectId) {
+      return projectDetails
+    }
+  }
+
+  throw new IntentError({
+    category: 'CompilerError',
+    stage: fnName,
+    message: `no ProjectDetails in the build for projectId: ${projectId}`
+  })
+}
 
 export class ProjectCompileService {
 
@@ -26,7 +51,7 @@ export class ProjectCompileService {
 
   // Code
   async getBuildFromFiles(
-          prisma: PrismaClient,
+          store: ProjectStore,
           projectDetails: ProjectDetails) {
 
     // Get buildFileList
@@ -50,7 +75,7 @@ export class ProjectCompileService {
       // Get/create the file's IntentCode node
       const intentFileNode = await
         intentCodePathGraphMutateService.upsertIntentCodePathAsGraph(
-          prisma,
+          store,
           projectDetails.projectIntentCodeNode,
           buildFile.intentCodeFilename)
 
@@ -84,7 +109,7 @@ export class ProjectCompileService {
     // Get IntentCode to compile
     var intentCodeList: string[] = []
 
-    await walkDirService.walkDir(
+    await walkDir(
       intentCodePath,
       intentCodeList,
       {
@@ -127,9 +152,9 @@ export class ProjectCompileService {
   }
 
   async runCompileBuildStage(
-          prisma: PrismaClient,
+          store: ProjectStore,
           buildData: BuildData,
-          projectNode: SourceNode) {
+          projectNode: SourceNodeRecord) {
 
     // Debug
     const fnName = `${this.clName}.runCompileBuildStage()`
@@ -137,25 +162,20 @@ export class ProjectCompileService {
     console.log(`Compiling IntentCode..`)
 
     // Get ProjectDetails
-    const projectDetails =
-            projectsQueryService.getProjectDetailsByInstanceId(
-              projectNode.instanceId,
-              buildData.projects)
-
-    if (projectDetails == null) {
-      throw new CustomError(`${fnName}: projectDetails == null`)
-    }
+    const projectDetails = getBuildProjectDetails(
+      buildData,
+      projectNode.projectId)
 
     // Get buildFromFiles
     const buildFromFiles = await
-      this.getBuildFromFiles(prisma, projectDetails)
+      this.getBuildFromFiles(store, projectDetails)
 
     // Compile IntentCode to source
     for (const buildFromFile of buildFromFiles) {
 
       // Compile
       await compilerMutateService.run(
-              prisma,
+              store,
               buildData,
               projectNode,
               projectDetails,
@@ -167,9 +187,9 @@ export class ProjectCompileService {
   }
 
   async runIndexBuildStage(
-          prisma: PrismaClient,
+          store: ProjectStore,
           buildData: BuildData,
-          projectNode: SourceNode) {
+          projectNode: SourceNodeRecord) {
 
     // Debug
     const fnName = `${this.clName}.runIndexBuildStage()`
@@ -177,14 +197,13 @@ export class ProjectCompileService {
     console.log(`Indexing IntentCode..`)
 
     // Get ProjectDetails
-    const projectDetails =
-            projectsQueryService.getProjectDetailsByInstanceId(
-              projectNode.instanceId,
-              buildData.projects)
+    const projectDetails = getBuildProjectDetails(
+      buildData,
+      projectNode.projectId)
 
     // Get buildFromFiles
     const buildFromFiles = await
-      this.getBuildFromFiles(prisma, projectDetails)
+      this.getBuildFromFiles(store, projectDetails)
 
     // Compile IntentCode to source
     for (const buildFromFile of buildFromFiles) {
@@ -199,7 +218,7 @@ export class ProjectCompileService {
 
       // Index the file
       await indexerMutateService.indexFileWithLlm(
-              prisma,
+              store,
               buildData,
               projectNode,
               projectDetails.projectIntentCodeNode,

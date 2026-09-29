@@ -1,9 +1,10 @@
-import { CustomError } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { BuildData } from '@/types/build-types.js'
 import { ExtensionsData } from '@/types/source-graph-types.js'
 import { ExtensionMutateService } from '@/services/extensions/extension/mutate-service.js'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service.js'
+import { ProjectRegistryService } from '@/services/projects/project-registry.js'
 import { ProjectSetupService } from '@/services/projects/setup-project.js'
 import { SourceDepsFileService } from './source-deps-service.js'
 import { ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
@@ -11,6 +12,7 @@ import { ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
 // Services
 const extensionMutateService = new ExtensionMutateService()
 const extensionQueryService = new ExtensionQueryService()
+const projectRegistryService = new ProjectRegistryService()
 const projectSetupService = new ProjectSetupService()
 const sourceDepsFileService = new SourceDepsFileService()
 
@@ -45,7 +47,7 @@ export class DepsSyncService {
   }
 
   async deleteExtensionsNotInDepsNode(
-    prisma: PrismaClient,
+    store: ProjectStore,
     extensionsData: ExtensionsData,
     depsNodeExtensions: any) {
 
@@ -84,17 +86,17 @@ export class DepsSyncService {
 
         // Delete
         await extensionMutateService.deleteExtension(
-          prisma,
+          store,
           extensionNode.id)
       }
     }
   }
 
   async loadExtensionsFromDepsNode(
-    prisma: PrismaClient,
-    projectNode: SourceNode,
-    extensionsData: ExtensionsData,
-    depsNodeExtensions: any) {
+          store: ProjectStore,
+          projectNode: SourceNodeRecord,
+          extensionsData: ExtensionsData,
+          depsNodeExtensions: any) {
 
     // Debug
     const fnName = `${this.clName}.loadExtensionsFromDepsNode()`
@@ -124,41 +126,40 @@ export class DepsSyncService {
 
         // Load extension into project
         await extensionMutateService.loadExtensionsInSystemToUserProject(
-          prisma,
-          projectNode.instanceId,
+          projectRegistryService.getStore(
+            projectRegistryService.getSystemProject()),
+          store,
+          projectNode.projectId,
           [id])
       }
     }
   }
 
   async update(
-    prisma: PrismaClient,
+    store: ProjectStore,
     buildData: BuildData,
-    projectNode: SourceNode) {
+    projectNode: SourceNodeRecord) {
 
-    // Load any new extensions
+    // Load any new extensions. A project with no deps.json has nothing to
+    // load, which is a project that has declared no dependencies.
     const depsNode = await
-      projectSetupService.loadDepsConfigFile(
-      prisma,
-      projectNode)
+      projectSetupService.loadDepsConfigFile(store, projectNode)
 
-    // Update extensions by deps file
-    await this.syncExtensions(
-      prisma,
-      projectNode,
-      depsNode)
+    if (depsNode != null) {
+      await this.syncExtensions(store, projectNode, depsNode)
+    }
 
     // Update and write the package manager file
     await sourceDepsFileService.updateAndWriteFile(
-      prisma,
+      store,
       buildData,
       projectNode)
   }
 
   async syncExtensions(
-    prisma: PrismaClient,
-    projectNode: SourceNode,
-    depsNode: SourceNode) {
+    store: ProjectStore,
+    projectNode: SourceNodeRecord,
+    depsNode: SourceNodeRecord) {
 
     // Debug
     const fnName = `${this.clName}.syncExtensions()`
@@ -166,14 +167,14 @@ export class DepsSyncService {
     // Get extensions in the project
     const projectExtensionsData = await
       extensionQueryService.loadExtensions(
-        prisma,
-        projectNode.instanceId)
+        store,
+        projectNode.projectId)
 
     // Validate
     if (projectExtensionsData?.extensionNodes == null) {
 
-      console.error(`Extensions not setup for project with instanceId: ` +
-        `${projectNode.instanceId}`)
+      console.error(`Extensions not setup for project with projectId: ` +
+        `${projectNode.projectId}`)
 
       process.exit(1)
     }
@@ -192,7 +193,7 @@ export class DepsSyncService {
     if (depsNodeExtensions != null) {
 
       await this.loadExtensionsFromDepsNode(
-        prisma,
+        store,
         projectNode,
         projectExtensionsData,
         depsNodeExtensions)
@@ -207,7 +208,7 @@ export class DepsSyncService {
     if (depsNodeExtensions != null) {
 
       await this.deleteExtensionsNotInDepsNode(
-        prisma,
+        store,
         projectExtensionsData,
         depsNodeExtensions)
     }

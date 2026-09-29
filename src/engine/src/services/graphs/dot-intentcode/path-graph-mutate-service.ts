@@ -1,5 +1,6 @@
-import { CustomError } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { SourceNodeTypes } from '@/types/source-graph-types.js'
 import { FsUtilsService } from '../../utils/fs-utils-service.js'
 import { DotIntentCodeGraphMutateService } from './graph-mutate-service.js'
@@ -16,8 +17,8 @@ export class DotIntentCodePathGraphMutateService {
 
   // Code
   async getOrCreateDotIntentCodeConfigFilePathAsGraph(
-          prisma: PrismaClient,
-          projectDotIntentCodeNode: SourceNode,
+          store: ProjectStore,
+          projectDotIntentCodeNode: SourceNodeRecord,
           fileSourceNodeType: SourceNodeTypes,
           fullPath: string) {
 
@@ -25,15 +26,25 @@ export class DotIntentCodePathGraphMutateService {
     const fnName = `${this.clName}.getOrCreateDotIntentCodeConfigFilePathAsGraph()`
 
     // Get project source path
-    const projectSourcePath = (projectDotIntentCodeNode.jsonContent as any)?.path
+    const jsonContent = projectDotIntentCodeNode.jsonContent
+    const projectSourcePath =
+      jsonContent != null &&
+      typeof jsonContent === 'object' &&
+      'path' in jsonContent &&
+      typeof jsonContent.path === 'string'
+        ? jsonContent.path
+        : undefined
 
     // Validate project path
     if (projectSourcePath == null ||
         !fsUtilsService.isPathWithin(fullPath, projectSourcePath)) {
 
-      throw new CustomError(
-        `${fnName}: Invalid path: ${fullPath} for project source node: ` +
-        `${projectSourcePath}`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: Invalid path: ${fullPath} for project source ` +
+          `node: ${projectSourcePath}`
+      })
     }
 
     // Strip project path from fullPath prefix
@@ -51,14 +62,14 @@ export class DotIntentCodePathGraphMutateService {
     // console.log(`${fnName}: dirs: ${dirs}`)
 
     // Get/create nodes for dirs
-    var dirSourceNode: SourceNode = projectDotIntentCodeNode
+    var dirSourceNode: SourceNodeRecord = projectDotIntentCodeNode
 
     for (const dir of dirs) {
 
       dirSourceNode = await
         dotIntentCodeGraphMutateService.getOrCreateDotIntentCodeDir(
-          prisma,
-          projectDotIntentCodeNode.instanceId,
+          store,
+          projectDotIntentCodeNode.projectId,
           dirSourceNode,
           dir)
     }
@@ -66,8 +77,8 @@ export class DotIntentCodePathGraphMutateService {
     // Get/create nodes for the filename
     const filenameSourceNode = await
             dotIntentCodeGraphMutateService.getOrCreateConfigFile(
-              prisma,
-              projectDotIntentCodeNode.instanceId,
+              store,
+              projectDotIntentCodeNode.projectId,
               dirSourceNode,
               fileSourceNodeType,
               filename,

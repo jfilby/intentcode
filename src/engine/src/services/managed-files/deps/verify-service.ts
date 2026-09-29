@@ -1,6 +1,7 @@
 import semver from 'semver'
-import { CustomError } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
 import { DependenciesMutateService } from '@/services/graphs/dependencies/mutate-service.js'
 import { DependenciesQueryService } from '@/services/graphs/dependencies/query-service.js'
@@ -21,8 +22,8 @@ export class DepsVerifyService {
 
   // Code
   async verifyDepsNode(
-    prisma: PrismaClient,
-    projectNode: SourceNode) {
+    store: ProjectStore,
+    projectNode: SourceNodeRecord) {
 
     // Debug
     const fnName = `${this.clName}.verifyDepsNode()`
@@ -30,26 +31,29 @@ export class DepsVerifyService {
     // Get Deps node
     const depsNode = await
       dependenciesQueryService.getDepsNode(
-        prisma,
+        store,
         projectNode)
+    // A project with no deps node has declared no dependencies, which is a
+    // project that has nothing to verify.
+    if (depsNode == null) return
 
     // Verify depsNode dependencies
     await this.verifyDepsNodeDependencies(
-      prisma,
+      store,
       projectNode,
       depsNode)
 
     // Verify depsNode matches deps.json
     await this.verifyDepsNodeSyncedToDepsJson(
-      prisma,
+      store,
       projectNode,
       depsNode)
   }
 
   async verifyDepsNodeDependencies(
-          prisma: PrismaClient,
-          projectNode: SourceNode,
-          depsNode: SourceNode) {
+          store: ProjectStore,
+          projectNode: SourceNodeRecord,
+          depsNode: SourceNodeRecord) {
 
     // Debug
     const fnName = `${this.clName}.verifyDepsNodeDependencies()`
@@ -104,7 +108,7 @@ export class DepsVerifyService {
       depsNode.jsonContent = jsonContent
 
       await dependenciesMutateService.updateDepsNode(
-              prisma,
+              store,
               projectNode,
               depsNode,
               true)  // writeToDepsJson
@@ -112,9 +116,9 @@ export class DepsVerifyService {
   }
 
   async verifyDepsNodeSyncedToDepsJson(
-          prisma: PrismaClient,
-          projectNode: SourceNode,
-          depsNode: SourceNode,
+          store: ProjectStore,
+          projectNode: SourceNodeRecord,
+          depsNode: SourceNodeRecord,
           writeIfFileNotFound: boolean = true) {
 
     // Debug
@@ -123,7 +127,7 @@ export class DepsVerifyService {
     // Read deps.json
     const { found, data, filename } = await
             depsJsonService.readFile(
-              prisma,
+              store,
               projectNode)
 
     // File not found?
@@ -133,7 +137,7 @@ export class DepsVerifyService {
       if (writeIfFileNotFound === true) {
 
         await depsJsonService.writeToFile(
-                prisma,
+                store,
                 projectNode,
                 depsNode)
       }
@@ -156,7 +160,11 @@ export class DepsVerifyService {
       console.log(`${fnName}: deps.json file: ` + typeof data)
       console.log(`${fnName}: deps.json file: ` + JSON.stringify(data))
 
-      throw new CustomError(`${fnName}: depsNode (jsonContent) !== deps.json`)
+      throw new IntentError({
+        category: 'StorageError',
+        stage: fnName,
+        message: 'depsNode (jsonContent) !== deps.json'
+      })
     }
   }
 }

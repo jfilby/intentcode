@@ -1,13 +1,12 @@
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
 import { BuildFromFile } from '@/types/build-types.js'
 import { ExtensionsData } from '@/types/source-graph-types.js'
 import { ServerOnlyTypes } from '@/types/server-only-types.js'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service.js'
-import { ProjectsQueryService } from '@/services/projects/query-service.js'
+import { ProjectRegistryService } from '@/services/projects/project-registry.js'
 
 // Services
 const extensionQueryService = new ExtensionQueryService()
-const projectsQueryService = new ProjectsQueryService()
+const projectRegistryService = new ProjectRegistryService()
 
 // Class
 export class TechStackPromptService {
@@ -17,8 +16,6 @@ export class TechStackPromptService {
 
   // Code
   async getPrompt(
-          prisma: PrismaClient,
-          projectNode: SourceNode,
           extensionsData: ExtensionsData,
           buildFromFile: BuildFromFile) {
 
@@ -90,15 +87,12 @@ export class TechStackPromptService {
       '```'
 
     // System (available extensions)
-    const systemProject = await
-            projectsQueryService.getProject(
-              prisma,
-              null,  // parentId
-              ServerOnlyTypes.systemProjectName)
+    const systemProject = projectRegistryService.getSystemProject()
+    const systemStore = projectRegistryService.getStore(systemProject)
 
     const systemExtensionsPrompting = await
             extensionQueryService.getAsPrompting(
-              prisma,
+              systemStore,
               systemProject.id)
 
     if (systemExtensionsPrompting != null) {
@@ -115,7 +109,7 @@ export class TechStackPromptService {
     // Add installed extensions
     const projectExtensionsPrompting = await
             extensionQueryService.getAsPrompting(
-              prisma,
+              systemStore,
               systemProject.id)
 
     if (projectExtensionsPrompting != null) {
@@ -131,7 +125,6 @@ export class TechStackPromptService {
 
     // Debug
     // console.log(`${fnName}: prompt: ${prompt}`)
-    // throw new CustomError(`${fnName}: TEST STOP`)
 
     // Return
     return prompt

@@ -1,11 +1,15 @@
 import fs from 'fs'
-import { WalkDirService } from 'serene-core-server'
-import { SourceNode } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import { walkDir, type WalkDirConfig } from '@/core/walk-dir.js'
 import { BuildData } from '@/types/build-types.js'
 import { ProjectDetails } from '@/types/server-only-types.js'
 
-// Services
-const walkDirService = new WalkDirService()
+// The IntentCode tree holds nothing but Markdown, one level down.
+const INTENT_CODE_FILES: WalkDirConfig = {
+  recursive: true,
+  fileExts: ['.md']
+}
 
 // Class
 export class IntentCodePromptingService {
@@ -22,7 +26,7 @@ export class IntentCodePromptingService {
     const intentCodeFiles = await
             this.getIntentCodeFiles(projectDetails.projectIntentCodeNode)
 
-    if (intentCodeFiles.size == 0) {
+    if (Object.keys(intentCodeFiles).length === 0) {
       return null
     }
 
@@ -64,7 +68,7 @@ export class IntentCodePromptingService {
       // Add each project's files
       const projectPrompting = await
               this.addProjectFilesPrompting(
-                projectNo as any as number,
+                Number(projectNo),
                 projectDetails)
 
       if (projectPrompting != null) {
@@ -76,24 +80,40 @@ export class IntentCodePromptingService {
     return prompting
   }
 
-  async getIntentCodeFiles(projectIntentCodeNode: SourceNode) {
+  async getIntentCodeFiles(projectIntentCodeNode: SourceNodeRecord) {
+
+    // Debug
+    const fnName = `${this.clName}.getIntentCodeFiles()`
 
     // Get IntentCode path
-    const intentCodePath = (projectIntentCodeNode.jsonContent as any).path
+    const jsonContent = projectIntentCodeNode.jsonContent
+    const intentCodePath =
+      jsonContent != null &&
+      typeof jsonContent === 'object' &&
+      'path' in jsonContent &&
+      typeof jsonContent.path === 'string'
+        ? jsonContent.path
+        : undefined
+
+    // Validate
+    if (intentCodePath == null) {
+      throw new IntentError({
+        category: 'StorageError',
+        stage: fnName,
+        message: `${fnName}: projectIntentCodeNode has no path`
+      })
+    }
 
     // Walk dir
     var mdFilesList: string[] = []
 
-    await walkDirService.walkDir(
+    await walkDir(
             intentCodePath,
             mdFilesList,
-            {
-              recursive: true,
-              fileExts: ['.md']
-            })
+            INTENT_CODE_FILES)
 
     // Read files
-    var intentCodeFiles: any = {}
+    var intentCodeFiles: Record<string, string> = {}
 
     for (const mdFilename of mdFilesList) {
 

@@ -1,4 +1,5 @@
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { ProjectStore } from '@/core/store.js'
+import { SourceNodeRecord } from '@/core/records.js'
 import { BuildFromFile } from '@/types/build-types.js'
 import { IntentCodeCommonTypes } from '../common/types.js'
 import { ServerOnlyTypes } from '@/types/server-only-types.js'
@@ -18,8 +19,8 @@ export class IndexerPromptService {
 
   // Code
   async getPrompt(
-          prisma: PrismaClient,
-          projectNode: SourceNode,
+          store: ProjectStore,
+          projectNode: SourceNodeRecord,
           extensionsData: ExtensionsData,
           buildFromFile: BuildFromFile) {
 
@@ -32,7 +33,7 @@ export class IndexerPromptService {
     // Get deps prompting
     const depsPrompting = await
             dependenciesPromptService.getDepsPrompting(
-              prisma,
+              store,
               projectNode,
               buildFromFile.fileNode)
 

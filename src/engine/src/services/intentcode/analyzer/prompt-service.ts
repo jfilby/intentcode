@@ -1,5 +1,5 @@
-import { CustomError } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type { SourceNodeRecord } from '@/core/records.js'
 import { BuildData, BuildFromFile } from '@/types/build-types.js'
 import { IntentCodeCommonTypes } from '../common/types.js'
 import { AnalyzerPromptTypes, FileOps, ServerOnlyTypes } from '@/types/server-only-types.js'
@@ -24,9 +24,8 @@ export class IntentCodeAnalyzerPromptService {
 
   // Code
   async getPrompt(
-          prisma: PrismaClient,
           promptType: AnalyzerPromptTypes,
-          projectNode: SourceNode,
+          projectNode: SourceNodeRecord | null,
           buildData: BuildData,
           buildFromFiles: BuildFromFile[],
           suggestion?: any) {
@@ -47,16 +46,12 @@ export class IntentCodeAnalyzerPromptService {
         `Chat with the user about the generated suggestion.\n`
 
     } else {
-      throw new CustomError(`${fnName}: unhandled promptType: ${promptType}`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `unhandled promptType: ${promptType}`})
     }
 
-    /* Get deps prompting
-    const depsPrompting = await
-            dependenciesPromptService.getDepsPrompting(
-              prisma,
-              projectNode,
-              buildFromFile.fileNode,
-              buildFromFile.targetFullPath) */
 
     // Debug
     // console.log(`${fnName}: targetLangPrompting: ${targetLangPrompting}`)
@@ -177,21 +172,6 @@ export class IntentCodeAnalyzerPromptService {
         projectsQueryService.getProjectsPrompting(buildData.projects)
     }
 
-    /* Add installed extensions
-    const projectExtensionsPrompting = await
-            extensionQueryService.getAsPrompting(
-              prisma,
-              projectSpecsNode.instanceId)
-
-    if (projectExtensionsPrompting != null) {
-
-      prompt +=
-        `## Project extensions\n` +
-        `\n` +
-        `These extensions have been installed for this project.\n` +
-        `\n` +
-        projectExtensionsPrompting
-    } */
 
     // Add existing IntentCode files
     const intentCodePrompting = await

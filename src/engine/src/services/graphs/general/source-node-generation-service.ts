@@ -1,4 +1,4 @@
-import { PrismaClient } from '@/prisma/client.js'
+import type { ProjectStore } from '@/core/store.js'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model.js'
 import { ServerOnlyTypes } from '@/types/server-only-types.js'
 
@@ -13,24 +13,23 @@ export class SourceNodeGenerationService {
 
   // Code
   async deleteOld(
-          prisma: PrismaClient,
+          store: ProjectStore,
           sourceNodeId: string) {
 
     // Get records to keep
     const keepSourceNodeGenerations = await
             sourceNodeGenerationModel.getLatestForSourceNodeId(
-              prisma,
+              store,
               ServerOnlyTypes.keepOldSourceNodeGenerations,
               sourceNodeId)
 
     // Get ids to keep
     const keepIds =
-            keepSourceNodeGenerations.map((keepSourceNodeGeneration: any) =>
-              keepSourceNodeGeneration.id)
+      keepSourceNodeGenerations.map((generation) => generation.id)
 
     // Delete old records
     await sourceNodeGenerationModel.deleteNotInAndSourceNodeId(
-            prisma,
+            store,
             keepIds,
             sourceNodeId)
   }

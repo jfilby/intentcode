@@ -1,8 +1,10 @@
-import { CustomError, WalkDirService } from 'serene-core-server'
+import { getModelId } from '@/services/intentcode/common/model-id.js'
+import { IntentError } from '@/core/errors.js'
+import { walkDir } from '@/core/walk-dir.js'
 import fs from 'fs'
 import { blake3 } from '@noble/hashes/blake3'
-import { AiModelService } from '@/services/ai/ai-model-service.js'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { ProjectStore } from '@/core/store.js'
+import { SourceNodeRecord } from '@/core/records.js'
 import { IndexerLlmService } from './llm-service.js'
 import { BuildData, BuildFromFile } from '@/types/build-types.js'
 import { IntentCodeAiTasks, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
@@ -22,7 +24,6 @@ const sourceNodeGenerationModel = new SourceNodeGenerationModel()
 const sourceNodeModel = new SourceNodeModel()
 
 // Services
-const aiModelService = new AiModelService()
 const dependenciesMutateService = new DependenciesMutateService()
 const fsUtilsService = new FsUtilsService()
 const indexerLlmService = new IndexerLlmService()
@@ -31,7 +32,6 @@ const intentCodeFilenameService = new IntentCodeFilenameService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
 const intentCodeMessagesService = new IntentCodeMessagesService()
 const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
-const walkDirService = new WalkDirService()
 
 // Class
 export class IndexerMutateService {
@@ -41,8 +41,8 @@ export class IndexerMutateService {
 
   // Code
   async getExistingJsonContent(
-          prisma: PrismaClient,
-          intentFileNode: SourceNode,
+          store: ProjectStore,
+          intentFileNode: SourceNodeRecord,
           modelId: string,
           prompt: string) {
 
@@ -52,9 +52,9 @@ export class IndexerMutateService {
     // Try to get existing indexer data SourceNode
     const indexerDataSourceNode = await
             sourceNodeModel.getByUniqueKey(
-              prisma,
+              store,
               intentFileNode.id,  // parentId
-              intentFileNode.instanceId,
+              intentFileNode.projectId,
               SourceNodeTypes.intentCodeIndexedData,
               SourceNodeNames.indexedData)
 
@@ -68,7 +68,7 @@ export class IndexerMutateService {
     // Try to get existing SourceNodeGeneration
     const sourceNodeGeneration = await
             sourceNodeGenerationModel.getByUniqueKey(
-              prisma,
+              store,
               indexerDataSourceNode.id,
               modelId,
               promptHash)
@@ -84,10 +84,10 @@ export class IndexerMutateService {
   }
 
   async indexFileWithLlm(
-          prisma: PrismaClient,
+          store: ProjectStore,
           buildData: BuildData,
-          projectNode: SourceNode,
-          projectIntentCodeNode: SourceNode,
+          projectNode: SourceNodeRecord,
+          projectIntentCodeNode: SourceNodeRecord,
           buildFromFile: BuildFromFile) {
 
     // Debug
@@ -101,20 +101,21 @@ export class IndexerMutateService {
     }
 
     // The model id
-    const modelId = aiModelService.getModelId(IntentCodeAiTasks.indexer)
+    const modelId = await getModelId(IntentCodeAiTasks.indexer)
 
     // Get prompt
     const prompt = await
             indexerPromptService.getPrompt(
-              prisma,
+              store,
               projectNode,
               buildData.extensionsData,
               buildFromFile)
 
-    // Already generated?
-    var jsonContent = await
+    // Already generated? The value is whatever the model replied with, so it
+    // stays untyped until processQueryResults reads it.
+    var jsonContent: unknown = await
           this.getExistingJsonContent(
-            prisma,
+            store,
             buildFromFile.fileNode,
             modelId,
             prompt)
@@ -124,7 +125,7 @@ export class IndexerMutateService {
 
       const llmResults = await
               indexerLlmService.llmRequest(
-                prisma,
+                store,
                                 IntentCodeAiTasks.indexer,
                 prompt)
 
@@ -143,7 +144,7 @@ export class IndexerMutateService {
 
     // Save the index data
     await this.processQueryResults(
-            prisma,
+            store,
             projectNode,
             buildFromFile,
             sourceNodeGenerationData,
@@ -151,21 +152,36 @@ export class IndexerMutateService {
   }
 
   async indexProject(
-          prisma: PrismaClient,
+          store: ProjectStore,
           buildData: BuildData,
-          projectNode: SourceNode,
-          projectIntentCodeNode: SourceNode) {
+          projectNode: SourceNodeRecord,
+          projectIntentCodeNode: SourceNodeRecord) {
 
     // Debug
     const fnName = `${this.clName}.indexProject()`
 
     // Get intentCodePath
-    const intentCodePath = (projectIntentCodeNode.jsonContent as any).path
+    const jsonContent = projectIntentCodeNode.jsonContent
+    const intentCodePath =
+      jsonContent != null && typeof jsonContent === 'object' &&
+      'path' in jsonContent && typeof jsonContent.path === 'string'
+        ? jsonContent.path
+        : undefined
+
+    // Validate. Without the path there is no IntentCode tree to index.
+    if (intentCodePath == null) {
+
+      throw new IntentError({
+        category: 'StorageError',
+        stage: fnName,
+        message: `${fnName}: the IntentCode project node has no path`
+      })
+    }
 
     // Walk dir
     var intentCodeList: string[] = []
 
-    await walkDirService.walkDir(
+    await walkDir(
       intentCodePath,
       intentCodeList,
       {
@@ -199,13 +215,13 @@ export class IndexerMutateService {
       // Get/create the file's SourceNode
       const intentFileNode = await
         intentCodePathGraphMutateService.upsertIntentCodePathAsGraph(
-          prisma,
+          store,
           projectIntentCodeNode,
           intentCodeFilename)
 
       // Check if the file has been updated since last indexed
       if (intentFileNode?.contentUpdated != null &&
-          intentFileNode.contentUpdated <= fileModifiedTime) {
+          new Date(intentFileNode.contentUpdated) <= fileModifiedTime) {
 
         // console.log(`${fnName}: file: ${intentCodeFilename} already indexed`)
         continue
@@ -229,7 +245,7 @@ export class IndexerMutateService {
     for (const buildFromFile of buildFromFiles) {
 
       await this.indexFileWithLlm(
-        prisma,
+        store,
         buildData,
         projectNode,
         projectIntentCodeNode,
@@ -238,8 +254,8 @@ export class IndexerMutateService {
   }
 
   async processQueryResults(
-          prisma: PrismaClient,
-          projectNode: SourceNode,
+          store: ProjectStore,
+          projectNode: SourceNodeRecord,
           buildFromFile: BuildFromFile,
           sourceNodeGenerationData: SourceNodeGenerationData,
           jsonContent: any) {
@@ -249,24 +265,38 @@ export class IndexerMutateService {
 
     // Validate
     if (buildFromFile.fileNode.jsonContent == null) {
-      throw new CustomError(
-        `${fnName}: intentFileNode.jsonContent == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: intentFileNode.jsonContent == null`
+      })
     }
 
-    if ((buildFromFile.fileNode.jsonContent as any).relativePath == null) {
-      throw new CustomError(
-        `${fnName}: intentFileNode.jsonContent.relativePath == null`)
+    const fileJsonContent = buildFromFile.fileNode.jsonContent
+    if (fileJsonContent != null &&
+        typeof fileJsonContent === 'object' &&
+        'relativePath' in fileJsonContent &&
+        fileJsonContent.relativePath == null) {
+
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: intentFileNode.jsonContent.relativePath == null`
+      })
     }
 
     // Set the relative path of the file indexed
     jsonContent.relativePath =
-      (buildFromFile.fileNode.jsonContent as any).relativePath
+      fileJsonContent != null && typeof fileJsonContent === 'object' &&
+      'relativePath' in fileJsonContent
+        ? fileJsonContent.relativePath
+        : undefined
 
     // Update the IntentCode node with deps
     if (jsonContent.source?.deps != null) {
 
       await dependenciesMutateService.processDeps(
-              prisma,
+              store,
               projectNode,
               buildFromFile.fileNode,
               jsonContent.source.deps)
@@ -275,8 +305,8 @@ export class IndexerMutateService {
     // Upsert the indexed data node
     const indexerDataSourceNode = await
             intentCodeGraphMutateService.upsertIntentCodeIndexedData(
-              prisma,
-              buildFromFile.fileNode.instanceId,
+              store,
+              buildFromFile.fileNode.projectId,
               buildFromFile.fileNode,  // parentNode
               SourceNodeNames.indexedData,
               jsonContent,

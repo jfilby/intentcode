@@ -1,9 +1,10 @@
-import { CustomError } from 'serene-core-server'
+import { getModelId } from '@/services/intentcode/common/model-id.js'
+import { IntentError } from '@/core/errors.js'
 import chalk from 'chalk'
 import fs from 'fs'
 import { blake3 } from '@noble/hashes/blake3'
-import { AiModelService } from '@/services/ai/ai-model-service.js'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import type { ProjectStore } from '@/core/store.js'
+import type { SourceNodeRecord } from '@/core/records.js'
 import { BuildData, BuildFromFile } from '@/types/build-types.js'
 import { Emoticons, IntentCodeAiTasks, ProjectDetails, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
 import { SourceNodeNames, SourceNodeGenerationData, SourceNodeTypes } from '@/types/source-graph-types.js'
@@ -26,7 +27,6 @@ const sourceNodeGenerationModel = new SourceNodeGenerationModel()
 const sourceNodeModel = new SourceNodeModel()
 
 // Services
-const aiModelService = new AiModelService()
 const compilerLlmService = new CompilerLlmService()
 const textService = new TextService()
 const compilerPromptService = new CompilerPromptService()
@@ -47,8 +47,8 @@ export class CompilerMutateService {
 
   // Code
   async getExistingJsonContent(
-          prisma: PrismaClient,
-          intentFileNode: SourceNode,
+          store: ProjectStore,
+          intentFileNode: SourceNodeRecord,
           modelId: string,
           prompt: string) {
 
@@ -58,9 +58,9 @@ export class CompilerMutateService {
     // Try to get existing compiler data SourceNode
     const compilerDataSourceNode = await
             sourceNodeModel.getByUniqueKey(
-              prisma,
+              store,
               intentFileNode.id,  // parentId
-              intentFileNode.instanceId,
+              intentFileNode.projectId,
               SourceNodeTypes.intentCodeCompilerData,
               SourceNodeNames.compilerData)
 
@@ -77,7 +77,7 @@ export class CompilerMutateService {
     // Try to get existing SourceNodeGeneration
     const sourceNodeGeneration = await
             sourceNodeGenerationModel.getByUniqueKey(
-              prisma,
+              store,
               compilerDataSourceNode.id,
               modelId,
               promptHash)
@@ -103,12 +103,12 @@ export class CompilerMutateService {
   }
 
   async processResults(
-          prisma: PrismaClient,
-          projectNode: SourceNode,
+          store: ProjectStore,
+          projectNode: SourceNodeRecord,
           buildFromFile: BuildFromFile,
           projectDetails: ProjectDetails,
           sourceNodeGenerationData: SourceNodeGenerationData,
-          content: string,
+          content: string | null | undefined,
           jsonContent: any) {
 
     // Debug
@@ -131,13 +131,18 @@ export class CompilerMutateService {
         process.exit(1)
       } else {
         // Throw an exception (content not specified and no errors)
-        throw new CustomError(`${fnName}: content == null (and no errors)`)
+        throw new IntentError({
+          category: 'CompilerError',
+          stage: fnName,
+          message: `content == null (and no errors)`})
       }
     }
 
     if (buildFromFile.targetFullPath == null) {
-      throw new CustomError(
-        `${fnName}: buildFromFile.sourceFullPath == null`)
+      throw new IntentError({
+        category: 'CompilerError',
+        stage: fnName,
+        message: `buildFromFile.targetFullPath == null`})
     }
 
     // Debug
@@ -151,7 +156,7 @@ export class CompilerMutateService {
 
       // Upsert SourceCode node path and content
       await sourceCodePathGraphMutateService.upsertSourceCodePathAsGraph(
-              prisma,
+              store,
               projectDetails.projectSourceNode,
               buildFromFile.targetFullPath,
               content,
@@ -168,7 +173,7 @@ export class CompilerMutateService {
     if (jsonContent.source?.deps != null) {
 
       await dependenciesMutateService.processDeps(
-              prisma,
+              store,
               projectNode,
               buildFromFile.fileNode,
               jsonContent.source.deps)
@@ -176,7 +181,7 @@ export class CompilerMutateService {
 
     // Upsert the IntentCode file contents
     await intentCodePathGraphMutateService.upsertIntentCodePathAsGraph(
-            prisma,
+            store,
             projectDetails.projectIntentCodeNode,
             buildFromFile.filename,
             buildFromFile.content)
@@ -184,8 +189,8 @@ export class CompilerMutateService {
     // Upsert the compiler data node
     const compilerDataSourceNode = await
             intentCodeGraphMutateService.upsertIntentCodeCompilerData(
-              prisma,
-              buildFromFile.fileNode.instanceId,
+              store,
+              buildFromFile.fileNode.projectId,
               buildFromFile.fileNode,  // parentNode
               SourceNodeNames.compilerData,
               jsonContent,
@@ -198,8 +203,8 @@ export class CompilerMutateService {
   }
 
   async requiresRecompileByPrompt(
-          prisma: PrismaClient,
-          projectSourceNode: SourceNode,
+          store: ProjectStore,
+          projectSourceNode: SourceNodeRecord,
           prompt: string,
           buildFromFile: BuildFromFile) {
 
@@ -209,7 +214,7 @@ export class CompilerMutateService {
     // Get source code node
     const sourceCodeNodeGeneration = await
             sourceCodePathGraphQueryService.getLatestSourceCodeGenerationByPathGraph(
-              prisma,
+              store,
               projectSourceNode,
               buildFromFile.targetFullPath!)
 
@@ -242,9 +247,9 @@ export class CompilerMutateService {
     return true
   }
 
-  async run(prisma: PrismaClient,
+  async run(store: ProjectStore,
             buildData: BuildData,
-            projectNode: SourceNode,
+            projectNode: SourceNodeRecord,
             projectDetails: ProjectDetails,
             buildFromFile: BuildFromFile) {
 
@@ -261,7 +266,7 @@ export class CompilerMutateService {
     }
 
     // The model id
-    const modelId = aiModelService.getModelId(IntentCodeAiTasks.compiler)
+    const modelId = await getModelId(IntentCodeAiTasks.compiler)
 
     // Get source code's full path
     buildFromFile.targetFullPath =
@@ -272,7 +277,7 @@ export class CompilerMutateService {
     // Get prompt
     const { prompt, promptWithoutSource } = await
       compilerPromptService.getPrompt(
-        prisma,
+        store,
         buildData,
         buildFromFile,
         projectNode,
@@ -282,14 +287,14 @@ export class CompilerMutateService {
     // Already generated?
     var { content, jsonContent } = await
           this.getExistingJsonContent(
-            prisma,
+            store,
             buildFromFile.fileNode,
             modelId,
             promptWithoutSource)
 
     // Check if the file should be recompiled
     if (await this.requiresRecompileByPrompt(
-                prisma,
+                store,
                 projectDetails.projectSourceNode,
                 promptWithoutSource,
                 buildFromFile) === false) {
@@ -310,7 +315,7 @@ export class CompilerMutateService {
 
       ({ status, message, content, jsonContent } = await
         compilerLlmService.llmRequest(
-          prisma,
+          store,
                     IntentCodeAiTasks.compiler,
           prompt))  // Use the final prompt (with latest target source)
     }
@@ -324,7 +329,7 @@ export class CompilerMutateService {
 
     // Process results
     await this.processResults(
-            prisma,
+            store,
             projectNode,
             buildFromFile,
             projectDetails,

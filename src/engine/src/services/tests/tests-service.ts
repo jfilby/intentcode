@@ -1,6 +1,16 @@
+/**
+ * The Tests menu.
+ *
+ * The tests build a bundled example project end to end, which is the only way
+ * to check the whole path — index, compile, verify — rather than one stage of
+ * it. There is no user: the tests run as the engine, against the example's
+ * own directory.
+ */
+
 import chalk from 'chalk'
 import { select } from '@inquirer/prompts'
-import { PrismaClient, UserProfile } from '@/prisma/client.js'
+import type { ProjectRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { CommonCommands } from '@/types/server-only-types.js'
 import { CalcTestsService } from './calc-tests-service.js'
 import { CalcV2TestsService } from './calc-v2-tests-service.js'
@@ -9,66 +19,40 @@ import { CalcV2TestsService } from './calc-v2-tests-service.js'
 const calcTestsService = new CalcTestsService()
 const calcV2TestsService = new CalcV2TestsService()
 
-// Class
 export class TestsService {
 
-  // Consts
   clName = 'TestsService'
 
   calcTests = `calc-tests`
   calcV2Tests = `calc-v2-tests`
 
-  // Code
-  async tests(prisma: PrismaClient,
-              regularTestUserProfile: UserProfile,
-              adminUserProfile: UserProfile) {
+  async tests(store: ProjectStore, project: ProjectRecord) {
 
-    // Tests menu
     console.log(``)
     console.log(chalk.bold(`─── Tests ───`))
     console.log(``)
 
-    // Choices
-    var choices = [
-      {
-        name: `Back`,
-        value: CommonCommands.back as string
-      },
-      {
-        name: `Calc project`,
-        value: this.calcTests
-      },
-      {
-        name: `Calc v2 project`,
-        value: this.calcV2Tests
-      }
-    ]
-
-    // Prompt for command
     const command = await select({
       message: `Select an option`,
       loop: false,
       pageSize: 10,
-      choices: choices
+      choices: [
+        { name: `Calc project`, value: this.calcTests },
+        { name: `Calc v2 project`, value: this.calcV2Tests },
+        { name: `Back`, value: CommonCommands.back }
+      ]
     })
 
-    // Run the selected test
     switch (command) {
 
       case this.calcTests: {
-        await calcTestsService.tests(
-                prisma,
-                regularTestUserProfile,
-                adminUserProfile)
-        return
+        await calcTestsService.tests()
+        break
       }
 
       case this.calcV2Tests: {
-        await calcV2TestsService.tests(
-                prisma,
-                regularTestUserProfile,
-                adminUserProfile)
-        return
+        await calcV2TestsService.tests()
+        break
       }
 
       default: {

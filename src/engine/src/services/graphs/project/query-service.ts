@@ -1,5 +1,6 @@
-import { CustomError } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types.js'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
 
@@ -14,8 +15,8 @@ export class ProjectGraphQueryService {
 
   // Code
   async getProjectNode(
-          prisma: PrismaClient,
-          instanceId: string) {
+          store: ProjectStore,
+          projectId: string) {
 
     // Debug
     const fnName = `${this.clName}.getProjectNode()`
@@ -23,9 +24,9 @@ export class ProjectGraphQueryService {
     // Try to get the node
     const projectNodes = await
             sourceNodeModel.filter(
-              prisma,
+              store,
               null,  // parentId
-              instanceId,
+              projectId,
               SourceNodeTypes.project)
 
     // Validate
@@ -33,7 +34,13 @@ export class ProjectGraphQueryService {
       return undefined
 
     } else if (projectNodes.length > 1) {
-      throw new CustomError(`${fnName}: projectNodes.length > 1`)
+      throw new IntentError({
+        category: 'StorageError',
+        stage: fnName,
+        message: `${fnName}: projectNodes.length > 1`,
+        detail: `the project ${projectId} has ` +
+          `${projectNodes.length} project nodes`
+      })
     }
 
     // Return
@@ -41,8 +48,8 @@ export class ProjectGraphQueryService {
   }
 
   async getSourceProjectNode(
-          prisma: PrismaClient,
-          projectNode: SourceNode) {
+          store: ProjectStore,
+          projectNode: SourceNodeRecord) {
 
     // Debug
     const fnName = `${this.clName}.getSourceProjectNode()`
@@ -50,16 +57,19 @@ export class ProjectGraphQueryService {
     // Validate
     if (projectNode.type !== SourceNodeTypes.project) {
 
-      throw new CustomError(
-        `${fnName}: projectNode.type !== SourceNodeTypes.project`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: projectNode.type !== SourceNodeTypes.project`
+      })
     }
 
     // Get source node
     const sourceCodeProject = await
             sourceNodeModel.getByUniqueKey(
-              prisma,
+              store,
               projectNode.id,
-              projectNode.instanceId,
+              projectNode.projectId,
               SourceNodeTypes.projectSourceCode,
               SourceNodeNames.projectSourceCode)
 

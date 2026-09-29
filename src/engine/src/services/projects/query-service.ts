@@ -1,580 +1,83 @@
-import NodeCache from 'node-cache'
-import path from 'path'
-import { CustomError, FieldNamingService, InstanceModel, InstanceSettingModel, UsersService } from 'serene-core-server'
-import { select } from '@inquirer/prompts'
-import { Instance, PrismaClient } from '@/prisma/client.js'
-import { ServerTestTypes } from '@/types/server-test-types.js'
-import { CommonCommands, InstanceSettingNames, ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types.js'
-import { BuildsGraphMutateService } from '../graphs/builds/mutate-service.js'
-import { DotIntentCodeGraphQueryService } from '../graphs/dot-intentcode/graph-query-service.js'
-import { FsUtilsService } from '../utils/fs-utils-service.js'
-import { IntentCodeAnalysisGraphMutateService } from '../graphs/intentcode-analysis/mutate-service.js'
-import { IntentCodeGraphMutateService } from '../graphs/intentcode/graph-mutate-service.js'
-import { ProjectGraphQueryService } from '../graphs/project/query-service.js'
-import { SourceCodeGraphMutateService } from '../graphs/source-code/graph-mutate-service.js'
-import { SpecsGraphQueryService } from '../graphs/specs/graph-query-service.js'
+/**
+ * Reading projects.
+ *
+ * Resolving a project is a question about the filesystem, and lives in
+ * `ProjectRegistryService`. What is left here is the two things that are
+ * questions about a *set* of projects rather than about one: finding a
+ * project's entry in a build's project map, and describing that map to the
+ * model.
+ *
+ * A build can cover several projects at once — a project may have a parent,
+ * and a build walks the hierarchy — so the compiler carries a map of them and
+ * has to pick one out of it by id. That lookup is here so every caller does
+ * it the same way.
+ */
 
-// Cache objects must be global, to access all data (e.g. ability to delete
-// an item from an object if InstanceService).
-const cachedInstances = new NodeCache()
-const cachedInstancesWithIncludes = new NodeCache()
+import { IntentError } from '@/core/errors.js'
+import type { ProjectRecord } from '@/core/records.js'
+import type { ProjectDetails } from '@/types/server-only-types.js'
 
-// Models
-const instanceModel = new InstanceModel()
-const instanceSettingModel = new InstanceSettingModel()
-
-// Services
-const buildsGraphMutateService = new BuildsGraphMutateService()
-const dotIntentCodeGraphQueryService = new DotIntentCodeGraphQueryService()
-const fieldNamingService = new FieldNamingService()
-const fsUtilsService = new FsUtilsService()
-const intentCodeAnalysisGraphMutateService = new IntentCodeAnalysisGraphMutateService()
-const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
-const projectGraphQueryService = new ProjectGraphQueryService()
-const sourceCodeGraphMutateService = new SourceCodeGraphMutateService()
-const specsGraphQueryService = new SpecsGraphQueryService()
-const usersService = new UsersService()
-
-// Class
 export class ProjectsQueryService {
 
-  // Consts
   clName = 'ProjectsQueryService'
 
   label = 'project'
 
-  // Code
-  getProjectDetailsByInstanceId(
-    instanceId: string,
-    projects: Record<number, ProjectDetails>) {
+  /**
+   * The project with this id in a build's map. A build covering more than one
+   * project reaches the right one by id rather than by position, because the
+   * order they were discovered in is not what the caller means.
+   */
+  getProjectDetailsByProjectId(
+    projectId: string,
+    projects: Record<number, ProjectDetails>
+  ): ProjectDetails {
 
-    // Debug
-    const fnName = `${this.clName}.getProjectsPrompting()`
-
-    // Find projectDetails
     for (const projectDetails of Object.values(projects)) {
-
-      if (projectDetails.instance.id === instanceId) {
-        return projectDetails
-      }
+      if (projectDetails.project.id === projectId) return projectDetails
     }
 
-    // Not found
-    throw new CustomError(
-      `${fnName}: projectDetails not found for instanceId: ${instanceId}`)
+    throw new IntentError({
+      category: 'ProjectError',
+      stage: `${this.clName}.getProjectDetailsByProjectId()`,
+      message: `no project details for projectId: ${projectId}`,
+      detail: `the build covered: ` +
+        Object.values(projects)
+          .map((details) => details.project.id)
+          .join(', ')
+    })
   }
 
-  async createProjectsList(
-          prisma: PrismaClient,
-          instanceId: string,
-          instance: Instance | undefined,
-          projects: Record<number, ProjectDetails>,
-          maxProjectNo: number = 1,
-          indents: number = 0) {
+  /**
+   * The project map as the model sees it: a numbered, indented list, so a
+   * project that contains others reads as belonging to them.
+   */
+  getProjectsPrompting(projects: Record<number, ProjectDetails>): string {
 
-    // Debug
-    const fnName = `${this.clName}.createProjectsList()`
-
-    // Get instance (and add it to the map) if not known
-    if (instance == null) {
-
-      instance = await
-        instanceModel.getById(
-          prisma,
-          instanceId)
-    }
-
-    // Validate
-    if (instance == null) {
-      throw new CustomError(`${fnName}: instance == null`)
-    }
-
-    // Get ProjectDetails
-    const projectDetails = await
-            this.createProjectDetails(
-              prisma,
-              indents,
-              instance)
-
-    // Add instance to the map
-    projects[maxProjectNo] = projectDetails
-
-    maxProjectNo += 1
-
-    // Get child instances
-    const childInstances = await
-            instanceModel.filter(
-              prisma,
-              instanceId)  // parentId
-
-    // Cascade to child instances
-    for (const childInstance of childInstances) {
-
-      await this.createProjectsList(
-              prisma,
-              childInstance.id,
-              childInstance,
-              projects,
-              maxProjectNo,
-              indents + 1)
-    }
-
-    // Return
-    return projects
-  }
-
-  getProjectsPrompting(projects: Record<number, ProjectDetails>) {
-
-    // Debug
-    const fnName = `${this.clName}.getProjectsPrompting()`
-
-    // Validate
-    if (projects == null) {
-      throw new CustomError(`${fnName}: projects == null`)
-    }
-
-    // Start prompting for projects
-    var prompting =
+    let prompting =
       `## Projects\n` +
       `\n` +
       `By project no:\n` +
       `\n`
 
-    // Debug
-    // console.log(`${fnName}: projectsMap: ${projectsMap.size}`)
+    for (const [projectNo, projectDetails] of Object.entries(projects)) {
 
-    // Iter projectsMap
-    for (const [projectNo, projectDetails] of
-         Object.entries(projects)) {
-
-      // Add to prompting
+      // The indent is the nesting depth, which is what tells the model that
+      // one project's specs may be built into another's source.
       const indents = ' '.repeat(projectDetails.indents * 2)
 
       prompting +=
-        `${indents}- ${projectNo}: ${projectDetails.instance.name}\n`
+        `${indents}- ${projectNo}: ${projectDetails.project.name}\n`
     }
 
-    // Final new-line
-    prompting += `\n`
-
-    // Return
-    return prompting
+    return `${prompting}\n`
   }
 
-  async getParentProjectByPath(
-          prisma: PrismaClient,
-          fullPath: string) {
-
-    // Debug
-    const fnName = `${this.clName}.getParentProjectByPath()`
-
-    // Resolve first. For a relative input, getPathRoot() resolves against
-    // process.cwd() and returns an absolute root, while path.dirname() walked
-    // a relative chain that never reached it ('myproj' -> '.' -> '.' -> ...),
-    // so the loop below never terminated and issued a DB query every
-    // iteration. The caller's safety counter was commented out and did not
-    // help.
-    const root = fsUtilsService.getPathRoot(fullPath)
-    var curPath = path.resolve(fullPath)
-    // Debug
-    // console.log(`${fnName}: root: ${root}`)
-    // console.log(`${fnName}: curPath: ${curPath}`)
-
-    // Iterate. path.dirname() on a resolved path always shortens toward the
-    // root, so this terminates; the counter is a backstop rather than the
-    // thing that makes it work.
-    var i = 0
-
-    while (curPath !== root) {
-
-      // Get parent directory
-      const parentPath = path.dirname(curPath)
-
-      // Debug
-      // console.log(`${fnName}: parentPath: ${parentPath}`)
-
-      // Check for a project
-      const instance = await
-              this.getProjectByPath(
-                prisma,
-                parentPath)
-
-      // Found?
-      if (instance != null) {
-        return instance
-      }
-
-      // Set curPath
-      curPath = parentPath
-
-      // Safety iterator
-      i += 1
-
-      if (i > 1000) {
-        throw new CustomError(`${fnName}: path too deep!`)
-      }
-    }
-
-    // Not found
-    return undefined
-  }
-
-  async getProject(
-          prisma: PrismaClient,
-          parentId: string | null,
-          projectName: string) {
-
-    // Debug
-    const fnName = `${this.clName}.getProject()`
-
-    // Get the admin UserProfile
-    const adminUserProfile = await
-            usersService.getUserProfileByEmail(
-              prisma,
-              ServerTestTypes.adminUserEmail)
-
-    if (adminUserProfile == null) {
-      throw new CustomError(`${fnName}: UserProfile not found for email: ` +
-                            ServerTestTypes.adminUserEmail)
-    }
-
-    // Get the System project
-    const project = await
-            instanceModel.getByParentIdAndNameAndUserProfileId(
-              prisma,
-              parentId,
-              projectName,
-              adminUserProfile.id)
-
-    // Return
-    return project
-  }
-
-  async getProjectByPath(
-          prisma: PrismaClient,
-          fullPath: string) {
-
-    // Debug
-    const fnName = `${this.clName}.getProjectByPath()`
-
-    // Debug
-    // console.log(`${fnName}: fullPath: ${fullPath}`)
-
-    // Get every registered project path. The previous call passed fullPath as
-    // the `value` argument, which InstanceSettingModel.filter() applies as an
-    // exact SQL equality match. That made the containment loop below
-    // unreachable: running the CLI from any subdirectory of a project (the
-    // common case, since cli.ts passes process.cwd()) never bound to a
-    // project, and getProjectByPath() returned null.
-    const projectPaths = await
-            instanceSettingModel.filter(
-              prisma,
-              undefined,  // instanceId
-              InstanceSettingNames.projectPath,
-              undefined)  // value
-
-    // Debug
-    // console.log(`${fnName}: projectPaths: ` + JSON.stringify(projectPaths))
-
-    // Matching. A nested project is registered alongside its parent, so the
-    // most specific (longest) containing path must win. Matching is by
-    // containment rather than a raw startsWith(), so the name-prefix sibling
-    // '/a/proj-b' is not treated as living inside '/a/proj'.
-    const matches = projectPaths.filter(
-      (projectPath) =>
-        fsUtilsService.isPathWithin(fullPath, projectPath.value))
-
-    matches.sort(
-      (a, b) => (b.value?.length ?? 0) - (a.value?.length ?? 0))
-
-    const best = matches[0]
-
-    if (best != null) {
-
-      // Get instance
-      const instance = await
-              instanceModel.getById(
-                prisma,
-                best.instanceId)
-
-      // Return instance
-      return instance
-    }
-
-    // Not found
-    return null
-  }
-
-  async getProjectByList(prisma: PrismaClient) {
-
-    // Choices
-    var choices = [
-      {
-        name: `Back`,
-        value: CommonCommands.back as string
-      }
-    ]
-
-    // Get projects
-    const instances = await
-            instanceModel.filter(
-              prisma,
-              null)  // parentId
-
-    // Build and print a list
-    var i = 1
-    var instancesMap = new Map<string, Instance>()
-
-    for (const instance of instances) {
-
-      // Skip System
-      if (instance.name === ServerOnlyTypes.systemProjectName) {
-        continue
-      }
-
-      // Set entry
-      instancesMap.set(
-        `${i}`,
-        instance)
-
-      // Add to choices
-      choices.push({
-        name: instance.name,
-        value: `${i}`
-      })
-
-      // Inc i
-      i += 1
-    }
-
-    // Prompt for project by number
-    const command = await select({
-      message: `Select an option`,
-      loop: false,
-      pageSize: 10,
-      choices: choices
-    })
-
-    // Non-project selection
-    if (!instancesMap.has(command)) {
-      return undefined
-    }
-
-    // Return selected project
-    return instancesMap.get(command)
-  }
-
-  async getProjectPath(
-          prisma: PrismaClient,
-          instanceId: string) {
-
-    // Debug
-    const fnName = `${this.clName}.getProjectPath()`
-
-    // Get project's path
-    const projectPaths = await
-            instanceSettingModel.filter(
-              prisma,
-              instanceId,
-              InstanceSettingNames.projectPath,
-              undefined)  // value
-
-    // Validate
-    if (projectPaths.length === 0) {
-      return undefined
-    } else if (projectPaths.length > 1) {
-      throw new CustomError(`${fnName}: more than one project path found`)
-    }
-
-    // Return
-    return projectPaths[0].value
-  }
-
-  async createProjectDetails(
-          prisma: PrismaClient,
-          indents: number,
-          instance: Instance) {
-
-    // Debug
-    const fnName = `${this.clName}.createProjectDetails()`
-
-    // Get ProjectNode
-    const projectNode = await
-            projectGraphQueryService.getProjectNode(
-              prisma,
-              instance.id)
-
-    // Validate
-    if (projectNode == null) {
-      throw new CustomError(`${fnName}: projectNode == null`)
-    }
-
-    // Determine paths
-    const projectPath = (projectNode.jsonContent as any).path
-    const intentPath = `${projectPath}${path.sep}intent`
-    const srcPath = `${projectPath}`
-
-    // Get DotIntentCodeProjectNode
-    const dotIntentCodeProjectNode = await
-      dotIntentCodeGraphQueryService.getDotIntentCodeProject(
-        prisma,
-        projectNode)
-
-    // Get ProjectSpecsNode
-    const projectSpecsNode = await
-      specsGraphQueryService.getSpecsProjectNode(
-        prisma,
-        projectNode)
-
-    // Get/create builds node
-    const buildsNode = await
-     buildsGraphMutateService.getOrCreateBuildsNode(
-      prisma,
-      projectNode)
-
-    // Create a new build node
-    const buildNode = await
-      buildsGraphMutateService.createBuildNode(
-        prisma,
-        buildsNode)
-
-    // Get or create ProjectIntentCodeNode
-    const projectIntentCodeNode = await
-      intentCodeGraphMutateService.getOrCreateIntentCodeProjectNode(
-        prisma,
-        buildNode,
-        intentPath)
-
-    // Get or create ProjectSourceNode
-    const projectSourceNode = await
-      sourceCodeGraphMutateService.getOrCreateSourceCodeProject(
-        prisma,
-        buildNode,
-        srcPath)
-
-    // Get or create ProjectIntentCodeAnalysisNode
-    const projectIntentCodeAnalysisNode = await
-      intentCodeAnalysisGraphMutateService.getOrCreateProjectIntentCodeAnalysisNode(
-        prisma,
-        buildNode)
-
-    // Define ProjectDetails
-    const projectDetails: ProjectDetails = {
-      indents: indents,
-      instance: instance,
-      projectNode: projectNode,
-      dotIntentCodeProjectNode: dotIntentCodeProjectNode,
-      projectSpecsNode: projectSpecsNode,
-      projectIntentCodeNode: projectIntentCodeNode,
-      projectSourceNode: projectSourceNode,
-      projectIntentCodeAnalysisNode: projectIntentCodeAnalysisNode
-    }
-
-    // Return
-    return projectDetails
-  }
-
-  async getByNameOrKey(
-    prisma: PrismaClient,
-    userProfileId: string,
-    name: string) {
-
-    // Get the key
-    const key = fieldNamingService.getAsKey(name)
-
-    // Get by name
-    var project = await
-      instanceModel.getByParentIdAndNameAndUserProfileId(
-        prisma,
-        null,  // parentId
-        name,
-        userProfileId)
-
-    if (project != null) {
-      return project
-    }
-
-    // Get by key
-    project = await
-      instanceModel.getByParentIdAndKeyAndUserProfileId(
-        prisma,
-        null,  // parentId
-        key,
-        userProfileId)
-
-    return project
-  }
-
-
-  async validate(
-    prisma: PrismaClient,
-    userProfileId: string,
-    name: string) {
-
-    // Validate userProfileId
-    if (userProfileId == null) {
-      return {
-        status: false,
-        message: `Invalid user`,
-        key: undefined,
-        name: undefined
-      }
-    }
-
-    // Validate the name
-    const validateNameResults =
-      fieldNamingService.validateName(
-        name,
-        this.label)
-
-    if (validateNameResults.status === false) {
-      return {
-        status: false,
-        message: validateNameResults.message,
-        key: undefined,
-        name: undefined
-      }
-    }
-
-    // Get the key
-    const key = fieldNamingService.getAsKey(validateNameResults.name!)
-
-    // Validate key
-    const validateKeyResults =
-      fieldNamingService.validateKey(
-        name,
-        this.label)
-
-    if (validateKeyResults.status === false) {
-      return {
-        status: false,
-        message: validateKeyResults.message,
-        key: undefined,
-        name: undefined
-      }
-    }
-
-    // Check if the project already exists (name or key)
-    const project = await
-            this.getByNameOrKey(
-              prisma,
-              userProfileId,
-              name)
-
-    if (project != null) {
-      return {
-        status: false,
-        message: `That project already exists`,
-        key: undefined,
-        name: undefined
-      }
-    }
-
-    // Return
-    return {
-      status: true,
-      key: key,
-      name: name
-    }
+  /** The projects in a map, as records. */
+  getProjects(
+    projects: Record<number, ProjectDetails>
+  ): ProjectRecord[] {
+
+    return Object.values(projects).map((details) => details.project)
   }
 }

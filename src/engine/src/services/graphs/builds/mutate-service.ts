@@ -1,5 +1,6 @@
-import { CustomError } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { BaseDataTypes } from '@/types/base-data-types.js'
 import { SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types.js'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
@@ -15,27 +16,35 @@ export class BuildsGraphMutateService {
 
   // Code
   async getOrCreateBuildsNode(
-    prisma: PrismaClient,
-    projectNode: SourceNode) {
+    store: ProjectStore,
+    projectNode: SourceNodeRecord) {
 
     // Debug
     const fnName = `${this.clName}.getOrCreateBuildsNode()`
 
     // Validate
     if (projectNode == null) {
-      throw new CustomError(`${fnName}: parentNode == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: parentNode == null`
+      })
     }
 
     if (projectNode.type !== SourceNodeTypes.project) {
-      throw new CustomError(`${fnName}: invalid type: ${projectNode.type}`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: invalid type: ${projectNode.type}`
+      })
     }
 
     // Try to get the builds node
     var buildsNode = await
       sourceNodeModel.getByUniqueKey(
-        prisma,
+        store,
         projectNode.id,
-        projectNode.instanceId,
+        projectNode.projectId,
         SourceNodeTypes.builds,
         SourceNodeNames.builds)
 
@@ -46,9 +55,9 @@ export class BuildsGraphMutateService {
     // Create a builds node
     buildsNode = await
       sourceNodeModel.create(
-        prisma,
+        store,
         projectNode.id,
-        projectNode.instanceId,
+        projectNode.projectId,
         BaseDataTypes.activeStatus,
         SourceNodeTypes.builds,
         SourceNodeNames.builds,
@@ -63,27 +72,35 @@ export class BuildsGraphMutateService {
   }
 
   async createBuildNode(
-    prisma: PrismaClient,
-    buildsNode: SourceNode) {
+    store: ProjectStore,
+    buildsNode: SourceNodeRecord) {
 
     // Debug
     const fnName = `${this.clName}.getOrCreateBuildsNode()`
 
     // Validate
     if (buildsNode == null) {
-      throw new CustomError(`${fnName}: parentNode == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: parentNode == null`
+      })
     }
 
     if (buildsNode.type !== SourceNodeTypes.builds) {
-      throw new CustomError(`${fnName}: invalid type: ${buildsNode.type}`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: invalid type: ${buildsNode.type}`
+      })
     }
 
     // Create a build node
     const buildNode = await
       sourceNodeModel.create(
-        prisma,
+        store,
         buildsNode.id,
-        buildsNode.instanceId,
+        buildsNode.projectId,
         BaseDataTypes.activeStatus,
         SourceNodeTypes.build,
         new Date().toISOString(),  // name

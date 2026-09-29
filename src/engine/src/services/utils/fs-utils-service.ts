@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { CustomError } from 'serene-core-server'
+import { IntentError } from '@/core/errors.js'
 
 export class FsUtilsService {
 
@@ -43,7 +43,11 @@ export class FsUtilsService {
     // Validate
     if (filenamePath == null) {
 
-      throw new CustomError(`${fnName}: filenamePath == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: 'filenamePath == null'
+      })
     }
 
     // Get the file extension
@@ -126,7 +130,11 @@ export class FsUtilsService {
     if (rootPath == null ||
         rootPath.length === 0) {
 
-      throw new CustomError(`${fnName}: rootPath == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: 'rootPath == null'
+      })
     }
 
     const root = path.resolve(rootPath)
@@ -163,7 +171,11 @@ export class FsUtilsService {
 
     // Validate
     if (relativePath == null) {
-      throw new CustomError(`${fnName}: relativePath == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: 'relativePath == null'
+      })
     }
 
     // path.join(), not path.resolve(relativePath): relativePath follows this
@@ -173,9 +185,12 @@ export class FsUtilsService {
 
     if (this.isPathWithin(fullPath, rootPath) === false) {
 
-      throw new CustomError(
-        `${fnName}: path escapes root: ${relativePath} ` +
-        `(root: ${rootPath})`)
+      throw new IntentError({
+        category: 'StorageError',
+        stage: fnName,
+        message:
+          `path escapes root: ${relativePath} (root: ${rootPath})`
+      })
     }
 
     // A delta must name something inside the root, not the root itself: a
@@ -183,9 +198,12 @@ export class FsUtilsService {
     // written over as if it were a file.
     if (fullPath === path.resolve(rootPath)) {
 
-      throw new CustomError(
-        `${fnName}: path is the root itself: ${relativePath} ` +
-        `(root: ${rootPath})`)
+      throw new IntentError({
+        category: 'StorageError',
+        stage: fnName,
+        message:
+          `path is the root itself: ${relativePath} (root: ${rootPath})`
+      })
     }
 
     return fullPath

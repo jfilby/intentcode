@@ -1,12 +1,10 @@
-import { ChatSettingsModel, CustomError } from 'serene-core-server'
-import { ChatSettings, PrismaClient } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type { ChatSettingsRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { BaseDataTypes } from '@/types/base-data-types.js'
 import { ChatSessionOptions, ChatTypes } from '@/types/chat-types.js'
 import { ChatPromptsService } from '../chat-prompts-service.js'
 import { ChatSessionService } from '../chat-session-service.js'
-
-// Models
-const chatSettingsModel = new ChatSettingsModel()
 
 // Services
 const chatPromptsService = new ChatPromptsService()
@@ -19,8 +17,11 @@ export class InstanceChatsService {
   clName = 'InstanceChatsService'
 
   // Code
+
+  // The chat settings a session is started with. They are seeded per project
+  // at setup, so this is a lookup by name rather than a creation.
   async getInitialData(
-    prisma: PrismaClient,
+    store: ProjectStore,
     chatSettingsName: string | undefined) {
 
     // Debug
@@ -30,8 +31,8 @@ export class InstanceChatsService {
     // console.log(`${fnName}: getting baseChatSettings with chatSettingsName: ` +
     //   JSON.stringify(chatSettingsName))
 
-    // Get domainId if none specified, but chatSettingsName is specified
-    var baseChatSettings: any = null
+    // Get ChatSettings, but only if a name is specified
+    var baseChatSettings: ChatSettingsRecord | null = null
 
     if (chatSettingsName != null) {
 
@@ -40,9 +41,11 @@ export class InstanceChatsService {
 
       // Get ChatSettings
       baseChatSettings = await
-        chatSettingsModel.getByName(
-          prisma,
-          chatSettingsName)
+        store.chatSettings.findFirst({
+          where: {
+            name: chatSettingsName
+          }
+        })
 
       // Debug
       // console.log(`${fnName}: baseChatSettings: ` +
@@ -51,8 +54,11 @@ export class InstanceChatsService {
       // Validate
       if (baseChatSettings == null) {
 
-        throw new CustomError(`${fnName}: ChatSettings not found for name: ` +
-          `${chatSettingsName}`)
+        throw new IntentError({
+          category: 'ChatError',
+          stage: fnName,
+          message: `ChatSettings not found for name: ${chatSettingsName}`
+        })
       }
     }
 
@@ -66,9 +72,8 @@ export class InstanceChatsService {
   }
 
   async getOrCreateChatSession(
-    prisma: PrismaClient,
-    instanceId: string,
-    userProfileId: string,
+    store: ProjectStore,
+    projectId: string | null,
     chatSessionId: string | undefined,
     chatSettingsName: string | undefined,
     appCustom: string | undefined,
@@ -77,8 +82,7 @@ export class InstanceChatsService {
     // Debug
     const fnName = `${this.clName}.getOrCreateChatSession()`
 
-    /* console.log(`${fnName}: starting with instanceId: ${instanceId} ` +
-      `userProfileId: ${userProfileId} ` +
+    /* console.log(`${fnName}: starting with projectId: ${projectId} ` +
       `chatSessionId: ${chatSessionId} ` +
       `chatSettingsName: ` + JSON.stringify(chatSettingsName)) */
 
@@ -90,7 +94,7 @@ export class InstanceChatsService {
     // Get initial data
     const initialDataResults = await
       this.getInitialData(
-        prisma,
+        store,
         chatSettingsName)
 
     var baseChatSettings = initialDataResults.baseChatSettings
@@ -103,16 +107,18 @@ export class InstanceChatsService {
 
       const chatSessionResults = await
         chatSessionService.getChatSessionById(
-          prisma,
-          chatSessionId,
-          userProfileId)
+          store,
+          chatSessionId)
 
       // Validate
       if (chatSessionResults.status === false ||
           chatSessionResults.chatSession == null) {
 
-        throw new CustomError(`${fnName}: chatSession not found: ` +
-          `${chatSessionId}`)
+        throw new IntentError({
+          category: 'ChatError',
+          stage: fnName,
+          message: `chatSession not found: ${chatSessionId}`
+        })
       }
 
       // Return
@@ -121,6 +127,16 @@ export class InstanceChatsService {
         chatSession: chatSessionResults.chatSession,
         chatParticipant: chatSessionResults.chatParticipant
       }
+    }
+
+    // Validate
+    if (baseChatSettings == null) {
+
+      throw new IntentError({
+        category: 'ChatError',
+        stage: fnName,
+        message: `ChatSettings not found for name: ${chatSettingsName}`
+      })
     }
 
     // If an agent is specified then create a new ChatSettings record
@@ -142,7 +158,6 @@ export class InstanceChatsService {
     // Determine the prompt
     const prompt = await
       this.getPrompt(
-        prisma,
         appCustomJson,
         chatSettings,
         options)
@@ -156,11 +171,10 @@ export class InstanceChatsService {
     // Create ChatSession
     const chatSessionResults = await
       chatSessionService.createChatSession(
-        prisma,
+        store,
         chatSettings.id,
-        userProfileId,
-        instanceId,
-        chatSettings.isEncryptedAtRest,
+        projectId,
+        false,            // isEncryptedAtRest
         chatSettings.isJsonMode,
         prompt,
         appCustomJson,
@@ -179,9 +193,8 @@ export class InstanceChatsService {
   }
 
   async getPrompt(
-    prisma: PrismaClient,
     appCustomJson: any,
-    chatSettings: ChatSettings,
+    chatSettings: ChatSettingsRecord,
     options: ChatSessionOptions) {
 
     // Debug
@@ -197,13 +210,16 @@ export class InstanceChatsService {
           `${fnName}: expected chatSettings.isJsonMode to be true`
 
         console.error(errorMessage)
-        throw new CustomError(errorMessage)
+        throw new IntentError({
+          category: 'ChatError',
+          stage: fnName,
+          message: errorMessage
+        })
       }
 
       // Get and return Analysis page prompt
       const prompt = await
         chatPromptsService.getAnalyzerSuggestionsPrompt(
-          prisma,
           appCustomJson)
 
       // Return

@@ -1,5 +1,6 @@
-import { CustomError } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { BaseDataTypes } from '@/types/base-data-types.js'
 import { SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types.js'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
@@ -15,27 +16,35 @@ export class IntentCodeAnalysisGraphMutateService {
 
   // Code
   async getOrCreateProjectIntentCodeAnalysisNode(
-    prisma: PrismaClient,
-    buildNode: SourceNode) {
+    store: ProjectStore,
+    buildNode: SourceNodeRecord) {
 
     // Debug
     const fnName = `${this.clName}.getOrCreateSourceCodeProject()`
 
     // Validate
     if (buildNode == null) {
-      throw new CustomError(`${fnName}: buildNode == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: buildNode == null`
+      })
     }
 
     if (buildNode.type !== SourceNodeTypes.build) {
-      throw new CustomError(`${fnName}: invalid type: ${buildNode.type}`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: invalid type: ${buildNode.type}`
+      })
     }
 
     // Try to get the node
     var projectIntentCodeAnalysisNode = await
           sourceNodeModel.getByUniqueKey(
-            prisma,
+            store,
             buildNode.id,  // parentId
-            buildNode.instanceId,
+            buildNode.projectId,
             SourceNodeTypes.projectIntentCodeAnalysisNode,
             SourceNodeNames.projectIntentCodeAnalysisNode)
 
@@ -46,9 +55,9 @@ export class IntentCodeAnalysisGraphMutateService {
     // Create the node
     projectIntentCodeAnalysisNode = await
       sourceNodeModel.create(
-        prisma,
+        store,
         buildNode.id,  // parentId
-        buildNode.instanceId,
+        buildNode.projectId,
         BaseDataTypes.activeStatus,
         SourceNodeTypes.projectIntentCodeAnalysisNode,
         SourceNodeNames.projectIntentCodeAnalysisNode,
@@ -63,8 +72,8 @@ export class IntentCodeAnalysisGraphMutateService {
   }
 
   async upsertSuggestion(
-    prisma: PrismaClient,
-    projectIntentCodeAnalysisNode: SourceNode,
+    store: ProjectStore,
+    projectIntentCodeAnalysisNode: SourceNodeRecord,
     suggestion: any) {
 
     // Debug
@@ -72,30 +81,46 @@ export class IntentCodeAnalysisGraphMutateService {
 
     // Validate
     if (projectIntentCodeAnalysisNode == null) {
-      throw new CustomError(`${fnName}: projectIntentCodeAnalysisNode == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: projectIntentCodeAnalysisNode == null`
+      })
     }
 
     if (projectIntentCodeAnalysisNode.type !==
         SourceNodeTypes.projectIntentCodeAnalysisNode) {
 
-      throw new CustomError(
-        `${fnName}: invalid type: ${projectIntentCodeAnalysisNode.type}`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: invalid type: ` +
+          `${projectIntentCodeAnalysisNode.type}`
+      })
     }
 
     if (suggestion == null) {
-      throw new CustomError(`${fnName}: suggestion == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: suggestion == null`
+      })
     }
 
     if (suggestion.text == null) {
-      throw new CustomError(`${fnName}: suggestion.text == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: suggestion.text == null`
+      })
     }
 
     // Create node
     const sourceNode = await
       sourceNodeModel.create(
-        prisma,
+        store,
         projectIntentCodeAnalysisNode.id,  // parentId
-        projectIntentCodeAnalysisNode.instanceId,
+        projectIntentCodeAnalysisNode.projectId,
         BaseDataTypes.activeStatus,
         SourceNodeTypes.suggestion,
         suggestion.text,

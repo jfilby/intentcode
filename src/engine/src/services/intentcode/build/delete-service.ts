@@ -1,5 +1,5 @@
-import { CustomError } from 'serene-core-server'
-import { PrismaClient } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import { createProjectStore } from '@/core/store.js'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
 import { ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types.js'
 import { SourceNodeTypes } from '@/types/source-graph-types.js'
@@ -20,8 +20,12 @@ export class DeleteBuildService {
   clName = 'DeleteBuildService'
 
   // Code
+  /**
+   * Each project holds its own graph, so each is opened and aged out on its
+   * own rather than through the store of whichever project the build started
+   * from.
+   */
   async deleteOldBuildGraphs(
-    prisma: PrismaClient,
     projectsMap: Record<number, ProjectDetails>) {
 
     // Iterate projects
@@ -29,33 +33,38 @@ export class DeleteBuildService {
 
       // Delete old build graphs for the project
       await this.deleteOldBuildGraphsByProject(
-        prisma,
         projectDetails)
     }
   }
 
   async deleteOldBuildGraphsByProject(
-    prisma: PrismaClient,
     projectDetails: ProjectDetails) {
 
     // Debug
     const fnName = `${this.clName}.deleteOldBuildGraphsByProject()`
 
+    const store = createProjectStore(projectDetails.project.path)
+
     // Get project node
     const buildsNode = await
       buildsGraphQueryService.getBuildsNode(
-        prisma,
+        store,
         projectDetails.projectNode)
 
     // Validate
     if (buildsNode == null) {
-      throw new CustomError(`${fnName}: buildNodes == null`)
+      throw new IntentError({
+        category: 'StorageError',
+        stage: fnName,
+        message: `${fnName}: buildNodes == null`,
+        detail: `the project ${projectDetails.project.key} has no Builds node`
+      })
     }
 
     // Get the build nodes to delete
     const buildNodes = await
       sourceNodeModel.getOldest(
-        prisma,
+        store,
         buildsNode.id,                     // parentId
         SourceNodeTypes.build,             // build nodes
         ServerOnlyTypes.oldBuildsToKeep)  // latestRecordsIgnored
@@ -64,7 +73,7 @@ export class DeleteBuildService {
     for (const buildNode of buildNodes) {
 
       await graphsDeleteService.deleteSourceNodeCascade(
-        prisma,
+        store,
         buildNode.id,
         true)  // deleteThisNode
     }

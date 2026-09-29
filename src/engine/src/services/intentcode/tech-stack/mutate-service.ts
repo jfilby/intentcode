@@ -1,8 +1,10 @@
-import { CustomError } from 'serene-core-server'
+import { getModelId } from '@/services/intentcode/common/model-id.js'
+import { IntentError } from '@/core/errors.js'
 import fs from 'fs'
 import { blake3 } from '@noble/hashes/blake3'
-import { AiModelService } from '@/services/ai/ai-model-service.js'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { ProjectStore } from '@/core/store.js'
+import { SourceNodeRecord } from '@/core/records.js'
+import type { NodeContent } from '@/core/records.js'
 import { BuildData, BuildFromFile } from '@/types/build-types.js'
 import { IntentCodeAiTasks } from '@/types/server-only-types.js'
 import { SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types.js'
@@ -12,25 +14,62 @@ import { DependenciesMutateService } from '@/services/graphs/dependencies/mutate
 import { DotIntentCodeGraphQueryService } from '@/services/graphs/dot-intentcode/graph-query-service.js'
 import { FsUtilsService } from '@/services/utils/fs-utils-service.js'
 import { IntentCodeGraphMutateService } from '@/services/graphs/intentcode/graph-mutate-service.js'
-import { IntentCodeMessagesService } from '@/services/intentcode/common/messages-service.js'
 import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service.js'
+import { IntentCodeMessagesService } from '@/services/intentcode/common/messages-service.js'
 import { ProjectsQueryService } from '@/services/projects/query-service.js'
 import { TechStackLlmService } from './llm-service.js'
 import { TechStackPromptService } from './prompt-service.js'
 import { TechStackQueryService } from './query-service.js'
+
+/** Whether a JSON value is an object whose keys can be written to. */
+function isJsonObject(value: unknown): value is Record<string, unknown> {
+  return value != null && typeof value === 'object' &&
+    Array.isArray(value) === false
+}
+
+/**
+ * The extensions and deps the model reported, merged into what the project's
+ * deps node already records. A key the model did not mention is left alone,
+ * which is why this merges rather than replaces.
+ */
+function mergeIntoDepsJson(
+  existing: NodeContent | null,
+  reported: any): NodeContent {
+
+  const depsJson: NodeContent = existing ?? {}
+
+  const extensions =
+    isJsonObject(depsJson.extensions) ? depsJson.extensions : {}
+
+  for (const [key, value] of Object.entries(reported.extensions ?? {})) {
+    extensions[key] = value
+  }
+  depsJson.extensions = extensions
+
+  const source = isJsonObject(depsJson.source) ? depsJson.source : {}
+  const deps = isJsonObject(source.deps) ? source.deps : {}
+
+  for (const [key, value] of
+       Object.entries(reported.source?.deps ?? {})) {
+    deps[key] = value
+  }
+  source.deps = deps
+  depsJson.source = source
+
+  return depsJson
+}
 
 // Models
 const sourceNodeGenerationModel = new SourceNodeGenerationModel()
 const sourceNodeModel = new SourceNodeModel()
 
 // Services
-const aiModelService = new AiModelService()
 const dependenciesMutateService = new DependenciesMutateService()
 const dotIntentCodeGraphQueryService = new DotIntentCodeGraphQueryService()
 const fsUtilsService = new FsUtilsService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
-const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
 const intentCodeMessagesService = new IntentCodeMessagesService()
+const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
 const projectsQueryService = new ProjectsQueryService()
 const techStackLlmService = new TechStackLlmService()
 const techStackPromptService = new TechStackPromptService()
@@ -44,8 +83,8 @@ export class TechStackMutateService {
 
   // Code
   async getExistingJsonContent(
-          prisma: PrismaClient,
-          intentFileNode: SourceNode,
+          store: ProjectStore,
+          intentFileNode: SourceNodeRecord,
           modelId: string,
           prompt: string) {
 
@@ -55,9 +94,9 @@ export class TechStackMutateService {
     // Try to get existing indexer data SourceNode
     const indexerDataSourceNode = await
             sourceNodeModel.getByUniqueKey(
-              prisma,
+              store,
               intentFileNode.id,  // parentId
-              intentFileNode.instanceId,
+              intentFileNode.projectId,
               SourceNodeTypes.intentCodeIndexedData,
               SourceNodeNames.indexedData)
 
@@ -71,7 +110,7 @@ export class TechStackMutateService {
     // Try to get existing SourceNodeGeneration
     const sourceNodeGeneration = await
             sourceNodeGenerationModel.getByUniqueKey(
-              prisma,
+              store,
               indexerDataSourceNode.id,
               modelId,
               promptHash)
@@ -87,11 +126,11 @@ export class TechStackMutateService {
   }
 
   async processTechStackFileWithLlm(
-          prisma: PrismaClient,
+          store: ProjectStore,
           buildData: BuildData,
-          projectNode: SourceNode,
-          projectIntentCodeNode: SourceNode,
-          projectDotIntentCodeNode: SourceNode,
+          projectNode: SourceNodeRecord,
+          projectIntentCodeNode: SourceNodeRecord,
+          projectDotIntentCodeNode: SourceNodeRecord,
           buildFromFile: BuildFromFile) {
 
     // Debug
@@ -101,20 +140,19 @@ export class TechStackMutateService {
     console.log(`processing: ${buildFromFile.filename}..`)
 
     // The model id
-    const modelId = aiModelService.getModelId(IntentCodeAiTasks.compiler)
+    const modelId = await getModelId(IntentCodeAiTasks.compiler)
 
     // Get prompt
     const prompt = await
       techStackPromptService.getPrompt(
-        prisma,
-        projectNode,
         buildData.extensionsData,
         buildFromFile)
 
-    // Already generated?
-    var jsonContent = await
+    // Already generated? The value is whatever the model replied with, so it
+    // stays untyped until processQueryResults reads it.
+    var jsonContent: unknown = await
           this.getExistingJsonContent(
-            prisma,
+            store,
             buildFromFile.fileNode,
             modelId,
             prompt)
@@ -128,7 +166,7 @@ export class TechStackMutateService {
       // LLM request
       const llmResults = await
               techStackLlmService.llmRequest(
-                prisma,
+                store,
                                 IntentCodeAiTasks.compiler,
                 prompt)
 
@@ -143,7 +181,7 @@ export class TechStackMutateService {
 
     // Process the results
     await this.processQueryResults(
-            prisma,
+            store,
             projectNode,
             projectIntentCodeNode,
             projectDotIntentCodeNode,
@@ -153,23 +191,23 @@ export class TechStackMutateService {
   }
 
   async processTechStack(
-          prisma: PrismaClient,
+          store: ProjectStore,
           buildData: BuildData,
-          projectNode: SourceNode) {
+          projectNode: SourceNodeRecord) {
 
     // Debug
     const fnName = `${this.clName}.processTechStack()`
 
     // Get ProjectDetails
     const projectDetails =
-            projectsQueryService.getProjectDetailsByInstanceId(
-              projectNode.instanceId,
-              buildData.projects)
+      projectsQueryService.getProjectDetailsByProjectId(
+        projectNode.projectId,
+        buildData.projects)
 
     // Get dotIntentCode node
     const projectDotIntentCodeNode = await
             dotIntentCodeGraphQueryService.getDotIntentCodeProject(
-              prisma,
+              store,
               projectNode)
 
     // Validate
@@ -206,13 +244,13 @@ export class TechStackMutateService {
       // Get/create the file's SourceNode
       const techStackNode = await
         intentCodePathGraphMutateService.upsertIntentCodePathAsGraph(
-          prisma,
+          store,
           projectDetails.projectIntentCodeNode,
           techStackFilename)
 
     // Check if the file has been updated since last indexed
     if (techStackNode?.contentUpdated != null &&
-        techStackNode.contentUpdated <= fileModifiedTime) {
+        new Date(techStackNode.contentUpdated) <= fileModifiedTime) {
 
       // console.log(`${fnName}: file: ${intentCodeFilename} already indexed`)
       return
@@ -230,7 +268,7 @@ export class TechStackMutateService {
 
     // Process tech-stack.md
     await this.processTechStackFileWithLlm(
-            prisma,
+            store,
             buildData,
             projectNode,
             projectDetails.projectIntentCodeNode,
@@ -239,10 +277,10 @@ export class TechStackMutateService {
   }
 
   async processQueryResults(
-          prisma: PrismaClient,
-          projectNode: SourceNode,
-          projectIntentCodeNode: SourceNode,
-          projectDotIntentCodeNode: SourceNode,
+          store: ProjectStore,
+          projectNode: SourceNodeRecord,
+          projectIntentCodeNode: SourceNodeRecord,
+          projectDotIntentCodeNode: SourceNodeRecord,
           buildFromFile: BuildFromFile,
           sourceNodeGenerationData: SourceNodeGenerationData,
           jsonContent: any) {
@@ -252,17 +290,33 @@ export class TechStackMutateService {
 
     // Validate
     if (projectIntentCodeNode == null) {
-      throw new CustomError(`${fnName}: projectIntentCodeNode == null`)
+
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: projectIntentCodeNode == null`
+      })
     }
 
-    if (buildFromFile.fileNode.jsonContent == null) {
-      throw new CustomError(
-        `${fnName}: intentFileNode.jsonContent == null`)
+    const fileJsonContent = buildFromFile.fileNode.jsonContent
+    if (fileJsonContent == null) {
+
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: intentFileNode.jsonContent == null`
+      })
     }
 
-    if ((buildFromFile.fileNode.jsonContent as any).relativePath == null) {
-      throw new CustomError(
-        `${fnName}: intentFileNode.jsonContent.relativePath == null`)
+    if (typeof fileJsonContent !== 'object' ||
+        !('relativePath' in fileJsonContent) ||
+        fileJsonContent.relativePath == null) {
+
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: intentFileNode.jsonContent.relativePath == null`
+      })
     }
 
     // Debug
@@ -275,35 +329,19 @@ export class TechStackMutateService {
       // Get/create deps node
       const depsNode = await
               dependenciesMutateService.getOrCreateDepsNode(
-                prisma,
+                store,
                 projectNode)
 
-      // Update depsNode
-      if (depsNode.jsonContent.extensions == null) {
-        depsNode.jsonContent.extensions = {}
-      }
-
-      for (const [key, value] of Object.entries(jsonContent.extensions)) {
-
-        depsNode.jsonContent.extensions[key] = value
-      }
-
-      if (depsNode.jsonContent.source == null) {
-        depsNode.jsonContent.source = {}
-      }
-
-      if (depsNode.jsonContent.source.deps == null) {
-        depsNode.jsonContent.source.deps = {}
-      }
-
-      for (const [key, value] of Object.entries(jsonContent.source.deps)) {
-
-        depsNode.jsonContent.source.deps[key] = value
-      }
+      // Update depsNode. Its jsonContent is the persisted record, so it is
+      // merged in place rather than replaced: a deps key the model did not
+      // mention has to survive.
+      depsNode.jsonContent = mergeIntoDepsJson(
+        depsNode.jsonContent,
+        jsonContent)
 
       // Update depsNode
       await dependenciesMutateService.updateDepsNode(
-        prisma,
+        store,
         projectNode,
         depsNode,
         true)  // writeToDepsJson
@@ -312,8 +350,8 @@ export class TechStackMutateService {
     // Upsert the tech-stack.json node
     const techStackJsonSourceNode = await
       intentCodeGraphMutateService.upsertTechStackJson(
-        prisma,
-        projectIntentCodeNode.instanceId,
+        store,
+        projectIntentCodeNode.projectId,
         projectIntentCodeNode,  // parentNode
         jsonContent,
         sourceNodeGenerationData,

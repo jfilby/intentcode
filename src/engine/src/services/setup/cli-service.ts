@@ -1,14 +1,26 @@
+/**
+ * The main menu and the command dispatch.
+ *
+ * The commands are the same ones the CLI has always had. What changed is what
+ * they run against: a project store and the project it belongs to, rather
+ * than a database client. There is no user to provision and no housekeeping
+ * to run, because nothing accumulates that has to be aged out — a chat that
+ * is no longer wanted is a file the user deletes.
+ */
+
 import chalk from 'chalk'
-import { UsersService } from 'serene-core-server'
 import { select } from '@inquirer/prompts'
-import { Instance, PrismaClient } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type { ProjectRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { CommonCommands } from '@/types/server-only-types.js'
-import { ServerTestTypes } from '@/types/server-test-types.js'
 import { InfoService } from './info-service.js'
-import { LoadExternalExtensionsService } from '../extensions/extension/load-external-service.js'
-import { ManageExtensionsCliService } from '../extensions/extension/cli-service.js'
-import { ProjectsQueryService } from '../projects/query-service.js'
+import { LoadExternalExtensionsService } from
+  '../extensions/extension/load-external-service.js'
+import { ManageExtensionsCliService } from
+  '../extensions/extension/cli-service.js'
 import { ProjectCliService } from '../projects/cli-service.js'
+import { ProjectRegistryService } from '../projects/project-registry.js'
 import { SetupService } from './setup-service.js'
 import { TestsService } from '../tests/tests-service.js'
 
@@ -16,16 +28,13 @@ import { TestsService } from '../tests/tests-service.js'
 const infoService = new InfoService()
 const loadExternalExtensionsService = new LoadExternalExtensionsService()
 const manageExtensionsCliService = new ManageExtensionsCliService()
-const projectsQueryService = new ProjectsQueryService()
 const projectCliService = new ProjectCliService()
+const projectRegistryService = new ProjectRegistryService()
 const setupService = new SetupService()
 const testsService = new TestsService()
-const usersService = new UsersService()
 
-// Class
 export class CliService {
 
-  // Consts
   clName = 'CliService'
 
   projectsCommand = 'projects'
@@ -45,161 +54,103 @@ export class CliService {
     CommonCommands.exit
   ]
 
-  // Code
-  async menu(prisma: PrismaClient) {
+  /**
+   * The menu loop. The project is resolved once at the top rather than on
+   * every pass: the working directory does not change under a running menu,
+   * and re-walking to the project root on each iteration is work whose answer
+   * cannot differ.
+   */
+  async menu(store: ProjectStore, project: ProjectRecord) {
 
-    // Debug
-    const fnName = `${this.clName}.menu()`
+    console.log(``)
+    console.log(chalk.bold(`─── IntentCode ───`))
+    console.log(``)
+    console.log(`Project: ${project.name} (${project.path})`)
+    console.log(``)
 
-    // REPL loop
     while (true) {
-
-      // Try to get a project in the cwd
-      const project = await
-        projectsQueryService.getProjectByPath(
-          prisma,
-          process.cwd())
-
-      // Show menu
-      console.log(``)
-      console.log(chalk.bold(`─── Main menu ───`))
-      console.log(``)
 
       const command = await select({
         message: `Select an option`,
         loop: false,
         pageSize: 10,
         choices: [
-          {
-            name: `Projects`,
-            value: this.projectsCommand
-          },
-          {
-            name: `Load extensions`,
-            value: this.loadExtensionsCommand
-          },
-          {
-            name: `Manage extensions`,
-            value: this.manageExtensionsCommand
-          },
-          {
-            name: `Setup`,
-            value: this.setupCommand
-          },
-          {
-            name: `Tests`,
-            value: this.testsCommand
-          },
-          {
-            name: `Info`,
-            value: this.infoCommand
-          },
-          {
-            name: `Exit`,
-            value: CommonCommands.exit
-          }
+          { name: `Projects`, value: this.projectsCommand },
+          { name: `Load extensions`, value: this.loadExtensionsCommand },
+          { name: `Manage extensions`, value: this.manageExtensionsCommand },
+          { name: `Setup`, value: this.setupCommand },
+          { name: `Tests`, value: this.testsCommand },
+          { name: `Info`, value: this.infoCommand },
+          { name: `Exit`, value: CommonCommands.exit }
         ]
       })
 
-      // Exit?
-      if (command === CommonCommands.exit) {
-        return
-      }
+      if (command === CommonCommands.exit) return
 
-      // Run command
       if (command != null) {
-
-        await this.runCommand(
-          prisma,
-          command,
-          project)
+        await this.runCommand(store, project, command)
       }
     }
   }
 
   async runCommand(
-    prisma: PrismaClient,
-    command: string,
-    project: Instance | null) {
+    store: ProjectStore,
+    project: ProjectRecord,
+    command: string
+  ) {
 
     // Debug
     const fnName = `${this.clName}.runCommand()`
 
     // Output
-    console.log(`${fnName}: comand to run: ${command}`)
+    console.log(`${fnName}: command to run: ${command}`)
 
-    // Get/create an admin user
-    const adminUserProfile = await
-      usersService.getOrCreateUserByEmail(
-        prisma,
-        ServerTestTypes.adminUserEmail,
-        undefined)  // defaultUserPreferences
-
-    // Get/create a regular (non-admin) user
-    const regularTestUserProfile = await
-            usersService.getOrCreateUserByEmail(
-              prisma,
-              ServerTestTypes.regularTestUserEmail,
-              undefined)  // defaultUserPreferences
-
-    // Handle command to run
     switch (command) {
 
       case this.infoCommand: {
-
-        await infoService.info()
-
+        await infoService.info(store, project)
         break
       }
 
       case this.projectsCommand: {
-
-        await projectCliService.projects(
-          prisma,
-          adminUserProfile)
-
+        await projectCliService.projects()
         break
       }
 
       case this.loadExtensionsCommand: {
-
-        await loadExternalExtensionsService.promptForAndLoadPath(prisma)
-
+        await loadExternalExtensionsService.promptForAndLoadPath(store, project)
         break
       }
 
       case this.manageExtensionsCommand: {
-
-        await manageExtensionsCliService.run(prisma)
-
+        await manageExtensionsCliService.run(store, project)
         break
       }
 
       case this.setupCommand: {
-
-        await setupService.setup(prisma)
-
+        await setupService.setup(store)
         break
       }
 
       case this.testsCommand: {
-
-        await testsService.tests(
-          prisma,
-          regularTestUserProfile,
-          adminUserProfile)
-
+        await testsService.tests(store, project)
         break
       }
 
       default: {
-
-        console.log(`${fnName}: invalid command, selection is: ` +
-          JSON.stringify(this.commands))
-
-        await prisma.$disconnect()
-        process.exit(1)
+        throw new IntentError({
+          category: 'ValidationError',
+          stage: fnName,
+          message: `invalid command: ${command}`,
+          detail: `known commands: ${this.commands.join(', ')}`
+        })
       }
     }
+  }
+
+  /** The System project, for a command that reads the bundled extensions. */
+  getSystemStore() {
+    const system = projectRegistryService.getSystemProject()
+    return projectRegistryService.getStore(system)
   }
 }

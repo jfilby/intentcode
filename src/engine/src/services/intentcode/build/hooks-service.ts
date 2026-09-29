@@ -1,4 +1,5 @@
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { BuildData } from '@/types/build-types.js'
 
 export class BuildHooksService {
@@ -8,8 +9,8 @@ export class BuildHooksService {
 
   // Code
   async updateDeps(
-          prisma: PrismaClient,
-          projectIntentCodeNode: SourceNode,
+          store: ProjectStore,
+          projectIntentCodeNode: SourceNodeRecord,
           buildData: BuildData) {
 
     // Update deps file

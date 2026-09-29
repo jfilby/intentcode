@@ -1,6 +1,7 @@
-import { CustomError } from 'serene-core-server'
+import { IntentError } from '@/core/errors.js'
 import { blake3 } from '@noble/hashes/blake3'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { BaseDataTypes } from '@/types/base-data-types.js'
 import { SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types.js'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
@@ -16,9 +17,9 @@ export class SpecsGraphMutateService {
 
   // Code
   async getOrCreateSpecsDir(
-          prisma: PrismaClient,
-          instanceId: string,
-          parentNode: SourceNode,
+          store: ProjectStore,
+          projectId: string,
+          parentNode: SourceNodeRecord,
           name: string) {
 
     // Debug
@@ -26,22 +27,30 @@ export class SpecsGraphMutateService {
 
     // Validate
     if (parentNode == null) {
-      throw new CustomError(`${fnName}: parentNode == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: parentNode == null`
+      })
     }
 
     if (![SourceNodeTypes.projectSpecs,
           SourceNodeTypes.specsDir].includes(
             parentNode.type as SourceNodeTypes)) {
 
-      throw new CustomError(`${fnName}: invalid type: ${parentNode.type}`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: invalid type: ${parentNode.type}`
+      })
     }
 
     // Try to get the node
     var specsDir = await
           sourceNodeModel.getByUniqueKey(
-            prisma,
+            store,
             parentNode.id,
-            instanceId,
+            projectId,
             SourceNodeTypes.specsDir,
             name)
 
@@ -52,9 +61,9 @@ export class SpecsGraphMutateService {
     // Create the node
     specsDir = await
       sourceNodeModel.create(
-        prisma,
+        store,
         parentNode.id,  // parentId
-        instanceId,
+        projectId,
         BaseDataTypes.activeStatus,
         SourceNodeTypes.specsDir,
         name,
@@ -69,9 +78,9 @@ export class SpecsGraphMutateService {
   }
 
   async getOrCreateSpecsFile(
-          prisma: PrismaClient,
-          instanceId: string,
-          parentNode: SourceNode,
+          store: ProjectStore,
+          projectId: string,
+          parentNode: SourceNodeRecord,
           name: string,
           relativePath: string) {
 
@@ -80,22 +89,30 @@ export class SpecsGraphMutateService {
 
     // Validate
     if (parentNode == null) {
-      throw new CustomError(`${fnName}: parentNode == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: parentNode == null`
+      })
     }
 
     if (![SourceNodeTypes.projectSpecs,
           SourceNodeTypes.specsDir].includes(
             parentNode.type as SourceNodeTypes)) {
 
-      throw new CustomError(`${fnName}: invalid type: ${parentNode.type}`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: invalid type: ${parentNode.type}`
+      })
     }
 
     // Try to get the node
     var specsFile = await
           sourceNodeModel.getByUniqueKey(
-            prisma,
+            store,
             parentNode.id,
-            instanceId,
+            projectId,
             SourceNodeTypes.specsFile,
             name)
 
@@ -108,9 +125,9 @@ export class SpecsGraphMutateService {
     // Create the node
     specsFile = await
       sourceNodeModel.create(
-        prisma,
+        store,
         parentNode.id,  // parentId
-        instanceId,
+        projectId,
         BaseDataTypes.activeStatus,
         SourceNodeTypes.specsFile,
         name,
@@ -127,8 +144,8 @@ export class SpecsGraphMutateService {
   }
 
   async getOrCreateSpecsProject(
-          prisma: PrismaClient,
-          projectNode: SourceNode,
+          store: ProjectStore,
+          projectNode: SourceNodeRecord,
           localPath: string) {
 
     // Debug
@@ -137,9 +154,9 @@ export class SpecsGraphMutateService {
     // Try to get the node
     var specsProjectNode = await
           sourceNodeModel.getByUniqueKey(
-            prisma,
+            store,
             projectNode.id,  // parentId
-            projectNode.instanceId,
+            projectNode.projectId,
             SourceNodeTypes.projectSpecs,
             SourceNodeNames.projectSpecs)
 
@@ -164,9 +181,9 @@ export class SpecsGraphMutateService {
     // Create the node
     specsProjectNode = await
       sourceNodeModel.create(
-        prisma,
+        store,
         projectNode.id,  // parentId
-        projectNode.instanceId,
+        projectNode.projectId,
         BaseDataTypes.activeStatus,
         SourceNodeTypes.projectSpecs,
         SourceNodeNames.projectSpecs,

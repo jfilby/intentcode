@@ -12,15 +12,9 @@ export class PathsService {
     // The engine root is the one directory holding bundled/extensions next to
     // package.json. Rather than counting levels up from a module location,
     // walk up from each candidate seed and accept the first that really has
-    // it.
-    //
-    // Counting levels does not work here. The Prisma generated client assigns
-    // `globalThis['__dirname']` as a side effect of being imported, so under
-    // tsx a bare `__dirname` can read as the generated client's directory
-    // rather than this file's. Trusting it resolved the engine root to
-    // prisma/generated. __dirname is also absent entirely when the sources
-    // are loaded as ESM, and in the CJS bundle it sits at <engine>/dist, one
-    // level below the root rather than the three the old code climbed.
+    // it. __dirname is absent when the sources are loaded as ESM, and in the
+    // CJS bundle it sits at <engine>/dist, one level below the root rather
+    // than the three the old code climbed, so it is only ever a seed.
     const marker = path.join('bundled', 'extensions')
 
     const seeds: string[] = [process.cwd()]

@@ -1,316 +1,172 @@
-import fs from 'fs'
-import chalk from 'chalk'
-import { CustomError, InstanceModel } from 'serene-core-server'
-import { input, select } from '@inquirer/prompts'
-import { Instance, PrismaClient, UserProfile } from '@/prisma/client.js'
-import { CommonCommands, ServerOnlyTypes } from '@/types/server-only-types.js'
-import { BuildMutateService } from '../intentcode/build/mutate-service.js'
-import { IntentCodeAnalyzerChatService } from '../intentcode/analyzer/chat-service.js'
-import { ProjectsMutateService } from './mutate-service.js'
-import { ProjectsQueryService } from './query-service.js'
-import { ProjectSetupService } from './setup-project.js'
+/**
+ * The Projects menu.
+ *
+ * Projects are directories, so this menu does two things: it lists the ones
+ * under the working directory, and it creates one. Creating a project writes
+ * an `intent.toml`; there is no registry to add an entry to, so a project
+ * created here is on disk immediately and is found by walking up from any
+ * directory inside it.
+ */
 
-// Models
-const instanceModel = new InstanceModel()
+import { existsSync } from 'node:fs'
+import { resolve } from 'node:path'
+import chalk from 'chalk'
+import { input, select } from '@inquirer/prompts'
+import { IntentError } from '@/core/errors.js'
+import type { ProjectRecord } from '@/core/records.js'
+import { CommonCommands } from '@/types/server-only-types.js'
+import { BuildMutateService } from '../intentcode/build/mutate-service.js'
+import { IntentCodeAnalyzerChatService } from
+  '../intentcode/analyzer/chat-service.js'
+import { ProjectRegistryService } from './project-registry.js'
 
 // Services
 const buildMutateService = new BuildMutateService()
 const intentCodeAnalyzerChatService = new IntentCodeAnalyzerChatService()
-const projectsMutateService = new ProjectsMutateService()
-const projectsQueryService = new ProjectsQueryService()
-const projectSetupService = new ProjectSetupService()
+const projectRegistryService = new ProjectRegistryService()
 
-// Class
 export class ProjectCliService {
 
-  // Consts
   clName = 'ProjectCliService'
 
-  aboutCommand = `about`
-  chatCommand = `chat`
-  runBuildCommand = `run-build`
+  aboutCommand = 'about'
+  chatCommand = 'chat'
+  runBuildCommand = 'run-build'
 
-  addProjectCommand = `add-project`
+  addProjectCommand = 'add-project'
 
-  // Code
-  async aboutProject(
-    prisma: PrismaClient,
-    instance: Instance) {
+  /** The project picker. Selecting one opens that project's own menu. */
+  async projects() {
 
-    // Banner
-    console.log(``)
-    console.log(chalk.bold(`─── About project: ${instance.name} ───`))
+    const projects = await projectRegistryService.getProjectList()
 
-    // Print project path
-    const projectPath = await
-      projectsQueryService.getProjectPath(
-        prisma,
-        instance.id)
+    const choices = [
+      ...projects.map((project, index) => ({
+        name: `${index + 1}. ${project.name} — ${project.path}`,
+        value: project.path
+      })),
+      { name: `Add a project`, value: this.addProjectCommand },
+      { name: `Back`, value: CommonCommands.back }
+    ]
 
-    // Output
-    console.log(``)
-    console.log(`Path: ${projectPath}`)
+    const selected = await select({
+      message: `Projects`,
+      loop: false,
+      pageSize: 15,
+      choices
+    })
+
+    if (selected == null || selected === CommonCommands.back) return
+
+    if (selected === this.addProjectCommand) {
+      await this.addProject()
+      return
+    }
+
+    const project = await projectRegistryService.getProjectByRoot(selected)
+
+    await this.project(project)
   }
 
-  async addProject(
-    prisma: PrismaClient,
-    adminUserProfile: UserProfile) {
+  /**
+   * Creates a project: asks for a directory and a name, and writes the
+   * intent.toml. Both are asked for separately because the name is what the
+   * project is called in every prompt the compiler writes, and it does not
+   * have to match the directory it lives in.
+   */
+  async addProject(): Promise<ProjectRecord | undefined> {
 
     // Debug
-    const fnName = `${this.clName}.project()`
+    const fnName = `${this.clName}.addProject()`
 
-    // Banner
+    const pathInput = await input({
+      message: `Project path (a directory that exists)`
+    })
+
+    const path = resolve(pathInput.trim())
+
+    if (existsSync(path) === false) {
+      throw new IntentError({
+        category: 'ProjectError',
+        stage: fnName,
+        message: `no directory at ${path}`,
+        detail: 'a project is a directory that already exists; create it ' +
+          'first, then add it here'
+      })
+    }
+
+    const nameInput = await input({
+      message: `Project name`,
+      default: path.split(/[\\/]/).filter((part) => part !== '').pop()
+    })
+
+    const name = nameInput.trim()
+
+    const project = await projectRegistryService.createProject(path, name)
+
     console.log(``)
-    console.log(chalk.bold(`─── Add a project ───`))
+    console.log(`Created project "${project.name}" at ${project.path}`)
     console.log(``)
 
-    // Get project name
-    var projectName = await
-      input({ message: `Enter the project name` })
-
-    projectName = projectName.trim()
-
-    // Is there already a top-level project with this name?
-    var instance = await
-      instanceModel.getByParentIdAndName(
-        prisma,
-        null,       // parentId
-        projectName)
-
-    if (instance != null) {
-
-      console.log(``)
-      console.log(`Project ${instance.name} already exists`)
-
-      return
-    }
-
-    // Get project path
-    var projectPath = await
-      input({ message: `Enter the project path` })
-
-    projectPath = projectPath.trim()
-
-    // Is there already a project with this path?
-    instance = await
-      projectsQueryService.getProjectByPath(
-        prisma,
-        projectPath)
-
-    if (instance != null) {
-
-      console.log(``)
-      console.log(`Project ${instance.name} already exists for that path`)
-
-      return
-    }
-
-    // Does the path exist
-    if (fs.existsSync(projectPath) === false) {
-
-      console.log(``)
-      console.log(`The path doesn't exist, please create it first`)
-
-      return
-    }
-
-    // Add the instance
-    const projectResults = await
-      projectsMutateService.getOrCreate(
-        prisma,
-        adminUserProfile.id,
-        projectName)
-
-    // Validate
-    if (projectResults.instance == null) {
-      throw new CustomError(`${fnName}: projectResults.instance == null`)
-    }
-
-    // Setup project node
-    const projectNode = await
-      projectSetupService.setupProject(
-        prisma,
-        projectResults.instance,
-        projectResults.instance.name,
-        projectPath)
+    return project
   }
 
-  async project(
-    prisma: PrismaClient,
-    adminUserProfile: UserProfile,
-    instance: Instance) {
+  /** One project's menu. */
+  async project(project: ProjectRecord) {
 
-    // Debug
-    const fnName = `${this.clName}.project()`
+    const store = projectRegistryService.getStore(project)
 
-    // REPL loop
     while (true) {
 
-      // Show menu
-      console.log(``)
-      console.log(chalk.bold(`─── Project: ${instance.name} ───`))
-      console.log(``)
-
       const command = await select({
-        message: `Select an option`,
+        message: `${project.name}`,
         loop: false,
         pageSize: 10,
         choices: [
-          {
-            name: `Back`,
-            value: CommonCommands.back
-          },
-          {
-            name: `About this project`,
-            value: this.aboutCommand
-          },
-          {
-            name: `Open a chat`,
-            value: this.chatCommand
-          },
-          {
-            name: `Run the build`,
-            value: this.runBuildCommand
-          }
+          { name: `About this project`, value: this.aboutCommand },
+          { name: `Open a chat`, value: this.chatCommand },
+          { name: `Run the build`, value: this.runBuildCommand },
+          { name: `Back`, value: CommonCommands.back }
         ]
       })
 
-      // Handle selection
+      if (command == null || command === CommonCommands.back) return
+
       switch (command) {
 
-        case CommonCommands.back: {
-          return
-        }
-
         case this.aboutCommand: {
-          await this.aboutProject(
-            prisma,
-            instance)
-
+          this.aboutProject(project)
           break
         }
 
         case this.chatCommand: {
-          await intentCodeAnalyzerChatService.openChat(
-            prisma,
-            instance)
-
+          await intentCodeAnalyzerChatService.openChat(store, project)
           break
         }
 
         case this.runBuildCommand: {
-          await buildMutateService.runBuild(
-            prisma,
-            instance.id,
-            instance.name)
-
+          await buildMutateService.runBuild(store, project.id, project.name)
           break
         }
 
         default: {
-          console.log(`Invalid command`)
+          throw new IntentError({
+            category: 'ValidationError',
+            stage: `${this.clName}.project()`,
+            message: `invalid command: ${String(command)}`
+          })
         }
       }
     }
   }
 
-  async projects(
-    prisma: PrismaClient,
-    adminUserProfile: UserProfile) {
+  aboutProject(project: ProjectRecord) {
 
-    // Debug
-    const fnName = `${this.clName}.project()`
-
-    // REPL loop
-    while (true) {
-
-      // Show menu
-      console.log(``)
-      console.log(chalk.bold(`─── Projects ───`))
-      console.log(``)
-
-      // Choices
-      var choices = [
-        {
-          name: `Back`,
-          value: CommonCommands.back
-        },
-        {
-          name: `Add a project`,
-          value: this.addProjectCommand
-        }
-      ]
-
-      // Get projects
-      var instances = await
-        instanceModel.filter(prisma)
-
-      // Validate
-      if (instances == null) {
-        throw new CustomError(`${fnName}: instances == null`)
-      }
-
-      // Filter out the System project
-      instances = instances.filter(
-        instance => instance.name !== ServerOnlyTypes.systemProjectName)
-
-      // Sort by name
-      instances.sort((a, b) => a.name.localeCompare(b.name))
-
-      // Create projects
-      var i = 1
-      const projectsMap = new Map<string, Instance>()
-
-      for (const instance of instances) {
-
-        projectsMap.set(
-          `${i}`,
-          instance)
-
-        i += 1
-      }
-
-      // List projects
-      for (const [projectNo, instance] of projectsMap.entries()) {
-
-        choices.push({
-          name: instance.name,
-          value: projectNo
-        })
-      }
-
-      // Select
-      const command = await select({
-        message: `Select an option`,
-        loop: false,
-        pageSize: 10,
-        choices: choices
-      })
-
-      // Handle command
-      if (command === this.addProjectCommand) {
-
-        await this.addProject(
-          prisma,
-          adminUserProfile)
-
-        continue
-
-      } else if (command === CommonCommands.back) {
-        return
-      }
-
-      // Project
-      if (projectsMap.has(command)) {
-
-        await this.project(
-          prisma,
-          adminUserProfile,
-          projectsMap.get(command)!)
-      }
-
-      // Default
-      console.log(`Invalid command`)
-    }
+    console.log(``)
+    console.log(chalk.bold(`# ${project.name}`))
+    console.log(``)
+    console.log(`Path: ${project.path}`)
+    console.log(`Key: ${project.key}`)
+    console.log(``)
   }
 }

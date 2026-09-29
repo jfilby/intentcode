@@ -2,17 +2,16 @@ import fs from 'fs'
 import https from 'node:https'
 import path from 'path'
 import semver from 'semver'
-import { CustomError } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { SourceNodeTypes } from '@/types/source-graph-types.js'
 import { BuildData } from '@/types/build-types.js'
-import { ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
+import { ProjectDetails, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
 import { ImportsData } from '@/services/source-code/imports/types.js'
-import { ProjectsQueryService } from '@/services/projects/query-service.js'
 import { ReadJsTsSourceImportsService } from '@/services/source-code/imports/read-js-ts-service.js'
 
 // Services
-const projectsQueryService = new ProjectsQueryService()
 const readJsTsSourceImportsService = new ReadJsTsSourceImportsService()
 
 // Class
@@ -20,7 +19,6 @@ export class PackageJsonFileMutateService {
 
   // Consts
   clName = 'PackageJsonFileMutateService'
-
   ignoredDependencies = [
     'nodejs'
   ]
@@ -44,6 +42,35 @@ export class PackageJsonFileMutateService {
         'module': 'CommonJS'
       }
     }
+
+
+  // Code
+
+  /**
+   * The build's details for a project. A build holds every project it covers,
+   * keyed by number, so the project is found by the id on the node rather
+   * than by the number: the caller has a node, not a number.
+   */
+  private getBuildProjectDetails(
+          buildData: BuildData,
+          projectId: string): ProjectDetails {
+
+    // Debug
+    const fnName = `${this.clName}.getBuildProjectDetails()`
+
+    for (const projectDetails of Object.values(buildData.projects)) {
+
+      if (projectDetails.project.id === projectId) {
+        return projectDetails
+      }
+    }
+
+    throw new IntentError({
+      category: 'CompilerError',
+      stage: fnName,
+      message: `no ProjectDetails in the build for projectId: ${projectId}`
+    })
+  }
 
   // Code
   enrichFromDepsNode(
@@ -121,7 +148,11 @@ export class PackageJsonFileMutateService {
     if (versionNo == null ||
         versionNo.length === 0) {
 
-      throw new CustomError(`${fnName}: invalid versionNo: ${versionNo}`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `invalid versionNo: ${versionNo}`
+      })
     }
 
     // Remove leading caret if present
@@ -204,7 +235,11 @@ export class PackageJsonFileMutateService {
 
     if (normalized == null) {
 
-      throw new CustomError(`${fnName}: invalid version: ${v}`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `invalid version: ${v}`
+      })
     }
 
     v = normalized
@@ -216,10 +251,10 @@ export class PackageJsonFileMutateService {
     return v
   }
 
-  async run(prisma: PrismaClient,
+  async run(store: ProjectStore,
             buildData: BuildData,
-            projectNode: SourceNode,
-            depsNode: SourceNode) {
+            projectNode: SourceNodeRecord,
+            depsNode: SourceNodeRecord) {
 
     // Debug
     const fnName = `${this.clName}.run()`
@@ -231,15 +266,17 @@ export class PackageJsonFileMutateService {
     // Validate
     if (projectNode.type !== SourceNodeTypes.project) {
 
-      throw new CustomError(
-        `${fnName}: projectNode.type !== SourceNodeTypes.project`)
+      throw new IntentError({
+        category: 'CompilerError',
+        stage: fnName,
+        message: 'projectNode.type !== SourceNodeTypes.project'
+      })
     }
 
     // Get ProjectDetails
-    const projectDetails =
-            projectsQueryService.getProjectDetailsByInstanceId(
-              projectNode.instanceId,
-              buildData.projects)
+    const projectDetails = this.getBuildProjectDetails(
+      buildData,
+      projectNode.projectId)
 
     // Validate
     var depsNodeJson: any = null
@@ -265,7 +302,7 @@ export class PackageJsonFileMutateService {
     // Read in the existing file (if available)
     const importsData = await
             readJsTsSourceImportsService.run(
-              prisma,
+              store,
               projectNode,
               projectSourcePath)
 

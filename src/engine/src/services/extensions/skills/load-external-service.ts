@@ -1,17 +1,16 @@
 import fs from 'fs'
 import YAML from 'yaml'
-import { CustomError, WalkDirService } from 'serene-core-server'
 import { blake3 } from '@noble/hashes/blake3'
-import { PrismaClient } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
+import { walkDir } from '@/core/walk-dir.js'
 import { BaseDataTypes } from '@/types/base-data-types.js'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
 import { SourceNodeTypes } from '@/types/source-graph-types.js'
 
 // Models
 const sourceNodeModel = new SourceNodeModel()
-
-// Services
-const walkDirService = new WalkDirService()
 
 // Class
 export class LoadExternalSkillsService {
@@ -21,9 +20,9 @@ export class LoadExternalSkillsService {
 
   // Code
   async loadFromPath(
-          prisma: PrismaClient,
-          instanceId: string,
-          extensionNode: any,
+          store: ProjectStore,
+          projectId: string,
+          extensionNode: SourceNodeRecord,
           loadPath: string) {
 
     // Debug
@@ -32,18 +31,26 @@ export class LoadExternalSkillsService {
     // console.log(`${fnName}: loadPath: ${loadPath}`)
 
     // Validate
-    if (instanceId == null) {
-      throw new CustomError(`${fnName}: instanceId == null`)
+    if (projectId == null) {
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: 'projectId == null'
+      })
     }
 
     if (loadPath == null) {
-      throw new CustomError(`${fnName}: loadPath == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: 'loadPath == null'
+      })
     }
 
     // Walk dir for md files
     var mdFiles: string[] = []
 
-    await walkDirService.walkDir(
+    await walkDir(
             loadPath,
             mdFiles,
             {
@@ -58,17 +65,17 @@ export class LoadExternalSkillsService {
     for (const mdFile of mdFiles) {
 
       await this.loadSkillMdFile(
-              prisma,
-              instanceId,
+              store,
+              projectId,
               extensionNode,
               mdFile)
     }
   }
 
   async loadSkillMdFile(
-          prisma: PrismaClient,
-          instanceId: string,
-          extensionNode: any,
+          store: ProjectStore,
+          projectId: string,
+          extensionNode: SourceNodeRecord,
           fullPath: string) {
 
     // Output
@@ -96,17 +103,17 @@ export class LoadExternalSkillsService {
 
     // Save the skill
     await this.saveSkill(
-            prisma,
-            instanceId,
+            store,
+            projectId,
             extensionNode,
             frontMatter,
             markdown)
   }
 
   async saveSkill(
-          prisma: PrismaClient,
-          instanceId: string,
-          extensionNode: any,
+          store: ProjectStore,
+          projectId: string,
+          extensionNode: SourceNodeRecord,
           frontMatter: any,
           markdown: string) {
 
@@ -115,7 +122,11 @@ export class LoadExternalSkillsService {
 
     // Validate
     if (frontMatter == null) {
-      throw new CustomError(`${fnName}: frontMatter == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: 'frontMatter == null'
+      })
     }
 
     if (frontMatter.name == null) {
@@ -143,10 +154,10 @@ export class LoadExternalSkillsService {
     // Upsert skill node
     const skillNode = await
             sourceNodeModel.upsert(
-              prisma,
+              store,
               undefined,         // id
               extensionNode.id,  // parentId
-              instanceId,
+              projectId,
               BaseDataTypes.activeStatus,
               SourceNodeTypes.skillType,
               frontMatter.name,  // name

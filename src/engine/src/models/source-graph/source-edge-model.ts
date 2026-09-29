@@ -1,270 +1,136 @@
-import { PrismaClient } from '@/prisma/client.js'
-import { isPrismaNotFound } from '../prisma-error-utils.js'
+/**
+ * The source graph's edges.
+ *
+ * An edge says one node implements another. Edges are not read often and are
+ * never on a hot path, so they live in their own collection beside the nodes
+ * rather than inside a node record.
+ */
+
+import type { SourceEdgeWithRelations } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
+import { createId } from '@/core/ids.js'
 
 export class SourceEdgeModel {
 
-  // Consts
   clName = 'SourceEdgeModel'
 
-  // Code
   async create(
-          prisma: PrismaClient,
-          fromId: string,
-          toId: string,
-          status: string,
-          name: string) {
+    store: ProjectStore,
+    fromId: string,
+    toId: string,
+    status: string,
+    name: string
+  ): Promise<SourceEdgeWithRelations> {
 
-    // Debug
-    const fnName = `${this.clName}.create()`
+    const now = new Date().toISOString()
 
-    // Create record
-    try {
-      return await prisma.sourceEdge.create({
-        data: {
-          fromId: fromId,
-          toId: toId,
-          status: status,
-          name: name
-        }
-      })
-    } catch(error) {
-      console.error(`${fnName}: error: ${error}`)
-      throw error
-    }
+    return await store.sourceEdges.create({
+      data: {
+        id: createId(),
+        fromId,
+        toId,
+        status,
+        name,
+        created: now,
+        updated: now
+      }
+    })
   }
 
-  async deleteById(
-          prisma: PrismaClient,
-          id: string) {
+  async deleteById(store: ProjectStore, id: string) {
+    return await store.sourceEdges.delete({ where: { id } })
+  }
 
-    // Debug
-    const fnName = `${this.clName}.deleteById()`
-
-    // Delete
-    try {
-      return await prisma.sourceEdge.delete({
-        where: {
-          id: id
-        }
-      })
-    } catch(error: any) {
-      if (isPrismaNotFound(error) === false) {
-        console.error(`${fnName}: error: ${error}`)
-        throw 'Prisma error'
-      }
-    }
+  async deleteByFromId(store: ProjectStore, fromId: string) {
+    return await store.sourceEdges.deleteMany({ where: { fromId } })
   }
 
   async filter(
-          prisma: PrismaClient,
-          fromId: string | undefined = undefined,
-          toId: string | undefined = undefined,
-          status: string | undefined = undefined,
-          name: string | undefined = undefined,
-          includeFromNodes: boolean = false,
-          includeToNodes: boolean = false) {
+    store: ProjectStore,
+    fromId: string | undefined = undefined,
+    toId: string | undefined = undefined,
+    status: string | undefined = undefined,
+    name: string | undefined = undefined,
+    includeFromNodes: boolean = false,
+    includeToNodes: boolean = false
+  ): Promise<SourceEdgeWithRelations[]> {
 
-    // Debug
-    const fnName = `${this.clName}.filter()`
-
-    // Query
-    try {
-      return await prisma.sourceEdge.findMany({
-        include: {
-          from: includeFromNodes,
-          to: includeToNodes
-        },
-        where: {
-          fromId: fromId,
-          toId: toId,
-          status: status,
-          name: name
-        }
-      })
-    } catch(error: any) {
-      console.error(`${fnName}: error: ${error}`)
-      throw 'Prisma error'
-    }
+    return await store.sourceEdges.findMany({
+      where: { fromId, toId, status, name },
+      include: {
+        ...(includeFromNodes ? { from: true } : {}),
+        ...(includeToNodes ? { to: true } : {})
+      }
+    })
   }
 
   async getById(
-          prisma: PrismaClient,
-          id: string) {
+    store: ProjectStore,
+    id: string
+  ): Promise<SourceEdgeWithRelations | null> {
 
-    // Debug
-    const fnName = `${this.clName}.getById()`
-
-    // Query
-    var sourceEdge: any = null
-
-    try {
-      sourceEdge = await prisma.sourceEdge.findUnique({
-        where: {
-          id: id
-        }
-      })
-    } catch(error: any) {
-      if (isPrismaNotFound(error) === false) {
-        console.error(`${fnName}: error: ${error}`)
-        throw 'Prisma error'
-      }
-    }
-
-    // Return
-    return sourceEdge
+    return await store.sourceEdges.findFirst({ where: { id } })
   }
 
   async getByUniqueKey(
-          prisma: PrismaClient,
-          fromId: string,
-          toId: string,
-          name: string) {
+    store: ProjectStore,
+    fromId: string,
+    toId: string,
+    name: string
+  ): Promise<SourceEdgeWithRelations | null> {
 
-    // Debug
-    const fnName = `${this.clName}.getByUniqueKey()`
-
-    // Validate
-    if (fromId == null) {
-      console.error(`${fnName}: fromId == null`)
-      throw 'Validation error'
-    }
-
-    if (toId == null) {
-      console.error(`${fnName}: toId == null`)
-      throw 'Validation error'
-    }
-
-    if (name == null) {
-      console.error(`${fnName}: name == null`)
-      throw 'Validation error'
-    }
-
-    // Query
-    var sourceEdge: any = null
-
-    try {
-      sourceEdge = await prisma.sourceEdge.findFirst({
-        where: {
-          fromId: fromId,
-          toId: toId,
-          name: name
-        }
-      })
-    } catch(error: any) {
-      if (isPrismaNotFound(error) === false) {
-        console.error(`${fnName}: error: ${error}`)
-        throw 'Prisma error'
-      }
-    }
-
-    // Return
-    return sourceEdge
+    return await store.sourceEdges.findFirst({
+      where: { fromId, toId, name }
+    })
   }
 
   async update(
-          prisma: PrismaClient,
-          id: string,
-          fromId: string | undefined,
-          toId: string | undefined,
-          status: string | undefined,
-          name: string | undefined) {
+    store: ProjectStore,
+    id: string,
+    fromId: string | undefined,
+    toId: string | undefined,
+    status: string | undefined,
+    name: string | undefined
+  ) {
 
-    // Debug
-    const fnName = `${this.clName}.update()`
-
-    // Update record
-    try {
-      return await prisma.sourceEdge.update({
-        data: {
-          fromId: fromId,
-          toId: toId,
-          status: status,
-          name: name
-        },
-        where: {
-          id: id
-        }
-      })
-    } catch(error) {
-      console.error(`${fnName}: error: ${error}`)
-      throw 'Prisma error'
-    }
+    return await store.sourceEdges.update({
+      where: { id },
+      data: {
+        fromId,
+        toId,
+        status,
+        name,
+        updated: new Date().toISOString()
+      }
+    })
   }
 
   async upsert(
-          prisma: PrismaClient,
-          id: string | undefined,
-          fromId: string | undefined,
-          toId: string | undefined,
-          status: string | undefined,
-          name: string | undefined) {
+    store: ProjectStore,
+    id: string | undefined,
+    fromId: string | undefined,
+    toId: string | undefined,
+    status: string | undefined,
+    name: string | undefined
+  ) {
 
-    // Debug
-    const fnName = `${this.clName}.upsert()`
-
-    // console.log(`${fnName}: starting with id: ` + JSON.stringify(id))
-
-    // If id isn't specified, but the unique keys are, try to get the record
     if (id == null &&
         fromId != null &&
         toId != null &&
         name != null) {
 
-      const sourceEdge = await
-              this.getByUniqueKey(
-                prisma,
-                fromId,
-                toId,
-                name)
-
-      if (sourceEdge != null) {
-        id = sourceEdge.id
-      }
+      const existing = await this.getByUniqueKey(store, fromId, toId, name)
+      if (existing != null) id = existing.id
     }
 
-    // Upsert
-    if (id == null) {
-
-      // Validate for create (mainly for type validation of the create call)
-      if (fromId == null) {
-        console.error(`${fnName}: id is null and fromId is null`)
-        throw 'Prisma error'
-      }
-
-      if (toId == null) {
-        console.error(`${fnName}: id is null and toId is null`)
-        throw 'Prisma error'
-      }
-
-      if (status == null) {
-        console.error(`${fnName}: id is null and status is null`)
-        throw 'Prisma error'
-      }
-
-      if (name == null) {
-        console.error(`${fnName}: id is null and name is null`)
-        throw 'Prisma error'
-      }
-
-      // Create
-      return await
-               this.create(
-                 prisma,
-                 fromId,
-                 toId,
-                 status,
-                 name)
-    } else {
-
-      // Update
-      return await
-               this.update(
-                 prisma,
-                 id,
-                 fromId,
-                 toId,
-                 status,
-                 name)
+    if (id != null) {
+      return await this.update(store, id, fromId, toId, status, name)
     }
+
+    if (fromId == null || toId == null || status == null || name == null) {
+      return null
+    }
+
+    return await this.create(store, fromId, toId, status, name)
   }
 }

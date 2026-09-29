@@ -1,16 +1,16 @@
 import semver from 'semver'
-import { CustomError } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
-import { ServerOnlyTypes } from '@/types/server-only-types.js'
+import { IntentError } from '@/core/errors.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { ExtensionsData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types.js'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
-import { ProjectsQueryService } from '@/services/projects/query-service.js'
+import { ProjectRegistryService } from '@/services/projects/project-registry.js'
 
 // Models
 const sourceNodeModel = new SourceNodeModel()
 
 // Services
-const projectsQueryService = new ProjectsQueryService()
+const projectRegistryService = new ProjectRegistryService()
 
 // Class
 export class ExtensionQueryService {
@@ -20,8 +20,8 @@ export class ExtensionQueryService {
 
   // Code
   async checkExtensionsExist(
-          prisma: PrismaClient,
-          instanceId: string,
+          store: ProjectStore,
+          projectId: string,
           extensionIds: string[],
           verbose: boolean = false) {
 
@@ -31,18 +31,22 @@ export class ExtensionQueryService {
     // Get extensions node
     const extensionsNode = await
             this.getExtensionsNode(
-              prisma,
-              instanceId)
+              store,
+              projectId)
 
     // Validate
     if (extensionsNode == null) {
-      throw new CustomError(`${fnName}: extensionsNode == null`)
+      throw new IntentError({
+        category: 'ExtensionError',
+        stage: fnName,
+        message: 'extensionsNode == null'
+      })
     }
 
     // Get extension nodes
     const extensionNodes = await
             sourceNodeModel.filter(
-              prisma,
+              store,
               extensionsNode.id)
 
     // List all loaded extensions if verbose
@@ -77,14 +81,14 @@ export class ExtensionQueryService {
   }
 
   async getAsPrompting(
-          prisma: PrismaClient,
-          instanceId: string) {
+          store: ProjectStore,
+          projectId: string) {
 
-    // Get all extensions with their hooks for the instance
+    // Get all extensions with their hooks for the project
     const extensionNodes = await
             sourceNodeModel.filterWithChildNodes(
-              prisma,
-              instanceId,
+              store,
+              projectId,
               SourceNodeTypes.extensionType,
               [SourceNodeTypes.hooksType])
 
@@ -113,7 +117,7 @@ export class ExtensionQueryService {
         `\n`
 
       // Iterate hook nodes
-      for (const hookNode of extensionNode.children) {
+      for (const hookNode of extensionNode.children ?? []) {
 
         if (hookNode.jsonContent == null) {
           continue
@@ -134,8 +138,8 @@ export class ExtensionQueryService {
   }
 
   async getExtension(
-          prisma: PrismaClient,
-          instanceId: string,
+          store: ProjectStore,
+          projectId: string,
           extensionsNodeId: string,
           getName: string,
           getMinVersionNo: string) {
@@ -144,15 +148,15 @@ export class ExtensionQueryService {
     const fnName = `${this.clName}.getExtension()`
 
     // console.log(
-    //   `${fnName}: instanceId: ${instanceId} extensionsNodeId: ` +
+    //   `${fnName}: projectId: ${projectId} extensionsNodeId: ` +
     //   `${extensionsNodeId} getName: ${getName}`)
 
     // Get potential extension nodes
     const extensions = await
             sourceNodeModel.filter(
-              prisma,
+              store,
               extensionsNodeId,  // parentId
-              instanceId,
+              projectId,
               SourceNodeTypes.extensionType,
               getName)
 
@@ -160,7 +164,7 @@ export class ExtensionQueryService {
     const minVersionNo = semver.minVersion(getMinVersionNo)
 
     // Get the highest version above minVersionNo
-    var highestExtensionNode: any = undefined
+    var highestExtensionNode: SourceNodeRecord | undefined = undefined
     var highestVersionNo: string | undefined = undefined
 
     for (const extension of extensions) {
@@ -169,11 +173,17 @@ export class ExtensionQueryService {
       // console.log(`${fnName}: trying: ` + JSON.stringify(extension))
 
       // Get the version no
-      const versionNo = (extension as any).jsonContent.version
+      const versionNo = (extension.jsonContent as any)?.version
 
       // Validate
       if (versionNo == null) {
-        throw new CustomError(`${fnName}: extension with SourceNode.id: ${extension.id} doesn't have a version set`)
+        throw new IntentError({
+          category: 'ExtensionError',
+          stage: fnName,
+          message:
+            `extension with SourceNode.id: ${extension.id} doesn't have a ` +
+            `version set`
+        })
       }
 
       // Is the version above the minimum required?
@@ -206,8 +216,8 @@ export class ExtensionQueryService {
   }
 
   async getExtensionNodes(
-          prisma: PrismaClient,
-          instanceId: string) {
+          store: ProjectStore,
+          projectId: string) {
 
     // Debug
     const fnName = `${this.clName}.getExtensionNodes()`
@@ -215,30 +225,39 @@ export class ExtensionQueryService {
     // Get extensions node
     const extensionsNode = await
             this.getExtensionsNode(
-              prisma,
-              instanceId)
+              store,
+              projectId)
+
+    // Validate
+    if (extensionsNode == null) {
+      throw new IntentError({
+        category: 'ExtensionError',
+        stage: fnName,
+        message: 'extensionsNode == null'
+      })
+    }
 
     // Get extensions
     const extensions = await
             sourceNodeModel.filter(
-              prisma,
+              store,
               extensionsNode.id,
-              instanceId)
+              projectId)
 
     // Return
     return extensions
   }
 
   async getExtensionsNode(
-          prisma: PrismaClient,
-          instanceId: string) {
+          store: ProjectStore,
+          projectId: string) {
 
     // Get extensions node
     const extensionsNode = await
             sourceNodeModel.getByUniqueKey(
-              prisma,
+              store,
               null,  // parentId
-              instanceId,
+              projectId,
               SourceNodeTypes.extensionsType,
               SourceNodeNames.extensionsName)
 
@@ -247,35 +266,35 @@ export class ExtensionQueryService {
   }
 
   async loadExtension(
-          prisma: PrismaClient,
-          instanceId: string,
-          extensionNode: SourceNode,
+          store: ProjectStore,
+          projectId: string,
+          extensionNode: SourceNodeRecord,
           withSkills: boolean = true,
           withHooks: boolean = true) {
 
     // Get skills
-    var skillNodes: SourceNode[] = []
+    var skillNodes: SourceNodeRecord[] = []
 
     if (withSkills === true) {
 
       skillNodes = await
         sourceNodeModel.filter(
-          prisma,
+          store,
           extensionNode.id,  // parentId
-          instanceId,
+          projectId,
           SourceNodeTypes.skillType)
     }
 
     // Get hooks
-    var hooksNodes: SourceNode[] = []
+    var hooksNodes: SourceNodeRecord[] = []
 
     if (withHooks === true) {
 
       hooksNodes = await
         sourceNodeModel.filter(
-          prisma,
+          store,
           extensionNode.id,  // parentId
-          instanceId,
+          projectId,
           SourceNodeTypes.hooksType)
     }
 
@@ -287,16 +306,16 @@ export class ExtensionQueryService {
   }
 
   async loadExtensions(
-          prisma: PrismaClient,
-          instanceId: string,
+          store: ProjectStore,
+          projectId: string,
           withSkills: boolean = true,
           withHooks: boolean = true) {
 
     // Get the extensions node
     const extensionsNode = await
             this.getExtensionsNode(
-              prisma,
-              instanceId)
+              store,
+              projectId)
 
     if (extensionsNode == null) {
       return undefined
@@ -305,9 +324,9 @@ export class ExtensionQueryService {
     // Get extensions
     const extensionNodes = await
             sourceNodeModel.filter(
-              prisma,
+              store,
               extensionsNode.id,  // parentId
-              instanceId,
+              projectId,
               SourceNodeTypes.extensionType,
               undefined,
               undefined,
@@ -315,15 +334,15 @@ export class ExtensionQueryService {
               true)       // orderByUniqueKey (for prompt reproducibility)
 
     // Load extensions
-    var skillNodes: SourceNode[] = []
-    var hooksNodes: SourceNode[] = []
+    var skillNodes: SourceNodeRecord[] = []
+    var hooksNodes: SourceNodeRecord[] = []
 
     for (const extensionNode of extensionNodes) {
 
       const { extensionSkillNodes, extensionHooksNodes } = await
         this.loadExtension(
-          prisma,
-          instanceId,
+          store,
+          projectId,
           extensionNode,
           withSkills,
           withHooks)
@@ -343,32 +362,32 @@ export class ExtensionQueryService {
     return extensionsData
   }
 
-  async systemProjectExtensions(prisma: PrismaClient) {
+  /**
+   * The extensions of the System project, which is where the bundled ones are
+   * read from. The System project is the engine directory rather than one found
+   * by walking, so it is built from the engine path.
+   */
+  async systemProjectExtensions() {
 
     // Debug
     const fnName = `${this.clName}.systemProjectExtensions()`
 
     // Get System project
-    const systemProject = await
-            projectsQueryService.getProject(
-              prisma,
-              null,  // parentId
-              ServerOnlyTypes.systemProjectName)
-
-    // Validate
-    if (systemProject == null) {
-      throw new CustomError(`${fnName}: systemProject == null`)
-    }
+    const systemProject = projectRegistryService.getSystemProject()
 
     // Get system extensions
     const extensionsData = await
             this.loadExtensions(
-              prisma,
+              projectRegistryService.getStore(systemProject),
               systemProject.id)
 
     // Validate
     if (extensionsData == null) {
-      throw new CustomError(`${fnName}: extensionsData == null`)
+      throw new IntentError({
+        category: 'ExtensionError',
+        stage: fnName,
+        message: 'extensionsData == null'
+      })
     }
 
     // Return

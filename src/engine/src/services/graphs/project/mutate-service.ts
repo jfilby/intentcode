@@ -1,5 +1,5 @@
 import { blake3 } from '@noble/hashes/blake3'
-import { PrismaClient } from '@/prisma/client.js'
+import type { ProjectStore } from '@/core/store.js'
 import { BaseDataTypes } from '@/types/base-data-types.js'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
 import { SourceNodeTypes } from '@/types/source-graph-types.js'
@@ -15,8 +15,8 @@ export class ProjectGraphMutateService {
 
   // Code
   async getOrCreateProject(
-          prisma: PrismaClient,
-          instanceId: string,
+          store: ProjectStore,
+          projectId: string,
           projectName: string,
           projectPath: string) {
 
@@ -26,9 +26,9 @@ export class ProjectGraphMutateService {
     // Try to get the node
     var projectNode = await
           sourceNodeModel.getByUniqueKey(
-            prisma,
+            store,
             null,  // parentId
-            instanceId,
+            projectId,
             SourceNodeTypes.project,
             projectName)
 
@@ -53,9 +53,9 @@ export class ProjectGraphMutateService {
     // Create the node
     projectNode = await
       sourceNodeModel.create(
-        prisma,
+        store,
         null,  // parentId
-        instanceId,
+        projectId,
         BaseDataTypes.activeStatus,
         SourceNodeTypes.project,
         projectName,

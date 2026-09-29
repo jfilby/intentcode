@@ -1,4 +1,4 @@
-import { PrismaClient } from '@/prisma/client.js'
+import { ProjectStore } from '@/core/store.js'
 import { LlmService } from '@/services/ai/llm-service.js'
 import { DependenciesQueryService } from '@/services/graphs/dependencies/query-service.js'
 import { BaseDataTypes } from '@/types/base-data-types.js'
@@ -15,7 +15,7 @@ export class IndexerLlmService {
 
   // Code
   async llmRequest(
-          prisma: PrismaClient,
+          store: ProjectStore,
           aiTask: IntentCodeAiTasks,
           prompt: string) {
 
@@ -25,7 +25,7 @@ export class IndexerLlmService {
     // The request
     const results = await
       llmService.request({
-        prisma: prisma,
+        store: store,
         aiTask: aiTask,
         system: BaseDataTypes.coderAgentRole,
         prompt: prompt,

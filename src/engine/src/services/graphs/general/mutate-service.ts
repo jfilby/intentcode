@@ -1,5 +1,5 @@
-import { CustomError } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type { ProjectStore } from '@/core/store.js'
 import { BaseDataTypes } from '@/types/base-data-types.js'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
 
@@ -14,8 +14,8 @@ export class GraphsMutateService {
 
   // Code
   async copyNodesToProject(
-          prisma: PrismaClient,
-          fromProjectId: string,
+          fromStore: ProjectStore,
+          toStore: ProjectStore,
           toProjectId: string,
           fromNodeId: string,
           parentToNodeId: string | null | undefined = null) {
@@ -26,34 +26,50 @@ export class GraphsMutateService {
     const fnName = `${this.clName}.copyNodesToProject()`
 
     // Validate
-    if (fromProjectId == null) {
-      throw new CustomError(`${fnName}: fromProjectId == null`)
-    }
-
     if (toProjectId == null) {
-      throw new CustomError(`${fnName}: toProjectId == null`)
+      throw new IntentError({
+        category: 'ProjectError',
+        stage: fnName,
+        message: `${fnName}: toProjectId == null`
+      })
     }
 
     if (fromNodeId == null) {
-      throw new CustomError(`${fnName}: fromNodeId == null`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: fromNodeId == null`
+      })
     }
 
     // Get the from node
     const fromNode = await
             sourceNodeModel.getById(
-              prisma,
+              fromStore,
               fromNodeId)
 
     // Validate
+    if (fromNode == null) {
+      throw new IntentError({
+        category: 'StorageError',
+        stage: fnName,
+        message: `${fnName}: fromNode == null`,
+        detail: `no source node with id ${fromNodeId}`
+      })
+    }
+
     if (fromNode.parentId === parentToNodeId) {
-      throw new CustomError(
-        `${fnName}: fromNode.parentId === parentToNodeId`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: fromNode.parentId === parentToNodeId`
+      })
     }
 
     // Create the extension node
     const toNode = await
             sourceNodeModel.upsert(
-              prisma,
+              toStore,
               undefined,         // id
               parentToNodeId,    // parentId
               toProjectId,
@@ -64,7 +80,9 @@ export class GraphsMutateService {
               fromNode.contentHash,
               fromNode.jsonContent,
               fromNode.jsonContentHash,
-              fromNode.contentUpdated)
+              fromNode.contentUpdated == null
+                ? null
+                : new Date(fromNode.contentUpdated))
 
     // Debug
     // console.log(`${fnName}: copied from ${fromNode.id} to ${toNode.id}`)
@@ -72,7 +90,7 @@ export class GraphsMutateService {
     // Get child nodes
     const fromChildNodes = await
             sourceNodeModel.filter(
-              prisma,
+              fromStore,
               fromNode.id)  // parentId
 
     // Copy child nodes
@@ -80,8 +98,8 @@ export class GraphsMutateService {
 
       // Cascade the copy to the from child node
       await this.copyNodesToProject(
-              prisma,
-              fromProjectId,
+              fromStore,
+              toStore,
               toProjectId,
               fromChildNode.id,
               toNode.id)  // parentToNodeId

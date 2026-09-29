@@ -1,17 +1,25 @@
 import { generateText, ModelMessage } from 'ai'
-import { CustomError } from 'serene-core-server'
-import { PrismaClient } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import { findProjectRoot, readProjectConfig } from '@/core/project-config.js'
+import type { ProjectConfig } from '@/core/project-config.js'
+import type { ProjectStore } from '@/core/store.js'
+import { resolveModelForTask, type ModelConfiguration } from '@/core/ai/model.js'
+import { createLanguageModel } from '@/core/ai/provider.js'
 import { LlmMessage } from '@/types/ai-types.js'
 import { IntentCodeAiTasks, ServerOnlyTypes } from '@/types/server-only-types.js'
-import { AiModelService } from './ai-model-service.js'
 import { LlmCacheService } from './llm-cache-service.js'
 
 // Consts
 const requestTries = 5
 
+// The config of each project read so far. A build makes many requests
+// against the same intent.toml, and the file is what names its models, so it
+// is read once per project rather than once per request.
+const projectConfigs = new Map<string, ProjectConfig | undefined>()
+
 // Contract
 export interface LlmRequestParams {
-  prisma: PrismaClient
+  store: ProjectStore
   aiTask: IntentCodeAiTasks
   system?: string
   prompt: string
@@ -40,7 +48,6 @@ export interface LlmChatResults {
 }
 
 // Services
-const aiModelService = new AiModelService()
 const llmCacheService = new LlmCacheService()
 
 // Class
@@ -59,7 +66,7 @@ export class LlmService {
     const fnName = `${this.clName}.request()`
 
     // The model id partitions the cache
-    const modelId = aiModelService.getModelId(params.aiTask)
+    const modelId = (await this.getModelConfig(params.aiTask)).id
 
     // The messages being sent (also what the cache key is built from)
     const cacheMessages: LlmMessage[] = []
@@ -86,7 +93,7 @@ export class LlmService {
 
       const cacheResults = await
         llmCacheService.tryGet(
-          params.prisma,
+          params.store,
           modelId,
           cacheMessages)
 
@@ -149,7 +156,7 @@ export class LlmService {
         if (cacheKey != null) {
 
           await llmCacheService.deleteByModelIdAndKey(
-            params.prisma,
+            params.store,
             modelId,
             cacheKey)
         }
@@ -161,7 +168,7 @@ export class LlmService {
       if (cacheKey != null) {
 
         await llmCacheService.save(
-          params.prisma,
+          params.store,
           modelId,
           cacheKey,
           inputMessage!,
@@ -179,12 +186,16 @@ export class LlmService {
     }
 
     // Validate
-    throw new CustomError(`${fnName}: no valid reply after ` +
-      `${requestTries} tries for the ${modelId} model`)
+    throw new IntentError({
+      category: 'AiError',
+      stage: fnName,
+      message: `no valid reply after ${requestTries} tries for the ` +
+        `${modelId} model`
+    })
   }
 
   // A chat turn. Not cached: the message list grows with every turn, so a
-  // cache entry would never be hit again and the table would grow without
+  // cache entry would never be hit again and the file would grow without
   // bound.
   async chat(params: LlmChatParams): Promise<LlmChatResults> {
 
@@ -192,7 +203,7 @@ export class LlmService {
     const fnName = `${this.clName}.chat()`
 
     // The model id
-    const modelId = aiModelService.getModelId(params.aiTask)
+    const modelId = (await this.getModelConfig(params.aiTask)).id
 
     // Generate
     const text = await
@@ -208,8 +219,11 @@ export class LlmService {
     if (params.isJsonMode === true &&
         json == null) {
 
-      throw new CustomError(`${fnName}: no JSON in the reply from ` +
-        `the ${modelId} model: ` + text)
+      throw new IntentError({
+        category: 'AiError',
+        stage: fnName,
+        message: `no JSON in the reply from the ${modelId} model: ` + text
+      })
     }
 
     // Return
@@ -229,7 +243,8 @@ export class LlmService {
     const fnName = `${this.clName}.generateText()`
 
     // The model
-    const model = aiModelService.getModel(aiTask)
+    const model = createLanguageModel(
+      await this.getModelConfig(aiTask))
 
     // Generate
     const { text } = await generateText({
@@ -241,6 +256,42 @@ export class LlmService {
 
     // Return
     return text
+  }
+
+  /**
+   * The model a task runs on. A project names its own models in its
+   * intent.toml, so the config of the project the command is running in is
+   * read and passed down; a project with no [model] table, and a command run
+   * outside a project, fall through to the environment.
+   */
+  private async getModelConfig(
+          aiTask: IntentCodeAiTasks): Promise<ModelConfiguration> {
+
+    // The project the command is running in
+    const projectPath = findProjectRoot()
+
+    if (projectPath == null) {
+
+      return resolveModelForTask(aiTask, undefined, undefined)
+    }
+
+    // Its config, read once
+    if (projectConfigs.has(projectPath) === false) {
+
+      const projectConfig =
+        await readProjectConfig(projectPath)
+          .catch(() => undefined)
+
+      projectConfigs.set(projectPath, projectConfig)
+    }
+
+    const projectConfig = projectConfigs.get(projectPath)
+
+    // Return
+    return resolveModelForTask(
+      aiTask,
+      projectConfig?.model,
+      projectConfig?.models)
   }
 }
 

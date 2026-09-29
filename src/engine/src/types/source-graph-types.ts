@@ -1,4 +1,4 @@
-import { SourceNode } from '@/prisma/client.js'
+import type { SourceNodeRecord } from '@/core/records.js'
 
 export enum SourceEdgeNames {
 
@@ -72,10 +72,26 @@ export interface SourceNodeGenerationData {
   prompt: string
 }
 
+/**
+ * The content of a project's deps node: the extensions it uses at what
+ * version, the package manager its source is built with, and the libraries
+ * those pull in. This is the engine's view of `deps.json`, and the file is
+ * written from it.
+ */
+export interface DepsData {
+  extensions?: Record<string, string>
+  tool?: string
+  runtimes?: Record<string, Record<string, string> | undefined>
+  source?: {
+    packageManager?: string
+    deps?: Record<string, string>
+  }
+}
+
 // Extensions
 
 export interface ExtensionsData {
-  extensionNodes: SourceNode[]
-  skillNodes: SourceNode[]
-  hooksNodes: SourceNode[]
+  extensionNodes: SourceNodeRecord[]
+  skillNodes: SourceNodeRecord[]
+  hooksNodes: SourceNodeRecord[]
 }

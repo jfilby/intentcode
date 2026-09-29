@@ -1,5 +1,4 @@
-import { CustomError } from 'serene-core-server'
-import { PrismaClient } from '@/prisma/client.js'
+import type { ProjectStore } from '@/core/store.js'
 import { BaseDataTypes } from '@/types/base-data-types.js'
 import { AgentUserModel } from '@/models/agents/agent-user-model.js'
 
@@ -13,7 +12,7 @@ export class AgentUserService {
   clName = 'AgentUserService'
 
   // Code
-  async getDefaultAgentUserForChatSettings(prisma: PrismaClient) {
+  async getDefaultAgentUserForChatSettings(store: ProjectStore) {
 
     // Debug
     const fnName = `${this.clName}.getDefaultAgentUserForChatSettings()`
@@ -21,7 +20,7 @@ export class AgentUserService {
     // Get
     const agentUser = await
             agentUserModel.getByUniqueRefId(
-              prisma,
+              store,
               BaseDataTypes.batchAgentRefId)
 
     // Return
@@ -30,28 +29,25 @@ export class AgentUserService {
     }
   }
 
-  async setup(prisma: PrismaClient) {
+  // The agents the engine defines, written into the project's store. A stored
+  // agent is left alone, so a chat started against one keeps the prompt it
+  // started with.
+  async setup(store: ProjectStore) {
 
     // Debug
     const fnName = `${this.clName}.setup()`
 
-    // Upsert Agent record
+    // Upsert Agent records
     for (const agent of BaseDataTypes.agents) {
 
-      const agentUser = await
+      await
               agentUserModel.upsert(
-                prisma,
-                undefined,                        // id
+                store,
                 agent.agentRefId,
                 agent.agentName,
                 agent.agentRole,
-                10,                               // maxPrevMessages
-                null)                             // defaultPrompt
-
-      if (agentUser == null) {
-        console.error(`${fnName}: agentUser == null`)
-        throw new CustomError(`${fnName}: agentUser == null`)
-      }
+                BaseDataTypes.maxPrevMessages,
+                null)                           // defaultPrompt
     }
   }
 }

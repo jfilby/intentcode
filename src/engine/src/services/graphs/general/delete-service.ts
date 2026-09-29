@@ -1,4 +1,4 @@
-import { PrismaClient } from '@/prisma/client.js'
+import type { ProjectStore } from '@/core/store.js'
 import { SourceEdgeModel } from '@/models/source-graph/source-edge-model.js'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model.js'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
@@ -16,7 +16,7 @@ export class GraphsDeleteService {
 
   // Code
   async deleteSourceNodeCascade(
-          prisma: PrismaClient,
+          store: ProjectStore,
           sourceNodeId: string,
           deleteThisNode: boolean = true) {
 
@@ -28,32 +28,32 @@ export class GraphsDeleteService {
     // Get child nodes
     const childNodes = await
             sourceNodeModel.filter(
-              prisma,
+              store,
               sourceNodeId)  // parentId
 
     // Delete edges (doesn't cascade to connected nodes)
     const edgesOut = await
             sourceEdgeModel.filter(
-              prisma,
+              store,
               sourceNodeId)  // fromId
 
     for (const edgeOut of edgesOut) {
 
       await sourceEdgeModel.deleteById(
-              prisma,
+              store,
               edgeOut.id)
     }
 
     const edgesIn = await
             sourceEdgeModel.filter(
-              prisma,
+              store,
               undefined,     // fromId
               sourceNodeId)  // toId
 
     for (const edgeIn of edgesIn) {
 
       await sourceEdgeModel.deleteById(
-              prisma,
+              store,
               edgeIn.id)
     }
 
@@ -61,7 +61,7 @@ export class GraphsDeleteService {
     for (const childNode of childNodes) {
 
       await this.deleteSourceNodeCascade(
-              prisma,
+              store,
               childNode.id,
               true)
     }
@@ -71,12 +71,12 @@ export class GraphsDeleteService {
 
       // Delete SourceNodeGenerations
       await sourceNodeGenerationModel.deleteBySourceNodeId(
-        prisma,
+        store,
         sourceNodeId)
 
       // Delete SourceNode
       await sourceNodeModel.deleteById(
-        prisma,
+        store,
         sourceNodeId)
     }
   }

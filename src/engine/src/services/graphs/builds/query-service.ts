@@ -1,4 +1,5 @@
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types.js'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
 
@@ -13,15 +14,15 @@ export class BuildsGraphQueryService {
 
   // Code
   async getBuildsNode(
-    prisma: PrismaClient,
-    projectNode: SourceNode) {
+    store: ProjectStore,
+    projectNode: SourceNodeRecord) {
 
     // Get the node
     var buildsNode = await
           sourceNodeModel.getByUniqueKey(
-            prisma,
+            store,
             projectNode.id,  // parentId
-            projectNode.instanceId,
+            projectNode.projectId,
             SourceNodeTypes.builds,
             SourceNodeNames.builds)
 

@@ -1,51 +1,40 @@
-import { PrismaClient, UserProfile } from '@/prisma/client.js'
+/**
+ * Build the bundled calc-v2 example.
+ *
+ * The same end-to-end build as the calc example, against a project that
+ * declares no extensions of its own: it is the case where the engine has to
+ * work out what the project needs rather than being told.
+ */
+
+import { join } from 'node:path'
 import { BuildMutateService } from '../intentcode/build/mutate-service.js'
-import { ExtensionQueryService } from '../extensions/extension/query-service.js'
 import { PathsService } from '../utils/paths-service.js'
-import { ProjectSetupService } from '../projects/setup-project.js'
+import { ProjectRegistryService } from '../projects/project-registry.js'
 
 // Services
 const buildMutateService = new BuildMutateService()
-const extensionQueryService = new ExtensionQueryService()
 const pathsService = new PathsService()
-const projectSetupService = new ProjectSetupService()
+const projectRegistryService = new ProjectRegistryService()
 
-// Class
 export class CalcV2TestsService {
 
-  // Consts
   clName = 'CalcV2TestsService'
 
-  // Code
-  async tests(prisma: PrismaClient,
-              regularTestUserProfile: UserProfile,
-              adminUserProfile: UserProfile) {
+  async tests() {
 
     // Debug
     const fnName = `${this.clName}.tests()`
 
-    // Get example's path
-    const bundledPath = pathsService.getBundledPath()
-    const projectPath = `${bundledPath}/examples/calc-v2`
+    const projectPath =
+      join(pathsService.getBundledPath(), 'examples', 'calc-v2')
 
-    // Initialize the project
-    const { instance, projectNode, projectName } = await
-            projectSetupService.initProject(
-              prisma,
-              projectPath,
-              adminUserProfile)
+    const project = await projectRegistryService.createProject(
+      projectPath, 'calc-v2')
 
-    /* Check expected extensions exist (loaded by the CLI)
-    await extensionQueryService.checkExtensionsExist(
-            prisma,
-            instance.id,
-            [`intentcode/nodejs-typescript`],
-            true)  // verbose */
+    const store = projectRegistryService.getStore(project)
 
-    // Recompile the project
-    await buildMutateService.runBuild(
-            prisma,
-            instance.id,
-            projectName)
+    await buildMutateService.runBuild(store, project.id, project.name)
+
+    console.log(`${fnName}: OK`)
   }
 }

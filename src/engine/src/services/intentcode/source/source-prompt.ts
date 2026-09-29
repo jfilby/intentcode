@@ -1,6 +1,6 @@
 import fs from 'fs'
-import { CustomError } from 'serene-core-server'
-import { SourceNode } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type { SourceNodeRecord } from '@/core/records.js'
 import { BuildFromFile } from '@/types/build-types.js'
 import { ServerOnlyTypes } from '@/types/server-only-types.js'
 
@@ -11,32 +11,56 @@ export class SourceAssistIntentCodeService {
 
   // Code
   getSourceCodeFullPath(
-    projectSourceNode: SourceNode,
-    intentFileNode: SourceNode) {
+    projectSourceNode: SourceNodeRecord,
+    intentFileNode: SourceNodeRecord) {
 
     // Debug
     const fnName = `${this.clName}.getSourceCodeFullPath()`
 
     // Get paths
-    const projectSourcePath = (projectSourceNode.jsonContent as any).path
+    const sourceJsonContent = projectSourceNode.jsonContent
+    const projectSourcePath =
+      sourceJsonContent != null &&
+      typeof sourceJsonContent === 'object' &&
+      'path' in sourceJsonContent &&
+      typeof sourceJsonContent.path === 'string'
+        ? sourceJsonContent.path
+        : undefined
 
+    const intentJsonContent = intentFileNode.jsonContent
     const intentFileRelativePath =
-            (intentFileNode.jsonContent as any).relativePath
+      intentJsonContent != null &&
+      typeof intentJsonContent === 'object' &&
+      'relativePath' in intentJsonContent &&
+      typeof intentJsonContent.relativePath === 'string'
+        ? intentJsonContent.relativePath
+        : undefined
 
     // Validate
     if (projectSourcePath == null) {
-      throw new CustomError(`${fnName}: projectSourcePath == null`)
+      throw new IntentError({
+        category: 'StorageError',
+        stage: fnName,
+        message: `${fnName}: projectSourcePath == null`
+      })
     }
 
     if (intentFileRelativePath == null) {
-      throw new CustomError(`${fnName}: intentFileRelativePath == null`)
+      throw new IntentError({
+        category: 'StorageError',
+        stage: fnName,
+        message: `${fnName}: intentFileRelativePath == null`
+      })
     }
 
     if (!intentFileRelativePath.endsWith(ServerOnlyTypes.dotMdFileExt)) {
 
-      throw new CustomError(
-        `${fnName}: intentFileRelativePath doesn't end with ` +
-        `${ServerOnlyTypes.dotMdFileExt}`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: intentFileRelativePath doesn't end with ` +
+          `${ServerOnlyTypes.dotMdFileExt}`
+      })
     }
 
     // Get SourceCode relative path
@@ -52,7 +76,7 @@ export class SourceAssistIntentCodeService {
   }
 
   async getExistingSourcePrompting(
-          projectSourceNode: SourceNode,
+          projectSourceNode: SourceNodeRecord,
           buildFromFile: BuildFromFile) {
 
     // Get source code's full path

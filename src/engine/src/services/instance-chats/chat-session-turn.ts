@@ -1,5 +1,5 @@
-import { CustomError } from 'serene-core-server'
-import { PrismaClient, UserProfile } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type { ProjectStore } from '@/core/store.js'
 import { ChatMessage } from '@/types/ai-types.js'
 import { ChatService } from './chat-service.js'
 import { ChatSessionService } from './chat-session-service.js'
@@ -25,19 +25,12 @@ export class ChatSessionTurnService {
 
   // Code
   async turn(
-          prisma: PrismaClient,
+          store: ProjectStore,
           chatSessionId: string,
-          fromChatParticipantId: string,
-          userProfile: UserProfile,
           contents: ChatMessage[]): Promise<ChatTurnResults> {
 
     // Debug
     const fnName = `${this.clName}.turn()`
-
-    // Get UserProfile
-    if (userProfile == null) {
-      throw new CustomError(`${fnName}: userProfile == null`)
-    }
 
     // Process the turn up to 5 times
     var retryI = 0
@@ -50,15 +43,13 @@ export class ChatSessionTurnService {
 
         replyData = await
           this.tryTurn(
-            prisma,
+            store,
             chatSessionId,
-            fromChatParticipantId,
-            userProfile,
             contents)
 
       } catch (error) {
 
-        if (error instanceof CustomError) {
+        if (error instanceof IntentError) {
           console.log(`${fnName}: error.message: ${error.message}`)
         } else {
           console.log(`${fnName}: error: ${error}`)
@@ -92,10 +83,8 @@ export class ChatSessionTurnService {
   }
 
   async tryTurn(
-          prisma: PrismaClient,
+          store: ProjectStore,
           chatSessionId: string,
-          fromChatParticipantId: string,
-          userProfile: UserProfile,
           contents: ChatMessage[]): Promise<ChatTurnResults> {
 
     // Debug
@@ -107,16 +96,14 @@ export class ChatSessionTurnService {
     // Chat session turn
     const sessionTurnData = await
       chatService.runSessionTurn(
-        prisma,
+        store,
         chatSessionId,
-        fromChatParticipantId,
-        userProfile,
         contents)
 
     // Save chat messages
     const saveMessageResults = await
       chatSessionService.saveMessages(
-        prisma,
+        store,
         sessionTurnData.chatSession,
         sessionTurnData)
 

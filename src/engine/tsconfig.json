@@ -23,8 +23,7 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"],
-      "@/prisma/*": ["./prisma/generated/prisma/*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": [

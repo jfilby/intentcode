@@ -1,8 +1,10 @@
-import { CustomError } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { DependenciesQueryService } from '@/services/graphs/dependencies/query-service.js'
 import { BuildData, DepsTools } from '@/types/build-types.js'
 import { ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
+import type { DepsData } from '@/types/source-graph-types.js'
 import { DependenciesMutateService } from '@/services/graphs/dependencies/mutate-service.js'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service.js'
 import { PackageJsonFileMutateService } from '../package-json/mutate-service.js'
@@ -21,8 +23,8 @@ export class SourceDepsFileService {
 
   // Code
   async inferPackageManagerFromExtensions(
-          prisma: PrismaClient,
-          projectNode: SourceNode,
+          store: ProjectStore,
+          projectNode: SourceNodeRecord,
           depsNode: any) {
 
     // Debug
@@ -31,12 +33,16 @@ export class SourceDepsFileService {
     // Get system extensions
     const extensionsData = await
             extensionQueryService.loadExtensions(
-              prisma,
-              projectNode.instanceId)
+              store,
+              projectNode.projectId)
 
     // Validate
     if (extensionsData == null) {
-      throw new CustomError(`${fnName}: extensionsData == null`)
+      throw new IntentError({
+        category: 'ExtensionError',
+        stage: fnName,
+        message: 'extensionsData == null'
+      })
     }
 
     // Output
@@ -78,16 +84,16 @@ export class SourceDepsFileService {
 
       // Update depsNode
       await dependenciesMutateService.updateDepsNode(
-              prisma,
+              store,
               projectNode,
               depsNode,
               true)  // writeToDepsJson
   }
 
   async updateAndWriteFile(
-          prisma: PrismaClient,
+          store: ProjectStore,
           buildData: BuildData,
-          projectNode: SourceNode) {
+          projectNode: SourceNodeRecord) {
 
     // Debug
     const fnName = `${this.clName}.updateAndWriteFile()`
@@ -95,7 +101,7 @@ export class SourceDepsFileService {
     // Get Deps node
     const depsNode = await
             dependenciesQueryService.getDepsNode(
-              prisma,
+              store,
               projectNode)
 
     // Validate
@@ -116,17 +122,26 @@ export class SourceDepsFileService {
         JSON.stringify(depsNode.jsonContent))
     }
 
-    // Continue validating
-    if (depsNode.jsonContent.source?.packageManager == null) {
+    // The engine's view of the project's dependencies. The node is created
+    // empty, so the content is absent until something is added to it.
+    const depsData = (depsNode.jsonContent ?? {}) as DepsData
+
+    if (depsData.source?.packageManager == null) {
 
       // Infer a package manager from the available extensions
       await this.inferPackageManagerFromExtensions(
-              prisma,
+              store,
               projectNode,
               depsNode)
 
       // Failed?
-      if (depsNode.jsonContent.source?.packageManager == null) {
+      // inferPackageManagerFromExtensions() writes the package manager back
+      // to the node, so the content is re-read rather than trusting the copy
+      // taken before the call.
+      const inferred =
+        (depsNode.jsonContent ?? {}) as DepsData
+
+      if (inferred.source?.packageManager == null) {
 
         console.log(
           `No source package manager specified.\n` +
@@ -138,11 +153,11 @@ export class SourceDepsFileService {
     }
 
     // Process by tool name
-    switch (depsNode.jsonContent.source.packageManager) {
+    switch ((depsNode.jsonContent as DepsData).source?.packageManager) {
 
       case DepsTools.npm: {
         await packageJsonFileMutateService.run(
-                prisma,
+                store,
                 buildData,
                 projectNode,
                 depsNode)
@@ -152,7 +167,8 @@ export class SourceDepsFileService {
 
       default: {
         console.log(
-          `Unhandled deps tool: ${depsNode.jsonContent.source.packageManager}`)
+          `Unhandled deps tool: ` +
+          `${(depsNode.jsonContent as DepsData).source?.packageManager}`)
 
         process.exit(1)
       }

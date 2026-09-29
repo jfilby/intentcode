@@ -1,4 +1,5 @@
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { BuildData } from '@/types/build-types.js'
 import { DepsVerifyService } from '../managed-files/deps/verify-service.js'
 import { TechStackVerifyService } from '../intentcode/tech-stack/verify-service.js'
@@ -15,18 +16,18 @@ export class ProjectVerifyService {
 
   // Code
   async run(
-    prisma: PrismaClient,
+    store: ProjectStore,
     buildData: BuildData,
-    projectNode: SourceNode) {
+    projectNode: SourceNodeRecord) {
 
     // Verify depsNode
     await depsVerifyService.verifyDepsNode(
-      prisma,
+      store,
       projectNode)
 
     // Verify tech-stack.md
     await techStackVerifyService.verify(
-      prisma,
+      store,
       buildData,
       projectNode)
   }

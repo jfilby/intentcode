@@ -1,4 +1,4 @@
-import { PrismaClient } from '@/prisma/client.js'
+import type { ProjectStore } from '@/core/store.js'
 import { LlmService } from '@/services/ai/llm-service.js'
 import { BaseDataTypes } from '@/types/base-data-types.js'
 import { BuildData } from '@/types/build-types.js'
@@ -16,7 +16,7 @@ export class IntentCodeAnalyzerSuggestionsLlmService {
 
   // Code
   async llmRequest(
-          prisma: PrismaClient,
+          store: ProjectStore,
           buildData: BuildData,
           aiTask: IntentCodeAiTasks,
           prompt: string) {
@@ -27,7 +27,7 @@ export class IntentCodeAnalyzerSuggestionsLlmService {
     // The request
     const results = await
       llmService.request({
-        prisma: prisma,
+        store: store,
         aiTask: aiTask,
         system: BaseDataTypes.coderAgentRole,
         prompt: prompt,

@@ -1,5 +1,6 @@
-import { CustomError } from 'serene-core-server'
-import { PrismaClient, SourceNode } from '@/prisma/client.js'
+import { IntentError } from '@/core/errors.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { SourceNodeTypes } from '@/types/source-graph-types.js'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model.js'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
@@ -20,8 +21,8 @@ export class SourceCodePathGraphQueryService {
 
   // Code
   async getLatestSourceCodeGenerationByPathGraph(
-          prisma: PrismaClient,
-          projectSourceNode: SourceNode,
+          store: ProjectStore,
+          projectSourceNode: SourceNodeRecord,
           fullPath: string) {
 
     // Debug
@@ -30,7 +31,7 @@ export class SourceCodePathGraphQueryService {
     // Get the source code node
     const sourceCodeNode = await
             this.getSourceCodePathAsGraph(
-              prisma,
+              store,
               projectSourceNode,
               fullPath)
 
@@ -44,7 +45,7 @@ export class SourceCodePathGraphQueryService {
     // Get latest SourceCodeGeneration
     const sourceCodeNodeGenerations = await
             sourceNodeGenerationModel.getLatestForSourceNodeId(
-              prisma,
+              store,
               1,  // count
               sourceCodeNode.id)
 
@@ -60,23 +61,33 @@ export class SourceCodePathGraphQueryService {
   }
 
   async getSourceCodePathAsGraph(
-          prisma: PrismaClient,
-          projectSourceNode: SourceNode,
+          store: ProjectStore,
+          projectSourceNode: SourceNodeRecord,
           fullPath: string) {
 
     // Debug
     const fnName = `${this.clName}.getSourceCodePathAsGraph()`
 
     // Get project source path
-    const projectSourcePath = (projectSourceNode.jsonContent as any)?.path
+    const jsonContent = projectSourceNode.jsonContent
+    const projectSourcePath =
+      jsonContent != null &&
+      typeof jsonContent === 'object' &&
+      'path' in jsonContent &&
+      typeof jsonContent.path === 'string'
+        ? jsonContent.path
+        : undefined
 
     // Validate project path
     if (projectSourcePath == null ||
         !fsUtilsService.isPathWithin(fullPath, projectSourcePath)) {
 
-      throw new CustomError(
-        `${fnName}: Invalid path: ${fullPath} for project source node: ` +
-        `${projectSourcePath}`)
+      throw new IntentError({
+        category: 'ValidationError',
+        stage: fnName,
+        message: `${fnName}: Invalid path: ${fullPath} for project source ` +
+          `node: ${projectSourcePath}`
+      })
     }
 
     // Strip project path from fullPath prefix
@@ -94,26 +105,38 @@ export class SourceCodePathGraphQueryService {
     // console.log(`${fnName}: dirs: ${dirs}`)
 
     // Get/create nodes for dirs
-    var sourceCodeDir: SourceNode = projectSourceNode
+    var sourceCodeDir: SourceNodeRecord = projectSourceNode
 
     for (const dir of dirs) {
 
       // Try to get the dir node
-      sourceCodeDir = await
+      const found = await
         sourceNodeModel.getByUniqueKey(
-          prisma,
+          store,
           sourceCodeDir.id,
-          projectSourceNode.instanceId,
+          projectSourceNode.projectId,
           SourceNodeTypes.sourceCodeDir,
           dir)
+
+      if (found == null) {
+
+        throw new IntentError({
+          category: 'StorageError',
+          stage: fnName,
+          message: `${fnName}: no source code dir node for dir: ${dir}`,
+          detail: `under the node ${sourceCodeDir.id}`
+        })
+      }
+
+      sourceCodeDir = found
     }
 
     // Try to get the node
     const sourceCodeFile = await
             sourceNodeModel.getByUniqueKey(
-              prisma,
+              store,
               sourceCodeDir.id,  // parentId
-              projectSourceNode.instanceId,
+              projectSourceNode.projectId,
               SourceNodeTypes.sourceCodeFile,
               filename)
 
