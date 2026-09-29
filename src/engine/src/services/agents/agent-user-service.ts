@@ -1,7 +1,7 @@
-import { AgentUserModel } from 'serene-ai-server'
 import { CustomError } from 'serene-core-server'
 import { PrismaClient } from '@/prisma/client.js'
 import { BaseDataTypes } from '@/types/base-data-types.js'
+import { AgentUserModel } from '@/models/agents/agent-user-model.js'
 
 // Models
 const agentUserModel = new AgentUserModel()
@@ -24,6 +24,7 @@ export class AgentUserService {
               prisma,
               BaseDataTypes.batchAgentRefId)
 
+    // Return
     return {
       agentUser: agentUser
     }

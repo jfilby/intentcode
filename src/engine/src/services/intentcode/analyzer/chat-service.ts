@@ -1,10 +1,10 @@
-import { ChatMessage } from 'serene-ai-server'
 import { CustomError, UsersService } from 'serene-core-server'
 import { input, select } from '@inquirer/prompts'
 import { Instance, PrismaClient } from '@/prisma/client.js'
+import { ChatMessage } from '@/types/ai-types.js'
 import { BaseDataTypes } from '@/types/base-data-types.js'
 import { BuildData, BuildFromFile } from '@/types/build-types.js'
-import { AnalyzerChatParams, ChatSessionOptions, ChatTypes } from '@/types/chat-types.js'
+import { AnalyzerChatParams, ChatSessionOptions, ChatTypes, getAnalyzerSuggestion } from '@/types/chat-types.js'
 import { ProjectDetails } from '@/types/server-only-types.js'
 import { ServerTestTypes } from '@/types/server-test-types.js'
 import { ChatSessionTurnService } from '@/services/instance-chats/chat-session-turn.js'
@@ -75,7 +75,7 @@ export class IntentCodeAnalyzerChatService {
     }
 
     // Return
-    return results.chatSession
+    return results
   }
 
   async openChat(
@@ -99,25 +99,13 @@ export class IntentCodeAnalyzerChatService {
         instance)
 
     // Create chat session
-    const chatSession = await
+    const { chatSession, chatParticipant } = await
       this.createChatSession(
         prisma,
         adminUserProfile.id,
         projectDetails,
         buildData,
         buildFromFiles)
-
-    // Get chatParticipantId
-    // console.log(`${fnName}: chatSession: ` + JSON.stringify(chatSession))
-
-    var chatParticipant: any = undefined
-
-    for (const thisChatParticipant of chatSession.chatParticipants) {
-
-      if (thisChatParticipant.userProfileId === adminUserProfile.id) {
-        chatParticipant = thisChatParticipant
-      }
-    }
 
     // Chat loop
     while (true) {
@@ -151,9 +139,7 @@ export class IntentCodeAnalyzerChatService {
           prisma,
           chatSession.id,
           chatParticipant.id,
-          adminUserProfile.id,
-          projectDetails.instance.id,
-          'User',  // name
+          adminUserProfile,
           contents)
 
       // Debug
@@ -173,20 +159,17 @@ export class IntentCodeAnalyzerChatService {
       }
 
       // If a suggestion is listed
-      if (replyData.rawJson.suggestion != null) {
+      const thisSuggestion = getAnalyzerSuggestion(replyData.rawJson)
 
-        const thisSuggestion = replyData.rawJson.suggestion
+      if (thisSuggestion != null) {
 
         console.log(``)
         console.log(`UPDATED: ${thisSuggestion.text}`)
 
-        if (thisSuggestion.fileDeltas != null) {
+        for (const fileDelta of thisSuggestion.fileDeltas) {
 
-          for (const fileDelta of thisSuggestion.fileDeltas) {
-
-            console.log(`.. ${fileDelta.fileOp} ${fileDelta.relativePath}: ` +
-              `${fileDelta.change}`)
-          }
+          console.log(`.. ${fileDelta.fileOp} ${fileDelta.relativePath}: ` +
+            `${fileDelta.change}`)
         }
 
         // Prompt to apply or ignore the suggestion
@@ -217,7 +200,7 @@ export class IntentCodeAnalyzerChatService {
             prisma,
             buildData,
             buildFromFiles,
-            [replyData.rawJson.suggestion]);
+            [thisSuggestion]);
 
           // Get build info
           ({ buildData, buildFromFiles, projectDetails } = await

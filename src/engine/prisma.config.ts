@@ -3,12 +3,14 @@
 import 'dotenv/config'
 import { defineConfig } from 'prisma/config'
 
-const databaseUrl = 'file:./prisma/data.db'
+// The schema, the migrations and the seed database all live under
+// prisma/schema (see ../../docs/dev.md).
+const databaseUrl = 'file:./prisma/schema/data.db'
 
 export default defineConfig({
-  schema: 'prisma',
+  schema: 'prisma/schema',
   migrations: {
-    path: 'prisma/migrations',
+    path: 'prisma/schema/migrations',
   },
   datasource: {
     url: databaseUrl,

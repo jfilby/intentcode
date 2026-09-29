@@ -1,11 +1,10 @@
-import { AgentUserModel, SereneAiSetup } from 'serene-ai-server'
 import { CustomError, ChatSettingsModel, UsersService } from 'serene-core-server'
 import { Instance, PrismaClient, UserProfile } from '@/prisma/client.js'
-import { AiModelsSelectionService } from './ai-models-selection-service.js'
 import { BaseDataTypes } from '@/types/base-data-types.js'
 import { ServerOnlyTypes, VersionNames } from '@/types/server-only-types.js'
 import { ServerTestTypes } from '@/types/server-test-types.js'
 import { VersionModel } from '@/models/engine/version-model.js'
+import { AgentUserModel } from '@/models/agents/agent-user-model.js'
 import { AgentUserService } from '@/services/agents/agent-user-service.js'
 import { LoadExternalExtensionsService } from '../extensions/extension/load-external-service.js'
 import { ProjectsMutateService } from '../projects/mutate-service.js'
@@ -18,11 +17,9 @@ const versionModel = new VersionModel()
 
 // Services
 const agentUserService = new AgentUserService()
-const aiModelsSelectionService = new AiModelsSelectionService()
 const loadExternalExtensionsService = new LoadExternalExtensionsService()
 const projectsMutateService = new ProjectsMutateService()
 const projectsQueryService = new ProjectsQueryService()
-const sereneAiSetup = new SereneAiSetup()
 const usersService = new UsersService()
 
 // Class
@@ -91,11 +88,6 @@ export class SetupService {
       prisma,
       adminUserProfile.id)
 
-    // Serene AI setup
-    await sereneAiSetup.setup(
-      prisma,
-      adminUserProfile.id)
-
     // Setup base data
     await this.setupBaseData(
       prisma,
@@ -157,9 +149,6 @@ export class SetupService {
         undefined,  // id
         VersionNames.engine,
         ServerOnlyTypes.engineVersion)
-
-    // Setup AI tasks with default models
-    await aiModelsSelectionService.setupAiTasksWithDefaults(prisma)
 
     // Install bundled extensions
     await loadExternalExtensionsService.loadBundledExtensions(

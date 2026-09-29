@@ -1,9 +1,8 @@
+import { CustomError, WalkDirService } from 'serene-core-server'
 import fs from 'fs'
-import { AiTasksService } from 'serene-ai-server'
-import { CustomError, UsersService, WalkDirService } from 'serene-core-server'
 import { blake3 } from '@noble/hashes/blake3'
-import { PrismaClient, SourceNode, Tech } from '@/prisma/client.js'
-import { ServerTestTypes } from '@/types/server-test-types.js'
+import { AiModelService } from '@/services/ai/ai-model-service.js'
+import { PrismaClient, SourceNode } from '@/prisma/client.js'
 import { IndexerLlmService } from './llm-service.js'
 import { BuildData, BuildFromFile } from '@/types/build-types.js'
 import { IntentCodeAiTasks, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
@@ -23,7 +22,7 @@ const sourceNodeGenerationModel = new SourceNodeGenerationModel()
 const sourceNodeModel = new SourceNodeModel()
 
 // Services
-const aiTasksService = new AiTasksService()
+const aiModelService = new AiModelService()
 const dependenciesMutateService = new DependenciesMutateService()
 const fsUtilsService = new FsUtilsService()
 const indexerLlmService = new IndexerLlmService()
@@ -33,7 +32,6 @@ const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
 const intentCodeMessagesService = new IntentCodeMessagesService()
 const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
 const walkDirService = new WalkDirService()
-const usersService = new UsersService()
 
 // Class
 export class IndexerMutateService {
@@ -45,7 +43,7 @@ export class IndexerMutateService {
   async getExistingJsonContent(
           prisma: PrismaClient,
           intentFileNode: SourceNode,
-          tech: Tech,
+          modelId: string,
           prompt: string) {
 
     // Debug
@@ -72,7 +70,7 @@ export class IndexerMutateService {
             sourceNodeGenerationModel.getByUniqueKey(
               prisma,
               indexerDataSourceNode.id,
-              tech.id,
+              modelId,
               promptHash)
 
     if (sourceNodeGeneration == null ||
@@ -102,29 +100,8 @@ export class IndexerMutateService {
       console.log(`indexing: ${buildFromFile.relativePath}..`)
     }
 
-    // Get the admin UserProfile
-    const adminUserProfile = await
-            usersService.getUserProfileByEmail(
-              prisma,
-              ServerTestTypes.adminUserEmail)
-
-    if (adminUserProfile == null) {
-      throw new CustomError(`${fnName}: adminUserProfile == null`)
-    }
-
-    // Get tech
-    const tech = await
-      aiTasksService.getTech(
-        prisma,
-        ServerOnlyTypes.namespace,
-        IntentCodeAiTasks.indexer,
-        null,  // userProfileId
-        true)  // exceptionOnNotFound
-
-    // Validate
-    if (tech == null) {
-      throw new CustomError(`${fnName}: tech == null`)
-    }
+    // The model id
+    const modelId = aiModelService.getModelId(IntentCodeAiTasks.indexer)
 
     // Get prompt
     const prompt = await
@@ -139,7 +116,7 @@ export class IndexerMutateService {
           this.getExistingJsonContent(
             prisma,
             buildFromFile.fileNode,
-            tech,
+            modelId,
             prompt)
 
     // Run
@@ -148,8 +125,7 @@ export class IndexerMutateService {
       const llmResults = await
               indexerLlmService.llmRequest(
                 prisma,
-                adminUserProfile.id,
-                tech,
+                                IntentCodeAiTasks.indexer,
                 prompt)
 
       /* jsonContent = {
@@ -161,7 +137,7 @@ export class IndexerMutateService {
 
     // Define SourceNodeGeneration
     const sourceNodeGenerationData: SourceNodeGenerationData = {
-      techId: tech.id,
+      modelId: modelId,
       prompt: prompt
     }
 

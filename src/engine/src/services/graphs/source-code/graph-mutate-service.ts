@@ -193,7 +193,7 @@ export class SourceCodeGraphMutateService {
               prisma,
               undefined,          // id
               sourceCodeFile.id,  // sourceNodeId
-              sourceNodeGenerationData.techId,
+              sourceNodeGenerationData.modelId,
               sourceNodeGenerationData.temperature ?? null,
               sourceNodeGenerationData.prompt,
               promptHash,

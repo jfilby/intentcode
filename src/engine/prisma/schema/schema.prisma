@@ -91,7 +91,7 @@ model SourceNode {
   outgoingEdges              SourceEdge[]      @relation("from")
   incomingEdges              SourceEdge[]      @relation("to")
   children                   SourceNode[]      @relation("parent")
-  ofSourceNodeTechs          SourceNodeGeneration[]
+  ofSourceNodeGenerations     SourceNodeGeneration[]
 
   @@unique([parentId, instanceId, type, name])
   @@index([contentHash])
@@ -103,8 +103,7 @@ model SourceNodeGeneration {
   id                         String            @id @default(cuid())
   sourceNodeId               String            @map("source_node_id")
   sourceNode                 SourceNode        @relation(fields: [sourceNodeId], references: [id])
-  techId                     String            @map("tech_id")
-  tech                       Tech              @relation(fields: [techId], references: [id])
+  modelId                    String            @map("model_id")  // The LLM model id, e.g. 'gemini-3-pro-preview'
   temperature                Float?
   prompt                     String
   promptHash                 String            @map("prompt_hash")
@@ -115,6 +114,6 @@ model SourceNodeGeneration {
   created                    DateTime          @default(now())
   updated                    DateTime          @updatedAt
 
-  @@unique([sourceNodeId, techId, promptHash])
+  @@unique([sourceNodeId, modelId, promptHash])
   @@map("source_node_generation")
 }

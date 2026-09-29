@@ -1,23 +1,18 @@
 import chalk from 'chalk'
-import { AiTasksService } from 'serene-ai-server'
-import { CustomError, UsersService } from 'serene-core-server'
 import { select } from '@inquirer/prompts'
 import { PrismaClient } from '@/prisma/client.js'
 import { BuildData, BuildFromFile } from '@/types/build-types.js'
-import { IntentCodeAiTasks, ServerOnlyTypes } from '@/types/server-only-types.js'
-import { ServerTestTypes } from '@/types/server-test-types.js'
+import { IntentCodeAiTasks } from '@/types/server-only-types.js'
 import { IntentCodeAnalyzerSuggestionsChatService } from './chat-service.js'
 import { IntentCodeAnalyzerSuggestionsLlmService } from './llm-service.js'
 import { IntentCodeAnalyzerSuggestionsPromptService } from './prompt-service.js'
 import { IntentCodeUpdaterMutateService } from '../updater/mutate-service.js'
 
 // Services
-const aiTasksService = new AiTasksService()
 const intentCodeAnalyzerSuggestionsChatService = new IntentCodeAnalyzerSuggestionsChatService()
 const intentCodeAnalyzerSuggestionsLlmService = new IntentCodeAnalyzerSuggestionsLlmService()
 const intentCodeAnalyzerSuggestionsPromptService = new IntentCodeAnalyzerSuggestionsPromptService()
 const intentCodeUpdaterMutateService = new IntentCodeUpdaterMutateService()
-const usersService = new UsersService()
 
 // Class
 export class IntentCodeAnalyzerSuggestionsMutateService {
@@ -44,30 +39,6 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
     // Debug
     const fnName = `${this.clName}.approveSuggestions()`
 
-    // Get the admin UserProfile
-    const adminUserProfile = await
-            usersService.getUserProfileByEmail(
-              prisma,
-              ServerTestTypes.adminUserEmail)
-
-    if (adminUserProfile == null) {
-      throw new CustomError(`${fnName}: adminUserProfile == null`)
-    }
-
-    // Get tech
-    const tech = await
-      aiTasksService.getTech(
-        prisma,
-        ServerOnlyTypes.namespace,
-        IntentCodeAiTasks.compiler,
-        null,  // userProfileId
-        true)  // exceptionOnNotFound
-
-    // Validate
-    if (tech == null) {
-      throw new CustomError(`${fnName}: tech == null`)
-    }
-
     // Get the prompt
     const prompt = await
       intentCodeAnalyzerSuggestionsPromptService.getPrompt(
@@ -81,8 +52,7 @@ export class IntentCodeAnalyzerSuggestionsMutateService {
       intentCodeAnalyzerSuggestionsLlmService.llmRequest(
         prisma,
         buildData,
-        adminUserProfile.id,
-        tech,
+                IntentCodeAiTasks.compiler,
         prompt)
 
     // Process changes

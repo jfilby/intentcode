@@ -1,11 +1,9 @@
 import chalk from 'chalk'
-import { AiKeysCliReplService } from 'serene-ai-server'
 import { UsersService } from 'serene-core-server'
 import { select } from '@inquirer/prompts'
 import { Instance, PrismaClient } from '@/prisma/client.js'
 import { CommonCommands } from '@/types/server-only-types.js'
 import { ServerTestTypes } from '@/types/server-test-types.js'
-import { AiModelsSelectionService } from './ai-models-selection-service.js'
 import { InfoService } from './info-service.js'
 import { LoadExternalExtensionsService } from '../extensions/extension/load-external-service.js'
 import { ManageExtensionsCliService } from '../extensions/extension/cli-service.js'
@@ -15,8 +13,6 @@ import { SetupService } from './setup-service.js'
 import { TestsService } from '../tests/tests-service.js'
 
 // Services
-const aiKeysCliReplService = new AiKeysCliReplService()
-const aiModelsSelectionService = new AiModelsSelectionService()
 const infoService = new InfoService()
 const loadExternalExtensionsService = new LoadExternalExtensionsService()
 const manageExtensionsCliService = new ManageExtensionsCliService()
@@ -34,10 +30,7 @@ export class CliService {
 
   projectsCommand = 'projects'
   loadExtensionsCommand = 'load-extensions'
-  manageAiModelsCommand = 'manage-ai-models'
-  manageAiKeysCommand = 'manage-ai-keys'
   manageExtensionsCommand = 'manage-extensions'
-  // loadTechProviderApiKeysCommand = 'load-tech-provider-api-keys'
   setupCommand = 'setup'
   testsCommand = 'tests'
   infoCommand = 'info'
@@ -45,10 +38,7 @@ export class CliService {
   commands = [
     this.projectsCommand,
     this.loadExtensionsCommand,
-    this.manageAiModelsCommand,
-    this.manageAiKeysCommand,
     this.manageExtensionsCommand,
-    // this.loadTechProviderApiKeysCommand,
     this.setupCommand,
     this.testsCommand,
     this.infoCommand,
@@ -91,14 +81,6 @@ export class CliService {
           {
             name: `Manage extensions`,
             value: this.manageExtensionsCommand
-          },
-          {
-            name: `Manage AI models`,
-            value: this.manageAiModelsCommand
-          },
-          {
-            name: `Manage AI keys`,
-            value: this.manageAiKeysCommand
           },
           {
             name: `Setup`,
@@ -186,31 +168,12 @@ export class CliService {
         break
       }
 
-      case this.manageAiModelsCommand: {
-
-        await aiModelsSelectionService.main(prisma)
-        break
-      }
-
-      case this.manageAiKeysCommand: {
-
-        await aiKeysCliReplService.main(prisma)
-        break
-      }
-
       case this.manageExtensionsCommand: {
 
         await manageExtensionsCliService.run(prisma)
 
         break
       }
-
-      /* case this.loadTechProviderApiKeysCommand: {
-  
-        await techProviderMutateService.cliLoadJsonStr(prisma)
-  
-        break
-      } */
 
       case this.setupCommand: {
 

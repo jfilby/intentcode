@@ -1,4 +1,3 @@
-import { AiTechDefs } from 'serene-ai-server'
 import { Instance, SourceNode } from '@/prisma/client.js'
 
 export enum CompilerMetaDataApproachs {
@@ -9,13 +8,6 @@ export enum CompilerMetaDataApproachs {
 export enum IntentCodeAiTasks {
   compiler = 'compiler',
   indexer = 'indexer'
-}
-
-export enum AiTaskModelPresets {
-  amazonNova2Based = 'amazonNova2Based',
-  gemini3pt1BasedFree = 'gemini3pt1BasedFree',
-  gemini3pt1BasedPaid = 'gemini3pt1BasedPaid',
-  gpt5pt4Based = 'gpt5pt4Based'
 }
 
 export enum VerbosityLevels {
@@ -38,22 +30,8 @@ export class ServerOnlyTypes {
   // Instance types
   static projectInstanceType = 'P'
 
-  // AI tasks
+  // AI tasks (the model for each is set in the environment)
   static namespace = 'intentcode'
-
-  static compilerModels: Record<string, string> = {
-    [AiTaskModelPresets.amazonNova2Based]: AiTechDefs.amazonNova_V2Pro,
-    [AiTaskModelPresets.gemini3pt1BasedFree]: AiTechDefs.googleGemini_V3pt1ProFree,
-    [AiTaskModelPresets.gemini3pt1BasedPaid]: AiTechDefs.googleGemini_V3pt1Pro,
-    [AiTaskModelPresets.gpt5pt4Based]: AiTechDefs.openAi_Gpt5pt4
-  }
-
-  static indexerModels: Record<string, string> = {
-    [AiTaskModelPresets.amazonNova2Based]: AiTechDefs.amazonNova_V2Pro,
-    [AiTaskModelPresets.gemini3pt1BasedFree]: AiTechDefs.googleGemini_V2pt5FlashFree,
-    [AiTaskModelPresets.gemini3pt1BasedPaid]: AiTechDefs.googleGemini_V2pt5Flash,
-    [AiTaskModelPresets.gpt5pt4Based]: AiTechDefs.openAi_Gpt5Mini
-  }
 
   // Verbosity
   static verbosity = VerbosityLevels.min

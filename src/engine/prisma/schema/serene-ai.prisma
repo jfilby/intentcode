@@ -1,49 +1,20 @@
 // Serene AI
 
-// AI tasks
-
-model AiTask {
-  id                           String               @id @default(cuid())
-  status                       String
-  namespace                    String
-  name                         String
-  created                      DateTime             @default(now())
-  updated                      DateTime             @updatedAt
-
-  ofAiTaskTechs                AiTaskTech[]
-
-  @@unique([namespace, name])
-  @@map("ai_task")
-}
-
-model AiTaskTech {
-  id                           String               @id @default(cuid())
-  aiTaskId                     String               @map("ai_task_id")
-  aiTask                       AiTask               @relation(fields: [aiTaskId], references: [id])
-  techId                       String               @map("tech_id")
-  tech                         Tech                 @relation(fields: [techId], references: [id])
-  userProfileId                String?              @map("user_profile_id")
-  userProfile                  UserProfile?         @relation(fields: [userProfileId], references: [id])
-  created                      DateTime             @default(now())
-  updated                      DateTime             @updatedAt
-
-  @@unique([aiTaskId, userProfileId])
-  @@map("ai_task_tech")
-}
-
-// Cache and rate-limiting
+// LLM cache
+//
+// Keyed on the model id (not on a Tech row): the model to use for each AI
+// task comes from the environment (see src/services/ai/ai-model-service.ts),
+// so there is no model catalogue in the database to reference.
 
 model LlmCache {
   id                           String               @id @default(cuid())
-  techId                       String               @map("tech_id")
-  tech                         Tech                 @relation(fields: [techId], references: [id])
+  modelId                      String               @map("model_id")
   key                          String
   inputMessage                 String               @map("input_message")
   outputMessage                String?              @map("output_message")
-  outputMessages               Json?                @map("output_messages")
   outputJson                   Json?                @map("output_json")
   created                      DateTime             @default(now())
 
-  @@unique([key, techId])
+  @@unique([key, modelId])
   @@map("llm_cache")
 }

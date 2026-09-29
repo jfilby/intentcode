@@ -1,9 +1,8 @@
-import { AiTasksService } from 'serene-ai-server'
-import { CustomError, UsersService } from 'serene-core-server'
+import { CustomError } from 'serene-core-server'
+import { AiModelService } from '@/services/ai/ai-model-service.js'
 import { PrismaClient, SourceNode } from '@/prisma/client.js'
 import { BuildData, BuildFromFile } from '@/types/build-types.js'
-import { AnalyzerPromptTypes, IntentCodeAiTasks, ServerOnlyTypes } from '@/types/server-only-types.js'
-import { ServerTestTypes } from '@/types/server-test-types.js'
+import { AnalyzerPromptTypes, IntentCodeAiTasks } from '@/types/server-only-types.js'
 import { SourceNodeGenerationData } from '@/types/source-graph-types.js'
 import { IntentCodeAnalysisGraphMutateService } from '@/services/graphs/intentcode-analysis/mutate-service.js'
 import { IntentCodeAnalyzerLlmService } from './llm-service.js'
@@ -14,7 +13,7 @@ import { ProjectsQueryService } from '@/services/projects/query-service.js'
 import { SpecsGraphQueryService } from '@/services/graphs/specs/graph-query-service.js'
 
 // Services
-const aiTasksService = new AiTasksService()
+const aiModelService = new AiModelService()
 const intentCodeAnalysisGraphMutateService = new IntentCodeAnalysisGraphMutateService()
 const intentCodeAnalyzerLlmService = new IntentCodeAnalyzerLlmService()
 const intentCodeAnalyzerPromptService = new IntentCodeAnalyzerPromptService()
@@ -22,7 +21,6 @@ const intentCodeAnalyzerSuggestionsMutateService = new IntentCodeAnalyzerSuggest
 const projectCompileService = new ProjectCompileService()
 const projectsQueryService = new ProjectsQueryService()
 const specsGraphQueryService = new SpecsGraphQueryService()
-const usersService = new UsersService()
 
 // Class
 export class IntentCodeAnalyzerMutateService {
@@ -125,29 +123,8 @@ export class IntentCodeAnalyzerMutateService {
     // Debug
     const fnName = `${this.clName}.processWithLlm()`
 
-    // Get the admin UserProfile
-    const adminUserProfile = await
-            usersService.getUserProfileByEmail(
-              prisma,
-              ServerTestTypes.adminUserEmail)
-
-    if (adminUserProfile == null) {
-      throw new CustomError(`${fnName}: adminUserProfile == null`)
-    }
-
-    // Get tech
-    const tech = await
-      aiTasksService.getTech(
-        prisma,
-        ServerOnlyTypes.namespace,
-        IntentCodeAiTasks.compiler,
-        null,  // userProfileId
-        true)  // exceptionOnNotFound
-
-    // Validate
-    if (tech == null) {
-      throw new CustomError(`${fnName}: tech == null`)
-    }
+    // The model id
+    const modelId = aiModelService.getModelId(IntentCodeAiTasks.compiler)
 
     // Get prompt
     const prompt = await
@@ -163,7 +140,7 @@ export class IntentCodeAnalyzerMutateService {
           this.getExistingJsonContent(
             prisma,
             projectSpecsNode,
-            tech,
+            modelId,
             prompt)
 
     // Run
@@ -173,8 +150,7 @@ export class IntentCodeAnalyzerMutateService {
               intentCodeAnalyzerLlmService.llmRequest(
                 prisma,
                 buildData,
-                adminUserProfile.id,
-                tech,
+                                IntentCodeAiTasks.compiler,
                 prompt)
 
       const jsonContent = llmResults.jsonContent
@@ -182,7 +158,7 @@ export class IntentCodeAnalyzerMutateService {
 
     // Define SourceNodeGeneration
     const sourceNodeGenerationData: SourceNodeGenerationData = {
-      techId: tech.id,
+      modelId: modelId,
       prompt: prompt
     }
 

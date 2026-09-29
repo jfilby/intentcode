@@ -1,11 +1,10 @@
+import { CustomError } from 'serene-core-server'
 import fs from 'fs'
-import { AiTasksService } from 'serene-ai-server'
-import { CustomError, UsersService } from 'serene-core-server'
 import { blake3 } from '@noble/hashes/blake3'
-import { PrismaClient, SourceNode, Tech } from '@/prisma/client.js'
-import { ServerTestTypes } from '@/types/server-test-types.js'
+import { AiModelService } from '@/services/ai/ai-model-service.js'
+import { PrismaClient, SourceNode } from '@/prisma/client.js'
 import { BuildData, BuildFromFile } from '@/types/build-types.js'
-import { IntentCodeAiTasks, ServerOnlyTypes } from '@/types/server-only-types.js'
+import { IntentCodeAiTasks } from '@/types/server-only-types.js'
 import { SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types.js'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model.js'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
@@ -25,7 +24,7 @@ const sourceNodeGenerationModel = new SourceNodeGenerationModel()
 const sourceNodeModel = new SourceNodeModel()
 
 // Services
-const aiTasksService = new AiTasksService()
+const aiModelService = new AiModelService()
 const dependenciesMutateService = new DependenciesMutateService()
 const dotIntentCodeGraphQueryService = new DotIntentCodeGraphQueryService()
 const fsUtilsService = new FsUtilsService()
@@ -36,7 +35,6 @@ const projectsQueryService = new ProjectsQueryService()
 const techStackLlmService = new TechStackLlmService()
 const techStackPromptService = new TechStackPromptService()
 const techStackQueryService = new TechStackQueryService()
-const usersService = new UsersService()
 
 // Class
 export class TechStackMutateService {
@@ -48,7 +46,7 @@ export class TechStackMutateService {
   async getExistingJsonContent(
           prisma: PrismaClient,
           intentFileNode: SourceNode,
-          tech: Tech,
+          modelId: string,
           prompt: string) {
 
     // Debug
@@ -75,7 +73,7 @@ export class TechStackMutateService {
             sourceNodeGenerationModel.getByUniqueKey(
               prisma,
               indexerDataSourceNode.id,
-              tech.id,
+              modelId,
               promptHash)
 
     if (sourceNodeGeneration == null ||
@@ -102,29 +100,8 @@ export class TechStackMutateService {
     // Verbose output
     console.log(`processing: ${buildFromFile.filename}..`)
 
-    // Get the admin UserProfile
-    const adminUserProfile = await
-            usersService.getUserProfileByEmail(
-              prisma,
-              ServerTestTypes.adminUserEmail)
-
-    if (adminUserProfile == null) {
-      throw new CustomError(`${fnName}: adminUserProfile == null`)
-    }
-
-    // Get tech
-    const tech = await
-      aiTasksService.getTech(
-        prisma,
-        ServerOnlyTypes.namespace,
-        IntentCodeAiTasks.compiler,
-        null,  // userProfileId
-        true)  // exceptionOnNotFound
-
-    // Validate
-    if (tech == null) {
-      throw new CustomError(`${fnName}: tech == null`)
-    }
+    // The model id
+    const modelId = aiModelService.getModelId(IntentCodeAiTasks.compiler)
 
     // Get prompt
     const prompt = await
@@ -139,7 +116,7 @@ export class TechStackMutateService {
           this.getExistingJsonContent(
             prisma,
             buildFromFile.fileNode,
-            tech,
+            modelId,
             prompt)
 
     // Run
@@ -152,8 +129,7 @@ export class TechStackMutateService {
       const llmResults = await
               techStackLlmService.llmRequest(
                 prisma,
-                adminUserProfile.id,
-                tech,
+                                IntentCodeAiTasks.compiler,
                 prompt)
 
       jsonContent = llmResults.queryResultsJson
@@ -161,7 +137,7 @@ export class TechStackMutateService {
 
     // Define SourceNodeGeneration
     const sourceNodeGenerationData: SourceNodeGenerationData = {
-      techId: tech.id,
+      modelId: modelId,
       prompt: prompt
     }
 

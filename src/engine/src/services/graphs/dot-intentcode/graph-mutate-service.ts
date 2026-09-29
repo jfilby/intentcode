@@ -257,7 +257,7 @@ export class DotIntentCodeGraphMutateService {
               prisma,
               undefined,                  // id
               intentCodeCompilerData.id,  // sourceNodeId
-              sourceNodeGenerationData.techId,
+              sourceNodeGenerationData.modelId,
               sourceNodeGenerationData.temperature ?? null,
               sourceNodeGenerationData.prompt,
               promptHash,
@@ -333,7 +333,7 @@ export class DotIntentCodeGraphMutateService {
               prisma,
               undefined,                  // id
               intentCodeIndexedData.id,  // sourceNodeId
-              sourceNodeGenerationData.techId,
+              sourceNodeGenerationData.modelId,
               sourceNodeGenerationData.temperature ?? null,
               sourceNodeGenerationData.prompt,
               promptHash,

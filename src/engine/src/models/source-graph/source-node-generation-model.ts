@@ -10,7 +10,7 @@ export class SourceNodeGenerationModel {
   async create(
           prisma: PrismaClient,
           sourceNodeId: string,
-          techId: string,
+          modelId: string,
           temperature: number | null,
           prompt: string,
           promptHash: string,
@@ -27,7 +27,7 @@ export class SourceNodeGenerationModel {
       return await prisma.sourceNodeGeneration.create({
         data: {
           sourceNodeId: sourceNodeId,
-          techId: techId,
+          modelId: modelId,
           temperature: temperature,
           prompt: prompt,
           promptHash: promptHash,
@@ -115,7 +115,7 @@ export class SourceNodeGenerationModel {
 
   async filter(
           prisma: PrismaClient,
-          techId: string | undefined = undefined) {
+          modelId: string | undefined = undefined) {
 
     // Debug
     const fnName = `${this.clName}.filter()`
@@ -124,7 +124,7 @@ export class SourceNodeGenerationModel {
     try {
       return await prisma.sourceNodeGeneration.findMany({
         where: {
-          techId: techId
+          modelId: modelId
         }
       })
     } catch(error: any) {
@@ -163,7 +163,7 @@ export class SourceNodeGenerationModel {
   async getByUniqueKey(
           prisma: PrismaClient,
           sourceNodeId: string,
-          techId: string,
+          modelId: string,
           promptHash: string) {
 
     // Debug
@@ -182,7 +182,7 @@ export class SourceNodeGenerationModel {
       sourceNodeGeneration = await prisma.sourceNodeGeneration.findFirst({
         where: {
           sourceNodeId: sourceNodeId,
-          techId: techId,
+          modelId: modelId,
           promptHash: promptHash
         }
       })
@@ -241,7 +241,7 @@ export class SourceNodeGenerationModel {
           prisma: PrismaClient,
           id: string,
           sourceNodeId: string | undefined,
-          techId: string | undefined,
+          modelId: string | undefined,
           temperature: number | null | undefined,
           prompt: string | undefined,
           promptHash: string | undefined,
@@ -258,7 +258,7 @@ export class SourceNodeGenerationModel {
       return await prisma.sourceNodeGeneration.update({
         data: {
           sourceNodeId: sourceNodeId,
-          techId: techId,
+          modelId: modelId,
           temperature: temperature,
           prompt: prompt,
           promptHash: promptHash,
@@ -281,7 +281,7 @@ export class SourceNodeGenerationModel {
           prisma: PrismaClient,
           id: string | undefined,
           sourceNodeId: string | undefined,
-          techId: string | undefined,
+          modelId: string | undefined,
           temperature: number | null | undefined,
           prompt: string | undefined,
           promptHash: string | undefined,
@@ -298,14 +298,14 @@ export class SourceNodeGenerationModel {
     // If id isn't specified, but the unique keys are, try to get the record
     if (id == null &&
         sourceNodeId != null &&
-        techId != null &&
+        modelId != null &&
         promptHash != null) {
 
       const sourceNodeGeneration = await
               this.getByUniqueKey(
                 prisma,
                 sourceNodeId,
-                techId,
+                modelId,
                 promptHash)
 
       if (sourceNodeGeneration != null) {
@@ -322,8 +322,8 @@ export class SourceNodeGenerationModel {
         throw 'Prisma error'
       }
 
-      if (techId == null) {
-        console.error(`${fnName}: id is null and techId is null`)
+      if (modelId == null) {
+        console.error(`${fnName}: id is null and modelId is null`)
         throw 'Prisma error'
       }
 
@@ -367,7 +367,7 @@ export class SourceNodeGenerationModel {
                this.create(
                  prisma,
                  sourceNodeId,
-                 techId,
+                 modelId,
                  temperature,
                  prompt,
                  promptHash,
@@ -383,7 +383,7 @@ export class SourceNodeGenerationModel {
                  prisma,
                  id,
                  sourceNodeId,
-                 techId,
+                 modelId,
                  temperature,
                  prompt,
                  promptHash,

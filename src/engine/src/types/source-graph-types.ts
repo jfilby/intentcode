@@ -67,7 +67,7 @@ export enum SourceNodeNames {
 }
 
 export interface SourceNodeGenerationData {
-  techId: string
+  modelId: string
   temperature?: number
   prompt: string
 }

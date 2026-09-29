@@ -1,12 +1,11 @@
+import { CustomError } from 'serene-core-server'
 import chalk from 'chalk'
 import fs from 'fs'
-import { CustomError, UsersService } from 'serene-core-server'
-import { AiTasksService, TextParsingService } from 'serene-ai-server'
 import { blake3 } from '@noble/hashes/blake3'
-import { PrismaClient, SourceNode, Tech } from '@/prisma/client.js'
+import { AiModelService } from '@/services/ai/ai-model-service.js'
+import { PrismaClient, SourceNode } from '@/prisma/client.js'
 import { BuildData, BuildFromFile } from '@/types/build-types.js'
 import { Emoticons, IntentCodeAiTasks, ProjectDetails, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
-import { ServerTestTypes } from '@/types/server-test-types.js'
 import { SourceNodeNames, SourceNodeGenerationData, SourceNodeTypes } from '@/types/source-graph-types.js'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model.js'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
@@ -20,14 +19,16 @@ import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/p
 import { SourceAssistIntentCodeService } from '../../source/source-prompt.js'
 import { SourceCodePathGraphMutateService } from '@/services/graphs/source-code/path-graph-mutate-service.js'
 import { SourceCodePathGraphQueryService } from '@/services/graphs/source-code/path-graph-query-service.js'
+import { TextService } from '@/services/utils/text-service.js'
 
 // Models
 const sourceNodeGenerationModel = new SourceNodeGenerationModel()
 const sourceNodeModel = new SourceNodeModel()
 
 // Services
-const aiTasksService = new AiTasksService()
+const aiModelService = new AiModelService()
 const compilerLlmService = new CompilerLlmService()
+const textService = new TextService()
 const compilerPromptService = new CompilerPromptService()
 const dependenciesMutateService = new DependenciesMutateService()
 const fsUtilsService = new FsUtilsService()
@@ -37,8 +38,6 @@ const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
 const sourceAssistIntentCodeService = new SourceAssistIntentCodeService()
 const sourceCodePathGraphMutateService = new SourceCodePathGraphMutateService()
 const sourceCodePathGraphQueryService = new SourceCodePathGraphQueryService()
-const textParsingService = new TextParsingService()
-const usersService = new UsersService()
 
 // Class
 export class CompilerMutateService {
@@ -50,7 +49,7 @@ export class CompilerMutateService {
   async getExistingJsonContent(
           prisma: PrismaClient,
           intentFileNode: SourceNode,
-          tech: Tech,
+          modelId: string,
           prompt: string) {
 
     // Debug
@@ -80,7 +79,7 @@ export class CompilerMutateService {
             sourceNodeGenerationModel.getByUniqueKey(
               prisma,
               compilerDataSourceNode.id,
-              tech.id,
+              modelId,
               promptHash)
 
     if (sourceNodeGeneration == null ||
@@ -144,11 +143,8 @@ export class CompilerMutateService {
     // Debug
     // console.log(`${fnName}: content: ${content}`)
 
-    // Pre-process the content (if needed)
-    const contentExtracts = textParsingService.getTextExtracts(content)
-
-    content =
-      textParsingService.combineTextExtracts(contentExtracts.extracts, '')
+    // Pre-process the content (strip any markdown extracts)
+    content = textService.extractCode(content)
 
     // Write source file (if any)
     if (content != null) {
@@ -264,29 +260,8 @@ export class CompilerMutateService {
       console.log(`compiling: ${buildFromFile.relativePath}..`)
     }
 
-    // Get the admin UserProfile
-    const adminUserProfile = await
-            usersService.getUserProfileByEmail(
-              prisma,
-              ServerTestTypes.adminUserEmail)
-
-    if (adminUserProfile == null) {
-      throw new CustomError(`${fnName}: adminUserProfile == null`)
-    }
-
-    // Get tech
-    const tech = await
-      aiTasksService.getTech(
-        prisma,
-        ServerOnlyTypes.namespace,
-        IntentCodeAiTasks.compiler,
-        null,  // userProfileId
-        true)  // exceptionOnNotFound
-
-    // Validate
-    if (tech == null) {
-      throw new CustomError(`${fnName}: tech == null`)
-    }
+    // The model id
+    const modelId = aiModelService.getModelId(IntentCodeAiTasks.compiler)
 
     // Get source code's full path
     buildFromFile.targetFullPath =
@@ -309,7 +284,7 @@ export class CompilerMutateService {
           this.getExistingJsonContent(
             prisma,
             buildFromFile.fileNode,
-            tech,
+            modelId,
             promptWithoutSource)
 
     // Check if the file should be recompiled
@@ -336,15 +311,14 @@ export class CompilerMutateService {
       ({ status, message, content, jsonContent } = await
         compilerLlmService.llmRequest(
           prisma,
-          adminUserProfile.id,
-          tech,
+                    IntentCodeAiTasks.compiler,
           prompt))  // Use the final prompt (with latest target source)
     }
 
     // Define SourceNodeGeneration
     // Save the initial prompt (without latest target source)
     const sourceNodeGenerationData: SourceNodeGenerationData = {
-      techId: tech.id,
+      modelId: modelId,
       prompt: promptWithoutSource
     }
 

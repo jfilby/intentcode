@@ -295,7 +295,7 @@ export class IntentCodeGraphMutateService {
               prisma,
               undefined,                  // id
               techStackJsonSourceNode.id,  // sourceNodeId
-              sourceNodeGenerationData.techId,
+              sourceNodeGenerationData.modelId,
               sourceNodeGenerationData.temperature ?? null,
               sourceNodeGenerationData.prompt,
               promptHash,
@@ -369,7 +369,7 @@ export class IntentCodeGraphMutateService {
               prisma,
               undefined,                  // id
               intentCodeCompilerData.id,  // sourceNodeId
-              sourceNodeGenerationData.techId,
+              sourceNodeGenerationData.modelId,
               sourceNodeGenerationData.temperature ?? null,
               sourceNodeGenerationData.prompt,
               promptHash,
@@ -443,7 +443,7 @@ export class IntentCodeGraphMutateService {
               prisma,
               undefined,                  // id
               intentCodeIndexedData.id,  // sourceNodeId
-              sourceNodeGenerationData.techId,
+              sourceNodeGenerationData.modelId,
               sourceNodeGenerationData.temperature ?? null,
               sourceNodeGenerationData.prompt,
               promptHash,

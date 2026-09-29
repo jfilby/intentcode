@@ -31,11 +31,13 @@ To run cli, for setup and running the compiler, type `npm run cli`.
 ## Setup
 
 The core setup should be run automatically on start, but you can rerun it
-anytime by selecting `Setup` from the main menu. This defaults to using the
-Gemini 3.1 Pro model (free tier).
+anytime by selecting `Setup` from the main menu.
 
-To select another model choose `Manage AI models` from the main menu. To enter
-a key for your AI API select `Manage AI keys` from the menu.
+The AI model is configured in the environment rather than in a menu. Set
+`INTENTCODE_AI_API_KEY` in `src/engine/.env`; see [docs/setup.md](docs/setup.md)
+for the full list of variables and how to point at a different provider. It
+defaults to the Gemini 3.1 Pro model (free tier). Select `Info` from the main
+menu to see which model each task resolved to.
 
 
 ## Extensions

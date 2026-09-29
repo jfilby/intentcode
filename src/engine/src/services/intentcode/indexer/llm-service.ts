@@ -1,14 +1,12 @@
-import { AgentLlmService, LlmCacheService, LlmUtilsService } from 'serene-ai-server'
-import { PrismaClient, Tech } from '@/prisma/client.js'
-import { BaseDataTypes } from '@/types/base-data-types.js'
-import { MessageTypes, ServerOnlyTypes } from '@/types/server-only-types.js'
+import { PrismaClient } from '@/prisma/client.js'
+import { LlmService } from '@/services/ai/llm-service.js'
 import { DependenciesQueryService } from '@/services/graphs/dependencies/query-service.js'
+import { BaseDataTypes } from '@/types/base-data-types.js'
+import { IntentCodeAiTasks, MessageTypes } from '@/types/server-only-types.js'
 
 // Services
-const agentLlmService = new AgentLlmService()
 const dependenciesQueryService = new DependenciesQueryService()
-const llmCacheService = new LlmCacheService()
-const llmUtilsService = new LlmUtilsService()
+const llmService = new LlmService()
 
 export class IndexerLlmService {
 
@@ -18,186 +16,77 @@ export class IndexerLlmService {
   // Code
   async llmRequest(
           prisma: PrismaClient,
-          userProfileId: string,
-          llmTech: Tech,
+          aiTask: IntentCodeAiTasks,
           prompt: string) {
 
     // Debug
     const fnName = `${this.clName}.llmRequest()`
 
-    // Try to get from cache
-    var cacheKey: string | undefined = undefined
-    var inputMessageStr: string | undefined = undefined
-
-    if (ServerOnlyTypes.llmCaching === true) {
-
-      // Build the messageWithRoles
-      const inputMessagesWithRoles = await
-              llmUtilsService.buildMessagesWithRolesForSinglePrompt(
-                prisma,
-                llmTech,
-                prompt)
-
-      // Try get from the cache
-      const cacheResults = await
-              llmCacheService.tryGet(
-                prisma,
-                llmTech.id,
-                inputMessagesWithRoles)
-
-      cacheKey = cacheResults.cacheKey
-      inputMessageStr = cacheResults.inputMessageStr
-      const queryResultsJson = cacheResults.llmCache?.outputJson
-
-      // Debug
-      // console.log(`${fnName}: cacheKey: ${cacheKey}`)
-      // console.log(`${fnName}: queryResults: ` + JSON.stringify(queryResults))
-
-      // Found?
-      if (queryResultsJson != null) {
-
-        // Debug
-        // console.log(`${fnName}: cached results found`)
-
-        // Return
-        return {
-          status: true,
-          message: undefined,
-          queryResultsJson: queryResultsJson
-        }
-      }
-    }
-
-    // LLM request tries
-    var queryResults: any = undefined
-    var validated = false
-
-    for (var i = 0; i < 5; i++) {
-
-      // LLM request
-      queryResults = await
-        agentLlmService.agentSingleShotLlmRequest(
-          prisma,
-          llmTech,
-          userProfileId,
-          null,       // instanceId,
-          BaseDataTypes.defaultChatSettingsName,
-          BaseDataTypes.coderAgentRefId,
-          BaseDataTypes.coderAgentName,
-          BaseDataTypes.coderAgentRole,
-          prompt,
-          true)       // isJsonMode
-
-      // Validate
-      validated = true
-
-      if (queryResults == null ||
-          queryResults.json == null) {
-
-        console.error(`${fnName}: null results: ` +
-          JSON.stringify(queryResults))
-
-        validated = false
-      } else {
-        validated = await
-          this.validateQueryResults(
-            prisma,
-            queryResults)
-      }
-
-      if (validated === false) {
-
-        // Delete from cache (if relevant)
-        if (cacheKey != null) {
-
-          await llmCacheService.deleteByTechIdAndKey(
-                  prisma,
-                  llmTech.id,
-                  cacheKey)
-        }
-
-        // Retry
-        continue
-      }
-
-      // Passed validation: save to cache (if relevant) and exit loop
-      if (cacheKey != null) {
-
-        await llmCacheService.save(
-                prisma,
-                llmTech.id,
-                cacheKey!,
-                inputMessageStr!,
-                queryResults.message,
-                queryResults.messages,
-                queryResults.json)
-      }
-
-      break
-    }
-
-    // Validate
-    if (validated === false) {
-
-      console.log(`${fnName}: failed validation after retries`)
-      process.exit(1)
-    }
+    // The request
+    const results = await
+      llmService.request({
+        prisma: prisma,
+        aiTask: aiTask,
+        system: BaseDataTypes.coderAgentRole,
+        prompt: prompt,
+        isJsonMode: true,
+        validate: (json) => this.validateQueryResults(json)
+      })
 
     // OK
     return {
       status: true,
       message: undefined,
-      queryResultsJson: queryResults.json
+      queryResultsJson: results.json
     }
   }
 
   async validateQueryResults(
-          prisma: PrismaClient,
-          queryResults: any) {
+          json: any) {
 
     // Debug
     const fnName = `${this.clName}.validateQueryResults()`
 
     // Test for concept graph results. This may not be a concept graph if the
     // text to analyze overrode the prompt.
-    if (Array.isArray(queryResults.json) === true) {
+    if (Array.isArray(json) === true) {
 
-      console.log(`${fnName}: queryResults.json should be a map: ` +
-                  JSON.stringify(queryResults))
+      console.log(`${fnName}: json should be a map: ` +
+                  JSON.stringify(json))
 
       return false
     }
 
     // Validate the JSON
-    if (queryResults.json.warnings != null) {
+    if (json.warnings != null) {
 
       const entryValidated =
               this.validateMessages(
                 MessageTypes.warnings,
-                queryResults.json.warnings)
+                json.warnings)
 
       if (entryValidated === false) {
         return false
       }
     }
 
-    if (queryResults.json.errors != null) {
+    if (json.errors != null) {
 
       const entryValidated =
               this.validateMessages(
                 MessageTypes.errors,
-                queryResults.json.errors)
+                json.errors)
 
       if (entryValidated === false) {
         return false
       }
     }
 
-    if (queryResults.json.source?.deps != null) {
+    if (json.source?.deps != null) {
 
       const entryValidated =
               dependenciesQueryService.verifyDepsDeltas(
-                queryResults.json.source?.deps)
+                json.source?.deps)
 
       if (entryValidated === false) {
         return false

@@ -1,10 +1,10 @@
-import { ChatMessage } from 'serene-ai-server'
 import { CustomError, UsersService } from 'serene-core-server'
 import { input } from '@inquirer/prompts'
 import { PrismaClient } from '@/prisma/client.js'
 import { BaseDataTypes } from '@/types/base-data-types.js'
+import { ChatMessage } from '@/types/ai-types.js'
 import { BuildData, BuildFromFile } from '@/types/build-types.js'
-import { AnalyzerChatParams, ChatSessionOptions, ChatTypes } from '@/types/chat-types.js'
+import { AnalyzerChatParams, ChatSessionOptions, ChatTypes, getAnalyzerSuggestion } from '@/types/chat-types.js'
 import { ProjectDetails } from '@/types/server-only-types.js'
 import { ServerTestTypes } from '@/types/server-test-types.js'
 import { InstanceChatsService } from '@/services/instance-chats/common/service.js'
@@ -70,7 +70,7 @@ export class IntentCodeAnalyzerSuggestionsChatService {
     }
 
     // Return
-    return results.chatSession
+    return results
   }
 
   async openChat(
@@ -104,7 +104,7 @@ export class IntentCodeAnalyzerSuggestionsChatService {
     }
 
     // Create chat session
-    const chatSession = await
+    const { chatSession, chatParticipant } = await
       this.createChatSession(
         prisma,
         adminUserProfile.id,
@@ -113,17 +113,6 @@ export class IntentCodeAnalyzerSuggestionsChatService {
         buildFromFiles,
         suggestion)
 
-    // Get chatParticipantId
-    // console.log(`${fnName}: chatSession: ` + JSON.stringify(chatSession))
-
-    var chatParticipant: any = undefined
-
-    for (const thisChatParticipant of chatSession.chatParticipants) {
-
-      if (thisChatParticipant.userProfileId === adminUserProfile.id) {
-        chatParticipant = thisChatParticipant
-      }
-    }
 
     // Chat loop
     while (true) {
@@ -172,9 +161,7 @@ export class IntentCodeAnalyzerSuggestionsChatService {
           prisma,
           chatSession.id,
           chatParticipant.id,
-          adminUserProfile.id,
-          projectDetails.instance.id,
-          'User',  // name
+          adminUserProfile,
           contents)
 
       // Debug
@@ -193,20 +180,17 @@ export class IntentCodeAnalyzerSuggestionsChatService {
         }
       }
 
-      if (replyData.rawJson.suggestion != null) {
+      const updatedSuggestion = getAnalyzerSuggestion(replyData.rawJson)
 
-        const thisSuggestion = replyData.rawJson.suggestion
+      if (updatedSuggestion != null) {
 
         console.log(``)
-        console.log(`UPDATED: ${thisSuggestion.text}`)
+        console.log(`UPDATED: ${updatedSuggestion.text}`)
 
-        if (thisSuggestion.fileDeltas != null) {
+        for (const fileDelta of updatedSuggestion.fileDeltas) {
 
-          for (const fileDelta of thisSuggestion.fileDeltas) {
-
-            console.log(`.. ${fileDelta.fileOp} ${fileDelta.relativePath}: ` +
-              `${fileDelta.change}`)
-          }
+          console.log(`.. ${fileDelta.fileOp} ${fileDelta.relativePath}: ` +
+            `${fileDelta.change}`)
         }
       }
     }

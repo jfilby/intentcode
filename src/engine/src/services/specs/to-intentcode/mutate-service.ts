@@ -1,12 +1,11 @@
 import fs from 'fs'
 import path from 'path'
-import { AiTasksService } from 'serene-ai-server'
-import { CustomError, UsersService, WalkDirService } from 'serene-core-server'
+import { WalkDirService } from 'serene-core-server'
 import { blake3 } from '@noble/hashes/blake3'
-import { PrismaClient, SourceNode, Tech } from '@/prisma/client.js'
+import { AiModelService } from '@/services/ai/ai-model-service.js'
+import { PrismaClient, SourceNode } from '@/prisma/client.js'
 import { BuildData, BuildFromFile } from '@/types/build-types.js'
 import { IntentCodeAiTasks, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
-import { ServerTestTypes } from '@/types/server-test-types.js'
 import { SourceNodeGenerationData } from '@/types/source-graph-types.js'
 import { SourceNodeGenerationModel } from '@/models/source-graph/source-node-generation-model.js'
 import { FsUtilsService } from '@/services/utils/fs-utils-service.js'
@@ -22,7 +21,7 @@ import { SpecsToIntentCodePromptService } from './prompt-service.js'
 const sourceNodeGenerationModel = new SourceNodeGenerationModel()
 
 // Services
-const aiTasksService = new AiTasksService()
+const aiModelService = new AiModelService()
 const fsUtilsService = new FsUtilsService()
 const intentCodeMessagesService = new IntentCodeMessagesService()
 const intentCodeUpdaterMutateService = new IntentCodeUpdaterMutateService()
@@ -31,7 +30,6 @@ const specsGraphQueryService = new SpecsGraphQueryService()
 const specsLlmService = new SpecsLlmService()
 const specsPathGraphMutateService = new SpecsPathGraphMutateService()
 const specsToIntentCodePromptService = new SpecsToIntentCodePromptService()
-const usersService = new UsersService()
 const walkDirService = new WalkDirService()
 
 // Class
@@ -44,7 +42,7 @@ export class SpecsToIntentCodeMutateService {
   async getExistingJsonContent(
           prisma: PrismaClient,
           projectSpecsNode: SourceNode,
-          tech: Tech,
+          modelId: string,
           prompt: string) {
 
     // Debug
@@ -58,7 +56,7 @@ export class SpecsToIntentCodeMutateService {
             sourceNodeGenerationModel.getByUniqueKey(
               prisma,
               projectSpecsNode.id,
-              tech.id,
+              modelId,
               promptHash)
 
     if (sourceNodeGeneration == null ||
@@ -109,29 +107,8 @@ export class SpecsToIntentCodeMutateService {
     // Debug
     const fnName = `${this.clName}.processSpecFilesWithLlm()`
 
-    // Get the admin UserProfile
-    const adminUserProfile = await
-            usersService.getUserProfileByEmail(
-              prisma,
-              ServerTestTypes.adminUserEmail)
-
-    if (adminUserProfile == null) {
-      throw new CustomError(`${fnName}: adminUserProfile == null`)
-    }
-
-    // Get tech
-    const tech = await
-      aiTasksService.getTech(
-        prisma,
-        ServerOnlyTypes.namespace,
-        IntentCodeAiTasks.compiler,
-        null,  // userProfileId
-        true)  // exceptionOnNotFound
-
-    // Validate
-    if (tech == null) {
-      throw new CustomError(`${fnName}: tech == null`)
-    }
+    // The model id
+    const modelId = aiModelService.getModelId(IntentCodeAiTasks.compiler)
 
     // Get prompt
     const prompt = await
@@ -146,7 +123,7 @@ export class SpecsToIntentCodeMutateService {
           this.getExistingJsonContent(
             prisma,
             projectSpecsNode,
-            tech,
+            modelId,
             prompt)
 
     // Run
@@ -156,8 +133,7 @@ export class SpecsToIntentCodeMutateService {
               specsLlmService.llmRequest(
                 prisma,
                 buildData,
-                adminUserProfile.id,
-                tech,
+                                IntentCodeAiTasks.compiler,
                 prompt)
 
       jsonContent = llmResults.queryResultsJson
@@ -165,7 +141,7 @@ export class SpecsToIntentCodeMutateService {
 
     // Define SourceNodeGeneration
     const sourceNodeGenerationData: SourceNodeGenerationData = {
-      techId: tech.id,
+      modelId: modelId,
       prompt: prompt
     }
 

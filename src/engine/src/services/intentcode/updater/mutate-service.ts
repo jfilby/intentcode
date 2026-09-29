@@ -1,16 +1,16 @@
 import fs from 'fs'
-import { TextParsingService } from 'serene-ai-server'
 import { CustomError } from 'serene-core-server'
 import { PrismaClient } from '@/prisma/client.js'
 import { BuildData } from '@/types/build-types.js'
 import { FileDelta, FileOps, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
 import { FsUtilsService } from '@/services/utils/fs-utils-service.js'
+import { TextService } from '@/services/utils/text-service.js'
 import { IntentCodePathGraphMutateService } from '@/services/graphs/intentcode/path-graph-mutate-service.js'
 
 // Service
 const fsUtilsService = new FsUtilsService()
 const intentCodePathGraphMutateService = new IntentCodePathGraphMutateService()
-const textParsingService = new TextParsingService()
+const textService = new TextService()
 
 // Class
 export class IntentCodeUpdaterMutateService {
@@ -31,11 +31,8 @@ export class IntentCodeUpdaterMutateService {
     // Pre-process the content (if needed)
     if (fileDelta.content != null) {
 
-      const contentExtracts =
-        textParsingService.getTextExtracts(fileDelta.content)
-
       fileDelta.content =
-        textParsingService.combineTextExtracts(contentExtracts.extracts, '')
+        textService.extractCode(fileDelta.content)
     }
 
     // Get projectDetails

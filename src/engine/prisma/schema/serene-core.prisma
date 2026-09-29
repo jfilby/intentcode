@@ -85,8 +85,6 @@ model UserProfile {
   ofEndUserErrors               UserError[]                @relation("end_user_profile")
   ofUserErrorSummaries          UserErrorSummary[]
 
-  ofAiTaskTechs                 AiTaskTech[]
-
   ofBatchJobs                   BatchJob[]
 
   @@map("user_profile")
@@ -96,8 +94,11 @@ model UserProfile {
 
 model AgentUser {
   id                   String         @id @default(cuid())
-  userProfileId        String         @map("user_profile_id") @unique
-  userProfile          UserProfile    @relation(fields: [userProfileId], references: [id])
+  // An agent is a shared identity, not tied to one profile: the engine
+  // defines a fixed set of them and ChatSettings point at them by id. A
+  // profile only owns the ChatSettings it creates.
+  userProfileId        String?        @map("user_profile_id")
+  userProfile          UserProfile?   @relation(fields: [userProfileId], references: [id])
   uniqueRefId          String?        @map("unique_ref_id") @unique
   name                 String
   role                 String
@@ -160,6 +161,9 @@ model ChatParticipant {
   chatSession                   ChatSession          @relation(fields: [chatSessionId], references: [id])
   userProfileId                 String               @map("user_profile_id")
   userProfile                   UserProfile          @relation(fields: [userProfileId], references: [id])
+  // Tells the user's side apart from the agent's: both are backed by the
+  // same UserProfile, so without this there is no way to tell them apart.
+  role                          String
 
   ofChatMessagesFrom            ChatMessage[]        @relation("fromChatParticipant")
   ofChatMessagesTo              ChatMessage[]        @relation("toChatParticipant")
@@ -360,11 +364,6 @@ model Tech {
 
   ofChatMessagesCreated        ChatMessageCreated[]
   ofRateLimitedApis            RateLimitedApi[]
-
-  ofAiTaskTechs                AiTaskTech[]
-  ofLlmCaches                  LlmCache[]
-
-  ofSourceNodeTechs            SourceNodeGeneration[]
 
   @@map("tech")
 }

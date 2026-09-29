@@ -1,8 +1,9 @@
-import { ChatSessionService, SereneAiServerOnlyTypes } from 'serene-ai-server'
 import { ChatSettingsModel, CustomError } from 'serene-core-server'
 import { ChatSettings, PrismaClient } from '@/prisma/client.js'
+import { BaseDataTypes } from '@/types/base-data-types.js'
 import { ChatSessionOptions, ChatTypes } from '@/types/chat-types.js'
 import { ChatPromptsService } from '../chat-prompts-service.js'
+import { ChatSessionService } from '../chat-session-service.js'
 
 // Models
 const chatSettingsModel = new ChatSettingsModel()
@@ -83,7 +84,7 @@ export class InstanceChatsService {
 
     // Use the default ChatSettings name?
     if (chatSettingsName == null) {
-      chatSettingsName = SereneAiServerOnlyTypes.defaultChatSettingsName
+      chatSettingsName = BaseDataTypes.defaultChatSettingsName
     }
 
     // Get initial data
@@ -106,16 +107,19 @@ export class InstanceChatsService {
           chatSessionId,
           userProfileId)
 
-      // Debug
-      console.log(`${fnName}: returning with existing chatSession..`)
+      // Validate
+      if (chatSessionResults.status === false ||
+          chatSessionResults.chatSession == null) {
 
-      // Formulate return var
-      var chatSession = chatSessionResults.chatSession
+        throw new CustomError(`${fnName}: chatSession not found: ` +
+          `${chatSessionId}`)
+      }
 
       // Return
       return {
         status: true,
-        chatSession: chatSession
+        chatSession: chatSessionResults.chatSession,
+        chatParticipant: chatSessionResults.chatParticipant
       }
     }
 
@@ -166,13 +170,11 @@ export class InstanceChatsService {
     // console.log(`${fnName}: created chatSession: ` +
     //   JSON.stringify(chatSessionResults.chatSession))
 
-    // Formulate return var
-    var chatSession = chatSessionResults.chatSession as any
-
     // Return
     return {
       status: true,
-      chatSession: chatSession
+      chatSession: chatSessionResults.chatSession,
+      chatParticipant: chatSessionResults.chatParticipant
     }
   }
 
