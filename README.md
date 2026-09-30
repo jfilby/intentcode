@@ -8,15 +8,19 @@ the compiler.
 
 ## Prerequisites
 
-Install Node.js from: https://nodejs.org
+Install Bun from: https://bun.sh
 
-Get/download the latest, or v22 to be on the version IntentCode is developed
-for.
-
+The engine runs on Bun, not Node. The Pi packages it is built on are Bun
+programs: they are published as TypeScript source, which Node refuses to load
+from `node_modules`, and they use Bun's builtins (`bun:sqlite` for session
+storage among them). `intent` is a Bun script, so Bun has to be on the PATH.
 
 ## Installing
 
 Install via NPM: `npm install -g intentcode-compiler`
+
+The installed `intent` is a Bun script, so Bun has to be installed (see
+[Prerequisites](#prerequisites)) for it to run.
 
 The same command can be used to upgrade to new versions when they're available.
 
@@ -26,8 +30,9 @@ command prints the usage below.
 
 ## Running
 
-To run the cli from source, type `npm run cli -- <command>`, for example
-`npm run cli -- build` from a project directory.
+To run the cli from source, type `bun ./src/cli.ts <command>` (or
+`bun run cli -- <command>`) from `src/engine`, for example
+`bun ./src/cli.ts build` from a project directory.
 
 Every command runs inside a [bubblewrap](https://github.com/containers/bubblewrap)
 sandbox, so `bwrap` has to be installed and on the PATH
