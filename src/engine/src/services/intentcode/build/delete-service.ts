@@ -1,7 +1,8 @@
 import { IntentError } from '@/core/errors.js'
-import { createProjectStore } from '@/core/store.js'
+import type { SourceNodeRecord } from '@/core/records.js'
+import type { ProjectStore } from '@/core/store.js'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
-import { ProjectDetails, ServerOnlyTypes } from '@/types/server-only-types.js'
+import { ServerOnlyTypes } from '@/types/server-only-types.js'
 import { SourceNodeTypes } from '@/types/source-graph-types.js'
 import { BuildsGraphQueryService } from '@/services/graphs/builds/query-service.js'
 import { GraphsDeleteService } from '@/services/graphs/general/delete-service.js'
@@ -21,35 +22,27 @@ export class DeleteBuildService {
 
   // Code
   /**
-   * Each project holds its own graph, so each is opened and aged out on its
-   * own rather than through the store of whichever project the build started
-   * from.
+   * Ages out the builds a project is keeping past its newest few, each with
+   * the source subtree it grew.
+   *
+   * This runs on the build's own store. A project's graph is one file with one
+   * writer: the build holds records it read earlier and writes them back
+   * further on, so a second store reading and writing that file behind the
+   * build's back drops records the build is still holding, and the next write
+   * of one of them fails on a record that is no longer there.
    */
   async deleteOldBuildGraphs(
-    projectsMap: Record<number, ProjectDetails>) {
-
-    // Iterate projects
-    for (const projectDetails of Object.values(projectsMap)) {
-
-      // Delete old build graphs for the project
-      await this.deleteOldBuildGraphsByProject(
-        projectDetails)
-    }
-  }
-
-  async deleteOldBuildGraphsByProject(
-    projectDetails: ProjectDetails) {
+    store: ProjectStore,
+    projectNode: SourceNodeRecord) {
 
     // Debug
-    const fnName = `${this.clName}.deleteOldBuildGraphsByProject()`
-
-    const store = createProjectStore(projectDetails.project.path)
+    const fnName = `${this.clName}.deleteOldBuildGraphs()`
 
     // Get project node
     const buildsNode = await
       buildsGraphQueryService.getBuildsNode(
         store,
-        projectDetails.projectNode)
+        projectNode)
 
     // Validate
     if (buildsNode == null) {
@@ -57,7 +50,7 @@ export class DeleteBuildService {
         category: 'StorageError',
         stage: fnName,
         message: `${fnName}: buildNodes == null`,
-        detail: `the project ${projectDetails.project.key} has no Builds node`
+        detail: `the project ${projectNode.projectId} has no Builds node`
       })
     }
 

@@ -143,25 +143,6 @@ export function createCollection<T extends { id: string }>(
     (record: T) => Promise<Record<string, unknown> | undefined>
   >()
 
-  /**
-   * Serializes the read-modify-write of one collection. A build appends to
-   * several collections at once, and without this the second append starts
-   * from the array the first one had already replaced.
-   */
-  let queue: Promise<unknown> = Promise.resolve()
-
-  const serialize = <R>(work: () => Promise<R>): Promise<R> => {
-    const result = queue.then(work, work)
-    // The chain must survive a rejection: this is the only place a store
-    // failure surfaces, and a poisoned chain would make every later write
-    // fail with the first error instead of its own.
-    queue = result.then(
-      () => undefined,
-      () => undefined
-    )
-    return result
-  }
-
   const readAll = async (): Promise<T[]> => {
 
     // Absence and corruption are different things. A collection that has
@@ -188,8 +169,43 @@ export function createCollection<T extends { id: string }>(
     return records
   }
 
-  const writeAll = async (records: T[]): Promise<void> => {
-    await store.write(path, records)
+  /**
+   * A read-modify-write of the whole collection, exclusive against every
+   * other writer of the file. The read and the write happen inside the store's
+   * own lock, so a second store over the same project — or a second engine
+   * process — cannot read the array this one is about to replace and write its
+   * own stale copy back over the records added since.
+   *
+   * The check that decides whether the collection is even an array is made
+   * here rather than in `readAll`: a file that will not parse is refused
+   * before anything is written over the records it holds.
+   */
+  const mutate = async <R>(
+    work: (records: T[]) => { records: T[], result: R } | null
+  ): Promise<R | null> => {
+
+    let outcome: R | null = null
+
+    await store.update<T[] | null>(path, (current) => {
+
+      const records = current ?? []
+
+      if (Array.isArray(records) === false) {
+        throw new IntentError({
+          category: 'StorageError',
+          message: `${path} is not a ${name} collection`
+        })
+      }
+
+      const changed = work(records)
+
+      if (changed == null) return records
+
+      outcome = changed.result
+      return changed.records
+    })
+
+    return outcome
   }
 
   const withRelations = async (
@@ -255,8 +271,9 @@ export function createCollection<T extends { id: string }>(
     },
 
     async create(args: CreateArgs<T>): Promise<T> {
-      return serialize(async () => {
-        const records = await readAll()
+
+      const created = await mutate((records) => {
+
         if (args.data.id != null &&
             records.some((record) => record.id === args.data.id)) {
 
@@ -265,82 +282,102 @@ export function createCollection<T extends { id: string }>(
             message: `${name} record ${args.data.id} already exists`
           })
         }
+
         records.push(args.data)
-        await writeAll(records)
-        return args.data
+        return { records, result: args.data }
       })
+
+      return created as T
     },
 
     async update(args: UpdateArgs<T>): Promise<T> {
-      return serialize(async () => {
-        const records = await readAll()
+
+      const updated = await mutate((records) => {
+
         const index = records.findIndex(
           (record) => matches(record as unknown as Where, args.where))
+
         if (index < 0) {
           throw new IntentError({
             category: 'StorageError',
-            message: `no ${name} record matches the update`
+            message: `no ${name} record matches the update`,
+            detail: `${path}: ${JSON.stringify(args.where)}`
           })
         }
+
         // A field set to undefined is a field the caller did not name, so it
         // is left alone rather than blanked.
-        const updated = { ...records[index] } as Record<string, unknown>
+        const record = { ...records[index] } as Record<string, unknown>
         for (const [field, value] of Object.entries(args.data)) {
           if (value === undefined) continue
-          updated[field] = value
+          record[field] = value
         }
-        const record = updated as T
-        records[index] = record
-        await writeAll(records)
-        return record
+
+        records[index] = record as T
+        return { records, result: record as T }
       })
+
+      return updated as T
     },
 
     async upsert(args: UpsertArgs<T>): Promise<T> {
-      return serialize(async () => {
-        const records = await readAll()
+
+      const upserted = await mutate((records) => {
+
         const index = records.findIndex(
           (record) => matches(record as unknown as Where, args.where))
+
         if (index < 0) {
           records.push(args.create)
-          await writeAll(records)
-          return args.create
+          return { records, result: args.create }
         }
-        const updated = { ...records[index] } as Record<string, unknown>
+
+        const record = { ...records[index] } as Record<string, unknown>
         for (const [field, value] of Object.entries(args.update)) {
           if (value === undefined) continue
-          updated[field] = value
+          record[field] = value
         }
-        const record = updated as T
-        records[index] = record
-        await writeAll(records)
-        return record
+
+        records[index] = record as T
+        return { records, result: record as T }
       })
+
+      return upserted as T
     },
 
     async delete(args: { where: Where }): Promise<T | null> {
-      return serialize(async () => {
-        const records = await readAll()
+
+      return await mutate<T | null>((records) => {
+
         const index = records.findIndex(
           (record) => matches(record as unknown as Where, args.where))
+
         if (index < 0) return null
+
         const [record] = records.splice(index, 1)
-        await writeAll(records)
-        return record
+        return { records, result: record }
       })
     },
 
     async deleteMany(
       args: { where?: Where } = {}): Promise<DeleteManyResult> {
-      return serialize(async () => {
-        const records = await readAll()
+
+      const count = await mutate<number>((records) => {
+
         const kept = records.filter(
           (record) =>
             matches(record as unknown as Where, args.where) === false)
-        const count = records.length - kept.length
-        if (count > 0) await writeAll(kept)
-        return { count }
+
+        const removed = records.length - kept.length
+
+        // Nothing matched, so the file already says what it should and is
+        // left as it is rather than rewritten.
+        if (removed === 0) return null
+
+        return { records: kept, result: removed }
       })
+
+      return { count: count ?? 0 }
     },
 
     async count(args: { where?: Where } = {}): Promise<number> {

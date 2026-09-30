@@ -232,9 +232,9 @@ export class BuildMutateService {
     // Get numbered projects map. A project is its own root, so a project
     // nested inside another is a separate build rather than a child of this
     // one.
-    const projects: Record<number, ProjectDetails> = {
-      1: await this.createProjectDetails(store, 0, project)
-    }
+    const projectDetails = await this.createProjectDetails(store, 0, project)
+
+    const projects: Record<number, ProjectDetails> = { 1: projectDetails }
 
     // Load extensions
     const extensionsData = await
@@ -253,7 +253,8 @@ export class BuildMutateService {
 
     // Delete old build graphs
     await deleteBuildService.deleteOldBuildGraphs(
-      projects)
+      store,
+      projectDetails.projectNode)
 
     // Create BuildData
     const buildData: BuildData = {

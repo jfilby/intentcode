@@ -8,8 +8,9 @@
  * observes one half written.
  */
 
-import { createHash } from 'node:crypto'
 import { mkdir, open, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises'
+import { setTimeout as sleep } from 'node:timers/promises'
+import { createHash } from 'node:crypto'
 import { dirname, isAbsolute, normalize, relative, resolve, sep } from 'node:path'
 import { IntentError } from './errors.js'
 
@@ -21,6 +22,18 @@ export interface JsonStore {
 
   read<T>(relativePath: string): Promise<T>
   write<T>(relativePath: string, value: T): Promise<void>
+
+  /**
+   * A read-modify-write of one file, exclusive against every other writer of
+   * it. `update` is handed what is currently there — undefined when the file
+   * has never been written — and returns what should be written in its place,
+   * so the read and the write it guards cannot be separated by another
+   * writer's own read-modify-write.
+   */
+  update<T>(
+    relativePath: string,
+    update: (current: T | undefined) => T
+  ): Promise<T>
   exists(relativePath: string): Promise<boolean>
   readText(relativePath: string): Promise<string>
   writeText(relativePath: string, contents: string): Promise<void>
@@ -50,6 +63,95 @@ export function hashValue(value: unknown): string {
  * then name its temporary file exactly as the first did.
  */
 let temporaryWrites = 0
+
+/**
+ * Serializes the read-modify-write of one file across every writer of it.
+ *
+ * A record is written by rewriting the whole file, so a writer that read it
+ * before another writer finished is holding an array that is already out of
+ * date: writing it back drops whatever the other writer added. The queue a
+ * collection keeps serializes its own writes and nothing else, so two stores
+ * over one project — the tests command building the example while the CLI
+ * holds a store for the project it was run from, or two builds run at once —
+ * interleave their read and write and lose records. The key is the resolved
+ * path, so it excludes writers in this process and in any other, and a stale
+ * lock from a process that died holding one is taken over rather than waited
+ * on forever.
+ */
+/** How long a lock file is honoured before it is taken over as abandoned. */
+const STALE_LOCK_MS = 30_000
+
+const fileQueues = new Map<string, Promise<unknown>>()
+
+function serializeFile<T>(
+  file: string,
+  work: () => Promise<T>
+): Promise<T> {
+  const previous = fileQueues.get(file) ?? Promise.resolve()
+  const result = previous.then(work, work)
+  fileQueues.set(
+    file,
+    result.then(
+      () => {
+        if (fileQueues.get(file) === result) fileQueues.delete(file)
+      },
+      () => {
+        if (fileQueues.get(file) === result) fileQueues.delete(file)
+      })
+  )
+  return result
+}
+
+/**
+ * Holds the lock file while the caller's work runs, releasing it whatever the
+ * outcome. The lock is a file created exclusively: a writer that finds one
+ * waits for it to go, so the read and the write it guards cannot be separated
+ * by another writer's whole read-modify-write.
+ *
+ * A process that dies holding the lock leaves it behind, so a wait that has
+ * run past `STALE_LOCK_MS` takes the lock over rather than blocking the engine
+ * for good. The holder is long gone by then: a read-modify-write of one of
+ * these files is milliseconds, not seconds.
+ */
+async function withFileLock<T>(
+  lockPath: string,
+  work: () => Promise<T>
+): Promise<T> {
+
+  const acquire = async (): Promise<void> => {
+
+    const deadline = Date.now() + STALE_LOCK_MS
+
+    while (true) {
+      try {
+        // 'wx' fails when the file is there, which is what makes this the
+        // lock rather than a read of a shared file.
+        const handle = await open(lockPath, 'wx')
+        await handle.write(`${process.pid}\n`)
+        await handle.close()
+        return
+      } catch (cause) {
+        if ((cause as NodeJS.ErrnoException).code !== 'EEXIST') throw cause
+      }
+
+      if (Date.now() >= deadline) {
+        await rm(lockPath, { force: true })
+        continue
+      }
+
+      await sleep(5)
+    }
+  }
+
+  await mkdir(dirname(lockPath), { recursive: true })
+  await acquire()
+
+  try {
+    return await work()
+  } finally {
+    await rm(lockPath, { force: true })
+  }
+}
 
 /**
  * Puts a path on the disk rather than in the page cache. A write renamed into
@@ -168,6 +270,60 @@ export function createJsonStore(root: string): JsonStore {
       await writeAtomically(
         relativePath,
         (temporary) => writeFile(temporary, serializeJson(value), 'utf8'))
+    },
+
+    async update<T>(
+      relativePath: string,
+      update: (current: T | undefined) => T): Promise<T> {
+
+      const file = resolveInStore(relativePath)
+
+      return await serializeFile(
+        file,
+        () => withFileLock(`${file}.lock`, async () => {
+
+          // Read under the lock, so what is handed to `update` is what every
+          // other writer has finished writing rather than what was there when
+          // this one started waiting.
+          //
+          // A file that is not there yet is a collection that has never been
+          // written, which is not an error: the first create of a project is
+          // what makes it. A file that is there and will not parse is a
+          // different thing — the records are on the disk — so it is refused
+          // rather than answered as absent.
+          let current: T | undefined
+          let text: string
+
+          try {
+            text = await readFile(file, 'utf8')
+          } catch (cause) {
+            if ((cause as NodeJS.ErrnoException).code !== 'ENOENT') {
+              throw storageError(
+                `cannot read ${relativePath}`,
+                cause instanceof Error ? cause.message : String(cause))
+            }
+            text = undefined as unknown as string
+          }
+
+          if (text != null) {
+            try {
+              current = JSON.parse(text) as T
+            } catch (cause) {
+              throw storageError(
+                `${relativePath} is not valid JSON`,
+                cause instanceof Error ? cause.message : String(cause))
+            }
+          }
+
+          const next = update(current)
+
+          await writeAtomically(
+            relativePath,
+            (temporary) =>
+              writeFile(temporary, serializeJson(next), 'utf8'))
+
+          return next
+        }))
     },
 
     async writeText(
