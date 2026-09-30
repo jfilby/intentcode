@@ -60,9 +60,18 @@ export class SourceDepsFileService {
       //             JSON.stringify(hooksNode.jsonContent))
 
       // Is a packageManager specified?
-      if ((hooksNode.jsonContent as any).deps.packageManager != null) {
+      // A hooks file is free to declare no deps at all: the bundled ones
+      // happen to name a package manager, an extension carrying only skills
+      // does not. Reading through a missing `deps` threw a TypeError that
+      // took the whole build down over an unrelated extension.
+      const hooksJson = hooksNode.jsonContent as
+        { deps?: { packageManager?: unknown } } | null
 
-        packageManager = (hooksNode.jsonContent as any).deps.packageManager
+      const declared = hooksJson?.deps?.packageManager
+
+      if (declared != null) {
+
+        packageManager = String(declared)
         break
       }
     }
@@ -75,12 +84,19 @@ export class SourceDepsFileService {
       return
     }
 
-    // Set in depsNode
-    if (depsNode.jsonContent.source == null) {
-      depsNode.jsonContent.source = {}
+    // Set in depsNode. The node is created empty, so on a project that has
+    // never recorded a dependency its jsonContent is still null: writing
+    // through it threw a TypeError on the one path that exists to populate
+    // it in the first place.
+    const depsJson = (depsNode.jsonContent ?? {}) as DepsData
+
+    if (depsJson.source == null) {
+      depsJson.source = {}
     }
 
-    depsNode.jsonContent.source.packageManager = packageManager
+    depsJson.source.packageManager = packageManager
+
+    depsNode.jsonContent = depsJson
 
       // Update depsNode
       await dependenciesMutateService.updateDepsNode(

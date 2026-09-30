@@ -163,14 +163,28 @@ export function createCollection<T extends { id: string }>(
   }
 
   const readAll = async (): Promise<T[]> => {
-    const records = await store.readIfValid<T[]>(path)
+
+    // Absence and corruption are different things. A collection that has
+    // never been written is empty; a collection whose file will not parse is
+    // a file whose records are still on disk and must not be treated as an
+    // empty collection, because the next create/upsert/deleteMany rewrites
+    // the file and every record in it is destroyed with no error and no way
+    // back. So the existence check is made here and a file that is present is
+    // read strictly: store.read() raises on invalid JSON rather than
+    // answering undefined.
+    if (!(await store.exists(path))) return []
+
+    const records = await store.read<T[]>(path)
+
     if (records == null) return []
+
     if (Array.isArray(records) === false) {
       throw new IntentError({
         category: 'StorageError',
         message: `${path} is not a ${name} collection`
       })
     }
+
     return records
   }
 

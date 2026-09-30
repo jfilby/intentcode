@@ -5,7 +5,7 @@ import semver from 'semver'
 import { IntentError } from '@/core/errors.js'
 import type { SourceNodeRecord } from '@/core/records.js'
 import type { ProjectStore } from '@/core/store.js'
-import { SourceNodeTypes } from '@/types/source-graph-types.js'
+import { DepsData, SourceNodeTypes } from '@/types/source-graph-types.js'
 import { BuildData } from '@/types/build-types.js'
 import { ProjectDetails, ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
 import { ImportsData } from '@/services/source-code/imports/types.js'
@@ -13,6 +13,19 @@ import { ReadJsTsSourceImportsService } from '@/services/source-code/imports/rea
 
 // Services
 const readJsTsSourceImportsService = new ReadJsTsSourceImportsService()
+
+/**
+ * The parts of a `package.json` / `tsconfig.json` this service edits. A
+ * hand-written manifest is not required to carry any of them, so every field
+ * is optional and is created before it is written to.
+ */
+interface PackageJson {
+  name?: string
+  scripts?: Record<string, string>
+  dependencies?: Record<string, string>
+  devDependencies?: Record<string, string>
+  [key: string]: unknown
+}
 
 // Class
 export class PackageJsonFileMutateService {
@@ -278,12 +291,9 @@ export class PackageJsonFileMutateService {
       buildData,
       projectNode.projectId)
 
-    // Validate
-    var depsNodeJson: any = null
-
-    if (depsNode?.jsonContent != null) {
-      depsNodeJson = (depsNode.jsonContent as any)
-    }
+    // Validate. The node is created empty, so a project that has declared no
+    // dependencies has no content yet; an absent deps node is an empty one.
+    const depsNodeJson: DepsData = (depsNode?.jsonContent as DepsData) ?? {}
 
     // Debug
     if (ServerOnlyTypes.verbosity >= VerbosityLevels.max) {
@@ -376,7 +386,7 @@ export class PackageJsonFileMutateService {
   }
 
   async updateAndWriteFile(
-          depsNodeJson: any,
+          depsNodeJson: DepsData,
           projectPath: string,
           importsData: ImportsData) {
 
@@ -385,8 +395,8 @@ export class PackageJsonFileMutateService {
 
     if (ServerOnlyTypes.verbosity >= VerbosityLevels.max) {
 
-      console.log(`${fnName}: depsNodeJsonsource.source.runtimes: ` +
-        JSON.stringify(depsNodeJson.source.runtimes))
+      console.log(`${fnName}: depsNodeJson.runtimes: ` +
+        JSON.stringify(depsNodeJson?.runtimes))
     }
 
     // Define filenames
@@ -397,17 +407,17 @@ export class PackageJsonFileMutateService {
     const packageJsonContent = await
             fs.readFileSync(packageJsonFilename, 'utf-8')
 
-    const packageJson = JSON.parse(packageJsonContent)
+    const packageJson = JSON.parse(packageJsonContent) as PackageJson
 
     // Read the existing tsconfig.json (if present)
-    var tsConfigJson: any = undefined
+    let tsConfigJson: PackageJson | undefined = undefined
 
     if (await fs.existsSync(tsConfigJsonFilename) === true) {
 
       const tsConfigJsonContent = await
               fs.readFileSync(tsConfigJsonFilename, 'utf-8')
 
-      tsConfigJson = JSON.parse(tsConfigJsonContent)
+      tsConfigJson = JSON.parse(tsConfigJsonContent) as PackageJson
     }
 
     // Update for runtimes
@@ -543,38 +553,61 @@ export class PackageJsonFileMutateService {
   }
 
   updateForRuntimes(
-    packageJson: any,
-    tsConfigJson: any,
-    depsNodeJson: any) {
+    packageJson: PackageJson,
+    tsConfigJson: PackageJson | undefined,
+    depsNodeJson: DepsData) {
 
     // Debug
     const fnName = `${this.clName}.updateForRuntimes()`
 
-    // Validate
-    if (depsNodeJson.source?.runtimes == null) {
+    // `runtimes` is a top-level key of the deps node: the schema in
+    // deps-json-service, DepsData and the gate in updateAndWriteFile all say
+    // so. This read `depsNodeJson.source.runtimes`, which no deps file can
+    // ever carry, so the whole body was unreachable — and it was reached by
+    // nothing that would have caught the unguarded dereferences inside it.
+    if (depsNodeJson?.runtimes == null) {
       return
     }
 
     // Runtimes
-    for (const [runtime, value] of Object.entries(depsNodeJson.source.runtimes)) {
+    for (const [runtime, obj] of Object.entries(depsNodeJson.runtimes)) {
 
-      const obj = value as any
+      // A runtime entry is a map of tool names to what to add; one with
+      // nothing in it configures nothing.
+      if (obj == null) continue
 
       // ts-script
-      if (runtime === this.tsScript) {
+      if (runtime !== this.tsScript) continue
 
-        // package.json modifications
-        packageJson.scripts[this.tsScript] = `ts-node ${obj.run}`
-        packageJson.dependencies[this.tsNode] = obj[this.tsNode]
+      // Every one of these is optional in a hand-written package.json: a
+      // project with no `scripts`, no `dependencies` or no `devDependencies`
+      // is ordinary, and writing through a missing one threw a TypeError
+      // that took the build down rather than adding the key.
+      if (packageJson.scripts == null) packageJson.scripts = {}
+      if (packageJson.dependencies == null) packageJson.dependencies = {}
+      if (packageJson.devDependencies == null) {
+        packageJson.devDependencies = {}
+      }
 
-        if (packageJson.dependencies[this.tsConfigPaths] == null &&
-            packageJson.devDependencies[this.tsConfigPaths] == null) {
+      // package.json modifications
+      packageJson.scripts[this.tsScript] = `ts-node ${obj.run}`
 
-          packageJson.dependencies[this.tsConfigPaths] =
-            this.tsConfigPathsMinVersionNo
-        }
+      // ts-node is a build-time tool, so it belongs with the dev
+      // dependencies rather than the ones a project ships.
+      if (obj[this.tsNode] != null) {
+        packageJson.devDependencies[this.tsNode] = obj[this.tsNode]
+      }
 
-        // tsconfig.json modifications
+      if (packageJson.dependencies[this.tsConfigPaths] == null &&
+          packageJson.devDependencies[this.tsConfigPaths] == null) {
+
+        packageJson.devDependencies[this.tsConfigPaths] =
+          this.tsConfigPathsMinVersionNo
+      }
+
+      // tsconfig.json modifications. A project with no tsconfig.json has
+      // nothing to configure, and one is not invented here.
+      if (tsConfigJson != null) {
         tsConfigJson[this.tsNode] = this.tsConfigJsonTsNode
       }
     }

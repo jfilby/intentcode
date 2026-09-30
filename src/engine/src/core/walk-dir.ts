@@ -62,10 +62,11 @@ export async function walkDir(
 }
 
 /**
- * Whether a path is excluded by the config. The path is normalized and made
- * relative to the walk root first, so a pattern written against the project
- * layout matches at any depth, and a pattern written against a platform's
- * separator matches on any platform.
+ * Whether a path is excluded by the config. Only the path within the walk is
+ * tested, normalized and made relative to the walk root, so a pattern written
+ * against the project layout matches at any depth, a pattern written against
+ * a platform's separator matches on any platform, and where the project
+ * happens to live on disk is irrelevant to it.
  */
 function isIgnored(
   fullPath: string,
@@ -75,12 +76,18 @@ function isIgnored(
 
   if (config.ignoreRegexs == null) return false
 
+  // Only the path *within* the walk is tested. The absolute path was tested
+  // as well, and a pattern is a whole-segment match on a directory name —
+  // so a project that happened to live under any segment named `tmp`,
+  // `build`, `out`, `lib`, `es`, `logs` or `coverage` had its entire source
+  // tree skipped and every dependency inferred from it silently lost. The
+  // pattern describes the tree being walked, never where the tree happens to
+  // be sitting.
   const relative = normalize(fullPath.slice(root.length).replace(/^[\\/]+/, ''))
   const posix = relative.split(sep).join('/')
-  const absolutePosix = normalize(fullPath).split(sep).join('/')
 
   for (const pattern of config.ignoreRegexs) {
-    if (pattern.test(posix) || pattern.test(absolutePosix)) return true
+    if (pattern.test(posix)) return true
   }
 
   return false

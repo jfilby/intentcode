@@ -29,14 +29,6 @@ export interface JsonStore {
   mkdirp(relativePath: string): Promise<void>
   listDir(relativePath: string): Promise<string[]>
 
-  /**
-   * The contents of a record a build can do without. A missing file and a
-   * file that is not JSON are both no record at all. It is for the records an
-   * operation regenerates when it cannot read them, never for one it has to
-   * be able to read: a record that is present and unreadable is a fault, and
-   * is reported as one, because the next write would destroy the only copy.
-   */
-  readIfValid<T>(relativePath: string): Promise<T | undefined>
 }
 
 export function serializeJson(value: unknown): string {
@@ -86,14 +78,40 @@ export function createJsonStore(root: string): JsonStore {
   const absoluteRoot = resolve(root)
 
   const resolveInStore = (relativePath: string): string => {
+
     if (isAbsolute(relativePath)) {
       throw storageError(`store paths must be relative: ${relativePath}`)
     }
+
     const target = resolve(absoluteRoot, normalize(relativePath))
     const rel = relative(absoluteRoot, target)
+
     if (rel.startsWith('..') || rel.split(sep).includes('..')) {
       throw storageError(`store path escapes root: ${relativePath}`)
     }
+
+    return target
+  }
+
+  /**
+   * The same path, refused when it names the store root itself.
+   *
+   * The escape test above cannot catch this: '', '.', 'a/..' and
+   * 'notes.json/..' all resolve back to the root without leaving it, and
+   * removeDir() through any of them recursively deleted the whole `.intent`
+   * tree. Reading the root is legitimate — listDir('.') is how a caller sees
+   * what the store holds — so the refusal belongs on the operations that
+   * destroy or replace it rather than on resolution in general.
+   */
+  const resolveDestructiveInStore = (relativePath: string): string => {
+
+    const target = resolveInStore(relativePath)
+
+    if (target === absoluteRoot) {
+      throw storageError(
+        `refusing to destroy the store root: ${relativePath || '<empty>'}`)
+    }
+
     return target
   }
 
@@ -106,7 +124,7 @@ export function createJsonStore(root: string): JsonStore {
     produce: (temporary: string) => Promise<void>
   ): Promise<void> => {
 
-    const file = resolveInStore(relativePath)
+    const file = resolveDestructiveInStore(relativePath)
     await mkdir(dirname(file), { recursive: true })
     const temporary =
       `${file}.${process.pid}.${temporaryWrites++}.tmp`
@@ -143,23 +161,6 @@ export function createJsonStore(root: string): JsonStore {
         throw storageError(
           `${relativePath} is not valid JSON`,
           cause instanceof Error ? cause.message : String(cause))
-      }
-    },
-
-    async readIfValid<T>(relativePath: string): Promise<T | undefined> {
-      if (!(await store.exists(relativePath))) return undefined
-      let text: string
-      try {
-        text = await readFile(resolveInStore(relativePath), 'utf8')
-      } catch (cause) {
-        throw storageError(
-          `cannot read ${relativePath}`,
-          cause instanceof Error ? cause.message : String(cause))
-      }
-      try {
-        return JSON.parse(text) as T
-      } catch {
-        return undefined
       }
     },
 
@@ -202,11 +203,11 @@ export function createJsonStore(root: string): JsonStore {
     },
 
     async remove(relativePath: string): Promise<void> {
-      await rm(resolveInStore(relativePath), { force: true })
+      await rm(resolveDestructiveInStore(relativePath), { force: true })
     },
 
     async removeDir(relativePath: string): Promise<void> {
-      await rm(resolveInStore(relativePath), {
+      await rm(resolveDestructiveInStore(relativePath), {
         force: true,
         recursive: true
       })
