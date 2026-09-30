@@ -122,11 +122,47 @@ refuses to load from `node_modules`, and they use Bun's builtins (`bun:sqlite`
 for session storage among them). `intent` is a Bun script, so Bun has to be on
 the PATH.
 
+Every command runs inside a [bubblewrap](https://github.com/containers/bubblewrap)
+sandbox, so `bwrap` has to be installed and on the PATH
+(`dnf install bubblewrap`, `apt install bubblewrap`). The engine does not fall
+back to running unsandboxed: without `bwrap` it says so and stops.
+
 To run the cli from source: `bun ./src/cli.ts <command>` from `src/engine`,
 or `npm run cli -- <command>`.
 For an install: `npm install -g intentcode-compiler`, then run
 `intent <command>`. There is no menu; run `intent` with no command and it
 prints the commands it takes.
+
+
+## The sandbox
+
+An agent session reads and writes files through the engine's own process, so
+the project is confined by the process's filesystem rather than by a check in
+each tool: the command runs again inside a mount namespace where the project
+is bound read-write and the directories above it are not present at all. A
+session that reads `../../..` gets nothing, because there is nothing there.
+
+The engine binds what it needs to run and nothing else:
+
+- The project directory, read-write. The session's working directory, its
+  source and its `.intent/` state are all inside it.
+- The engine directory, read-only: the bundle, the packages it imports and the
+  extensions it bundles. Nothing is written there.
+- Pi's own state — the config root (`~/.omp`, or `PI_CONFIG_DIR`) and the agent
+  directory, plus the XDG directories it redirects those into when they are
+  set — read-write, because that is where Pi keeps its sessions and databases.
+- `/usr`, `/etc`, `/run` and the runtime's own directory, read-only, plus a
+  private `/tmp`. `/run` is what `resolv.conf` resolves through on a systemd
+  host, so without it the model is unreachable.
+
+The network is shared, because the model is reached over it. Everything else
+is unshared, including user namespaces: a session cannot build its own way out
+of the one it is in.
+
+Two commands reach outside the project, and the CLI settles those paths before
+the sandbox is entered, because a path that is not bound is not reachable from
+inside one. `tests` binds the engine's `examples/` directory, which it builds.
+`load-extensions` asks for the path first and binds what you give it.
 
 
 ## Upgrading an existing install

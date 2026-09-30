@@ -84,3 +84,23 @@ model id, stored under `.intent/cache/llm.json`. It stays because Pi caches
 provider-side prompt prefixes, not replies: a repeated prompt still costs a
 round trip. Only `cachedRequest` uses it; a worker that edits files has no
 reply worth remembering.
+
+
+## The sandbox
+
+`src/services/utils/sandbox-service.ts` builds the mount namespace every
+command runs in, and `src/cli.ts` starts it: the CLI reads the project, works
+out what the command will touch outside it, spawns `bwrap` running the same
+script with the same arguments, and exits with whatever that run exited with.
+The re-run is what makes it a boundary rather than a convention — Pi's read,
+glob, grep, write and edit tools are in-process (`node:fs`, `Bun.file`), so
+there is no per-tool call to put a check in. `INTENTCODE_SANDBOX` is what the
+child sees to know it is already inside and must not start another.
+
+The bind list is deliberately the project plus what running needs. Adding a
+bind is the only way to make something outside the project reachable, so a new
+command that touches a path outside it has to say so: pass it as an
+`extraPaths` entry, which is what `tests` and `load-extensions` do. The reason
+`load-extensions` asks for its path in `cli.ts` rather than in the service is
+the same thing — a prompt answered inside the sandbox cannot bind what it
+answers.

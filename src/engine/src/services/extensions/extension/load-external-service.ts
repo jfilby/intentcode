@@ -1,11 +1,9 @@
-import chalk from 'chalk'
 import fs from 'fs'
 import path from 'path'
 import { IntentError } from '@/core/errors.js'
-import type { ProjectRecord, SourceNodeRecord } from '@/core/records.js'
+import type { SourceNodeRecord } from '@/core/records.js'
 import type { ProjectStore } from '@/core/store.js'
 import { listSubdirectories } from '@/core/walk-dir.js'
-import { input } from '@inquirer/prompts'
 import semver from 'semver'
 import { ExtensionMutateService } from './mutate-service.js'
 import { GraphsDeleteService } from '@/services/graphs/general/delete-service.js'
@@ -327,28 +325,5 @@ export class LoadExternalExtensionsService {
 
     // Return
     return extensionNode
-  }
-
-  /**
-   * Loads extensions from a directory into the project the command is running
-   * in.
-   */
-  async promptForAndLoadPath(
-    store: ProjectStore,
-    project: ProjectRecord) {
-
-    // Prompt for a path
-    console.log(``)
-    console.log(chalk.bold(`─── Load extensions ───`))
-    console.log(``)
-
-    const loadPath = await
-      input({ message: `Enter the path to load extensions from` })
-
-    // Load path
-    await this.loadExtensionsInPath(
-      store,
-      project.id,
-      loadPath)
   }
 }

@@ -29,6 +29,12 @@ command prints the usage below.
 To run the cli from source, type `npm run cli -- <command>`, for example
 `npm run cli -- build` from a project directory.
 
+Every command runs inside a [bubblewrap](https://github.com/containers/bubblewrap)
+sandbox, so `bwrap` has to be installed and on the PATH
+(`dnf install bubblewrap`, `apt install bubblewrap`). The project is bound
+read-write inside it and the directories above it are not present, so an agent
+session cannot read or write outside the project it is working on. There is no
+unsandboxed fallback; see [docs/setup.md](docs/setup.md#the-sandbox).
 
 ## Commands
 

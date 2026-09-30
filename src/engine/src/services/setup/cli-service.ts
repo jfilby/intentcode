@@ -82,11 +82,17 @@ export class CliService {
    * Runs one command against the project the working directory is in. A build
    * lays the project's nodes out first: the graph is derived state, so a
    * project built for the first time has none of it yet.
+   *
+   * `extensionsPath` is the directory `load-extensions` was given. It is
+   * passed in rather than asked for here because the CLI asks before the
+   * sandbox is entered: a path outside the project is not reachable from
+   * inside one unless the sandbox binds it.
    */
   async runCommand(
     store: ProjectStore,
     project: ProjectRecord,
-    command: string
+    command: string,
+    extensionsPath?: string
   ) {
 
     // Debug
@@ -119,7 +125,20 @@ export class CliService {
       }
 
       case this.loadExtensionsCommand: {
-        await loadExternalExtensionsService.promptForAndLoadPath(store, project)
+
+        // The CLI asks for the path before the sandbox is entered, so the
+        // command arriving here without one is a dispatch called wrong rather
+        // than a person who left the prompt unanswered.
+        if (extensionsPath == null) {
+          throw new IntentError({
+            category: 'ValidationError',
+            stage: fnName,
+            message: `no path to load extensions from`
+          })
+        }
+
+        await loadExternalExtensionsService.loadExtensionsInPath(
+          store, project.id, extensionsPath)
         break
       }
 
