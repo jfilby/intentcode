@@ -10,6 +10,7 @@
 import { IntentError } from '@/core/errors.js'
 import type { ProjectRecord } from '@/core/records.js'
 import type { ProjectStore } from '@/core/store.js'
+import { startBuildTitle } from '@/core/terminal-title.js'
 import { BuildMutateService } from '../intentcode/build/mutate-service.js'
 import { IntentCodeAnalyzerChatService } from
   '../intentcode/analyzer/chat-service.js'
@@ -75,7 +76,15 @@ export class CliService {
       `  manage-extensions  list and delete the project's extensions\n` +
       `  setup              set the project up\n` +
       `  tests              run the example builds\n` +
-      `  info               print the models and settings in use`
+      `  info               print the models and settings in use\n` +
+      `\n` +
+      `On a terminal, a build animates the tab title as the intentcode ` +
+      `brand next to\n` +
+      `a spinner, and settles it on the outcome: a check mark for a build ` +
+      `that finished\n` +
+      `and a cross for one that did not. A build whose output is a pipe or ` +
+      `a file never\n` +
+      `writes a title, so a log holds nothing but the build`
   }
 
   /**
@@ -104,8 +113,21 @@ export class CliService {
     switch (command) {
 
       case this.buildCommand: {
-        await projectSetupService.setupProject(store, project)
-        await buildMutateService.runBuild(store, project.id, project.name)
+
+        // A build owns the tab while it works: the brand and a spinner, which
+        // settle on the outcome. Anything that is not a terminal is left
+        // alone, so a piped build's log holds nothing but the build.
+        const title = startBuildTitle(project.name, process.stdout)
+
+        try {
+          await projectSetupService.setupProject(store, project)
+          await buildMutateService.runBuild(store, project.id, project.name)
+        } catch (cause) {
+          title.stop('fail')
+          throw cause
+        }
+
+        title.stop('ok')
         break
       }
 

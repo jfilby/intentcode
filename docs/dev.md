@@ -104,3 +104,20 @@ command that touches a path outside it has to say so: pass it as an
 `load-extensions` asks for its path in `cli.ts` rather than in the service is
 the same thing — a prompt answered inside the sandbox cannot bind what it
 answers.
+
+## The tab title
+
+`src/core/terminal-title.ts` owns the tab while a build works: the
+intentcode brand, a spinner glyph, then the project name, written as an OSC 0
+escape on a timer so the animation never touches what the command prints.
+When the build stops the spinner is replaced by what it was spinning for — a
+check mark for a build that finished, a cross for one that did not — and the
+brand stays.
+
+`cli-service.ts` starts it around the build case, so it is the one command
+that animates. A stream that is not a terminal is given nothing at all: a
+build whose output is a pipe or a file must not carry escape sequences into a
+log. The animation also settles on `exit`, `SIGINT` and `SIGTERM`, because a
+title left mid-spinner after a Ctrl-C would outlive the build and say the
+build is still running; a handled signal is re-raised without the handler so
+the process still dies of it.
