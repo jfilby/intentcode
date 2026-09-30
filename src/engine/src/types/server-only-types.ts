@@ -13,7 +13,7 @@ export class ServerOnlyTypes {
   static llmCaching = true
 
   // Versions
-  static engineVersion = '0.0.1'
+  static engineVersion = '0.0.2'
 
   // Instance types
   static projectInstanceType = 'P'
