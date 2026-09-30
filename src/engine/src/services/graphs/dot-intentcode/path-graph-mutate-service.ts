@@ -62,7 +62,7 @@ export class DotIntentCodePathGraphMutateService {
     // console.log(`${fnName}: dirs: ${dirs}`)
 
     // Get/create nodes for dirs
-    var dirSourceNode: SourceNodeRecord = projectDotIntentCodeNode
+    let dirSourceNode: SourceNodeRecord = projectDotIntentCodeNode
 
     for (const dir of dirs) {
 

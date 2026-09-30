@@ -52,9 +52,6 @@ export class BuildMutateService {
   // Code
   createNextBuildStage(buildData: BuildData) {
 
-    // Debug
-    const fnName = `${this.clName}.createNextBuildStage()`
-
     // Get buildNo
     const buildNo = buildData.curBuildNo + 1
 
@@ -89,7 +86,7 @@ export class BuildMutateService {
   getBuildStageTypes() {
 
     // Initial build stages
-    var buildStages = [
+    let buildStages = [
       // Verify (pre-checks)
       BuildStageType.verifyInternals,
       // Specs to IntentCode
@@ -211,7 +208,7 @@ export class BuildMutateService {
     const fnName = `${this.clName}.initBuildData()`
 
     // Create initial build stages
-    var buildStageTypes: BuildStageType[] =
+    const buildStageTypes: BuildStageType[] =
       this.getBuildStageTypes()
 
     // Initial builds array
@@ -309,7 +306,7 @@ export class BuildMutateService {
     // console.log(`${fnName}: buildData: ` + JSON.stringify(buildData))
 
     // Iterate until completed
-    var nextIter = true
+    let nextIter = true
 
     while (nextIter === true) {
 

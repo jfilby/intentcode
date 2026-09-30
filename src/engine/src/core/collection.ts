@@ -221,16 +221,6 @@ export function createCollection<T extends { id: string }>(
     return out
   }
 
-  const findIn = async (
-    records: T[],
-    where: Where | undefined
-  ): Promise<T | null> => {
-    for (const record of records) {
-      if (matches(record as unknown as Where, where)) return record
-    }
-    return null
-  }
-
   return {
 
     name,

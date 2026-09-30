@@ -7,7 +7,7 @@ export class JsonUtilsService {
   clName = 'JsonUtilsService'
 
   // Code
-  compareObjects(a: any, b: any) {
+  compareObjects(a: unknown, b: unknown): boolean {
 
     // Normalize via stringify/parse to remove invisible keys, etc
     // (e.g. [key] = undefined)

@@ -130,9 +130,6 @@ export class PiService {
           store: ProjectStore | undefined,
           params: PiRequestParams): Promise<PiRequestResults> {
 
-    // Debug
-    const fnName = `${this.clName}.request()`
-
     // The model this task runs on
     const modelPattern = await getModelPattern(params.aiTask)
 
@@ -208,9 +205,6 @@ export class PiService {
   async cachedRequest(
           store: ProjectStore,
           params: PiRequestParams): Promise<PiRequestResults> {
-
-    // Debug
-    const fnName = `${this.clName}.cachedRequest()`
 
     // The model partitions the cache
     const modelPattern = await getModelPattern(params.aiTask)

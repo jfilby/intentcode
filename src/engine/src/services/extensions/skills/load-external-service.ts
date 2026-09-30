@@ -9,6 +9,19 @@ import { BaseDataTypes } from '@/types/base-data-types.js'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
 import { SourceNodeTypes } from '@/types/source-graph-types.js'
 
+// Types
+
+/**
+ * The YAML front-matter at the top of a skill's markdown: the `name` the skill
+ * node is keyed by, plus whatever else the skill declares. The file is read
+ * off disk, so only the fields read here are named and anything else it holds
+ * is carried through to the node's jsonContent as-is.
+ */
+type SkillFrontMatter = {
+  name?: string
+  [key: string]: unknown
+}
+
 // Models
 const sourceNodeModel = new SourceNodeModel()
 
@@ -48,7 +61,7 @@ export class LoadExternalSkillsService {
     }
 
     // Walk dir for md files
-    var mdFiles: string[] = []
+    const mdFiles: string[] = []
 
     await walkDir(
             loadPath,
@@ -115,7 +128,7 @@ export class LoadExternalSkillsService {
           store: ProjectStore,
           projectId: string,
           extensionNode: SourceNodeRecord,
-          frontMatter: any,
+          frontMatter: SkillFrontMatter | null,
           markdown: string,
           fullPath: string) {
 
@@ -136,7 +149,7 @@ export class LoadExternalSkillsService {
     }
 
     // Get contentHash
-    var markdownHash: string | null = null
+    let markdownHash: string | null = null
 
     if (markdown != null) {
 
@@ -155,7 +168,7 @@ export class LoadExternalSkillsService {
     const jsonContentHash = blake3(JSON.stringify(jsonContent)).toString()
 
     // Upsert skill node
-    const skillNode = await
+    await
             sourceNodeModel.upsert(
               store,
               undefined,         // id

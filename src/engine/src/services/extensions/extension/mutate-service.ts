@@ -10,6 +10,22 @@ import { GraphsDeleteService } from '@/services/graphs/general/delete-service.js
 import { GraphsMutateService } from '@/services/graphs/general/mutate-service.js'
 import { ProjectRegistryService } from '@/services/projects/project-registry.js'
 
+// Types
+
+/** An `extension.json` file: an id, plus whatever else the extension says. */
+type ExtensionJson = {
+  id?: string
+  [key: string]: unknown
+}
+
+/**
+ * The extensions a project asks for, keyed by extension name with the lowest
+ * version it will take. A list of names is also accepted: it names the same
+ * extensions, with no version floor.
+ */
+type RequestedExtensions = Record<string, string> | string[]
+
+
 // Models
 const sourceNodeModel = new SourceNodeModel()
 
@@ -41,7 +57,7 @@ export class ExtensionMutateService {
           projectId: string) {
 
     // Try to get the extensions node
-    var extensionsNode = await
+    let extensionsNode = await
           extensionQueryService.getExtensionsNode(
             store,
             projectId)
@@ -73,10 +89,10 @@ export class ExtensionMutateService {
           store: ProjectStore,
           projectId: string,
           extensionsNodeId: string,
-          extensionJson: any) {
+          extensionJson: ExtensionJson) {
 
     // Get jsonContentHash
-    var extensionJsonHash: string | null = null
+    let extensionJsonHash: string | null = null
 
     if (extensionJson != null) {
       extensionJsonHash = blake3(JSON.stringify(extensionJson)).toString()
@@ -167,10 +183,7 @@ export class ExtensionMutateService {
           systemStore: ProjectStore,
           userStore: ProjectStore,
           loadToProjectId: string,
-          extensions: any) {
-
-    // Debug
-    const fnName = `${this.clName}.loadExtensionNodesInSystemToUserProject()`
+          extensions: RequestedExtensions) {
 
     // Get the System project
     const systemProject = projectRegistryService.getSystemProject()
@@ -256,7 +269,7 @@ export class ExtensionMutateService {
     }
 
     // Does the extension already exist in the user project?
-    var extensionNode = await
+    const extensionNode = await
       sourceNodeModel.getByUniqueKey(
         userStore,
         extensionsNode.id,
@@ -302,7 +315,7 @@ export class ExtensionMutateService {
       projectRegistryService.getProjectList()
 
     // Per user project/extensionNode
-    var copyCount = 0
+    let copyCount = 0
 
     for (const userProject of userProjects) {
 

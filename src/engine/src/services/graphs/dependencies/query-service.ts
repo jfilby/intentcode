@@ -1,6 +1,7 @@
 import { IntentError } from '@/core/errors.js'
 import type { SourceNodeRecord } from '@/core/records.js'
 import type { ProjectStore } from '@/core/store.js'
+import type { DepDelta } from '@/types/server-only-types.js'
 import { DepDeltaNames } from '@/types/server-only-types.js'
 import { SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types.js'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
@@ -33,7 +34,7 @@ export class DependenciesQueryService {
     }
 
     // Try to get an existing node
-    var depsNode = await
+    const depsNode = await
           sourceNodeModel.getByUniqueKey(
             store,
             projectNode.id,
@@ -45,7 +46,9 @@ export class DependenciesQueryService {
     return depsNode
   }
 
-  verifyDepsDeltas(deps: any[]) {
+  verifyDepsDeltas(
+          deps: Array<Omit<Partial<DepDelta>, 'delta'> &
+                           { delta?: DepDeltaNames }>) {
 
     // Verify array
     if (!Array.isArray(deps)) {

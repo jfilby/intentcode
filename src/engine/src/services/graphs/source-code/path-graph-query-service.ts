@@ -105,7 +105,7 @@ export class SourceCodePathGraphQueryService {
     // console.log(`${fnName}: dirs: ${dirs}`)
 
     // Get/create nodes for dirs
-    var sourceCodeDir: SourceNodeRecord = projectSourceNode
+    let sourceCodeDir: SourceNodeRecord = projectSourceNode
 
     for (const dir of dirs) {
 

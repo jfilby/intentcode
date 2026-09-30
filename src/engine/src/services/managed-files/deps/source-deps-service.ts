@@ -1,5 +1,5 @@
 import { IntentError } from '@/core/errors.js'
-import type { SourceNodeRecord } from '@/core/records.js'
+import type { NodeContent, SourceNodeRecord } from '@/core/records.js'
 import type { ProjectStore } from '@/core/store.js'
 import { DependenciesQueryService } from '@/services/graphs/dependencies/query-service.js'
 import { BuildData, DepsTools } from '@/types/build-types.js'
@@ -25,7 +25,7 @@ export class SourceDepsFileService {
   async inferPackageManagerFromExtensions(
           store: ProjectStore,
           projectNode: SourceNodeRecord,
-          depsNode: any) {
+          depsNode: SourceNodeRecord) {
 
     // Debug
     const fnName = `${this.clName}.inferPackageManagerFromExtensions()`
@@ -51,7 +51,7 @@ export class SourceDepsFileService {
       `extension hooks..`)
 
     // Look for one that specifies a package manager
-    var packageManager: string | undefined = undefined
+    let packageManager: string | undefined = undefined
 
     for (const hooksNode of extensionsData.hooksNodes) {
 
@@ -96,7 +96,7 @@ export class SourceDepsFileService {
 
     depsJson.source.packageManager = packageManager
 
-    depsNode.jsonContent = depsJson
+    depsNode.jsonContent = depsJson as DepsData & NodeContent
 
       // Update depsNode
       await dependenciesMutateService.updateDepsNode(

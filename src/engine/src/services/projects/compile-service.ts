@@ -56,7 +56,7 @@ export class ProjectCompileService {
     const buildFileList = await this.getBuildFileList(projectDetails)
 
     // Iterate
-    var buildFromFiles: any[] = []
+    const buildFromFiles: BuildFromFile[] = []
 
     for (const buildFile of buildFileList) {
 
@@ -103,12 +103,23 @@ export class ProjectCompileService {
     // Debug
     const fnName = `${this.clName}.getBuildFileList()`
 
-    // Get IntentCode path
+    // Get IntentCode path. The node records the path it was created with and
+    // nothing rewrites it, so a non-string here means the node is not one this
+    // stage can compile from.
     const intentCodePath =
-      (projectDetails.projectIntentCodeNode.jsonContent as any).path
+      projectDetails.projectIntentCodeNode.jsonContent?.path
+
+    if (typeof intentCodePath !== 'string') {
+
+      throw new IntentError({
+        category: 'ProjectError',
+        stage: fnName,
+        message: `${fnName}: the project IntentCode node records no path`
+      })
+    }
 
     // Get IntentCode to compile
-    var intentCodeList: string[] = []
+    const intentCodeList: string[] = []
 
     await walkDir(
       intentCodePath,
@@ -118,7 +129,11 @@ export class ProjectCompileService {
       })
 
     // Compile
-    var buildFileList: any[] = []
+    const buildFileList: {
+      targetFileExt: string
+      intentCodeFilename: string
+      relativePath: string
+    }[] = []
 
     for (const intentCodeFilename of intentCodeList) {
 
@@ -156,9 +171,6 @@ export class ProjectCompileService {
           store: ProjectStore,
           buildData: BuildData,
           projectNode: SourceNodeRecord) {
-
-    // Debug
-    const fnName = `${this.clName}.runCompileBuildStage()`
 
     console.log(`Compiling IntentCode..`)
 

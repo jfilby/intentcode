@@ -58,9 +58,6 @@ export class CompilerService {
             projectDetails: ProjectDetails,
             buildFromFile: BuildFromFile) {
 
-    // Debug
-    const fnName = `${this.clName}.run()`
-
     // The source this Intent names
     const targetFullPath = await
       this.getTargetFullPath(projectDetails, buildFromFile)
@@ -163,9 +160,6 @@ export class CompilerService {
   private async getTargetFullPath(
             projectDetails: ProjectDetails,
             buildFromFile: BuildFromFile) {
-
-    // Debug
-    const fnName = `${this.clName}.getTargetFullPath()`
 
     const sourceRoot =
       this.getSourcePath(projectDetails.projectSourceNode.jsonContent)

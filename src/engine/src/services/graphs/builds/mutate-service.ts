@@ -40,7 +40,7 @@ export class BuildsGraphMutateService {
     }
 
     // Try to get the builds node
-    var buildsNode = await
+    let buildsNode = await
       sourceNodeModel.getByUniqueKey(
         store,
         projectNode.id,

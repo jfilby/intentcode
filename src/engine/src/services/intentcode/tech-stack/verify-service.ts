@@ -20,9 +20,6 @@ export class TechStackVerifyService {
     buildData: BuildData,
     projectNode: SourceNodeRecord) {
 
-    // Debug
-    const fnName = `${this.clName}.verify()`
-
     // Get ProjectDetails
     const projectDetails =
       projectsQueryService.getProjectDetailsByProjectId(
@@ -30,7 +27,6 @@ export class TechStackVerifyService {
         buildData.projects)
 
     // Get tech-stack filename
-    const { intentCodePath, techStackFilename } = await
-      techStackQueryService.getFilename(projectDetails)
+    await techStackQueryService.getFilename(projectDetails)
   }
 }

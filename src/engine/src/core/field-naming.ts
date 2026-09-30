@@ -13,7 +13,7 @@ import { IntentError } from './errors.js'
 /** The longest key kept as readable text; longer names are hashed whole. */
 const MAX_KEY_LENGTH = 48
 
-// eslint-disable-next-line no-control-regex
+
 const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f]/
 
 /**
@@ -52,7 +52,7 @@ export function validateName(name: string): string | undefined {
 
   // A name is only a label; the key is what addresses the project. Refusing
   // control characters keeps a name from breaking a prompt or a terminal.
-  // eslint-disable-next-line no-control-regex
+
   if (CONTROL_CHARACTERS.test(name)) {
     return 'the name contains control characters'
   }

@@ -23,11 +23,8 @@ export class DepsJsonService {
           store: ProjectStore,
           projectNode: SourceNodeRecord) {
 
-    // Debug
-    const fnName = `${this.clName}.readFile()`
-
     // Found var
-    var found = false
+    let found = false
 
     // Get dotIntentCode node
     const projectDotIntentCodeNode = await
@@ -64,13 +61,13 @@ export class DepsJsonService {
 
     // Validate by schema, but don't use the return object, it could differ
     // from the original
-    const validatedData = this.validate(data)
+    this.validate(data)
 
     // Return
     return { found, data, filename }
   }
 
-  validate(depsNode: any) {
+  validate(depsNode: unknown) {
 
     // Zod object
     const DepsNode = z.object({

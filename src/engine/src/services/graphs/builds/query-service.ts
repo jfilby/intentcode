@@ -18,7 +18,7 @@ export class BuildsGraphQueryService {
     projectNode: SourceNodeRecord) {
 
     // Get the node
-    var buildsNode = await
+    const buildsNode = await
           sourceNodeModel.getByUniqueKey(
             store,
             projectNode.id,  // parentId

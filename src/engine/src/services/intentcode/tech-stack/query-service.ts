@@ -11,9 +11,6 @@ export class TechStackQueryService {
   // Code
   async getFilename(projectDetails: ProjectDetails) {
 
-    // Debug
-    const fnName = `${this.clName}.getFilename()`
-
     // Get intentCodePath
     const jsonContent = projectDetails.projectIntentCodeNode.jsonContent
     const intentCodePath =
@@ -31,7 +28,7 @@ export class TechStackQueryService {
     }
 
     // Walk dir
-    var mdFilesList: string[] = []
+    const mdFilesList: string[] = []
 
     await walkDir(
       intentCodePath,
@@ -45,7 +42,7 @@ export class TechStackQueryService {
     // console.log(`${fnName}: mdFilesList: ` + JSON.stringify(mdFilesList))
 
     // Find the tech-stack.md file
-    var techStackList: string[] = []
+    const techStackList: string[] = []
 
     for (const mdFilename of mdFilesList) {
 

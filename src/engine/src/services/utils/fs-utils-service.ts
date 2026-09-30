@@ -51,7 +51,7 @@ export class FsUtilsService {
     }
 
     // Get the file extension
-    var fileExt = path.extname(filenamePath)
+    let fileExt = path.extname(filenamePath)
 
     if (fileExt.length > 0 &&
         fileExt[0] === '.') {
@@ -85,7 +85,7 @@ export class FsUtilsService {
 
     const fileExtensionPart = this.getFileExtension(filenamePath)
 
-    var extLength = fileExtensionPart.length
+    let extLength = fileExtensionPart.length
 
     if (fileExtensionPart !== '') {
       extLength += 1
@@ -108,7 +108,7 @@ export class FsUtilsService {
     basePath: string) {
 
     // Remove the base path
-    var relativePath =
+    const relativePath =
           fullPath.replace(
           basePath, '')
 

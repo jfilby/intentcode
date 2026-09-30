@@ -1,6 +1,6 @@
 import { IntentError } from '@/core/errors.js'
 import { blake3 } from '@noble/hashes/blake3'
-import type { SourceNodeRecord } from '@/core/records.js'
+import type { NodeContent, SourceNodeRecord } from '@/core/records.js'
 import type { ProjectStore } from '@/core/store.js'
 import { BaseDataTypes } from '@/types/base-data-types.js'
 import { SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types.js'
@@ -52,7 +52,7 @@ export class IntentCodeGraphMutateService {
     }
 
     // Try to get the node
-    var intentCodeFile = await
+    const intentCodeFile = await
           sourceNodeModel.getByUniqueKey(
             store,
             parentNode.id,
@@ -99,7 +99,7 @@ export class IntentCodeGraphMutateService {
     }
 
     // Try to get the node
-    var intentCodeDir = await
+    let intentCodeDir = await
           sourceNodeModel.getByUniqueKey(
             store,
             parentNode.id,
@@ -162,7 +162,7 @@ export class IntentCodeGraphMutateService {
     }
 
     // Try to get the node
-    var intentCodeFile = await
+    let intentCodeFile = await
           sourceNodeModel.getByUniqueKey(
             store,
             parentNode.id,
@@ -173,7 +173,7 @@ export class IntentCodeGraphMutateService {
     // console.log(`${fnName}: intentCodeFile: ` + JSON.stringify(intentCodeFile))
 
     // Get contentHash
-    var contentHash: string | null = null
+    let contentHash: string | null = null
 
     if (content != null) {
       contentHash = blake3(JSON.stringify(content)).toString()
@@ -228,7 +228,7 @@ export class IntentCodeGraphMutateService {
     }
 
     // Try to get the node
-    var intentCodeProject = await
+    let intentCodeProject = await
           sourceNodeModel.getByUniqueKey(
             store,
             buildNode.id,  // parentId
@@ -246,7 +246,7 @@ export class IntentCodeGraphMutateService {
     }
 
     // Get jsonContentHash
-    var jsonContentHash: string | null = null
+    let jsonContentHash: string | null = null
 
     if (jsonContent != null) {
       jsonContentHash = blake3(JSON.stringify(jsonContent)).toString()
@@ -275,7 +275,7 @@ export class IntentCodeGraphMutateService {
           store: ProjectStore,
           projectId: string | undefined,
           parentNode: SourceNodeRecord | undefined,
-          jsonContent: any,
+          jsonContent: NodeContent,
           sourceNodeGenerationData: SourceNodeGenerationData,
           fileModifiedTime: Date) {
 
@@ -301,7 +301,7 @@ export class IntentCodeGraphMutateService {
     }
 
     // Get jsonContentHash
-    var jsonContentHash: string | null = null
+    let jsonContentHash: string | null = null
 
     if (jsonContent != null) {
 
@@ -330,7 +330,7 @@ export class IntentCodeGraphMutateService {
             blake3(JSON.stringify(sourceNodeGenerationData.prompt)).toString()
 
     // Upsert SourceNodeGeneration
-    const sourceNodeGeneration = await
+    await
             sourceNodeGenerationModel.upsert(
               store,
               undefined,                  // id
@@ -358,7 +358,7 @@ export class IntentCodeGraphMutateService {
           projectId: string | undefined,
           parentNode: SourceNodeRecord | undefined,
           name: string,
-          jsonContent: any,
+          jsonContent: NodeContent,
           sourceNodeGenerationData: SourceNodeGenerationData,
           fileModifiedTime: Date) {
 
@@ -385,7 +385,7 @@ export class IntentCodeGraphMutateService {
     }
 
     // Get jsonContentHash
-    var jsonContentHash: string | null = null
+    let jsonContentHash: string | null = null
 
     if (jsonContent != null) {
       jsonContentHash = blake3(JSON.stringify(jsonContent)).toString()
@@ -412,7 +412,7 @@ export class IntentCodeGraphMutateService {
             blake3(JSON.stringify(sourceNodeGenerationData.prompt)).toString()
 
     // Upsert SourceNodeGeneration
-    const sourceNodeGeneration = await
+    await
             sourceNodeGenerationModel.upsert(
               store,
               undefined,                  // id
@@ -440,7 +440,7 @@ export class IntentCodeGraphMutateService {
           projectId: string | undefined,
           parentNode: SourceNodeRecord | undefined,
           name: string,
-          jsonContent: any,
+          jsonContent: NodeContent,
           sourceNodeGenerationData: SourceNodeGenerationData,
           fileModifiedTime: Date) {
 
@@ -466,7 +466,7 @@ export class IntentCodeGraphMutateService {
     }
 
     // Get jsonContentHash
-    var jsonContentHash: string | null = null
+    let jsonContentHash: string | null = null
 
     if (jsonContent != null) {
       jsonContentHash = blake3(JSON.stringify(jsonContent)).toString()
@@ -493,7 +493,7 @@ export class IntentCodeGraphMutateService {
             blake3(JSON.stringify(sourceNodeGenerationData.prompt)).toString()
 
     // Upsert SourceNodeGeneration
-    const sourceNodeGeneration = await
+    await
             sourceNodeGenerationModel.upsert(
               store,
               undefined,                  // id

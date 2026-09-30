@@ -1,7 +1,7 @@
 import type { SourceNodeRecord } from '@/core/records.js'
 import type { ProjectStore } from '@/core/store.js'
 import { BuildData } from '@/types/build-types.js'
-import { ExtensionsData } from '@/types/source-graph-types.js'
+import { DepsData, ExtensionsData } from '@/types/source-graph-types.js'
 import { ExtensionMutateService } from '@/services/extensions/extension/mutate-service.js'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service.js'
 import { ProjectRegistryService } from '@/services/projects/project-registry.js'
@@ -16,6 +16,11 @@ const projectRegistryService = new ProjectRegistryService()
 const projectSetupService = new ProjectSetupService()
 const sourceDepsFileService = new SourceDepsFileService()
 
+/** The part of an extension node's jsonContent this service reads. */
+type ExtensionNodeContent = {
+  id?: string
+}
+
 // Class
 export class DepsSyncService {
 
@@ -27,9 +32,6 @@ export class DepsSyncService {
     extensionId: string,
     extensionsData: ExtensionsData) {
 
-    // Debug
-    const fnName = `${this.clName}.checkExtensionInExtensionsData()`
-
     // Check every extension in the graph
     for (const extensionNode of extensionsData.extensionNodes) {
 
@@ -38,7 +40,8 @@ export class DepsSyncService {
       //   `${(extensionNode.jsonContent as any).id}`)
 
       // Check
-      if ((extensionNode.jsonContent as any).id === extensionId) {
+      if ((extensionNode.jsonContent as ExtensionNodeContent).id ===
+          extensionId) {
         return true
       }
     }
@@ -49,7 +52,7 @@ export class DepsSyncService {
   async deleteExtensionsNotInDepsNode(
     store: ProjectStore,
     extensionsData: ExtensionsData,
-    depsNodeExtensions: any) {
+    depsNodeExtensions: Record<string, string>) {
 
     // Debug
     const fnName = `${this.clName}.deleteExtensionsNotInDepsNode()`
@@ -64,12 +67,13 @@ export class DepsSyncService {
       console.log(`${fnName}: checking extensionNode..`)
 
       // Get id
-      const extensionId = (extensionNode.jsonContent as any).id
+      const extensionId =
+        (extensionNode.jsonContent as ExtensionNodeContent).id
 
       // Check if extension in depsNode
-      var inDepsNode = false
+      let inDepsNode = false
 
-      for (const [id, version] of Object.entries(depsNodeExtensions)) {
+      for (const id of Object.keys(depsNodeExtensions)) {
 
         if (id === extensionId) {
           inDepsNode = true
@@ -96,10 +100,7 @@ export class DepsSyncService {
           store: ProjectStore,
           projectNode: SourceNodeRecord,
           extensionsData: ExtensionsData,
-          depsNodeExtensions: any) {
-
-    // Debug
-    const fnName = `${this.clName}.loadExtensionsFromDepsNode()`
+          depsNodeExtensions: Record<string, string>) {
 
     // console.log(`${fnName}: starting..`)
 
@@ -111,7 +112,7 @@ export class DepsSyncService {
     }
 
     // Iterate depsNode extensions
-    for (const [id, version] of Object.entries(depsNodeExtensions)) {
+    for (const id of Object.keys(depsNodeExtensions)) {
 
       // Debug
       // console.log(`${fnName}: checking if ${id} is loaded..`)
@@ -187,7 +188,8 @@ export class DepsSyncService {
     }
 
     // Get depsNode extensions
-    const depsNodeExtensions = (depsNode?.jsonContent as any)?.extensions
+    const depsNodeExtensions =
+      (depsNode?.jsonContent as DepsData | null)?.extensions
 
     // Try to load any extensions not in the project
     if (depsNodeExtensions != null) {

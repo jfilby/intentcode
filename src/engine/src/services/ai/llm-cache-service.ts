@@ -49,7 +49,7 @@ export class LlmCacheService {
       this.buildCacheKey(messages)
 
     // Query
-    var llmCache: LlmCacheRecord | null = null
+    let llmCache: LlmCacheRecord | null = null
 
     try {
       llmCache = await store.llmCache.findFirst({

@@ -20,11 +20,8 @@ export class ProjectGraphMutateService {
           projectName: string,
           projectPath: string) {
 
-    // Debug
-    const fnName = `${this.clName}.getOrCreateProject()`
-
     // Try to get the node
-    var projectNode = await
+    let projectNode = await
           sourceNodeModel.getByUniqueKey(
             store,
             null,  // parentId
@@ -42,7 +39,7 @@ export class ProjectGraphMutateService {
     }
 
     // Get jsonContentHash
-    var jsonContentHash: string | null = null
+    let jsonContentHash: string | null = null
 
     if (jsonContent != null) {
 

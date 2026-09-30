@@ -9,6 +9,34 @@ import { SourceNodeTypes } from '@/types/source-graph-types.js'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
 import { DependenciesMutateService } from '@/services/graphs/dependencies/mutate-service.js'
 
+// Types
+
+/**
+ * A hooks file: the `name` the hook node is keyed by, and the deps tool the
+ * extension wants its projects to use, plus whatever else the extension
+ * declares. The file is read off disk, so only the fields read here are named
+ * and anything else it holds is carried through as-is.
+ */
+type HooksJson = {
+  name?: string
+  deps?: {
+    packageManager?: string
+  } | null
+  [key: string]: unknown
+}
+
+/**
+ * The `source` block of a deps node, as this service writes it: the tool the
+ * project's dependencies are installed with.
+ */
+type DepsJson = {
+  source?: {
+    packageManager?: string
+  } | null
+  [key: string]: unknown
+}
+
+
 // Models
 const sourceNodeModel = new SourceNodeModel()
 
@@ -49,7 +77,7 @@ export class LoadExternalHooksService {
     }
 
     // Walk dir for json files
-    var jsonFiles: string[] = []
+    const jsonFiles: string[] = []
 
     await walkDir(
             loadPath,
@@ -101,7 +129,7 @@ export class LoadExternalHooksService {
           store: ProjectStore,
           projectId: string,
           extensionNode: SourceNodeRecord,
-          hooksJson: any) {
+          hooksJson: HooksJson | null) {
 
     // Debug
     const fnName = `${this.clName}.saveHooks()`
@@ -120,7 +148,7 @@ export class LoadExternalHooksService {
     }
 
     // Get jsonContentHash
-    var hooksJsonHash: string | null = null
+    let hooksJsonHash: string | null = null
 
     if (hooksJson != null) {
 
@@ -129,7 +157,7 @@ export class LoadExternalHooksService {
     }
 
     // Upsert hook node
-    const hookNode = await
+    await
             sourceNodeModel.upsert(
               store,
               undefined,         // id
@@ -148,7 +176,7 @@ export class LoadExternalHooksService {
   async setDepsToolForProjects(
           store: ProjectStore,
           projectId: string,
-          hooksJson: any) {
+          hooksJson: HooksJson) {
 
     // Debug
     const fnName = `${this.clName}.setDepsToolForProjects()`
@@ -172,7 +200,7 @@ export class LoadExternalHooksService {
     }
 
     // Check for a specified deps tool
-    var packageManager = hooksJson.deps?.packageManager
+    const packageManager = hooksJson.deps?.packageManager
 
     if (packageManager == null) {
 
@@ -213,14 +241,14 @@ export class LoadExternalHooksService {
     //             `${projectIntentCodeNode.id}`)
 
     // Get/create Deps node
-    var depsNode = await
+    let depsNode = await
           dependenciesMutateService.getOrCreateDepsNode(
             store,
             projectNode)
 
     // Already set?
-    if ((depsNode.jsonContent as any)?.source?.packageManager ===
-        packageManager) {
+    if ((depsNode.jsonContent as DepsJson | null)
+          ?.source?.packageManager === packageManager) {
 
       console.log(
         `${fnName}: skipping, package manager already set as expected`)
@@ -234,7 +262,7 @@ export class LoadExternalHooksService {
     }
 
     // Set deps tool
-    const depsNodeJson = depsNode.jsonContent as any
+    const depsNodeJson = depsNode.jsonContent as DepsJson
 
     if (depsNodeJson.source == null) {
       depsNodeJson.source = {}

@@ -20,9 +20,6 @@ export class IntentCodeAnalyzerQueryService {
     store: ProjectStore,
     project: ProjectRecord) {
 
-    // Debug
-    const fnName = `${this.clName}.getBuildInfo()`
-
     // Init BuildData
     const buildData = await
       buildMutateService.initBuildData(

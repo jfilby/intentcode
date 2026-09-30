@@ -14,6 +14,18 @@ const dependenciesMutateService = new DependenciesMutateService()
 const dependenciesQueryService = new DependenciesQueryService()
 const jsonUtilsService = new JsonUtilsService()
 
+/**
+ * The part of a deps node this service verifies: the source package manager
+ * and the libraries it pulls in. A dependency whose min version number is
+ * not a valid range is dropped from the map, so a value can be undefined.
+ */
+type VerifiableDepsData = {
+  source?: {
+    packageManager?: string
+    deps?: Record<string, string | undefined>
+  }
+}
+
 // Class
 export class DepsVerifyService {
 
@@ -24,9 +36,6 @@ export class DepsVerifyService {
   async verifyDepsNode(
     store: ProjectStore,
     projectNode: SourceNodeRecord) {
-
-    // Debug
-    const fnName = `${this.clName}.verifyDepsNode()`
 
     // Get Deps node
     const depsNode = await
@@ -55,16 +64,13 @@ export class DepsVerifyService {
           projectNode: SourceNodeRecord,
           depsNode: SourceNodeRecord) {
 
-    // Debug
-    const fnName = `${this.clName}.verifyDepsNodeDependencies()`
-
     // Validate
     if (depsNode?.jsonContent == null) {
       return
     }
 
-    // Get jsonContent as any
-    const jsonContent = (depsNode.jsonContent) as any
+    // Get jsonContent
+    const jsonContent = depsNode.jsonContent as VerifiableDepsData
 
     // Validate
     if (jsonContent.source?.packageManager == null ||
@@ -79,7 +85,7 @@ export class DepsVerifyService {
     //   JSON.stringify(jsonContent.source.deps))
 
     // Verify semvers
-    var modified = false
+    let modified = false
 
     for (const [packageName, minVersionNo] of
          Object.entries(jsonContent.source.deps)) {

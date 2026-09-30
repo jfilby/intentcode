@@ -27,6 +27,11 @@ interface PackageJson {
   [key: string]: unknown
 }
 
+/** The part of a project's node jsonContent this service reads. */
+type ProjectNodeContent = {
+  path: string
+}
+
 // Class
 export class PackageJsonFileMutateService {
 
@@ -87,11 +92,8 @@ export class PackageJsonFileMutateService {
 
   // Code
   enrichFromDepsNode(
-    depsNodeJson: any,
+    depsNodeJson: DepsData,
     importsData: ImportsData) {
-
-    // Debug
-    const fnName = `${this.clName}.enrichFromDepsNode()`
 
     // Validate
     if (depsNodeJson.source?.deps == null) {
@@ -105,7 +107,7 @@ export class PackageJsonFileMutateService {
     }
   }
 
-  async fixDependencies(packageJson: any) {
+  async fixDependencies(packageJson: PackageJson) {
 
     // Iterate dependencies
     if (packageJson.dependencies != null) {
@@ -117,9 +119,12 @@ export class PackageJsonFileMutateService {
     }
   }
 
-  async fixDependencyEntries(dependencies: any) {
+  async fixDependencyEntries(dependencies: Record<string, string | undefined>) {
 
-    for (var [dependency, minVersionNo] of Object.entries(dependencies)) {
+    for (const [dependency, minVersion] of Object.entries(dependencies)) {
+
+      // Mutable: a non-semver specifier below is replaced with `latest`.
+      let minVersionNo = minVersion
 
       // Remove ignored dependencies
       if (this.isIgnoredDependency(dependency)) {
@@ -140,7 +145,7 @@ export class PackageJsonFileMutateService {
       if ((minVersionNo as string).endsWith(this.latest)) {
 
         // Get latest version
-        var latestVersionNo = await
+        const latestVersionNo = await
           this.getLatestVersion(dependency)
 
         // Use the major version only
@@ -301,10 +306,10 @@ export class PackageJsonFileMutateService {
     }
 
     // Get paths
-    const projectPath = (projectNode.jsonContent as any).path
+    const projectPath = (projectNode.jsonContent as ProjectNodeContent).path
 
     const projectSourcePath =
-      (projectDetails.projectSourceNode.jsonContent as any).path
+      (projectDetails.projectSourceNode.jsonContent as ProjectNodeContent).path
 
     // Test for an existing package.json file
     await this.verifyPackageJsonExists(projectPath)
@@ -346,7 +351,7 @@ export class PackageJsonFileMutateService {
     }
 
     // Check for existing dependency
-    var existing = target[dependency]
+    let existing = target[dependency]
 
     // Debug
     if (ServerOnlyTypes.verbosity >= VerbosityLevels.max) {
@@ -463,7 +468,7 @@ export class PackageJsonFileMutateService {
   }
 
   async updateDependencies(
-    packageJson: any,
+    packageJson: PackageJson,
     importsData: ImportsData) {
 
     // Debug
@@ -473,7 +478,11 @@ export class PackageJsonFileMutateService {
     await this.fixDependencies(packageJson)
 
     // Add dependencies
-    for (var [dependency, minVersionNo] of Object.entries(importsData.dependencies)) {
+    for (const [dependency, minVersion] of
+           Object.entries(importsData.dependencies)) {
+
+      // Mutable: the latest major is assigned to it below.
+      let minVersionNo = minVersion
 
       // Ignore certain dependencies
       if (this.isIgnoredDependency(dependency)) {
@@ -481,7 +490,7 @@ export class PackageJsonFileMutateService {
       }
 
       // Get clean version numbers for comparisons
-      var numericMinVersionNo = this.getNumericOnlyVersionNo(minVersionNo)
+      let numericMinVersionNo = this.getNumericOnlyVersionNo(minVersionNo)
 
       // Get dependencies / devDependencies
       const deps = packageJson.dependencies ?? {}

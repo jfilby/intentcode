@@ -133,7 +133,7 @@ export class CliService {
       }
 
       case this.testsCommand: {
-        await testsService.tests(store, project)
+        await testsService.tests()
         break
       }
 

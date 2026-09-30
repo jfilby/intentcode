@@ -17,11 +17,8 @@ export class DotIntentCodeGraphQueryService {
           store: ProjectStore,
           projectNode: SourceNodeRecord) {
 
-    // Debug
-    const fnName = `${this.clName}.getDotIntentCodeProject()`
-
     // Get the node
-    var projectDotIntentCodeNode = await
+    const projectDotIntentCodeNode = await
           sourceNodeModel.getByUniqueKey(
             store,
             projectNode.id,  // parentId

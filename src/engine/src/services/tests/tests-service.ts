@@ -9,8 +9,6 @@
 
 import chalk from 'chalk'
 import { select } from '@inquirer/prompts'
-import type { ProjectRecord } from '@/core/records.js'
-import type { ProjectStore } from '@/core/store.js'
 import { CommonCommands } from '@/types/server-only-types.js'
 import { CalcTestsService } from './calc-tests-service.js'
 import { CalcV2TestsService } from './calc-v2-tests-service.js'
@@ -26,7 +24,7 @@ export class TestsService {
   calcTests = `calc-tests`
   calcV2Tests = `calc-v2-tests`
 
-  async tests(store: ProjectStore, project: ProjectRecord) {
+  async tests() {
 
     console.log(``)
     console.log(chalk.bold(`─── Tests ───`))

@@ -83,9 +83,6 @@ export class LoadExternalExtensionsService {
     store: ProjectStore,
     projectId: string) {
 
-    // Debug
-    const fnName = `${this.clName}.loadBundledExtensions()`
-
     // Determine extensions path
     const bundledPath = pathsService.getBundledPath()
     const extensionsPath = `${bundledPath}/extensions`
@@ -104,9 +101,6 @@ export class LoadExternalExtensionsService {
           store: ProjectStore,
           projectId: string,
           loadPath: string) {
-
-    // Debug
-    const fnName = `${this.clName}.loadExtensionsInPath()`
 
     // Get the extension directories below the path
     const pathsList = await listSubdirectories(loadPath)
@@ -217,7 +211,7 @@ export class LoadExternalExtensionsService {
     console.log(chalk.bold(`─── Load extensions ───`))
     console.log(``)
 
-    var loadPath = await
+    const loadPath = await
       input({ message: `Enter the path to load extensions from` })
 
     // Load path

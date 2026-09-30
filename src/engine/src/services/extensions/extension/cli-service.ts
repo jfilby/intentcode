@@ -66,7 +66,7 @@ export class ManageExtensionsCliService {
     // Get the store and extensions node of the to project
     const loadToStore = projectRegistryService.getStore(loadToProject)
 
-    var extensionsNode = await
+    const extensionsNode = await
           extensionMutateService.getOrCreateExtensionsNode(
             loadToStore,
             loadToProject.id)
@@ -141,7 +141,7 @@ export class ManageExtensionsCliService {
       console.log(``)
 
       // Choices
-      var choices = [
+      const choices = [
         {
           name: `Back`,
           value: CommonCommands.back
@@ -198,16 +198,13 @@ export class ManageExtensionsCliService {
 
   async run(store: ProjectStore, project: ProjectRecord) {
 
-    // Debug
-    const fnName = `${this.clName}.run()`
-
     // Start
     console.log(``)
     console.log(chalk.bold(`─── Do you want to specify a project? ───`))
     console.log(``)
 
     // Choices
-    var choices = [
+    let choices = [
       {
         name: `Back`,
         value: CommonCommands.back
@@ -242,7 +239,7 @@ export class ManageExtensionsCliService {
     })
 
     // Get project by method
-    var selectedProject: ProjectRecord =
+    let selectedProject: ProjectRecord =
       projectRegistryService.getSystemProject()
 
     switch (command) {
@@ -315,16 +312,16 @@ export class ManageExtensionsCliService {
     console.log(``)
 
     // Choices, numbered so the extension is picked by position
-    var choices = [
+    const choices = [
       {
         name: `Back`,
         value: CommonCommands.back as string
       }
     ]
 
-    var extensionsMap: Record<string, SourceNodeRecord> = {}
+    const extensionsMap: Record<string, SourceNodeRecord> = {}
 
-    var i = 1
+    let i = 1
 
     for (const extension of extensionsData.extensionNodes) {
 
@@ -389,16 +386,16 @@ export class ManageExtensionsCliService {
     console.log(``)
 
     // Choices, numbered so the extension is picked by position
-    var choices = [
+    const choices = [
       {
         name: `Back`,
         value: CommonCommands.back as string
       }
     ]
 
-    var extensionsMap: Record<string, SourceNodeRecord> = {}
+    const extensionsMap: Record<string, SourceNodeRecord> = {}
 
-    var i = 1
+    let i = 1
 
     for (const extension of extensionsData.extensionNodes) {
 
@@ -447,7 +444,7 @@ export class ManageExtensionsCliService {
     console.log(``)
 
     // Choices
-    var choices = [
+    const choices = [
       {
         name: `Back`,
         value: CommonCommands.back as string

@@ -63,7 +63,7 @@ export class SourceCodePathGraphMutateService {
     // console.log(`${fnName}: dirs: ${dirs}`)
 
     // Get/create nodes for dirs
-    var dirSourceNode: SourceNodeRecord = projectSourceNode
+    let dirSourceNode: SourceNodeRecord = projectSourceNode
 
     for (const dir of dirs) {
 

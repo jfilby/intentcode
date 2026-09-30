@@ -63,7 +63,7 @@ export class IntentCodePathGraphQueryService {
     // console.log(`${fnName}: dirs: ${dirs}`)
 
     // Get/create nodes for dirs
-    var intentCodeDir: SourceNodeRecord = projectIntentCodeNode
+    let intentCodeDir: SourceNodeRecord = projectIntentCodeNode
 
     for (const dir of dirs) {
 

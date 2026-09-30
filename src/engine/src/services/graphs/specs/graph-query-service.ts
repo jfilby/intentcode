@@ -17,11 +17,8 @@ export class SpecsGraphQueryService {
           store: ProjectStore,
           projectNode: SourceNodeRecord) {
 
-    // Debug
-    const fnName = `${this.clName}.getSpecsProjectNode()`
-
     // Get the node
-    var specsProjectNode = await
+    const specsProjectNode = await
           sourceNodeModel.getByUniqueKey(
             store,
             projectNode.id,  // parentId

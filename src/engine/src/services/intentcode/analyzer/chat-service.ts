@@ -29,9 +29,6 @@ export class IntentCodeAnalyzerChatService {
     store: ProjectStore,
     project: ProjectRecord) {
 
-    // Debug
-    const fnName = `${this.clName}.openChat()`
-
     // The Intent directory, which is what the chat is about
     const { projectDetails } = await
       intentCodeAnalyzerQueryService.getBuildInfo(

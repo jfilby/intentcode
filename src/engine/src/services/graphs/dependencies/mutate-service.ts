@@ -83,7 +83,7 @@ export class DependenciesMutateService {
     }
 
     // Try to get the existing node
-    var depsNode = await
+    let depsNode = await
           dependenciesQueryService.getDepsNode(
             store,
             projectNode)
@@ -185,7 +185,7 @@ export class DependenciesMutateService {
           name: string) {
 
     // Upsert edge
-    const depEdge = await
+    await
             sourceEdgeModel.upsert(
               store,
               undefined,  // id

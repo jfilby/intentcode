@@ -101,7 +101,7 @@ export class IntentCodeGraphQueryService {
     projectIntentCodeNode: SourceNodeRecord) {
 
     // Var to return
-    var indexedDataSourceNodes: SourceNodeWithRelations[] = []
+    let indexedDataSourceNodes: SourceNodeWithRelations[] = []
 
     // Get all IntentCode nodes
     const intentCodeNodes = await
@@ -166,7 +166,7 @@ export class IntentCodeGraphQueryService {
     }
 
     // Try to get the node
-    var intentCodeDir = await
+    const intentCodeDir = await
       sourceNodeModel.getByUniqueKey(
         store,
         parentNode.id,

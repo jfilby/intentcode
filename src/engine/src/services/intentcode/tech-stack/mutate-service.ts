@@ -87,9 +87,6 @@ export class TechStackMutateService {
           buildData: BuildData,
           projectNode: SourceNodeRecord) {
 
-    // Debug
-    const fnName = `${this.clName}.processTechStack()`
-
     // Get ProjectDetails
     const projectDetails =
       projectsQueryService.getProjectDetailsByProjectId(

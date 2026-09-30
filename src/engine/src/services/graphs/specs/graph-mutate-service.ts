@@ -46,7 +46,7 @@ export class SpecsGraphMutateService {
     }
 
     // Try to get the node
-    var specsDir = await
+    let specsDir = await
           sourceNodeModel.getByUniqueKey(
             store,
             parentNode.id,
@@ -108,7 +108,7 @@ export class SpecsGraphMutateService {
     }
 
     // Try to get the node
-    var specsFile = await
+    let specsFile = await
           sourceNodeModel.getByUniqueKey(
             store,
             parentNode.id,
@@ -148,11 +148,8 @@ export class SpecsGraphMutateService {
           projectNode: SourceNodeRecord,
           localPath: string) {
 
-    // Debug
-    const fnName = `${this.clName}.getOrCreateSpecsProject()`
-
     // Try to get the node
-    var specsProjectNode = await
+    let specsProjectNode = await
           sourceNodeModel.getByUniqueKey(
             store,
             projectNode.id,  // parentId
@@ -170,7 +167,7 @@ export class SpecsGraphMutateService {
     }
 
     // Get jsonContentHash
-    var jsonContentHash: string | null = null
+    let jsonContentHash: string | null = null
 
     if (jsonContent != null) {
 

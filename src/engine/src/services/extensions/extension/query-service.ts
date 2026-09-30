@@ -6,6 +6,33 @@ import { ExtensionsData, SourceNodeNames, SourceNodeTypes } from '@/types/source
 import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
 import { ProjectRegistryService } from '@/services/projects/project-registry.js'
 
+// Types
+
+/**
+ * The `id`, `name` and `version` read out of an extension's jsonContent. The
+ * jsonContent is whatever the extension's `extension.json` held, so only the
+ * fields read here are named.
+ */
+type ExtensionJsonContent = {
+  id?: unknown
+  name?: unknown
+  version?: unknown
+}
+
+/**
+ * The `version` read out of an extension's jsonContent when picking the
+ * highest version a project will take. A version is what semver compares, so
+ * it is read as the string the file is expected to hold.
+ */
+type VersionedExtensionJsonContent = {
+  version?: string
+}
+
+/** The name a hook's jsonContent is read for. */
+type HookJsonContent = {
+  name?: unknown
+}
+
 // Models
 const sourceNodeModel = new SourceNodeModel()
 
@@ -61,7 +88,7 @@ export class ExtensionQueryService {
     // Ensure each extension id exists
     for (const extensionId of extensionIds) {
 
-      var found = false
+      let found = false
 
       for (const extensionNode of extensionNodes) {
 
@@ -98,7 +125,7 @@ export class ExtensionQueryService {
     }
 
     // Generate prompting
-    var prompting = ``
+    let prompting = ``
 
     // Iterate extension nodes
     for (const extensionNode of extensionNodes) {
@@ -107,7 +134,8 @@ export class ExtensionQueryService {
         continue
       }
 
-      const extensionJsonContent = extensionNode.jsonContent as any
+      const extensionJsonContent =
+        extensionNode.jsonContent as ExtensionJsonContent
 
       prompting +=
         `### Extension id: ${extensionJsonContent.id}\n` +
@@ -123,7 +151,7 @@ export class ExtensionQueryService {
           continue
         }
 
-        const hookJsonContent = hookNode.jsonContent as any
+        const hookJsonContent = hookNode.jsonContent as HookJsonContent
 
         prompting +=
           `#### Hook: ${hookJsonContent.name}\n` +
@@ -164,8 +192,8 @@ export class ExtensionQueryService {
     const minVersionNo = semver.minVersion(getMinVersionNo)
 
     // Get the highest version above minVersionNo
-    var highestExtensionNode: SourceNodeRecord | undefined = undefined
-    var highestVersionNo: string | undefined = undefined
+    let highestExtensionNode: SourceNodeRecord | undefined = undefined
+    let highestVersionNo: string | undefined = undefined
 
     for (const extension of extensions) {
 
@@ -173,7 +201,9 @@ export class ExtensionQueryService {
       // console.log(`${fnName}: trying: ` + JSON.stringify(extension))
 
       // Get the version no
-      const versionNo = (extension.jsonContent as any)?.version
+      const versionNo =
+        (extension.jsonContent as VersionedExtensionJsonContent | null)
+          ?.version
 
       // Validate
       if (versionNo == null) {
@@ -273,7 +303,7 @@ export class ExtensionQueryService {
           withHooks: boolean = true) {
 
     // Get skills
-    var skillNodes: SourceNodeRecord[] = []
+    let skillNodes: SourceNodeRecord[] = []
 
     if (withSkills === true) {
 
@@ -286,7 +316,7 @@ export class ExtensionQueryService {
     }
 
     // Get hooks
-    var hooksNodes: SourceNodeRecord[] = []
+    let hooksNodes: SourceNodeRecord[] = []
 
     if (withHooks === true) {
 
@@ -334,8 +364,8 @@ export class ExtensionQueryService {
               true)       // orderByUniqueKey (for prompt reproducibility)
 
     // Load extensions
-    var skillNodes: SourceNodeRecord[] = []
-    var hooksNodes: SourceNodeRecord[] = []
+    let skillNodes: SourceNodeRecord[] = []
+    let hooksNodes: SourceNodeRecord[] = []
 
     for (const extensionNode of extensionNodes) {
 

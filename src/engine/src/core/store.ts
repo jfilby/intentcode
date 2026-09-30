@@ -18,14 +18,11 @@ import type {
   AgentUserRecord,
   ChatMessageRecord,
   ChatParticipantRecord,
-  ChatSessionRecord,
   ChatSessionWithSettings,
   ChatSettingsRecord,
   LlmCacheRecord,
-  SourceEdgeRecord,
   SourceEdgeWithRelations,
   SourceNodeGenerationRecord,
-  SourceNodeRecord,
   SourceNodeWithRelations,
   VersionRecord
 } from './records.js'

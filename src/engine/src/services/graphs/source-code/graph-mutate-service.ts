@@ -48,7 +48,7 @@ export class SourceCodeGraphMutateService {
     }
 
     // Try to get the node
-    var sourceCodeProject = await
+    let sourceCodeProject = await
           sourceNodeModel.getByUniqueKey(
             store,
             buildNode.id,  // parentId
@@ -66,7 +66,7 @@ export class SourceCodeGraphMutateService {
     }
 
     // Get jsonContentHash
-    var jsonContentHash: string | null = null
+    let jsonContentHash: string | null = null
 
     if (jsonContent != null) {
 
@@ -123,7 +123,7 @@ export class SourceCodeGraphMutateService {
     }
 
     // Try to get the node
-    var sourceCodeDir = await
+    let sourceCodeDir = await
           sourceNodeModel.getByUniqueKey(
             store,
             parentNode.id,
@@ -186,7 +186,7 @@ export class SourceCodeGraphMutateService {
     }
 
     // Get contentHash
-    var contentHash: string | null = null
+    let contentHash: string | null = null
 
     if (content != null) {
       contentHash = blake3(JSON.stringify(content)).toString()
@@ -213,7 +213,7 @@ export class SourceCodeGraphMutateService {
             blake3(JSON.stringify(sourceNodeGenerationData.prompt)).toString()
 
     // Upsert SourceNodeGeneration
-    const sourceNodeGeneration = await
+    await
             sourceNodeGenerationModel.upsert(
               store,
               undefined,          // id

@@ -105,7 +105,7 @@ export class ReadJsTsSourceImportsService {
           srcPath: string) {
 
     // Read source files
-    var fileList: string[] = []
+    const fileList: string[] = []
 
     await walkDir(
             srcPath,

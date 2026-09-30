@@ -20,9 +20,6 @@ export class GraphsDeleteService {
           sourceNodeId: string,
           deleteThisNode: boolean = true) {
 
-    // Debug
-    const fnName = `${this.clName}.deleteSourceNodeCascade()`
-
     // console.log(`${fnName}: starting with sourceNodeId: ${sourceNodeId}`)
 
     // Get child nodes

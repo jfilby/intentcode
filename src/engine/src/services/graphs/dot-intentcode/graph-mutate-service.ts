@@ -1,6 +1,6 @@
 import { IntentError } from '@/core/errors.js'
 import { blake3 } from '@noble/hashes/blake3'
-import type { SourceNodeRecord } from '@/core/records.js'
+import type { NodeContent, SourceNodeRecord } from '@/core/records.js'
 import type { ProjectStore } from '@/core/store.js'
 import { BaseDataTypes } from '@/types/base-data-types.js'
 import { SourceNodeGenerationData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types.js'
@@ -52,7 +52,7 @@ export class DotIntentCodeGraphMutateService {
     }
 
     // Try to get the node
-    var dotIntentCodeDir = await
+    let dotIntentCodeDir = await
           sourceNodeModel.getByUniqueKey(
             store,
             parentNode.id,
@@ -124,7 +124,7 @@ export class DotIntentCodeGraphMutateService {
     }
 
     // Try to get the node
-    var intentCodeFile = await
+    let intentCodeFile = await
           sourceNodeModel.getByUniqueKey(
             store,
             parentNode.id,
@@ -164,11 +164,8 @@ export class DotIntentCodeGraphMutateService {
           projectNode: SourceNodeRecord,
           localPath: string) {
 
-    // Debug
-    const fnName = `${this.clName}.getOrCreateDotIntentCodeProject()`
-
     // Try to get the node
-    var projectDotIntentCodeNode = await
+    let projectDotIntentCodeNode = await
       sourceNodeModel.getByUniqueKey(
         store,
         projectNode.id,  // parentId
@@ -186,7 +183,7 @@ export class DotIntentCodeGraphMutateService {
     }
 
     // Get jsonContentHash
-    var jsonContentHash: string | null = null
+    let jsonContentHash: string | null = null
 
     if (jsonContent != null) {
 
@@ -219,7 +216,7 @@ export class DotIntentCodeGraphMutateService {
           parentNode: SourceNodeRecord | undefined,
           name: string,
           content: string,
-          jsonContent: any,
+          jsonContent: NodeContent,
           sourceNodeGenerationData: SourceNodeGenerationData,
           fileModifiedTime: Date) {
 
@@ -246,14 +243,14 @@ export class DotIntentCodeGraphMutateService {
     }
 
     // Get contentHash
-    var contentHash: string | null = null
+    let contentHash: string | null = null
 
     if (content != null) {
       contentHash = blake3(JSON.stringify(content)).toString()
     }
 
     // Get jsonContentHash
-    var jsonContentHash: string | null = null
+    let jsonContentHash: string | null = null
 
     if (jsonContent != null) {
 
@@ -281,7 +278,7 @@ export class DotIntentCodeGraphMutateService {
             blake3(JSON.stringify(sourceNodeGenerationData.prompt)).toString()
 
     // Upsert SourceNodeGeneration
-    const sourceNodeGeneration = await
+    await
             sourceNodeGenerationModel.upsert(
               store,
               undefined,                  // id
@@ -309,7 +306,7 @@ export class DotIntentCodeGraphMutateService {
           projectId: string | undefined,
           parentNode: SourceNodeRecord | undefined,
           name: string,
-          jsonContent: any,
+          jsonContent: NodeContent,
           sourceNodeGenerationData: SourceNodeGenerationData,
           fileModifiedTime: Date) {
 
@@ -336,7 +333,7 @@ export class DotIntentCodeGraphMutateService {
     }
 
     // Get jsonContentHash
-    var jsonContentHash: string | null = null
+    let jsonContentHash: string | null = null
 
     if (jsonContent != null) {
 
@@ -365,7 +362,7 @@ export class DotIntentCodeGraphMutateService {
             blake3(JSON.stringify(sourceNodeGenerationData.prompt)).toString()
 
     // Upsert SourceNodeGeneration
-    const sourceNodeGeneration = await
+    await
             sourceNodeGenerationModel.upsert(
               store,
               undefined,                  // id

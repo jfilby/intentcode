@@ -65,7 +65,7 @@ export class IntentCodePathGraphMutateService {
 
     // Get/create nodes for dirs. A dir that is not in the graph means the
     // file below it was never written, so there is nothing to delete.
-    var dirSourceNode: SourceNodeRecord | null = projectIntentCodeNode
+    let dirSourceNode: SourceNodeRecord | null = projectIntentCodeNode
 
     for (const dir of dirs) {
 
@@ -137,7 +137,7 @@ export class IntentCodePathGraphMutateService {
     // console.log(`${fnName}: dirs: ${dirs}`)
 
     // Get/create nodes for dirs
-    var dirSourceNode: SourceNodeRecord = projectIntentCodeNode
+    let dirSourceNode: SourceNodeRecord = projectIntentCodeNode
 
     for (const dir of dirs) {
 

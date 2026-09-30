@@ -59,9 +59,6 @@ export class ProjectVerifyService {
     buildData: BuildData,
     projectNode: SourceNodeRecord) {
 
-    // Debug
-    const fnName = `${this.clName}.verifyDrift()`
-
     const findings = await driftService.getDrift(
       store,
       buildData,

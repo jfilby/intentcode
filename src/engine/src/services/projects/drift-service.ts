@@ -77,9 +77,6 @@ export class DriftService {
           buildData: BuildData,
           projectNode: SourceNodeRecord): Promise<DriftFinding[]> {
 
-    // Debug
-    const fnName = `${this.clName}.getDrift()`
-
     const projectDetails =
       projectsQueryService.getProjectDetailsByProjectId(
         projectNode.projectId,

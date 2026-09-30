@@ -40,9 +40,6 @@ export class IntentCodeAnalyzerMutateService {
             buildData: BuildData,
             projectNode: SourceNodeRecord) {
 
-    // Debug
-    const fnName = `${this.clName}.run()`
-
     // Console output
     console.log(`Reading the IntentCode..`)
 

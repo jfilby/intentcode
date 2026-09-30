@@ -40,7 +40,7 @@ export class IntentCodeAnalysisGraphMutateService {
     }
 
     // Try to get the node
-    var projectIntentCodeAnalysisNode = await
+    let projectIntentCodeAnalysisNode = await
           sourceNodeModel.getByUniqueKey(
             store,
             buildNode.id,  // parentId
@@ -74,7 +74,7 @@ export class IntentCodeAnalysisGraphMutateService {
   async upsertSuggestion(
     store: ProjectStore,
     projectIntentCodeAnalysisNode: SourceNodeRecord,
-    suggestion: any) {
+    suggestion: { text?: string } | null) {
 
     // Debug
     const fnName = `${this.clName}.upsertSuggestion()`

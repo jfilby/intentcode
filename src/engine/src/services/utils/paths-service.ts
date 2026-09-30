@@ -26,7 +26,7 @@ export class PathsService {
 
     for (const seed of seeds) {
 
-      var cur = path.resolve(seed)
+      let cur = path.resolve(seed)
 
       while (true) {
 

@@ -60,7 +60,7 @@ export class SpecsPathGraphMutateService {
     // console.log(`${fnName}: dirs: ${dirs}`)
 
     // Get/create nodes for dirs
-    var dirSourceNode: SourceNodeRecord = projectSpecsNode
+    let dirSourceNode: SourceNodeRecord = projectSpecsNode
 
     for (const dir of dirs) {
 

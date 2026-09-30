@@ -54,9 +54,6 @@ export class ChatService {
           project: ProjectRecord,
           framing: string) {
 
-    // Debug
-    const fnName = `${this.clName}.chat()`
-
     // The project's own skills, read the way a build reads them. A chat has no
     // build behind it, so the extensions are loaded here rather than passed in.
     const extensionsData =

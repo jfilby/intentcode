@@ -206,9 +206,6 @@ export class ProjectSetupService {
     configPath?: string
   ) {
 
-    // Debug
-    const fnName = `${this.clName}.loadDepsConfigFile()`
-
     void configPath
 
     const { found, data, filename } =
