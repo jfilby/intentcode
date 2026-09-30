@@ -1,6 +1,6 @@
 {
   "name": "intentcode-compiler",
-  "version": "0.1.19",
+  "version": "0.2.0",
   "type": "module",
   "main": "./dist/cli.js",
   "types": "./dist/cli.d.ts",
@@ -9,7 +9,8 @@
   },
   "files": [
     "dist",
-    "bundled/extensions"
+    "bundled/extensions",
+    "!dist/.tsbuildinfo"
   ],
   "scripts": {
     "dev": "next dev",

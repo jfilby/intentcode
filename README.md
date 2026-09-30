@@ -31,15 +31,15 @@ command prints the usage below.
 ## Running
 
 To run the cli from source, type `bun ./src/cli.ts <command>` (or
-`bun run cli -- <command>`) from `src/engine`, for example
-`bun ./src/cli.ts build` from a project directory.
+`bun run cli -- <command>`) from the engine's own directory in the repository,
+for example `bun ./src/cli.ts build` from a project directory.
 
 Every command runs inside a [bubblewrap](https://github.com/containers/bubblewrap)
 sandbox, so `bwrap` has to be installed and on the PATH
 (`dnf install bubblewrap`, `apt install bubblewrap`). The project is bound
 read-write inside it and the directories above it are not present, so an agent
 session cannot read or write outside the project it is working on. There is no
-unsandboxed fallback; see [docs/setup.md](docs/setup.md#the-sandbox).
+unsandboxed fallback; see [docs/setup.md](https://github.com/jfilby/intentcode/blob/master/docs/setup.md#the-sandbox).
 
 ## Commands
 
@@ -86,10 +86,13 @@ provider = "openai"
 model = "gpt-5"
 ```
 
-The API key is configured in the environment rather than in a menu. Set
-`AI_API_KEY` in `src/engine/.env`; see [docs/setup.md](docs/setup.md) for the
-full list of variables and how to point at a different provider. Run
-`intent info` to see which model each task resolved to.
+The API key is configured in the environment rather than in a menu. Pi
+resolves the key for whichever provider a model names, so it is set in a
+`.env` beside the project or in the shell: `OPENAI_API_KEY`,
+`ANTHROPIC_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`, `OPENROUTER_API_KEY`,
+`COMMANDCODE_API_KEY`. See [docs/setup.md](https://github.com/jfilby/intentcode/blob/master/docs/setup.md) for how to point at
+a different provider. Run `intent info` to see which model each task resolved
+to.
 
 There's an `intent` directory in your project root where the Intent files go.
 
@@ -106,9 +109,9 @@ Everything the engine derives for a project is written to a `.intent/`
 directory in the project root: the source graph, the builds, the chat history
 and the cached model replies. It is all disposable — delete the directory and
 the next build recreates it. Your Intent files, your source and your
-`intent.toml` are the only things you have to keep. The engine's own state —
-the bundled extensions every project inherits from — is kept in your user
-application directory rather than in a project, so it never appears in yours.
+`intent.toml` are the only things you have to keep. The engine's own bundled
+extensions ship inside the installed package and are copied into a project
+like any other extension, when the project's `deps.json` names them.
 
 
 ## Compiler validation & suggestion
