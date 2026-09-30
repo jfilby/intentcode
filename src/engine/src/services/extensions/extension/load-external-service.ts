@@ -5,7 +5,7 @@ import { IntentError } from '@/core/errors.js'
 import type { ProjectRecord, SourceNodeRecord } from '@/core/records.js'
 import type { ProjectStore } from '@/core/store.js'
 import { listSubdirectories } from '@/core/walk-dir.js'
-import { confirm, input } from '@inquirer/prompts'
+import { input } from '@inquirer/prompts'
 import { ExtensionMutateService } from './mutate-service.js'
 import { GraphsDeleteService } from '@/services/graphs/general/delete-service.js'
 import { LoadExternalHooksService } from '../hooks/load-external-service.js'
@@ -202,6 +202,10 @@ export class LoadExternalExtensionsService {
     return extensionNode
   }
 
+  /**
+   * Loads extensions from a directory into the project the command is running
+   * in.
+   */
   async promptForAndLoadPath(
     store: ProjectStore,
     project: ProjectRecord) {
@@ -215,32 +219,9 @@ export class LoadExternalExtensionsService {
       input({ message: `Enter the path to load extensions from` })
 
     // Load path
-    const extensionNodes = await
-      this.loadExtensionsInPath(
-        store,
-        project.id,
-        loadPath)
-
-    // Prompt whether to load into user projects
-    const loadToUserProjects = await
-      confirm({
-        default: false,
-        message: `Copy new versions to existing user projects?`
-      })
-
-    // No?
-    if (loadToUserProjects === false) {
-      return
-    }
-
-    // Load into user projects
-    const copyCount = await
-      extensionMutateService.upgradeToUserProjects(
-        store,
-        project,
-        extensionNodes)
-
-    // Done
-    console.log(`Copied to ${copyCount} user projects`)
+    await this.loadExtensionsInPath(
+      store,
+      project.id,
+      loadPath)
   }
 }

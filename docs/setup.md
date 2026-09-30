@@ -2,10 +2,9 @@
 
 ## Project configuration
 
-A project is a directory containing an `intent.toml`. There is nothing to
-register: create the file and the directory is a project. The engine finds the
-project for a command by walking up from the working directory, so running it
-anywhere inside a project binds to that project.
+A project is a directory containing an `intent.toml`. Create the file and the
+directory is a project; every command is run from inside the project it is
+about and works on the one named by that file.
 
 A minimal `intent.toml`:
 
@@ -144,7 +143,6 @@ from this release on:
 - macOS: `~/Library/Application Support/IntentCode/data.db`
 - Windows: `%APPDATA%\IntentCode\data.db`
 
-A project that was registered before the upgrade is no longer registered,
-because registration was the database row. Create an `intent.toml` in the
-project directory to make it a project again; the source, the Intent files and
-the extensions in the directory are untouched by the upgrade.
+A project created before the upgrade is a directory again. Create an
+`intent.toml` in the project directory to make it a project; the source, the
+Intent files and the extensions in the directory are untouched by the upgrade.

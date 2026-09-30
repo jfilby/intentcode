@@ -8,7 +8,7 @@ import { BaseDataTypes } from '@/types/base-data-types.js'
 import { ExtensionQueryService } from './query-service.js'
 import { GraphsDeleteService } from '@/services/graphs/general/delete-service.js'
 import { GraphsMutateService } from '@/services/graphs/general/mutate-service.js'
-import { ProjectRegistryService } from '@/services/projects/project-registry.js'
+import { getSystemProject } from '@/services/projects/system-project.js'
 
 // Types
 
@@ -33,7 +33,6 @@ const sourceNodeModel = new SourceNodeModel()
 const extensionQueryService = new ExtensionQueryService()
 const graphsDeleteService = new GraphsDeleteService()
 const graphsMutateService = new GraphsMutateService()
-const projectRegistryService = new ProjectRegistryService()
 
 // Class
 export class ExtensionMutateService {
@@ -137,7 +136,7 @@ export class ExtensionMutateService {
     const extensionNodes = await
       extensionQueryService.getExtensionNodes(
         systemStore,
-        projectRegistryService.getSystemProject().id)
+        getSystemProject().id)
 
     // Get the toExtensions node
     const toExtensionsNode = await
@@ -185,8 +184,7 @@ export class ExtensionMutateService {
           loadToProjectId: string,
           extensions: RequestedExtensions) {
 
-    // Get the System project
-    const systemProject = projectRegistryService.getSystemProject()
+    const systemProject = getSystemProject()
 
     // Get the system project node
     const systemExtensionsNode = await
@@ -299,51 +297,4 @@ export class ExtensionMutateService {
     return true
   }
 
-  /**
-   * Copies freshly loaded extension nodes out of the project they were loaded
-   * into and into every other project under the working directory. Each project
-   * is a directory of its own with its own state, so each is upgraded through
-   * its own store rather than a shared one.
-   */
-  async upgradeToUserProjects(
-    store: ProjectStore,
-    project: ProjectRecord,
-    extensionNodes: SourceNodeRecord[]) {
-
-    // Get user projects
-    const userProjects = await
-      projectRegistryService.getProjectList()
-
-    // Per user project/extensionNode
-    let copyCount = 0
-
-    for (const userProject of userProjects) {
-
-      // Skip the project the extensions were loaded into: they are already
-      // there, and copying a node onto itself would duplicate the graph
-      if (userProject.path === project.path) {
-        continue
-      }
-
-      const userStore = projectRegistryService.getStore(userProject)
-
-      // Per extensionNode
-      for (const extensionNode of extensionNodes) {
-
-        const copied = await
-          this.upgradeToUserProject(
-            store,
-            userStore,
-            userProject,
-            extensionNode)
-
-        if (copied === true) {
-          copyCount += 1
-        }
-      }
-    }
-
-    // Return
-    return copyCount
-  }
 }

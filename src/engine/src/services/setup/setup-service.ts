@@ -14,7 +14,6 @@
  */
 
 import { createId } from '@/core/ids.js'
-import { IntentError } from '@/core/errors.js'
 import type { ProjectStore } from '@/core/store.js'
 import { BaseDataTypes } from '@/types/base-data-types.js'
 import { ServerOnlyTypes, VersionNames } from '@/types/server-only-types.js'
@@ -22,7 +21,10 @@ import { VersionModel } from '@/models/engine/version-model.js'
 import { AgentUserModel } from '@/models/agents/agent-user-model.js'
 import { LoadExternalExtensionsService } from
   '../extensions/extension/load-external-service.js'
-import { ProjectRegistryService } from '../projects/project-registry.js'
+import {
+  getSystemProject,
+  getSystemStore
+} from '../projects/system-project.js'
 
 // Models
 const agentUserModel = new AgentUserModel()
@@ -30,7 +32,6 @@ const versionModel = new VersionModel()
 
 // Services
 const loadExternalExtensionsService = new LoadExternalExtensionsService()
-const projectRegistryService = new ProjectRegistryService()
 
 export class SetupService {
 
@@ -79,8 +80,8 @@ export class SetupService {
    */
   async setupSystemProject(): Promise<void> {
 
-    const system = projectRegistryService.getSystemProject()
-    const store = projectRegistryService.getStore(system)
+    const system = getSystemProject()
+    const store = getSystemStore()
 
     await this.chatSettingsSetup(store)
 
@@ -100,7 +101,7 @@ export class SetupService {
    * project reads them from the System project, and copying them is a
    * deliberate action so a project can be pinned to a version.
    */
-  async setupProject(store: ProjectStore, projectId: string): Promise<void> {
+  async setupProject(store: ProjectStore): Promise<void> {
 
     await this.chatSettingsSetup(store)
 
@@ -109,20 +110,16 @@ export class SetupService {
       undefined,
       VersionNames.engine,
       ServerOnlyTypes.engineVersion)
-
-    void projectId
   }
 
   /**
    * Seeds the System project when it has not been seeded, and the project the
-   * command is running in when there is one. Called on every start, so it has
-   * to be cheap when there is nothing to do.
+   * command is running in when it has not been seeded either. Called on every
+   * start, so it has to be cheap when there is nothing to do.
    */
-  async setupIfRequired(store: ProjectStore | undefined): Promise<void> {
+  async setupIfRequired(store: ProjectStore): Promise<void> {
 
     await this.setupSystemProject()
-
-    if (store == null) return
 
     const engine = await versionModel.getByUniqueKey(
       store,
@@ -134,22 +131,13 @@ export class SetupService {
 
     // The engine version moved, so the project's agents and chat settings are
     // brought up to date. Both writes leave an existing record alone.
-    await this.setupProject(store, '')
+    await this.setupProject(store)
   }
 
-  /** Re-runs every seed, for the Setup menu entry. */
-  async setup(store: ProjectStore | undefined): Promise<void> {
-
-    if (store == null) {
-      throw new IntentError({
-        category: 'ProjectError',
-        stage: `${this.clName}.setup()`,
-        message: 'run this from a project directory: there is nothing to set ' +
-          'up outside one'
-      })
-    }
+  /** Re-runs every seed, for the Setup command. */
+  async setup(store: ProjectStore): Promise<void> {
 
     await this.setupSystemProject()
-    await this.setupProject(store, '')
+    await this.setupProject(store)
   }
 }

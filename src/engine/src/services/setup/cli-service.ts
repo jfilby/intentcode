@@ -2,15 +2,9 @@
  * The command dispatch.
  *
  * There is no menu: every command is an argument, and the CLI runs the one it
- * is given and exits. A command that needs a project is handed the project
- * the working directory is in, or the one at the directory named after the
- * command.
- *
- * `build` is the exception, and deliberately so. A build writes compiled
- * source over the project's own files, so it runs against the project in the
- * directory it was given and nothing else: a directory without an
- * `intent.toml` is reported as not being a project rather than quietly
- * building whatever project happens to be above it.
+ * is given and exits. Every command is handed the same project, the one whose
+ * intent.toml is in the working directory, because that is the only project
+ * there is to run against.
  */
 
 import { IntentError } from '@/core/errors.js'
@@ -24,7 +18,7 @@ import { LoadExternalExtensionsService } from
   '../extensions/extension/load-external-service.js'
 import { ManageExtensionsCliService } from
   '../extensions/extension/cli-service.js'
-import { ProjectRegistryService } from '../projects/project-registry.js'
+import { ProjectSetupService } from '../projects/setup-project.js'
 import { SetupService } from './setup-service.js'
 import { TestsService } from '../tests/tests-service.js'
 
@@ -34,7 +28,7 @@ const infoService = new InfoService()
 const intentCodeAnalyzerChatService = new IntentCodeAnalyzerChatService()
 const loadExternalExtensionsService = new LoadExternalExtensionsService()
 const manageExtensionsCliService = new ManageExtensionsCliService()
-const projectRegistryService = new ProjectRegistryService()
+const projectSetupService = new ProjectSetupService()
 const setupService = new SetupService()
 const testsService = new TestsService()
 
@@ -65,32 +59,34 @@ export class CliService {
   /** What to print when the CLI is run with no command to run. */
   usage(): string {
     return `Usage:\n` +
-      `  intent <command>        run one command against the project ` +
-      `containing\n` +
-      `                          the working directory, and exit\n` +
-      `  intent <command> <dir>  run it against the project at <dir>\n` +
+      `  intent <command>  run one command against the project in the ` +
+      `working\n` +
+      `                     directory, and exit\n` +
+      `\n` +
+      `A project is the directory holding the intent.toml, so the command ` +
+      `has to be\n` +
+      `run from inside it.\n` +
       `\n` +
       `Commands:\n` +
-      `  build            build the project in the working directory\n` +
-      `  chat             chat about the project's Intent files\n` +
-      `  about            print the project the command resolved to\n` +
-      `  load-extensions  copy extensions into the project\n` +
+      `  build              build the project\n` +
+      `  chat               chat about the project's Intent files\n` +
+      `  about              print the project the command resolved to\n` +
+      `  load-extensions    copy extensions into the project\n` +
       `  manage-extensions  list, load and delete the project's extensions\n` +
-      `  setup            set the project up\n` +
-      `  tests            run the bundled example builds\n` +
-      `  info             print the models and settings in use`
+      `  setup              set the project up\n` +
+      `  tests              run the bundled example builds\n` +
+      `  info               print the models and settings in use`
   }
 
   /**
-   * Runs one command. The store and the project are the ones the directory the
-   * command is aimed at belongs to; `dir` is that directory itself, which is
-   * what a build has to resolve rather than inherit.
+   * Runs one command against the project the working directory is in. A build
+   * lays the project's nodes out first: the graph is derived state, so a
+   * project built for the first time has none of it yet.
    */
   async runCommand(
     store: ProjectStore,
     project: ProjectRecord,
-    command: string,
-    dir: string
+    command: string
   ) {
 
     // Debug
@@ -102,11 +98,8 @@ export class CliService {
     switch (command) {
 
       case this.buildCommand: {
-        const buildProject = await projectRegistryService.getProjectInDir(dir)
-        await buildMutateService.runBuild(
-          projectRegistryService.getStore(buildProject),
-          buildProject.id,
-          buildProject.name)
+        await projectSetupService.setupProject(store, project)
+        await buildMutateService.runBuild(store, project.id, project.name)
         break
       }
 
@@ -131,7 +124,7 @@ export class CliService {
       }
 
       case this.manageExtensionsCommand: {
-        await manageExtensionsCliService.run(store, project)
+        await manageExtensionsCliService.repl(store, project)
         break
       }
 
@@ -154,11 +147,5 @@ export class CliService {
         })
       }
     }
-  }
-
-  /** The System project, for a command that reads the bundled extensions. */
-  getSystemStore() {
-    const system = projectRegistryService.getSystemProject()
-    return projectRegistryService.getStore(system)
   }
 }

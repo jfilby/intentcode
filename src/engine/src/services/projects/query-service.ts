@@ -2,15 +2,13 @@
  * Reading projects.
  *
  * Resolving a project is a question about the filesystem, and lives in
- * `ProjectRegistryService`. What is left here is the two things that are
- * questions about a *set* of projects rather than about one: finding a
- * project's entry in a build's project map, and describing that map to the
- * model.
+ * `readProject`. What is left here is the two things that are questions about
+ * a *set* of projects rather than about one: finding a project's entry in a
+ * build's project map, and describing that map to the model.
  *
- * A build can cover several projects at once — a project may have a parent,
- * and a build walks the hierarchy — so the compiler carries a map of them and
- * has to pick one out of it by id. That lookup is here so every caller does
- * it the same way.
+ * A build carries a numbered map of projects rather than one, so the compiler
+ * picks one out of it by id. That lookup is here so every caller does it the
+ * same way.
  */
 
 import { IntentError } from '@/core/errors.js'

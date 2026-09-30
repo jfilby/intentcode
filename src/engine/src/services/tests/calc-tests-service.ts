@@ -1,10 +1,10 @@
 /**
  * Build the bundled calc example.
  *
- * The example is a real project directory, so it is created the same way any
- * project is: an intent.toml is written if it has none, the extensions it
- * needs are copied in from the System project, and the build runs. Nothing
- * here is special-cased for the test beyond the path.
+ * The example is a real project directory, so it is treated like any other
+ * one: its intent.toml is read, the extensions it needs are copied in from
+ * the System project, and the build runs. Nothing here is special-cased for
+ * the test beyond the path.
  */
 
 import { join } from 'node:path'
@@ -12,14 +12,17 @@ import { BuildMutateService } from '../intentcode/build/mutate-service.js'
 import { ExtensionMutateService } from '../extensions/extension/mutate-service.js'
 import { ExtensionQueryService } from '../extensions/extension/query-service.js'
 import { PathsService } from '../utils/paths-service.js'
-import { ProjectRegistryService } from '../projects/project-registry.js'
+import { getSystemStore } from '../projects/system-project.js'
+import { readProject } from '@/core/project.js'
+import { createProjectStore } from '@/core/store.js'
+import { ProjectSetupService } from '../projects/setup-project.js'
 
 // Services
 const buildMutateService = new BuildMutateService()
 const extensionMutateService = new ExtensionMutateService()
 const extensionQueryService = new ExtensionQueryService()
 const pathsService = new PathsService()
-const projectRegistryService = new ProjectRegistryService()
+const projectSetupService = new ProjectSetupService()
 
 export class CalcTestsService {
 
@@ -36,17 +39,15 @@ export class CalcTestsService {
     const projectPath =
       join(pathsService.getBundledPath(), 'examples', 'calc')
 
-    // The example is a project like any other: writing its intent.toml makes
-    // it one, and reading it back gives the id the rest of the test uses.
-    const project = await projectRegistryService.createProject(
-      projectPath, 'calc')
+    // The example is a project like any other: its intent.toml is read from
+    // the example directory, and its store is that directory's own.
+    const project = await readProject(projectPath)
 
-    const store = projectRegistryService.getStore(project)
+    const store = createProjectStore(project.path)
 
     // Install the extensions the example needs, from the System project that
     // holds the bundled ones.
-    const system = projectRegistryService.getSystemProject()
-    const systemStore = projectRegistryService.getStore(system)
+    const systemStore = getSystemStore()
 
     await extensionMutateService.loadExtensionsInSystemToUserProject(
       systemStore,
@@ -58,6 +59,8 @@ export class CalcTestsService {
       store,
       project.id,
       this.extensions)
+
+    await projectSetupService.setupProject(store, project)
 
     // Recompile the project
     await buildMutateService.runBuild(store, project.id, project.name)

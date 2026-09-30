@@ -9,12 +9,14 @@
 import { join } from 'node:path'
 import { BuildMutateService } from '../intentcode/build/mutate-service.js'
 import { PathsService } from '../utils/paths-service.js'
-import { ProjectRegistryService } from '../projects/project-registry.js'
+import { readProject } from '@/core/project.js'
+import { createProjectStore } from '@/core/store.js'
+import { ProjectSetupService } from '../projects/setup-project.js'
 
 // Services
 const buildMutateService = new BuildMutateService()
 const pathsService = new PathsService()
-const projectRegistryService = new ProjectRegistryService()
+const projectSetupService = new ProjectSetupService()
 
 export class CalcV2TestsService {
 
@@ -28,10 +30,13 @@ export class CalcV2TestsService {
     const projectPath =
       join(pathsService.getBundledPath(), 'examples', 'calc-v2')
 
-    const project = await projectRegistryService.createProject(
-      projectPath, 'calc-v2')
+    // The example is a project like any other: its intent.toml is read from
+    // the example directory, and its store is that directory's own.
+    const project = await readProject(projectPath)
 
-    const store = projectRegistryService.getStore(project)
+    const store = createProjectStore(project.path)
+
+    await projectSetupService.setupProject(store, project)
 
     await buildMutateService.runBuild(store, project.id, project.name)
 

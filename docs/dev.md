@@ -21,7 +21,8 @@ module.
   strings, not `Date`.
 
 `src/core/project-config.ts` reads and writes `intent.toml`, and
-`findProjectRoot` resolves the project for a path by walking up. Adding a field
+`src/core/project.ts` resolves a project by reading the one in a directory.
+Adding a field
 to a project means adding it to `ProjectConfig` and to `normalizeProjectConfig`;
 a field that is present but the wrong type is an error naming the field.
 

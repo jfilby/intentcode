@@ -32,11 +32,10 @@ To run the cli from source, type `npm run cli -- <command>`, for example
 
 ## Commands
 
-    intent <command>        run one command against the project containing
-                            the working directory, and exit
-    intent <command> <dir>  run it against the project at <dir>
+    intent <command>  run one command against the project in the working
+                     directory, and exit
 
-    build              build the project in the working directory
+    build              build the project
     chat               chat about the project's Intent files
     about              print the project the command resolved to
     load-extensions    copy extensions into the project
@@ -45,19 +44,15 @@ To run the cli from source, type `npm run cli -- <command>`, for example
     tests              run the bundled example builds
     info               print the models and settings in use
 
-`build` is the one command that needs the project in the directory it is run
-from rather than in one above it: a directory with no `intent.toml` is
-reported as not being a project, so a build never lands on a project the
-caller did not mean.
+A command has to be run from inside the project it is about: the working
+directory has to be the one holding the `intent.toml`.
 
 
 ## Projects
 
-A project is a directory with an `intent.toml` in it. There is nothing to
-register: create the file and the directory is a project. The engine finds the
-project for a command by walking up from the working directory, so running it
-anywhere inside a project binds to that project. The project root is referred
-to as PRJ_ROOT in this doc.
+A project is a directory with an `intent.toml` in it. Create the file and the
+directory is a project; a command run in it reads that file and works on the
+project it names. The project root is referred to as PRJ_ROOT in this doc.
 
 PRJ_ROOT/intent.toml is the project config. The name is the only required
 field:

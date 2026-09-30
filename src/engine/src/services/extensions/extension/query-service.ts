@@ -4,7 +4,10 @@ import type { SourceNodeRecord } from '@/core/records.js'
 import type { ProjectStore } from '@/core/store.js'
 import { ExtensionsData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types.js'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
-import { ProjectRegistryService } from '@/services/projects/project-registry.js'
+import {
+  getSystemProject,
+  getSystemStore
+} from '@/services/projects/system-project.js'
 
 // Types
 
@@ -37,7 +40,6 @@ type HookJsonContent = {
 const sourceNodeModel = new SourceNodeModel()
 
 // Services
-const projectRegistryService = new ProjectRegistryService()
 
 // Class
 export class ExtensionQueryService {
@@ -394,21 +396,20 @@ export class ExtensionQueryService {
 
   /**
    * The extensions of the System project, which is where the bundled ones are
-   * read from. The System project is the engine directory rather than one found
-   * by walking, so it is built from the engine path.
+   * read from. The System project is the engine directory rather than one
+   * named by an intent.toml, so it is built from the engine path.
    */
   async systemProjectExtensions() {
 
     // Debug
     const fnName = `${this.clName}.systemProjectExtensions()`
 
-    // Get System project
-    const systemProject = projectRegistryService.getSystemProject()
+    const systemProject = getSystemProject()
 
     // Get system extensions
     const extensionsData = await
             this.loadExtensions(
-              projectRegistryService.getStore(systemProject),
+              getSystemStore(),
               systemProject.id)
 
     // Validate

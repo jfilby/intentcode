@@ -12,7 +12,7 @@ import { DepsSyncService } from '@/services/managed-files/deps/sync-service.js'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service.js'
 import { IntentCodeAnalyzerMutateService } from '../analyzer/mutate-service.js'
 import { ProjectCompileService } from '@/services/projects/compile-service.js'
-import { ProjectRegistryService } from '@/services/projects/project-registry.js'
+import { readProject } from '@/core/project.js'
 import { ProjectVerifyService } from '@/services/projects/verify-service.js'
 import { TechStackMutateService } from '@/services/intentcode/tech-stack/mutate-service.js'
 import { BuildsGraphMutateService } from '@/services/graphs/builds/mutate-service.js'
@@ -37,7 +37,6 @@ const intentCodeAnalyzerMutateService = new IntentCodeAnalyzerMutateService()
 const intentCodeGraphMutateService = new IntentCodeGraphMutateService()
 const projectCompileService = new ProjectCompileService()
 const projectGraphQueryService = new ProjectGraphQueryService()
-const projectRegistryService = new ProjectRegistryService()
 const projectVerifyService = new ProjectVerifyService()
 const sourceCodeGraphMutateService = new SourceCodeGraphMutateService()
 const specsGraphQueryService = new SpecsGraphQueryService()
@@ -216,8 +215,7 @@ export class BuildMutateService {
 
     // The project being built. A project is a directory, so the store already
     // names it and its intent.toml is the one record of it.
-    const project = await
-      projectRegistryService.getProjectByRoot(store.projectPath)
+    const project = await readProject(store.projectPath)
 
     // Validate
     if (project.id !== projectId) {

@@ -4,7 +4,7 @@ import { BuildData } from '@/types/build-types.js'
 import { DepsData, ExtensionsData } from '@/types/source-graph-types.js'
 import { ExtensionMutateService } from '@/services/extensions/extension/mutate-service.js'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service.js'
-import { ProjectRegistryService } from '@/services/projects/project-registry.js'
+import { getSystemStore } from '@/services/projects/system-project.js'
 import { ProjectSetupService } from '@/services/projects/setup-project.js'
 import { SourceDepsFileService } from './source-deps-service.js'
 import { ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
@@ -12,7 +12,6 @@ import { ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
 // Services
 const extensionMutateService = new ExtensionMutateService()
 const extensionQueryService = new ExtensionQueryService()
-const projectRegistryService = new ProjectRegistryService()
 const projectSetupService = new ProjectSetupService()
 const sourceDepsFileService = new SourceDepsFileService()
 
@@ -125,10 +124,8 @@ export class DepsSyncService {
         // Debug
         // console.log(`${fnName}: loading extensions ${id}..`)
 
-        // Load extension into project
         await extensionMutateService.loadExtensionsInSystemToUserProject(
-          projectRegistryService.getStore(
-            projectRegistryService.getSystemProject()),
+          getSystemStore(),
           store,
           projectNode.projectId,
           [id])

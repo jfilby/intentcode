@@ -13,7 +13,7 @@
  */
 
 import { IntentError } from '../errors.js'
-import { findProjectRoot, readProjectConfig } from '../project-config.js'
+import { readProjectConfig } from '../project-config.js'
 import type { ProjectConfig, ProjectModelConfig } from '../project-config.js'
 
 /**
@@ -102,12 +102,10 @@ export function resolveModelPattern(
 // and a session per chat turn, and the file that names them is read once.
 const projectConfigs = new Map<string, ProjectConfig | undefined>()
 
-/** The resolved config for the project a command is running in. */
+/** The config for the project the command was run in, read from its cwd. */
 async function getProjectConfig(): Promise<ProjectConfig | undefined> {
 
-  const projectPath = findProjectRoot()
-
-  if (projectPath == null) return undefined
+  const projectPath = process.cwd()
 
   if (projectConfigs.has(projectPath) === false) {
     projectConfigs.set(

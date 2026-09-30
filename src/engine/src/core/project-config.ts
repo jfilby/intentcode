@@ -1,18 +1,16 @@
 /**
  * Project configuration: `intent.toml`.
  *
- * registration step: there is no separate list to add a directory to, and the
- * project is found by walking up from the working directory, so running the
- * compiler in a subdirectory of a project binds to that project.
+ * There is nothing to register and no list to search: a directory is a
+ * project because it holds an intent.toml, and a command resolves the project
+ * it was run in by reading that file.
  *
  * The file is read with the same rules the rest of the engine reads data
  * with: a field that is present but the wrong type is an error naming the
  * field, and a field that is absent takes its default.
  */
-import type { Dirent } from 'node:fs'
-import { existsSync } from 'node:fs'
-import { readdir, readFile, writeFile } from 'node:fs/promises'
-import { basename, dirname, isAbsolute, join, parse, resolve, sep } from 'node:path'
+import { readFile, writeFile } from 'node:fs/promises'
+import { basename, dirname, join } from 'node:path'
 import { parse as parseToml, stringify as stringifyToml } from 'smol-toml'
 import { IntentError } from './errors.js'
 import { PROJECT_CONFIG_FILE } from './store.js'
@@ -216,92 +214,4 @@ export async function writeProjectConfig(
   if (config.models != null) table.models = config.models
 
   await writeFile(path, stringifyToml(table), 'utf8')
-}
-
-/**
- * The nearest directory at or above `from` holding an intent.toml, or
- * undefined when there is none. Resolving first matters: walking up from a
- * relative path never reaches the root, and the loop below would not
- * terminate.
- */
-export function findProjectRoot(
-  from: string = process.cwd()
-): string | undefined {
-
-  const root = parse(resolve(from)).root
-  let current = resolve(from)
-
-  while (true) {
-    if (existsSync(join(current, PROJECT_CONFIG_FILE))) return current
-    if (current === root) return undefined
-    const parent = dirname(current)
-    if (parent === current) return undefined
-    current = parent
-  }
-}
-
-export function isWithinPath(fullPath: string, rootPath: string): boolean {
-  const resolved = resolve(fullPath)
-  const root = resolve(rootPath)
-  if (resolved === root) return true
-  // Containment rather than a prefix test, so /a/proj-b is not read as living
-  // inside /a/proj.
-  return resolved.startsWith(root.endsWith(sep) ? root : `${root}${sep}`)
-}
-
-/**
- * Every intent.toml at or below `root`, as the project paths they name. Used
- * to list the projects under a directory, which is what the extension
- * commands act on when they ask which project to load into.
- */
-export async function findProjectRoots(
-  root: string,
-  depth: number = 3
-): Promise<string[]> {
-
-  const found: string[] = []
-  const queue: { path: string; depth: number }[] = [{ path: root, depth: 0 }]
-
-  while (queue.length > 0) {
-    const next = queue.shift()!
-    if (next.depth > depth) continue
-    if (existsSync(join(next.path, PROJECT_CONFIG_FILE))) {
-      found.push(next.path)
-      // A project is a tree: a project inside a project is its own root, and
-      // its own children are found from it.
-      continue
-    }
-    let entries: Dirent[]
-    try {
-      entries = await readdir(next.path, { withFileTypes: true })
-    } catch {
-      continue
-    }
-    for (const entry of entries) {
-      if (entry.isDirectory() === false) continue
-      if (entry.name.startsWith('.')) continue
-      if (entry.name === 'node_modules') continue
-      queue.push({ path: join(next.path, entry.name), depth: next.depth + 1 })
-    }
-  }
-
-  return found.sort()
-}
-
-/** Resolves a project argument, which may be a path or a key, to a path. */
-export function resolveProjectPath(
-  reference: string,
-  cwd: string = process.cwd()
-): string | undefined {
-
-  if (isAbsolute(reference) || reference.startsWith('.') ||
-      reference.includes('/') || reference.includes(sep)) {
-
-    const candidate = resolve(cwd, reference)
-    return existsSync(join(candidate, PROJECT_CONFIG_FILE))
-      ? candidate
-      : undefined
-  }
-
-  return findProjectRoot(cwd)
 }

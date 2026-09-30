@@ -1,15 +1,10 @@
 /**
  * The `intent` command.
  *
- * Every command runs against a project, and a project is the nearest
- * directory above the working directory holding an `intent.toml`. A command
- * run outside one still works — there is a System project holding the bundled
- * extensions — but a build needs the working directory itself to be one, and
- * says so when it is not.
- *
- * Usage:
- *   intent <command>       run one command and exit
- *   intent <command> <dir> run it against the project at <dir>
+ * The project a command runs against is the one whose `intent.toml` is in the
+ * working directory, so the engine is run from inside the project it is asked
+ * about. A directory without an intent.toml is not a project, and the CLI
+ * says so rather than carrying on without one.
  *
  * There is no menu: run without a command and the CLI prints its usage.
  */
@@ -17,7 +12,8 @@
 import { join } from 'node:path'
 import { IntentError, isIntentError } from './core/errors.js'
 import { CliService } from './services/setup/cli-service.js'
-import { ProjectRegistryService } from './services/projects/project-registry.js'
+import { readProject } from './core/project.js'
+import { createProjectStore } from './core/store.js'
 import { SetupService } from './services/setup/setup-service.js'
 
 // The credentials come from a .env beside the project, or from the
@@ -33,7 +29,6 @@ try {
 const main = async (): Promise<void> => {
 
   const cliService = new CliService()
-  const projectRegistryService = new ProjectRegistryService()
   const setupService = new SetupService()
 
   const command = process.argv[2]
@@ -49,18 +44,16 @@ const main = async (): Promise<void> => {
     })
   }
 
-  // The command may name the project directory, so a project can be built
-  // from anywhere rather than only from inside it.
-  const dir = process.argv[3] ?? process.cwd()
-
-  const { project, store } =
-    await projectRegistryService.getStoreForPath(dir)
+  // The working directory is the project: its intent.toml is the only record
+  // of one there is.
+  const project = await readProject()
+  const store = createProjectStore(project.path)
 
   // Seeding is idempotent and cheap when there is nothing to do, so it runs
   // before every command rather than being a step the user has to remember.
   await setupService.setupIfRequired(store)
 
-  await cliService.runCommand(store, project, command, dir)
+  await cliService.runCommand(store, project, command)
 }
 
 main()
