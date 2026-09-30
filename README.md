@@ -95,7 +95,9 @@ Everything the engine derives for a project is written to a `.intent/`
 directory in the project root: the source graph, the builds, the chat history
 and the cached model replies. It is all disposable — delete the directory and
 the next build recreates it. Your Intent files, your source and your
-`intent.toml` are the only things you have to keep.
+`intent.toml` are the only things you have to keep. The engine's own state —
+the bundled extensions every project inherits from — is kept in your user
+application directory rather than in a project, so it never appears in yours.
 
 
 ## Compiler validation & suggestion
