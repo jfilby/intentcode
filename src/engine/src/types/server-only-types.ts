@@ -56,8 +56,7 @@ export enum AnalyzerPromptTypes {
 
 export enum CommonCommands {
   add = `add`,
-  back = `back`,
-  exit = `exit`
+  back = `back`
 }
 
 export enum DepDeltaNames {

@@ -251,8 +251,8 @@ export function isWithinPath(fullPath: string, rootPath: string): boolean {
 
 /**
  * Every intent.toml at or below `root`, as the project paths they name. Used
- * to list the projects under a directory, which is what the Projects menu
- * shows when it is run outside one.
+ * to list the projects under a directory, which is what the extension
+ * commands act on when they ask which project to load into.
  */
 export async function findProjectRoots(
   root: string,

@@ -123,9 +123,11 @@ refuses to load from `node_modules`, and they use Bun's builtins (`bun:sqlite`
 for session storage among them). `intent` is a Bun script, so Bun has to be on
 the PATH.
 
-To run the cli from source: `bun ./src/cli.ts` from `src/engine`, or
-`npm run cli`.
-For an install: `npm install -g intentcode-compiler`, then run `intent`.
+To run the cli from source: `bun ./src/cli.ts <command>` from `src/engine`,
+or `npm run cli -- <command>`.
+For an install: `npm install -g intentcode-compiler`, then run
+`intent <command>`. There is no menu; run `intent` with no command and it
+prints the commands it takes.
 
 
 ## Upgrading an existing install

@@ -14,7 +14,7 @@
  */
 
 import { existsSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import { getAsKey } from '@/core/field-naming.js'
 import {
   findProjectRoot,
@@ -91,6 +91,31 @@ export class ProjectRegistryService {
   }
 
   /**
+   * The project in exactly this directory, which means the directory has to
+   * hold an intent.toml of its own: this does not walk up either, so a command
+   * that builds the project in the directory it was run from says that
+   * directory is not a project rather than quietly building the one above it.
+   * A file that is there but cannot be read as a project config is the same
+   * failure — `getProjectByRoot` reads it, and reports what is wrong with it.
+   */
+  async getProjectInDir(dir: string): Promise<ProjectRecord> {
+
+    const root = resolve(dir)
+
+    if (!existsSync(join(root, PROJECT_CONFIG_FILE))) {
+      throw new IntentError({
+        category: 'ProjectError',
+        stage: `${this.clName}.getProjectInDir()`,
+        message: `no ${PROJECT_CONFIG_FILE} in ${root}`,
+        detail: `a project is a directory holding an ${PROJECT_CONFIG_FILE}, ` +
+          `so run this from the project directory itself`
+      })
+    }
+
+    return await this.getProjectByRoot(root)
+  }
+
+  /**
    * The project the engine is running in, which is the one whose intent.toml
    * is the nearest one above the working directory. This is what every command
    * defaults to.
@@ -103,8 +128,9 @@ export class ProjectRegistryService {
   }
 
   /**
-   * Every project at or below a directory, for the Projects menu. The System
-   * project is not among them: it is not the user's, and it is never built.
+   * Every project at or below a directory, which is what the extension
+   * commands offer to act on. The System project is not among them: it is not
+   * the user's, and it is never built.
    */
   async getProjectList(
     root: string = process.cwd(),

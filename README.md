@@ -20,12 +20,35 @@ Install via NPM: `npm install -g intentcode-compiler`
 
 The same command can be used to upgrade to new versions when they're available.
 
-Start the cli by running `intent`.
+There is no menu: every command is an argument. Running `intent` with no
+command prints the usage below.
 
 
 ## Running
 
-To run cli, for setup and running the compiler, type `npm run cli`.
+To run the cli from source, type `npm run cli -- <command>`, for example
+`npm run cli -- build` from a project directory.
+
+
+## Commands
+
+    intent <command>        run one command against the project containing
+                            the working directory, and exit
+    intent <command> <dir>  run it against the project at <dir>
+
+    build              build the project in the working directory
+    chat               chat about the project's Intent files
+    about              print the project the command resolved to
+    load-extensions    copy extensions into the project
+    manage-extensions  list, load and delete the project's extensions
+    setup              set the project up
+    tests              run the bundled example builds
+    info               print the models and settings in use
+
+`build` is the one command that needs the project in the directory it is run
+from rather than in one above it: a directory with no `intent.toml` is
+reported as not being a project, so a build never lands on a project the
+caller did not mean.
 
 
 ## Projects
@@ -59,16 +82,16 @@ model = "gpt-5"
 
 The API key is configured in the environment rather than in a menu. Set
 `AI_API_KEY` in `src/engine/.env`; see [docs/setup.md](docs/setup.md) for the
-full list of variables and how to point at a different provider. Select `Info`
-from the main menu to see which model each task resolved to.
+full list of variables and how to point at a different provider. Run
+`intent info` to see which model each task resolved to.
 
 There's an `intent` directory in your project root where the Intent files go.
 
 They are named with their compiled file extension and .md at the end. For
 example the target PRJ_ROOT/index.ts should be PRJ_ROOT/intent/index.ts.md.
 
-In the cli, under projects, select compile. Your Intent files will be compiled
-to source.
+Run `intent build` from the project directory. Your Intent files will be
+compiled to source.
 
 
 ## Temporary files

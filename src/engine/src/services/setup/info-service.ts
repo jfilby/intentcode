@@ -1,5 +1,5 @@
 /**
- * What the engine is currently configured with.
+ * What the CLI reports about a project.
  *
  * The model is reported per AI task, because a project may name a different
  * model per task and the answer to "which model did this use" is otherwise
@@ -17,6 +17,17 @@ import { IntentCodeAiTasks, resolveModelPattern } from '@/core/ai/model.js'
 export class InfoService {
 
   clName = 'InfoService'
+
+  /** The project a command resolved to, which is what `about` reports. */
+  about(project: ProjectRecord) {
+
+    console.log(``)
+    console.log(`# ${project.name}`)
+    console.log(``)
+    console.log(`Path: ${project.path}`)
+    console.log(`Key: ${project.key}`)
+    console.log(``)
+  }
 
   async info(store: ProjectStore, project: ProjectRecord) {
 

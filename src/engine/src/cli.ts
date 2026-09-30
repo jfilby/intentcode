@@ -4,17 +4,18 @@
  * Every command runs against a project, and a project is the nearest
  * directory above the working directory holding an `intent.toml`. A command
  * run outside one still works — there is a System project holding the bundled
- * extensions — but the commands that build or chat about a project need one
- * and say so if there is not.
+ * extensions — but a build needs the working directory itself to be one, and
+ * says so when it is not.
  *
  * Usage:
- *   intent                 the main menu
  *   intent <command>       run one command and exit
  *   intent <command> <dir> run it against the project at <dir>
+ *
+ * There is no menu: run without a command and the CLI prints its usage.
  */
 
 import { join } from 'node:path'
-import { isIntentError } from './core/errors.js'
+import { IntentError, isIntentError } from './core/errors.js'
 import { CliService } from './services/setup/cli-service.js'
 import { ProjectRegistryService } from './services/projects/project-registry.js'
 import { SetupService } from './services/setup/setup-service.js'
@@ -35,26 +36,31 @@ const main = async (): Promise<void> => {
   const projectRegistryService = new ProjectRegistryService()
   const setupService = new SetupService()
 
+  const command = process.argv[2]
+
+  // No command is a usage error rather than a menu to open: every command is
+  // an argument, and there is nothing to choose between without one.
+  if (command == null) {
+    throw new IntentError({
+      category: 'ValidationError',
+      stage: 'cli',
+      message: `no command given`,
+      detail: cliService.usage()
+    })
+  }
+
   // The command may name the project directory, so a project can be built
   // from anywhere rather than only from inside it.
-  const projectArgument = process.argv[3]
-  const cwd = projectArgument ?? process.cwd()
+  const dir = process.argv[3] ?? process.cwd()
 
   const { project, store } =
-    await projectRegistryService.getStoreForPath(cwd)
+    await projectRegistryService.getStoreForPath(dir)
 
   // Seeding is idempotent and cheap when there is nothing to do, so it runs
   // before every command rather than being a step the user has to remember.
   await setupService.setupIfRequired(store)
 
-  const command = process.argv[2]
-
-  if (command == null) {
-    await cliService.menu(store, project)
-    return
-  }
-
-  await cliService.runCommand(store, project, command)
+  await cliService.runCommand(store, project, command, dir)
 }
 
 main()
