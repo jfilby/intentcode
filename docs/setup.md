@@ -136,19 +136,18 @@ to live in a SQLite file; it now lives under `.intent/` in the project
 directory, and the projects themselves used to be rows in a table; they are now
 the directories holding an `intent.toml`.
 
-The old database can be deleted. It is not read by any version of the engine
-from this release on:
+The old database can be deleted, and so can the directory that held it. It is
+not read by any version of the engine from this release on, and the engine
+writes nothing outside a project any more:
 
-- Linux: `~/.local/share/IntentCode/data.db`
-- macOS: `~/Library/Application Support/IntentCode/data.db`
-- Windows: `%APPDATA%\IntentCode\data.db`
+- Linux: `~/.local/share/IntentCode`
+- macOS: `~/Library/Application Support/IntentCode`
+- Windows: `%APPDATA%\IntentCode`
 
-The System project — the bundled extensions every project inherits from — is
-the one thing that is not a project directory, because it belongs to the engine
-rather than to you. Its state is in an `.intent/` directory under your user
-application directory (`~/.local/share/IntentCode` on Linux, and the paths
-above without `data.db` elsewhere). It is rebuilt from the engine's own bundled
-extensions on every run, so there is nothing there to keep either.
+The bundled extensions are the one thing that used to live there, as a System
+project every project inherited from. They are read out of the engine's own
+directory instead and written into a project like any other extension, when
+the project's `deps.json` names them.
 
 A project created before the upgrade is a directory again. Create an
 `intent.toml` in the project directory to make it a project; the source, the

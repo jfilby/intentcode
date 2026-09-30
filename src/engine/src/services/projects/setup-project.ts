@@ -17,8 +17,10 @@ import { DependenciesMutateService } from '../graphs/dependencies/mutate-service
 import { DepsJsonService } from '../managed-files/deps/deps-json-service.js'
 import { DotIntentCodeGraphMutateService } from
   '../graphs/dot-intentcode/graph-mutate-service.js'
-import { ExtensionMutateService } from '../extensions/extension/mutate-service.js'
-import { getSystemStore } from './system-project.js'
+import { ExtensionMutateService } from
+  '../extensions/extension/mutate-service.js'
+import { LoadExternalExtensionsService } from
+  '../extensions/extension/load-external-service.js'
 import { ProjectGraphMutateService } from '../graphs/project/mutate-service.js'
 
 // Models
@@ -30,6 +32,7 @@ const depsJsonService = new DepsJsonService()
 const dotIntentCodeGraphMutateService =
   new DotIntentCodeGraphMutateService()
 const extensionMutateService = new ExtensionMutateService()
+const loadExternalExtensionsService = new LoadExternalExtensionsService()
 const projectGraphMutateService = new ProjectGraphMutateService()
 
 export class ProjectSetupService {
@@ -88,18 +91,20 @@ export class ProjectSetupService {
       jsonContent,
       jsonContentHash)
 
-    // The extensions named in the file are copied in from the System project,
-    // which is where the bundled ones live.
+    // The extensions named in the file are the engine's bundled ones, so they
+    // are read out of the engine directory and written into this project.
     const extensions = jsonContent.extensions
 
-    if (Array.isArray(extensions)) {
+    if (extensions != null &&
+        typeof extensions === 'object' &&
+        !Array.isArray(extensions)) {
+
       console.log(`Loading extensions specified in ${filename}..`)
 
-      await extensionMutateService.loadExtensionNodesInSystemToUserProject(
-        getSystemStore(),
+      await loadExternalExtensionsService.loadBundledExtensionNodes(
         store,
         projectNode.projectId,
-        extensions as string[])
+        extensions as Record<string, string>)
     }
 
     return depsNode

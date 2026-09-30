@@ -53,6 +53,13 @@ export class PathsService {
 
     return path.join(this.getEnginePath(), 'bundled')
   }
+
+  /** The directory the engine's own extensions are bundled in. */
+  getBundledExtensionsPath() {
+
+    return path.join(this.getBundledPath(), 'extensions')
+  }
+
   /**
    * The example projects the `tests` command builds.
    *

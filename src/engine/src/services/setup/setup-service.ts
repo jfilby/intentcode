@@ -7,10 +7,6 @@
  * from the engine, not chosen by the user, so they are written once and then
  * left alone — a chat started against an agent keeps the agent it started
  * with even after the engine's prompt for it changes.
- *
- * The System project is seeded too. It holds the bundled extensions every
- * project inherits from, and it is the one project the engine seeds without
- * being asked.
  */
 
 import { createId } from '@/core/ids.js'
@@ -19,20 +15,12 @@ import { BaseDataTypes } from '@/types/base-data-types.js'
 import { ServerOnlyTypes, VersionNames } from '@/types/server-only-types.js'
 import { VersionModel } from '@/models/engine/version-model.js'
 import { AgentUserModel } from '@/models/agents/agent-user-model.js'
-import { LoadExternalExtensionsService } from
-  '../extensions/extension/load-external-service.js'
-import {
-  getSystemProject,
-  getSystemStore
-} from '../projects/system-project.js'
 
 // Models
 const agentUserModel = new AgentUserModel()
 const versionModel = new VersionModel()
 
-// Services
-const loadExternalExtensionsService = new LoadExternalExtensionsService()
-
+// Class
 export class SetupService {
 
   clName = 'SetupService'
@@ -75,31 +63,10 @@ export class SetupService {
   }
 
   /**
-   * Seeds the System project: the agents, the chat settings, the engine
-   * version, and the bundled extensions the other projects inherit from.
-   */
-  async setupSystemProject(): Promise<void> {
-
-    const system = getSystemProject()
-    const store = getSystemStore()
-
-    await this.chatSettingsSetup(store)
-
-    await versionModel.upsert(
-      store,
-      undefined,
-      VersionNames.engine,
-      ServerOnlyTypes.engineVersion)
-
-    await loadExternalExtensionsService.loadBundledExtensions(
-      store,
-      system.id)
-  }
-
-  /**
-   * Seeds a user project. The bundled extensions are not copied here: a
-   * project reads them from the System project, and copying them is a
-   * deliberate action so a project can be pinned to a version.
+   * Seeds the agents, the chat settings that name them, and the engine
+   * version. The bundled extensions are not seeded here: a project takes the
+   * ones its deps file names, so loading them is a deliberate act rather than
+   * something a run of the engine does to every project it touches.
    */
   async setupProject(store: ProjectStore): Promise<void> {
 
@@ -113,13 +80,11 @@ export class SetupService {
   }
 
   /**
-   * Seeds the System project when it has not been seeded, and the project the
-   * command is running in when it has not been seeded either. Called on every
-   * start, so it has to be cheap when there is nothing to do.
+   * Seeds the project the command is running in when it has not been seeded
+   * yet. Called on every start, so it has to be cheap when there is nothing to
+   * do.
    */
   async setupIfRequired(store: ProjectStore): Promise<void> {
-
-    await this.setupSystemProject()
 
     const engine = await versionModel.getByUniqueKey(
       store,
@@ -137,7 +102,6 @@ export class SetupService {
   /** Re-runs every seed, for the Setup command. */
   async setup(store: ProjectStore): Promise<void> {
 
-    await this.setupSystemProject()
     await this.setupProject(store)
   }
 }

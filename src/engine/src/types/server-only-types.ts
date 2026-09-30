@@ -9,12 +9,6 @@ export enum VerbosityLevels {
 
 export class ServerOnlyTypes {
 
-  // System project
-  static systemProjectName = 'System'
-
-  /** The id the System project's records are keyed by. */
-  static systemProjectId = 'system'
-
   // Caching
   static llmCaching = true
 

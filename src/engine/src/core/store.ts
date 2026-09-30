@@ -7,10 +7,10 @@
  * the `intent.toml` beside it, which is the only file a user has to keep.
  *
  * A store is created for a project root and is not shared between projects,
- * so a record name can never name another project's data. The System project
- * is the one store with no project root of its own, so it is created against
- * the user's application directory rather than against a directory the engine
- * would then have to write into.
+ * so a record name can never name another project's data. The engine's own
+ * bundled extensions are read from the engine directory and written into a
+ * project like any other extension, so no state of the engine's own is kept
+ * outside a project.
  */
 
 import { join } from 'node:path'

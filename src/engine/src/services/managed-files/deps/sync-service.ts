@@ -3,8 +3,9 @@ import type { ProjectStore } from '@/core/store.js'
 import { BuildData } from '@/types/build-types.js'
 import { DepsData, ExtensionsData } from '@/types/source-graph-types.js'
 import { ExtensionMutateService } from '@/services/extensions/extension/mutate-service.js'
+import { LoadExternalExtensionsService } from
+  '@/services/extensions/extension/load-external-service.js'
 import { ExtensionQueryService } from '@/services/extensions/extension/query-service.js'
-import { getSystemStore } from '@/services/projects/system-project.js'
 import { ProjectSetupService } from '@/services/projects/setup-project.js'
 import { SourceDepsFileService } from './source-deps-service.js'
 import { ServerOnlyTypes, VerbosityLevels } from '@/types/server-only-types.js'
@@ -14,6 +15,7 @@ const extensionMutateService = new ExtensionMutateService()
 const extensionQueryService = new ExtensionQueryService()
 const projectSetupService = new ProjectSetupService()
 const sourceDepsFileService = new SourceDepsFileService()
+const loadExternalExtensionsService = new LoadExternalExtensionsService()
 
 /** The part of an extension node's jsonContent this service reads. */
 type ExtensionNodeContent = {
@@ -124,8 +126,7 @@ export class DepsSyncService {
         // Debug
         // console.log(`${fnName}: loading extensions ${id}..`)
 
-        await extensionMutateService.loadExtensionsInSystemToUserProject(
-          getSystemStore(),
+        await loadExternalExtensionsService.loadBundledExtensionsByName(
           store,
           projectNode.projectId,
           [id])
@@ -200,9 +201,9 @@ export class DepsSyncService {
 
     // Try to delete any extensions not in the new depsNode. Only prune when
     // deps.json actually carries an extensions map: a Deps node with no
-    // 'extensions' key is the normal state for a project whose extensions
-    // came from the system project, and passing undefined through here both
-    // threw on Object.entries(undefined) and cascade-deleted every one of the
+    // 'extensions' key is the normal state for a project that has not named
+    // any, and passing undefined through here both threw on
+    // Object.entries(undefined) and cascade-deleted every one of the
     // project's extensions.
     if (depsNodeExtensions != null) {
 

@@ -1,13 +1,8 @@
-import semver from 'semver'
 import { IntentError } from '@/core/errors.js'
 import type { SourceNodeRecord } from '@/core/records.js'
 import type { ProjectStore } from '@/core/store.js'
 import { ExtensionsData, SourceNodeNames, SourceNodeTypes } from '@/types/source-graph-types.js'
 import { SourceNodeModel } from '@/models/source-graph/source-node-model.js'
-import {
-  getSystemProject,
-  getSystemStore
-} from '@/services/projects/system-project.js'
 
 // Types
 
@@ -20,15 +15,6 @@ type ExtensionJsonContent = {
   id?: unknown
   name?: unknown
   version?: unknown
-}
-
-/**
- * The `version` read out of an extension's jsonContent when picking the
- * highest version a project will take. A version is what semver compares, so
- * it is read as the string the file is expected to hold.
- */
-type VersionedExtensionJsonContent = {
-  version?: string
 }
 
 /** The name a hook's jsonContent is read for. */
@@ -167,119 +153,6 @@ export class ExtensionQueryService {
     return prompting
   }
 
-  async getExtension(
-          store: ProjectStore,
-          projectId: string,
-          extensionsNodeId: string,
-          getName: string,
-          getMinVersionNo: string) {
-
-    // Debug
-    const fnName = `${this.clName}.getExtension()`
-
-    // console.log(
-    //   `${fnName}: projectId: ${projectId} extensionsNodeId: ` +
-    //   `${extensionsNodeId} getName: ${getName}`)
-
-    // Get potential extension nodes
-    const extensions = await
-            sourceNodeModel.filter(
-              store,
-              extensionsNodeId,  // parentId
-              projectId,
-              SourceNodeTypes.extensionType,
-              getName)
-
-    // Get semantic min version
-    const minVersionNo = semver.minVersion(getMinVersionNo)
-
-    // Get the highest version above minVersionNo
-    let highestExtensionNode: SourceNodeRecord | undefined = undefined
-    let highestVersionNo: string | undefined = undefined
-
-    for (const extension of extensions) {
-
-      // Debug
-      // console.log(`${fnName}: trying: ` + JSON.stringify(extension))
-
-      // Get the version no
-      const versionNo =
-        (extension.jsonContent as VersionedExtensionJsonContent | null)
-          ?.version
-
-      // Validate
-      if (versionNo == null) {
-        throw new IntentError({
-          category: 'ExtensionError',
-          stage: fnName,
-          message:
-            `extension with SourceNode.id: ${extension.id} doesn't have a ` +
-            `version set`
-        })
-      }
-
-      // Is the version above the minimum required?
-      if (semver.lt(
-            versionNo,
-            minVersionNo!)) {
-
-        continue
-      }
-
-      // Get if a higher version than the one already known
-      if (highestVersionNo == null) {
-
-        highestExtensionNode = extension
-        highestVersionNo = versionNo
-        continue
-      }
-
-      if (semver.gt(
-            versionNo,
-            highestVersionNo)) {
-
-        highestExtensionNode = extension
-        highestVersionNo = versionNo
-      }
-    }
-
-    // Return
-    return highestExtensionNode
-  }
-
-  async getExtensionNodes(
-          store: ProjectStore,
-          projectId: string) {
-
-    // Debug
-    const fnName = `${this.clName}.getExtensionNodes()`
-
-    // Get extensions node
-    const extensionsNode = await
-            this.getExtensionsNode(
-              store,
-              projectId)
-
-    // Validate
-    if (extensionsNode == null) {
-      throw new IntentError({
-        category: 'ExtensionError',
-        stage: fnName,
-        message: 'extensionsNode == null'
-      })
-    }
-
-    // Get extensions
-    const extensions = await
-            sourceNodeModel.filter(
-              store,
-              extensionsNode.id,
-              projectId)
-
-    // Return
-    return extensions
-  }
-
   async getExtensionsNode(
           store: ProjectStore,
           projectId: string) {
@@ -388,37 +261,6 @@ export class ExtensionQueryService {
       extensionNodes: extensionNodes,
       skillNodes: skillNodes,
       hooksNodes: hooksNodes
-    }
-
-    // Return
-    return extensionsData
-  }
-
-  /**
-   * The extensions of the System project, which is where the bundled ones are
-   * read from. The System project is the engine directory rather than one
-   * named by an intent.toml, so it is built from the engine path.
-   */
-  async systemProjectExtensions() {
-
-    // Debug
-    const fnName = `${this.clName}.systemProjectExtensions()`
-
-    const systemProject = getSystemProject()
-
-    // Get system extensions
-    const extensionsData = await
-            this.loadExtensions(
-              getSystemStore(),
-              systemProject.id)
-
-    // Validate
-    if (extensionsData == null) {
-      throw new IntentError({
-        category: 'ExtensionError',
-        stage: fnName,
-        message: 'extensionsData == null'
-      })
     }
 
     // Return

@@ -16,12 +16,6 @@ export interface ProjectRecord {
   key: string
   /** The absolute path of the directory holding intent.toml. */
   path: string
-  /**
-   * The System project, which holds the bundled extensions every project
-   * inherits from. It has a path like any other but is never listed as a
-   * project the user can build.
-   */
-  isSystem: boolean
   status: string
   created: string
   updated: string

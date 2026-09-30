@@ -47,7 +47,6 @@ export async function readProject(
     name: config.name,
     key,
     path,
-    isSystem: false,
     status: 'A',
     created: now,
     updated: now

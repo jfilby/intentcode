@@ -10,7 +10,7 @@
 
 import { createHash } from 'node:crypto'
 import { mkdir, open, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises'
-import { dirname, isAbsolute, join, normalize, relative, resolve, sep } from 'node:path'
+import { dirname, isAbsolute, normalize, relative, resolve, sep } from 'node:path'
 import { IntentError } from './errors.js'
 
 export interface JsonStore {
@@ -244,25 +244,3 @@ export function createJsonStore(root: string): JsonStore {
   return store
 }
 
-/**
- * The engine's per-user application directory, where the System project and
- * the engine's own state live. This is the same place the database used to
- * sit, so an upgrade keeps the user's data.
- */
-export function getUserAppDir(appName = 'IntentCode'): string {
-
-  if (process.platform === 'win32') {
-    const appData = process.env.APPDATA ??
-      join(process.env.HOME ?? process.env.USERPROFILE ?? '.', 'AppData', 'Roaming')
-    return join(appData, appName)
-  }
-
-  if (process.platform === 'darwin') {
-    const home = process.env.HOME ?? process.env.USERPROFILE ?? '.'
-    return join(home, 'Library', 'Application Support', appName)
-  }
-
-  const dataHome = process.env.XDG_DATA_HOME ??
-    join(process.env.HOME ?? '.', '.local', 'share')
-  return join(dataHome, appName)
-}
