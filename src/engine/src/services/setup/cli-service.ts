@@ -74,7 +74,7 @@ export class CliService {
       `  load-extensions    copy extensions into the project\n` +
       `  manage-extensions  list, load and delete the project's extensions\n` +
       `  setup              set the project up\n` +
-      `  tests              run the bundled example builds\n` +
+      `  tests              run the example builds\n` +
       `  info               print the models and settings in use`
   }
 

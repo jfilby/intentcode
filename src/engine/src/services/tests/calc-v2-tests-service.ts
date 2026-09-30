@@ -1,5 +1,5 @@
 /**
- * Build the bundled calc-v2 example.
+ * Build the calc-v2 example.
  *
  * The same end-to-end build as the calc example, against a project that
  * declares no extensions of its own: it is the case where the engine has to
@@ -28,7 +28,7 @@ export class CalcV2TestsService {
     const fnName = `${this.clName}.tests()`
 
     const projectPath =
-      join(pathsService.getBundledPath(), 'examples', 'calc-v2')
+      join(pathsService.getExamplesPath(), 'calc-v2')
 
     // The example is a project like any other: its intent.toml is read from
     // the example directory, and its store is that directory's own.

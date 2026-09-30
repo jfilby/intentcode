@@ -53,4 +53,14 @@ export class PathsService {
 
     return path.join(this.getEnginePath(), 'bundled')
   }
+  /**
+   * The example projects the `tests` command builds.
+   *
+   * They are development fixtures, not bundled content, so they sit beside the
+   * engine in the repository rather than inside it, and are not published.
+   */
+  getExamplesPath() {
+
+    return path.join(this.getEnginePath(), '..', 'examples')
+  }
 }

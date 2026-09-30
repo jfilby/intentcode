@@ -1,7 +1,7 @@
 /**
  * The Tests menu.
  *
- * The tests build a bundled example project end to end, which is the only way
+ * The tests build an example project end to end, which is the only way
  * to check the whole path — index, compile, verify — rather than one stage of
  * it. There is no user: the tests run as the engine, against the example's
  * own directory.

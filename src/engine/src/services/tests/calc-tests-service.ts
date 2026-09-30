@@ -1,5 +1,5 @@
 /**
- * Build the bundled calc example.
+ * Build the calc example.
  *
  * The example is a real project directory, so it is treated like any other
  * one: its intent.toml is read, the extensions it needs are copied in from
@@ -37,7 +37,7 @@ export class CalcTestsService {
     const fnName = `${this.clName}.tests()`
 
     const projectPath =
-      join(pathsService.getBundledPath(), 'examples', 'calc')
+      join(pathsService.getExamplesPath(), 'calc')
 
     // The example is a project like any other: its intent.toml is read from
     // the example directory, and its store is that directory's own.

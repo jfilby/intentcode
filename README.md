@@ -41,7 +41,7 @@ To run the cli from source, type `npm run cli -- <command>`, for example
     load-extensions    copy extensions into the project
     manage-extensions  list, load and delete the project's extensions
     setup              set the project up
-    tests              run the bundled example builds
+    tests              run the example builds
     info               print the models and settings in use
 
 A command has to be run from inside the project it is about: the working
