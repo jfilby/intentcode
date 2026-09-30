@@ -86,9 +86,9 @@ const main = async (): Promise<void> => {
 
   const store = createProjectStore(project.path)
 
-  // Seeding is idempotent and cheap when there is nothing to do, so it runs
+  // Seeding writes a record only when there is not one already, so it runs
   // before every command rather than being a step the user has to remember.
-  await setupService.setupIfRequired(store)
+  await setupService.setup(store)
 
   await cliService.runCommand(store, project, command, extensionsPath)
 }

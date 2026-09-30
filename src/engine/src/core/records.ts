@@ -155,9 +155,3 @@ export interface LlmCacheRecord {
   outputJson: unknown
   created: string
 }
-
-export interface VersionRecord {
-  id: string
-  name: string
-  version: string
-}

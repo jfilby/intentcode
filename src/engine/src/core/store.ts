@@ -26,8 +26,7 @@ import type {
   LlmCacheRecord,
   SourceEdgeWithRelations,
   SourceNodeGenerationRecord,
-  SourceNodeWithRelations,
-  VersionRecord
+  SourceNodeWithRelations
 } from './records.js'
 
 /** The directory a project's derived state lives in. */
@@ -52,7 +51,6 @@ export interface ProjectStore {
   readonly chatMessages: Collection<ChatMessageRecord>
   readonly agents: Collection<AgentUserRecord>
   readonly llmCache: Collection<LlmCacheRecord>
-  readonly versions: Collection<VersionRecord>
 }
 
 export function createProjectStore(projectPath: string): ProjectStore {
@@ -79,8 +77,6 @@ export function createProjectStore(projectPath: string): ProjectStore {
     files, 'agent', 'chat/agents.json')
   const llmCache = createCollection<LlmCacheRecord>(
     files, 'llm cache', 'cache/llm.json')
-  const versions = createCollection<VersionRecord>(
-    files, 'version', 'engine/versions.json')
 
   // The relations the graph and chat services read. They resolve a record to
   // the rows it points at rather than storing the join, so a record is only
@@ -128,8 +124,7 @@ export function createProjectStore(projectPath: string): ProjectStore {
     chatParticipants,
     chatMessages,
     agents,
-    llmCache,
-    versions
+    llmCache
   }
 }
 

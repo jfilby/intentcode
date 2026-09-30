@@ -12,8 +12,6 @@ export class ServerOnlyTypes {
   // Caching
   static llmCaching = true
 
-  // Versions
-  static engineVersion = '0.0.2'
 
   // Instance types
   static projectInstanceType = 'P'
@@ -75,10 +73,6 @@ export enum MessageTypes {
 export enum Emoticons {
   tick = '✓',
   cross = '✗'
-}
-
-export enum VersionNames {
-  engine = 'Engine'
 }
 
 export interface DepDelta {
