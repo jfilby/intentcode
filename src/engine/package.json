@@ -2,10 +2,10 @@
   "name": "intentcode-compiler",
   "version": "0.1.19",
   "type": "module",
-  "main": "./dist/src/index.js",
-  "types": "./dist/src/index.d.ts",
+  "main": "./dist/cli.js",
+  "types": "./dist/cli.d.ts",
   "bin": {
-    "intent": "./dist/cli.cjs"
+    "intent": "./dist/cli.js"
   },
   "files": [
     "dist",
@@ -16,7 +16,7 @@
     "build": "tsup && npm link",
     "start": "next start",
     "lint": "eslint",
-    "cli": "tsx ./src/cli.ts",
+    "cli": "bun ./src/cli.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

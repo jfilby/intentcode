@@ -12,15 +12,16 @@ export class PathsService {
     // The engine root is the one directory holding bundled/extensions next to
     // package.json. Rather than counting levels up from a module location,
     // walk up from each candidate seed and accept the first that really has
-    // it. __dirname is absent when the sources are loaded as ESM, and in the
-    // CJS bundle it sits at <engine>/dist, one level below the root rather
-    // than the three the old code climbed, so it is only ever a seed.
+    // it. import.meta.dirname is the bundle's own directory, <engine>/dist,
+    // one level below the root rather than the three the old code climbed,
+    // so it is only ever a seed. process.cwd() is the other, for the case
+    // where the bundle was moved away from its package.
     const marker = path.join('bundled', 'extensions')
 
     const seeds: string[] = [process.cwd()]
 
-    if (typeof __dirname !== 'undefined') {
-      seeds.push(__dirname)
+    if (import.meta.dirname != null) {
+      seeds.push(import.meta.dirname)
     }
 
     for (const seed of seeds) {

@@ -117,7 +117,14 @@ convention is.
 
 ## Running
 
-To run the cli: `npm run cli` from `src/engine`.
+The engine runs on [Bun](https://bun.sh), not Node. The Pi packages it is
+built on are Bun programs: they are published as TypeScript source, which Node
+refuses to load from `node_modules`, and they use Bun's builtins (`bun:sqlite`
+for session storage among them). `intent` is a Bun script, so Bun has to be on
+the PATH.
+
+To run the cli from source: `bun ./src/cli.ts` from `src/engine`, or
+`npm run cli`.
 For an install: `npm install -g intentcode-compiler`, then run `intent`.
 
 

@@ -32,6 +32,27 @@ migration step and no codegen: a record is a JSON object, so adding a field
 means adding it to the type and reading it defensively where an older file
 might not have it.
 
+## The bundle
+
+`npm run build` from `src/engine` bundles `src/cli.ts` into `dist/cli.js` with
+tsup and links it as the `intent` command. The bundle is ESM with a Bun
+shebang, and both parts are load-bearing rather than preference:
+
+- ESM, because the engine imports packages that only exist as ESM, and a CJS
+  bundle cannot load them. `require` of an ESM-only package hands back the
+  module namespace, so a default import of `chalk` arrives as a namespace and
+  `chalk.bold` is `undefined` — the crash that made `intent` die on its first
+  line of output.
+- Bun, because `@oh-my-pi/pi-coding-agent` publishes its entry point as
+  TypeScript source for a bundler to compile, and Node will not strip types
+  inside `node_modules`. Bundling it is not an option either: it and its
+  dependencies are written against Bun's builtins.
+
+Dependencies stay external, so the runtime's own interop decides how each one
+loads. `paths-service.ts` finds the engine root from `import.meta.dirname`,
+which is the bundle's own directory; under the source tree that is
+`src/services/utils`, and walking up from either reaches the same root.
+
 
 ## The AI layer
 
