@@ -48,6 +48,24 @@ Reporting rather than repairing is the point. A check that fixed what it found
 would leave nothing to show that a file had once been out of step, and would be
 making the call about what to do on the engine's own authority.
 
+### Skipping
+
+A build recompiles only the files that could come out different. Before
+running a session for an Intent file, the compiler asks the same record the
+drift check asks whether the source is still exactly what the engine wrote for
+exactly this Intent — recorded, answering the Intent as it reads now, and
+unchanged on disk. If so the file is skipped and reported as up to date.
+
+That test is the negation of every drift finding, read from the same record in
+the same order, so a build cannot skip a file drift would call out, or
+recompile one it would call settled. Anything short of all three conditions —
+no record, a changed Intent, a missing or hand-edited source — is compiled, so
+a file that has drifted is repaired by the next build rather than skipped over.
+
+The record is compared against content hashes; `fileModifiedTime` is recorded
+on the build and read by nothing, and would not decide this anyway, since a
+touched file is not a changed one.
+
 ## What the engine still owns
 
 - **The graph.** `.intent/` says what should exist, and the source record says

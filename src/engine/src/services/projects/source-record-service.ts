@@ -15,6 +15,7 @@
  */
 
 import { blake3 } from '@noble/hashes/blake3'
+import { hashContent } from '@/core/content-hash.js'
 import { IntentError } from '@/core/errors.js'
 import type { NodeContent, SourceNodeRecord } from '@/core/records.js'
 import type { ProjectStore } from '@/core/store.js'
@@ -85,6 +86,41 @@ export class SourceRecordService {
           sourceRelativePath: string): Promise<SourceRecord | undefined> {
 
     return (await this.getRecords(store, projectNode))[sourceRelativePath]
+  }
+
+  /**
+   * Whether the source file is exactly what the engine last wrote for exactly
+   * this Intent: recorded, answering the Intent as it reads now, and still on
+   * disk unchanged.
+   *
+   * This is the negation of every drift finding, decided from the same record
+   * in the same order `DriftService` decides them, so a build cannot skip a
+   * file the drift check would call out, or recompile one it would call
+   * settled. Anything short of all three — no record, a changed Intent, a
+   * missing or edited source — compiles, which is what the engine did before
+   * this existed.
+   */
+  async isUpToDate(
+          store: ProjectStore,
+          projectNode: SourceNodeRecord,
+          sourceRelativePath: string,
+          intentContent: string,
+          sourceContent: string | null): Promise<boolean> {
+
+    const record = await this.getRecord(
+      store, projectNode, sourceRelativePath)
+
+    // Never written, as far as the engine knows
+    if (record == null) return false
+
+    // The Intent has moved on since the source was written
+    if (record.intentContentHash !== hashContent(intentContent)) return false
+
+    // No source on disk to be up to date about
+    if (sourceContent == null) return false
+
+    // The source on disk has moved on since the engine recorded it
+    return record.contentHash === hashContent(sourceContent)
   }
 
   /**

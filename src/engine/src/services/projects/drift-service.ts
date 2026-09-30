@@ -12,7 +12,7 @@
  * a file would be making that decision on its behalf.
  */
 
-import { blake3 } from '@noble/hashes/blake3'
+import { hashContent } from '@/core/content-hash.js'
 import fs from 'fs'
 import { join } from 'node:path'
 import type { ProjectStore } from '@/core/store.js'
@@ -131,9 +131,7 @@ export class DriftService {
 
       // The source this Intent names: the same path without the .md
       const sourceRelativePath =
-        intentRelativePath.slice(
-          0,
-          intentRelativePath.length - ServerOnlyTypes.dotMdFileExt.length)
+        filenameService.getSourceRelativePath(intentRelativePath)
 
       const finding = this.getFinding(
         store,
@@ -176,7 +174,7 @@ export class DriftService {
     }
 
     // The Intent has moved on since the source was written
-    const intentHash = this.hashContent(
+    const intentHash = hashContent(
       fs.readFileSync(intentFilename, { encoding: 'utf8' }))
 
     if (record.intentContentHash !== intentHash) {
@@ -202,7 +200,7 @@ export class DriftService {
       }
     }
 
-    if (record.contentHash !== this.hashContent(onDisk)) {
+    if (record.contentHash !== hashContent(onDisk)) {
 
       return {
         intentRelativePath,
@@ -223,11 +221,6 @@ export class DriftService {
     } catch {
       return null
     }
-  }
-
-  /** The hash the engine records content under, so the two are comparable. */
-  private hashContent(content: string) {
-    return blake3(JSON.stringify(content)).toString()
   }
 
   private getPath(jsonContent: unknown): string | undefined {

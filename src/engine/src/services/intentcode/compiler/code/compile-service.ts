@@ -13,7 +13,7 @@
  * two can be compared later.
  */
 
-import { blake3 } from '@noble/hashes/blake3'
+import { hashContent } from '@/core/content-hash.js'
 import { join } from 'node:path'
 import chalk from 'chalk'
 import fs from 'fs'
@@ -28,10 +28,13 @@ import { PiSkillsService } from
   '@/services/extensions/skills/pi-skills-service.js'
 import { SourceRecordService } from
   '@/services/projects/source-record-service.js'
+import { IntentCodeFilenameService } from
+  '@/services/utils/filename-service.js'
 
 // Services
 const piService = new PiService()
 const sourceRecordService = new SourceRecordService()
+const filenameService = new IntentCodeFilenameService()
 const piSkillsService = new PiSkillsService()
 const sourceCodePathGraphMutateService =
   new SourceCodePathGraphMutateService()
@@ -63,6 +66,25 @@ export class CompilerService {
       this.getTargetFullPath(projectDetails, buildFromFile)
 
     buildFromFile.targetFullPath = targetFullPath
+
+    // A source that is already what this Intent describes, and was written by
+    // the engine rather than by hand since, has nothing to be recompiled from.
+    // A session is the expensive part of a build, so it is only worth running
+    // where a file could come out different.
+    const upToDate = await sourceRecordService.isUpToDate(
+      store,
+      projectDetails.projectNode,
+      filenameService.getSourceRelativePath(buildFromFile.relativePath),
+      buildFromFile.content,
+      this.readSource(targetFullPath))
+
+    if (upToDate) {
+
+      console.log(`${chalk.bold.yellow(Emoticons.tick)} ` +
+                  `${buildFromFile.relativePath}: already up to date`)
+
+      return
+    }
 
     // The skills that apply to this kind of file
     const skills = piSkillsService.getSkills(
@@ -113,12 +135,10 @@ export class CompilerService {
     await sourceRecordService.setRecord(
       store,
       projectDetails.projectNode,
-      buildFromFile.relativePath.slice(
-        0,
-        buildFromFile.relativePath.length - '.md'.length),
+      filenameService.getSourceRelativePath(buildFromFile.relativePath),
       {
-        intentContentHash: this.hashContent(buildFromFile.content),
-        contentHash: this.hashContent(written)
+        intentContentHash: hashContent(buildFromFile.content),
+        contentHash: hashContent(written)
       })
 
     console.log(`${chalk.bold.green(Emoticons.tick)} ` +
@@ -166,9 +186,7 @@ export class CompilerService {
 
     return join(
       sourceRoot,
-      buildFromFile.relativePath.slice(
-        0,
-        buildFromFile.relativePath.length - '.md'.length))
+      filenameService.getSourceRelativePath(buildFromFile.relativePath))
   }
 
   private readSource(targetFullPath: string): string | null {
@@ -180,10 +198,6 @@ export class CompilerService {
     }
   }
 
-  /** The hash a node's contentHash holds, so the two are comparable. */
-  private hashContent(content: string) {
-    return blake3(JSON.stringify(content)).toString()
-  }
 
   private getSourcePath(jsonContent: unknown): string {
 

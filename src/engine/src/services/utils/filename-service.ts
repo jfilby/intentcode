@@ -1,4 +1,5 @@
 import path from 'path'
+import { ServerOnlyTypes } from '@/types/server-only-types.js'
 
 export class IntentCodeFilenameService {
 
@@ -27,5 +28,21 @@ export class IntentCodeFilenameService {
     }
 
     return '.' + fileExt
+  }
+
+  /**
+   * The source path an Intent file names, relative to the project: its own
+   * path with the `.md` taken off.
+   *
+   * This is the mapping every other part of the engine agrees on — it is what
+   * `DriftService` looks a record up under and what the compiler records
+   * against — so it is stated once here rather than sliced out of a path at
+   * each of those sites.
+   */
+  getSourceRelativePath(intentRelativePath: string): string {
+
+    return intentRelativePath.slice(
+      0,
+      intentRelativePath.length - ServerOnlyTypes.dotMdFileExt.length)
   }
 }
