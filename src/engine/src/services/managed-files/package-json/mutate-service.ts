@@ -157,31 +157,6 @@ export class PackageJsonFileMutateService {
     }
   }
 
-  getNumericOnlyVersionNo(versionNo: string) {
-
-    // Debug
-    const fnName = `${this.clName}.getCleanVersionNo()`
-
-    // Validate
-    if (versionNo == null ||
-        versionNo.length === 0) {
-
-      throw new IntentError({
-        category: 'ValidationError',
-        stage: fnName,
-        message: `invalid versionNo: ${versionNo}`
-      })
-    }
-
-    // Remove leading caret if present
-    if (versionNo[0] === '^') {
-      return versionNo.substring(1)
-    }
-
-    // Valid as is
-    return versionNo
-  }
-
   async getLatestVersion(pkgName: string) {
 
     return new Promise<string>((resolve, reject) => {
@@ -239,19 +214,17 @@ export class PackageJsonFileMutateService {
 
     // console.log(`${fnName}: v: ${v}`)
 
-    // Remove non-numeric chars
-    v = this.getNumericOnlyVersionNo(v)
+    // A min version is a range, not always a pin: the tech stack a project
+    // reports can ask for '*' or '>=16' as readily as '5.0.0'. Comparing the
+    // floor of the range is what makes those comparable, and it answers all
+    // three correctly — '*' floors at 0.0.0 and so never upgrades an existing
+    // pin, '>=16' at 16.0.0, a bare '5' at 5.0.0. valid() plus coerce(),
+    // which this replaces, only read a pin and threw on a wildcard, which
+    // killed the build on any project whose tech stack named one.
+    const range = typeof v === 'string' ? semver.validRange(v) : null
+    const floor = range == null ? null : semver.minVersion(range)
 
-    // Debug
-    // console.log(`${fnName}: v: ${v}`)
-
-    // E.g. 5 -> 5.0.0. The non-null assertion was load-bearing only because
-    // callers guaranteed a numeric version; a dist-tag slipped through and
-    // produced null, which then surfaced much later as
-    // "Invalid Version: null" from semver.minVersion().
-    const normalized = semver.valid(v) ?? semver.valid(semver.coerce(v))
-
-    if (normalized == null) {
+    if (floor == null) {
 
       throw new IntentError({
         category: 'ValidationError',
@@ -260,13 +233,7 @@ export class PackageJsonFileMutateService {
       })
     }
 
-    v = normalized
-
-    // Debug
-    // console.log(`${fnName}: v: ${v}`)
-
-    // Return
-    return v
+    return floor.version
   }
 
   async run(store: ProjectStore,
@@ -489,9 +456,6 @@ export class PackageJsonFileMutateService {
         continue
       }
 
-      // Get clean version numbers for comparisons
-      let numericMinVersionNo = this.getNumericOnlyVersionNo(minVersionNo)
-
       // Get dependencies / devDependencies
       const deps = packageJson.dependencies ?? {}
       const devDeps = packageJson.devDependencies ?? {}
@@ -526,8 +490,6 @@ export class PackageJsonFileMutateService {
           const latestMajorVersionNo = semver.major(latestVersionNo)
 
           minVersionNo = `${latestMajorVersionNo}`
-          numericMinVersionNo =
-            this.getNumericOnlyVersionNo(minVersionNo)
         }
 
         // Debug
@@ -556,7 +518,13 @@ export class PackageJsonFileMutateService {
           packageJson.dependencies = {}
         }
 
-        packageJson.dependencies[dependency] = `^${numericMinVersionNo}`
+        // A min version that admits anything has a floor of 0.0.0, and no
+        // version below every real release is a useful pin, so such a
+        // specifier is written as it stands rather than with a caret off a
+        // floor nothing asked for.
+        const floor = this.normalizeSemVer(minVersionNo)
+        packageJson.dependencies[dependency] =
+          semver.eq(floor, '0.0.0') ? '*' : `^${floor}`
       }
     }
   }
